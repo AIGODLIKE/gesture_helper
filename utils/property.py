@@ -246,6 +246,8 @@ CANNOT_ACT_AS_CHILD = (  # 无法作为子级 除选择结构外
 )
 
 
+# CTEXT_ENUM_ITEMS =
+
 class PieProperty:
     pie_animation_timeout: IntProperty(**pie_animation_timeout_data)
     pie_initial_timeout: IntProperty(**pie_initial_timeout_data)

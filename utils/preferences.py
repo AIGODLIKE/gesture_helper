@@ -4,7 +4,7 @@ from bpy.types import AddonPreferences, Operator
 
 from .log import log
 from .utils import PublicClass
-from ..ui.ui_list import DrawUIList
+from ..ui.ui_list import DrawElement, DrawUIElement
 
 from .gesture import ElementItem
 from .property import (
@@ -18,13 +18,23 @@ from .property import (
 class GestureAddon(AddonPreferences, PieProperty, PublicClass):
     bl_idname = ADDON_NAME
 
-    element_items_property: CollectionProperty(type=ElementItem)
-    active_element_index: IntProperty()
+    gesture_element_items: CollectionProperty(type=ElementItem)
+    active_index: IntProperty()
 
     def register_key(self):
         ...
 
     def unregister_key(self):
+        ...
+
+    @classmethod
+    def register(cls):
+        ...
+        # TODO　key
+        # TODO ui
+
+    @classmethod
+    def unregister(cls):
         ...
 
     def draw(self, context):
@@ -34,22 +44,28 @@ class GestureAddon(AddonPreferences, PieProperty, PublicClass):
         col = row.column(align=True)
         col.operator(GestureAddon.Add.bl_idname, text='', icon='ADD')
         col.operator(GestureAddon.Del.bl_idname, text='', icon='REMOVE')
+        col.operator(GestureAddon.Copy.bl_idname, text='', icon='COPYDOWN')
 
-        row.template_list(DrawUIList.bl_idname,
-                          DrawUIList.bl_idname,
+        col.separator()
+
+        col.operator(GestureAddon.Move.bl_idname, text='', icon='SORT_DESC')
+        col.operator(GestureAddon.Move.bl_idname, text='', icon='SORT_ASC')
+
+        row.template_list(DrawElement.bl_idname,
+                          DrawElement.bl_idname,
                           self.pref,
-                          'element_items_property',
+                          'gesture_element_items',
                           self.pref,
-                          'active_element_index'
+                          'active_index'
                           )
 
         if self.pref.active_element:
-            row.template_list(DrawUIList.bl_idname,
-                              DrawUIList.bl_idname,
-                              self.pref,
-                              'element_items_property',
-                              self.pref,
-                              'active_element_index'
+            row.template_list(DrawUIElement.bl_idname,
+                              DrawUIElement.bl_idname,
+                              self.pref.active_element,
+                              'ui_element_collection',
+                              self.pref.active_element,
+                              'active_index'
                               )
         else:
             row.label(text="emm")
@@ -57,8 +73,14 @@ class GestureAddon(AddonPreferences, PieProperty, PublicClass):
         for key, value in self.rna_type.properties.items():
             layout.prop(self, key)
 
+    def export_json(self, path):
+        ...
+
+    def import_json(self, path):
+        ...
+
     class Add(Operator, PublicClass):
-        bl_idname = 'gesture_helper.element_add'
+        bl_idname = 'gesture_helper.gesture_element_add'
         bl_label = 'Add Element'
 
         def execute(self, context: bpy.types.Context):
@@ -67,8 +89,12 @@ class GestureAddon(AddonPreferences, PieProperty, PublicClass):
             return {'FINISHED'}
 
     class Del(Operator, PublicClass):
-        bl_idname = 'gesture_helper.element_del'
+        bl_idname = 'gesture_helper.gesture_element_add'
         bl_label = 'Del Element'
+
+        @classmethod
+        def poll(cls, context):
+            return len(cls.pref_().element_items)
 
         def execute(self, context: bpy.types.Context):
             try:
@@ -77,11 +103,51 @@ class GestureAddon(AddonPreferences, PieProperty, PublicClass):
                 log.info(e.args)
             return {'FINISHED'}
 
+    class Copy(Operator, PublicClass):
+        bl_idname = 'gesture_helper.gesture_element_copy'
+        bl_label = 'Add Element'
+
+        def execute(self, context: bpy.types.Context):
+            new = self.element_items.add()
+            new.name = 'name'
+            return {'FINISHED'}
+
+    class Export(Operator, PublicClass):
+        bl_idname = 'gesture_helper.gesture_element_export'
+        bl_label = 'Export Element'
+
+        def execute(self, context: bpy.types.Context):
+            new = self.element_items.add()
+            new.name = 'Export  Element'
+            return {'FINISHED'}
+
+    class Import(Operator, PublicClass):
+        bl_idname = 'gesture_helper.gesture_element_import'
+        bl_label = 'Import  Element'
+
+        def execute(self, context: bpy.types.Context):
+            new = self.element_items.add()
+            new.name = 'name'
+            return {'FINISHED'}
+
+    class Move(Operator, PublicClass):
+        bl_idname = 'gesture_helper.gesture_element_move'
+        bl_label = 'Move Element'
+
+        def execute(self, context: bpy.types.Context):
+            new = self.element_items.add()
+            new.name = 'name'
+            return {'FINISHED'}
+
 
 class_tuple = (
     GestureAddon,
     GestureAddon.Add,
     GestureAddon.Del,
+    GestureAddon.Copy,
+    GestureAddon.Export,
+    GestureAddon.Import,
+    GestureAddon.Move,
 )
 
 register_class, unregister_class = bpy.utils.register_classes_factory(class_tuple)
@@ -89,10 +155,12 @@ register_class, unregister_class = bpy.utils.register_classes_factory(class_tupl
 
 def register():
     register_class()
+    GestureAddon.register()
 
 
 def unregister():
     unregister_class()
+    GestureAddon.unregister()
 
     # def update_active_index(self, context):n
     #     #

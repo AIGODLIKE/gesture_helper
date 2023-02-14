@@ -141,11 +141,11 @@ class PublicClass:
 
     @property
     def element_items(self):
-        return self.pref.element_items_property
+        return self.pref.gesture_element_items
 
     @property
     def active_element(self):
         try:
             return self.element_items[self.pref.active_element_index]
         except IndexError as e:
-            log.info(f'active_element index error {e.args}')
+            log.debug(f'active_element index error {e.args}')
