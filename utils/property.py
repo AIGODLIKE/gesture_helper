@@ -1,8 +1,19 @@
+from bpy.app.translations import contexts as i18n_contexts
+from bpy.props import IntProperty
+
+from .log import log
 from .utils import from_bl_rna_get_bl_property_data
+
+from bpy.types import EnumPropertyItem, UILayout, PreferencesView, KeyMapItem
+
+from os.path import dirname, basename
+
+ADDON_NAME = basename(dirname(dirname(__file__)))
 
 rna_data = from_bl_rna_get_bl_property_data
 
 # misc get property
+
 
 icon_enum = rna_data(EnumPropertyItem, 'icon')
 icon_enum['items'] = [icon[:3] + icon[:1] + icon[-1:]
@@ -25,29 +36,30 @@ pie_property_items = ['pie_animation_timeout',
                       'pie_menu_threshold',
                       'pie_menu_confirm',
                       ]
-pie_animation_timeout = rna_data(
+pie_animation_timeout_data = rna_data(
     PreferencesView, 'pie_animation_timeout', fill_copy=True)
-pie_tap_timeout = rna_data(
+pie_tap_timeout_data = rna_data(
     PreferencesView, 'pie_tap_timeout', fill_copy=True)
-pie_initial_timeout = rna_data(
+pie_initial_timeout_data = rna_data(
     PreferencesView, 'pie_initial_timeout', fill_copy=True)
-pie_menu_radius = rna_data(
+pie_menu_radius_data = rna_data(
     PreferencesView, 'pie_menu_radius', fill_copy=True)
-pie_menu_threshold = rna_data(
+pie_menu_threshold_data = rna_data(
     PreferencesView, 'pie_menu_threshold', fill_copy=True)
-pie_menu_confirm = rna_data(
+pie_menu_confirm_data = rna_data(
     PreferencesView, 'pie_menu_confirm', fill_copy=True)
 # custom element property   default
-pie_animation_timeout['default'] = 6
-pie_tap_timeout['default'] = 20
-pie_initial_timeout['default'] = 0
-pie_menu_radius['default'] = 100
-pie_menu_threshold['default'] = 20
-pie_menu_confirm['default'] = 60
-pie_animation_timeout['min'] = pie_tap_timeout['min'] = pie_initial_timeout[
-    'min'] = pie_menu_radius['min'] = pie_menu_threshold['min'] = pie_menu_confirm['min'] = -1
-pie_animation_timeout['soft_min'] = pie_tap_timeout['soft_min'] = pie_initial_timeout[
-    'soft_min'] = pie_menu_radius['soft_min'] = pie_menu_threshold['soft_min'] = pie_menu_confirm['soft_min'] = 0
+pie_animation_timeout_data['default'] = 6
+pie_tap_timeout_data['default'] = 20
+pie_initial_timeout_data['default'] = 0
+pie_menu_radius_data['default'] = 100
+pie_menu_threshold_data['default'] = 20
+pie_menu_confirm_data['default'] = 60
+pie_animation_timeout_data['min'] = pie_tap_timeout_data['min'] = pie_initial_timeout_data[
+    'min'] = pie_menu_radius_data['min'] = pie_menu_threshold_data['min'] = pie_menu_confirm_data['min'] = -1
+pie_animation_timeout_data['soft_min'] = pie_tap_timeout_data['soft_min'] = pie_initial_timeout_data[
+    'soft_min'] = pie_menu_radius_data['soft_min'] = pie_menu_threshold_data['soft_min'] = pie_menu_confirm_data[
+    'soft_min'] = 0
 
 # kmi get property
 kmi_type = rna_data(
@@ -226,9 +238,28 @@ UI_ELEMENT_SELECT_STRUCTURE_TYPE = [(i, i, '')  # 选择结构
                                     ]
 
 ALLOW_CHILD_TYPE = (  # 允许有子级的项
-    'if', 'elif', 'else',  # 选择枚举
+    *SELECT_STRUCTURE,  # 选择枚举
     'box', 'row', 'split', 'column', 'menu_pie')
 
 CANNOT_ACT_AS_CHILD = (  # 无法作为子级 除选择结构外
     'menu_pie',
 )
+
+
+class PieProperty:
+    pie_animation_timeout: IntProperty(**pie_animation_timeout_data)
+    pie_initial_timeout: IntProperty(**pie_initial_timeout_data)
+    pie_menu_confirm: IntProperty(**pie_menu_confirm_data)
+    pie_menu_radius: IntProperty(**pie_menu_radius_data)
+    pie_menu_threshold: IntProperty(**pie_menu_threshold_data)
+    pie_tap_timeout: IntProperty(**pie_tap_timeout_data)
+
+
+def register():
+    ...
+    log.debug(f'addon {ADDON_NAME} register')
+    print(__file__)
+
+
+def unregister():
+    ...

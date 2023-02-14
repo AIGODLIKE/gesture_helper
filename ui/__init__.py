@@ -1,6 +1,12 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty, PointerProperty
 from bpy.types import PropertyGroup
+from . import (
+    draw,
+    icon,
+    panel,
+    ui_list,
+)
 
 
 class Extend(PropertyGroup):
@@ -26,12 +32,18 @@ class Extend(PropertyGroup):
     default_bool_value: BoolProperty(name='添加布尔属性的默认值')
 
 
-mod_tuple = ()
+mod_tuple = (
+    draw,
+    icon,
+    panel,
+    ui_list,
+)
 
 
 def register():
     for mod in mod_tuple:
         mod.register()
+
     bpy.utils.register_class(Extend)
     bpy.types.WindowManager.gesture_helper = PointerProperty(type=Extend)
 
@@ -39,5 +51,6 @@ def register():
 def unregister():
     for mod in mod_tuple:
         mod.unregister()
+        
     bpy.utils.unregister_class(Extend)
     del bpy.types.WindowManager.gesture_helper

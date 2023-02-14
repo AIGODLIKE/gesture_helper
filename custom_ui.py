@@ -32,7 +32,7 @@ from colorama import Fore
 from gpu_extras.batch import batch_for_shader
 from mathutils import Euler, Vector, Matrix
 
-from ...ui import restore_ui, uilist
+from ui import restore_ui, uilist
 from ui import get_icon, long_label
 draw_extend_ui = bbpy.ui.draw_extend_ui
 '''

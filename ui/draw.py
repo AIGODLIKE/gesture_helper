@@ -104,3 +104,11 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
         out_lay = lay
 
     return extend_bool, out_lay
+
+
+def register():
+    ...
+
+
+def unregister():
+    ...

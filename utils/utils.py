@@ -1,4 +1,8 @@
+import bpy
 from bpy.app.translations import contexts as i18n_contexts
+from functools import cache
+
+from .log import log
 
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
@@ -115,15 +119,33 @@ def set_ctext_enum():
     return data
 
 
+@cache
+def get_pref():
+    from .property import ADDON_NAME
+    return bpy.context.preferences.addons[ADDON_NAME].preferences
+
+
 class PublicClass:
 
     @staticmethod
-    def cache_clear(self):
-        ...
+    def cache_clear():
+        get_pref.cache_clear()
 
     @staticmethod
     def pref_():
-        ...
+        return get_pref()
 
+    @property
     def pref(self):
-        return
+        return self.pref_()
+
+    @property
+    def element_items(self):
+        return self.pref.element_items_property
+
+    @property
+    def active_element(self):
+        try:
+            return self.element_items[self.pref.active_element_index]
+        except IndexError as e:
+            log.info(f'active_element index error {e.args}')
