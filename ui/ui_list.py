@@ -2,6 +2,21 @@ import bpy.utils
 from bpy.types import UIList
 
 
+def draw_default_filter(self, layout):
+    sp = layout.split()
+    row = sp.row(align=True)
+    row.prop(self, 'filter_name', text='')
+    row.prop(self, 'use_filter_invert', icon='ARROW_LEFTRIGHT')
+
+    row = sp.row(align=True)
+    row.pref(self, 'use_filter_sort_alpha', icon='ICON_NONE', text='')
+    row.pref(self,
+             'use_filter_sort_reverse',
+             icon='UILST_FLT_SORT_REVERSE' if self.use_filter_sort_reverse else 'ICON_SORT_ASC',
+             text=''
+             )
+
+
 class DrawElement(UIList):
     bl_idname = 'DRAW_UL_element'
 
@@ -17,19 +32,22 @@ class DrawElement(UIList):
         row.label(text='emm')
 
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
-        from ..utils.preferences import GestureAddon
-        row = layout.row(align=True)
+        from ..utils.preferences import GestureAddonPreferences
+        col = layout.column()
+        draw_default_filter(self, col)
 
-        row.operator(GestureAddon.Import.bl_idname,
+        row = col.row(align=True)
+
+        row.operator(GestureAddonPreferences.Import.bl_idname,
                      text='',
                      icon='PRESET',
                      )
 
-        row.operator(GestureAddon.Import.bl_idname,
+        row.operator(GestureAddonPreferences.Import.bl_idname,
                      icon='IMPORT',
                      )
 
-        row.operator(GestureAddon.Export.bl_idname,
+        row.operator(GestureAddonPreferences.Export.bl_idname,
                      icon='EXPORT',
                      )
 

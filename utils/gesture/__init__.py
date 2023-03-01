@@ -11,59 +11,23 @@ from . import (
     operator,
     prop,
 )
-from ..utils import PublicClass
+from ..utils import PublicClass, PublicName, PublicIndex
 
 
-class ElementItem(PropertyGroup, PublicClass):
-
-    def get_name(self):
-        if 'name' not in self:
-            return 'emm'
-        return self['name']
-
-    def set_name(self, value):
-        self['name'] = value
-
-    def update_name(self, context):
-        log.debug(f'update {self}')
-
-    name: StringProperty(
-        name='emm',
-        get=get_name,
-        set=set_name,
-        update=update_name,
-    )
-    ui_element_items: CollectionProperty(type=UiElementItems)
-    active_index: IntProperty()
-
-    def active_item(self):
-        try:
-            return self.ui_element_items[self.active_idnex]
-        except IndexError as e:
-            log.debug(f'active_element index error {e.args}')
-
-    @property
-    def index(self):
-        return self.element_items.values().index(self)
-
-    def register_key(self):
-        ...
-
-    def unregister_key(self):
-        ...
-
+class ElementOperator:
     class Add(Operator, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_add'
-        bl_label = 'Add Element'
+        bl_label = 'Add Ui Element'
 
         def execute(self, context: bpy.types.Context):
-            new = self.element_items.add()
+            new = self.active_element.ui_items.add()
             new.name = 'name'
+            new['parent_element_items'] = self.active_element.name
             return {'FINISHED'}
 
     class Del(Operator, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_del'
-        bl_label = 'Del Element'
+        bl_label = 'Del Ui Element'
 
         @classmethod
         def poll(cls, context):
@@ -71,32 +35,14 @@ class ElementItem(PropertyGroup, PublicClass):
 
         def execute(self, context: bpy.types.Context):
             try:
-                self.element_items.remove(self.active_element.index)
+                self.active_ui_element.remove(self.active_element.index)
             except Exception as e:
                 log.info(e.args)
             return {'FINISHED'}
 
     class Copy(Operator, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_copy'
-        bl_label = 'Add Element'
-
-        def execute(self, context: bpy.types.Context):
-            new = self.element_items.add()
-            new.name = 'name'
-            return {'FINISHED'}
-
-    class Export(Operator, PublicClass):
-        bl_idname = 'gesture_helper.gesture_element_ui_export'
-        bl_label = 'Export Element'
-
-        def execute(self, context: bpy.types.Context):
-            new = self.element_items.add()
-            new.name = 'Export  Element'
-            return {'FINISHED'}
-
-    class Import(Operator, PublicClass):
-        bl_idname = 'gesture_helper.gesture_element_ui_import'
-        bl_label = 'Import  Element'
+        bl_label = 'Add Ui Element'
 
         def execute(self, context: bpy.types.Context):
             new = self.element_items.add()
@@ -113,6 +59,41 @@ class ElementItem(PropertyGroup, PublicClass):
             return {'FINISHED'}
 
 
+class ElementItem(PropertyGroup,
+                  PublicClass,
+                  PublicIndex,
+                  PublicName,
+                  ElementOperator):  # 元素项
+    ui_items: CollectionProperty(type=UiElementItems)
+    active_index: IntProperty()
+
+    @property
+    def _items(self):
+        return self.pref.gesture_element_items
+
+    def copy(self):
+        ...
+
+    def move(self, to):
+        ...
+
+    def active_item(self):
+        try:
+            return self.ui_items[self.active_idnex]
+        except IndexError as e:
+            log.debug(f'active_element index error {e.args}')
+
+    @property
+    def index(self):
+        return self.element_items.values().index(self)
+
+    def register_key(self):
+        ...
+
+    def unregister_key(self):
+        ...
+
+
 mod_tuple = (
     draw,
     element,
@@ -125,8 +106,6 @@ class_tuple = (
     ElementItem.Add,
     ElementItem.Del,
     ElementItem.Copy,
-    ElementItem.Export,
-    ElementItem.Import,
     ElementItem.Move,
 )
 register_class, unregister_class = bpy.utils.register_classes_factory(class_tuple)
@@ -142,5 +121,5 @@ def register():
 def unregister():
     for mod in mod_tuple:
         mod.unregister()
-        
+
     unregister_class()

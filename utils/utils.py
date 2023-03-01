@@ -1,6 +1,8 @@
 import bpy
 from bpy.app.translations import contexts as i18n_contexts
 from functools import cache
+import abc
+from bpy.props import StringProperty, IntProperty
 
 from .log import log
 
@@ -125,6 +127,18 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
+class _Miss:
+
+    @property
+    def _items(self):
+        """反回父项"""
+
+    @property
+    def _keys(self):
+        """反回集合项"""
+        return self._items.keys()
+
+
 class PublicClass:
 
     @staticmethod
@@ -136,7 +150,7 @@ class PublicClass:
         return get_pref()
 
     @property
-    def pref(self):
+    def pref(self) -> 'GestureAddonPreferences':
         return self.pref_()
 
     @property
@@ -145,7 +159,102 @@ class PublicClass:
 
     @property
     def active_element(self):
+        index = self.pref.active_index
+        items_len = len(self.element_items)
+        if not items_len:
+            return
+        elif index >= items_len:
+            index = items_len - 1
+        return self.element_items[index]
+
+    @property
+    def active_ui_element(self):
+        if self.active_element:
+            act = self.active_element
+            return act.ui_element_items[act.active_index]
+
+
+class PublicName(_Miss):
+    @staticmethod
+    def _get_suffix(string):
+        sp = string.split('.')
         try:
-            return self.element_items[self.pref.active_element_index]
-        except IndexError as e:
-            log.debug(f'active_element index error {e.args}')
+            return int(sp[-1])
+        except ValueError as e:
+            log.info(f'_get_suffix change name to {string, e.args}')
+            return -1
+
+    @classmethod
+    def _suffix_is_number(cls, string: str) -> bool:
+        _i = cls._get_suffix(string)
+        if _i == -1:
+            return False
+        return True
+
+    def get_name(self):
+        if 'name' not in self:
+            self.set_name('New Element')
+        return self['name']
+
+    def chick_name(self):
+        for key in self._keys:
+            self._items[key].set_name(key)
+
+    def _get_effective_name(self, value):
+
+        def _get_number(n):
+            if n < 999:
+                return f'{n}'.rjust(3, '0')
+            return f'1'.rjust(3, '0')
+
+        if value in self._keys:
+            if self._suffix_is_number(value):
+                log.debug(f'_suffix_is_number {self._get_suffix(value)}')
+                number = _get_number(self._get_suffix(value) + 1)
+                sp = value.split('.')
+                sp[-1] = number
+                value = '.'.join(sp)
+            else:
+                value += '.001'
+            return self._get_effective_name(value)
+        return value
+
+    def set_name(self, value):
+        keys = self._keys
+        if 'name' in self and value == self['name'] and keys.count(value) < 2:
+            return
+        name = self._get_effective_name(value)
+        self['name'] = name
+
+        if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
+            self.chick_name()
+        if getattr(self, 'change_name', False):
+            self.change_name(name)
+
+    def update_name(self, context):
+        ...
+
+    name: StringProperty(
+        name='name',
+        get=get_name,
+        set=set_name,
+        update=update_name,
+    )
+
+
+class PublicIndex(_Miss):
+    def _get_active_index(self):
+        if 'active_index' not in self:
+            return 0
+        index = self['active_index']
+        items_len = len(self._items)
+        return items_len - 1 if index >= items_len else index
+
+    def _set_active_index(self, value):
+        self['active_index'] = value
+
+    active_index: IntProperty(
+        name='活动项索引',
+        get=_get_active_index,
+        set=_set_active_index,
+    )
