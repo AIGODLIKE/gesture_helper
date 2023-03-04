@@ -127,6 +127,12 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
+@cache
+def get_debug():
+    import os
+    return os.getlogin() in ('EM1', 'EMM')
+
+
 class _Miss:
 
     @property
@@ -151,6 +157,7 @@ class PublicClass:
     @staticmethod
     def cache_clear():
         get_pref.cache_clear()
+        get_debug.cache_clear()
 
     @staticmethod
     def pref_():
@@ -179,6 +186,10 @@ class PublicClass:
         if self.active_element:
             act = self.active_element
             return act.ui_items_collection_group[act.active_index]
+
+    @property
+    def is_debug(self):
+        return get_debug()
 
 
 class PublicName(_Miss):

@@ -126,12 +126,6 @@ class ElementCRUD(PropertyGroup,
 class ElementGroup(ElementCRUD):  # 元素项
     ui_items_collection_group: CollectionProperty(type=UiCollectionGroupElement)
 
-    def register_key(self):
-        ...
-
-    def unregister_key(self):
-        ...
-
 
 mod_tuple = (
     draw,

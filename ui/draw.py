@@ -19,7 +19,8 @@ class DrawPreferences(PublicClass):
 
         self.draw_element_ui_list(row)
 
-    def draw_crud(self, layout, cls):
+    @staticmethod
+    def draw_crud(layout, cls):
         col = layout.column(align=True)
         col.operator(cls.Add.bl_idname, text='', icon='ADD')
         col.operator(cls.Del.bl_idname, text='', icon='REMOVE')
@@ -29,6 +30,11 @@ class DrawPreferences(PublicClass):
 
         col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
         col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
+
+    def draw_property(self, layout, point):
+        if self.is_debug and point:
+            for i in point.bl_rna.propertys:
+                layout.row(point, i)
 
     def draw_element_item(self, layout):
         row = layout.row(align=True)
@@ -42,6 +48,7 @@ class DrawPreferences(PublicClass):
                           self.pref,
                           'active_index'
                           )
+        self.draw_property(layout, self.active_element)
 
     def draw_element_ui_list(self, layout):
         row = layout.row(align=True)
@@ -55,6 +62,7 @@ class DrawPreferences(PublicClass):
                               self.pref.active_element,
                               'active_index'
                               )
+            self.draw_property(layout, self.active_ui_element)
         else:
             row.label(text="Not Gesture Element")
 
