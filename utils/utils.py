@@ -2,7 +2,7 @@ import bpy
 from bpy.app.translations import contexts as i18n_contexts
 from functools import cache
 import abc
-from bpy.props import StringProperty, IntProperty
+from bpy.props import StringProperty, IntProperty, BoolProperty
 
 from .log import log
 
@@ -138,8 +138,15 @@ class _Miss:
         """反回集合项"""
         return self._items.keys()
 
+    @property
+    def _index(self):
+        ...
+
 
 class PublicClass:
+    _parent_element_key = 'parent_element_key'
+    _parent_ui_key = 'parent_ui_emm'
+    _child_ui_key = 'child_ui_key_emm'
 
     @staticmethod
     def cache_clear():
@@ -155,7 +162,7 @@ class PublicClass:
 
     @property
     def element_items(self):
-        return self.pref.gesture_element_items
+        return self.pref.gesture_element_collection_group
 
     @property
     def active_element(self):
@@ -171,7 +178,7 @@ class PublicClass:
     def active_ui_element(self):
         if self.active_element:
             act = self.active_element
-            return act.ui_element_items[act.active_index]
+            return act.ui_items_collection_group[act.active_index]
 
 
 class PublicName(_Miss):
@@ -181,7 +188,6 @@ class PublicName(_Miss):
         try:
             return int(sp[-1])
         except ValueError as e:
-            log.info(f'_get_suffix change name to {string, e.args}')
             return -1
 
     @classmethod
@@ -191,14 +197,22 @@ class PublicName(_Miss):
             return False
         return True
 
-    def get_name(self):
-        if 'name' not in self:
-            self.set_name('New Element')
+    @property
+    def _not_update_name(self):
+        return 'name' not in self
+
+    def _get_name(self):
+        if self._not_update_name:
+            return f'not update name {self}'
+        elif 'name' not in self:
+            self._set_name('New Name')
+
         return self['name']
 
     def chick_name(self):
-        for key in self._keys:
-            self._items[key].set_name(key)
+        # for key in self._keys:
+        #     self._items[key]._set_name(key)
+        ...
 
     def _get_effective_name(self, value):
 
@@ -209,7 +223,6 @@ class PublicName(_Miss):
 
         if value in self._keys:
             if self._suffix_is_number(value):
-                log.debug(f'_suffix_is_number {self._get_suffix(value)}')
                 number = _get_number(self._get_suffix(value) + 1)
                 sp = value.split('.')
                 sp[-1] = number
@@ -219,35 +232,74 @@ class PublicName(_Miss):
             return self._get_effective_name(value)
         return value
 
-    def set_name(self, value):
+    def _set_name(self, value):
         keys = self._keys
-        if 'name' in self and value == self['name'] and keys.count(value) < 2:
+        el_er = ('name' in self and value == self['name'] and keys.count(value) < 2)
+        if el_er:
+            log.debug(f'el_er {self}')
             return
         name = self._get_effective_name(value)
+
+        log.debug(f'set name {name}')
         self['name'] = name
 
         if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
             self.chick_name()
+
         if getattr(self, 'change_name', False):
             self.change_name(name)
 
-    def update_name(self, context):
+    def set_name(self, name):
+        self['name'] = self.name = name
+
+    def _update_name(self, context):
         ...
 
     name: StringProperty(
         name='name',
-        get=get_name,
-        set=set_name,
-        update=update_name,
+        get=_get_name,
+        set=_set_name,
+        update=_update_name,
     )
 
 
+class PublicMove(_Miss):
+
+    def move(self, is_next=True):
+        ...
+
+    @staticmethod
+    def move_collection_element(collection_prop, active_prop, active_name: str = 'active_index', is_next=True) -> None:
+        prop_len = len(collection_prop)
+        index = getattr(active_prop, active_name, 0)
+        if is_next:
+            if prop_len - 1 <= index:
+                collection_prop.move(index, 0)
+                act_ind = 0
+            else:
+                collection_prop.move(index, index + 1)
+                act_ind = index + 1
+        else:
+            if 0 >= index:
+                collection_prop.move(index, prop_len - 1)
+                act_ind = prop_len - 1
+            else:
+                collection_prop.move(index, index - 1)
+                act_ind = index - 1
+        setattr(active_prop, active_name, act_ind)
+
+
 class PublicIndex(_Miss):
+
+    @property
+    def _index_items(self):
+        ...
+
     def _get_active_index(self):
         if 'active_index' not in self:
             return 0
         index = self['active_index']
-        items_len = len(self._items)
+        items_len = len(self._index_items)
         return items_len - 1 if index >= items_len else index
 
     def _set_active_index(self, value):

@@ -1,12 +1,135 @@
-def register():
-    # bpy.utils.register_class(UiElementItem)
-    ...
+from bpy.types import KeyMapItem
 
 
-def unregister():
-    # bpy.utils.unregister_class(UiElementItem)
-    ...
+class KeyMap:
+    key_list = list()
+    key_map_item: 'list[KeyMapItem]'
 
+    @property
+    def is_use_keymap(self):
+        ...
+
+    def register_keymap(self):
+        ...
+
+    def unregister_keymap(self):
+        ...
+
+    def update_keymap(self):
+        ...
+
+    # def update_key_data(self, context: 'bpy.context'):
+    #     """更新uuid项的所有快捷键,将所有的设置赋予到对应快捷键上面
+    #     循环在所有快捷键里面,如果idname和uuid匹配将会把所有的数据进行设置(需要操作的数据很多,但不是很卡)
+    #
+    #     Args:
+    #         context (_type_): _description_
+    #     """
+    #
+    #     if self.key_unable_update():
+    #         return
+    #
+    #     self.is_update = True
+    #     print(f'{addon_name} update_key_data id:{self.uuid}')
+    #
+    #     if self.any and (not all((self.ctrl, self.alt, self.shift, self.oskey, self.any))):
+    #         self.any = False
+    #
+    #     self.for_set_keymaps_data()
+    #     self.is_update = False
+    #
+    # alt: BoolProperty(name='Alt', update=update_key_data)
+    # any: BoolProperty(name='Any', update=update_any)
+    # ctrl: BoolProperty(name='Ctrl', update=update_key_data)
+    # shift: BoolProperty(name='Shift', update=update_key_data)
+    # oskey: BoolProperty(name='Cmd', update=update_key_data)
+    # repeat: BoolProperty(update=update_key_data)
+    #
+    # value: EnumProperty(name='触发方式', **kmi_value,
+    #                     default='PRESS', update=update_key_data)
+    # map_type: EnumProperty(**kmi_map_type, update=update_key_data)
+    #
+
+#     @property
+#     def double_keys(self) -> dict:
+#         """获取双键信息,用来存有那些双键,在提示的时候有用
+#
+#         Returns:
+#             dict: {key{}}
+#         """
+#         double_dict = {}
+#         for item in self.prefs.ui_items_collection_group:
+#             key = item.key
+#             if key.is_use_keymaps and key.is_enable_keymaps and key.value == 'DOUBLE_KEY':
+#                 if key.key_combination not in double_dict:
+#                     double_dict[key.key_combination] = {'keys': set()}
+#                 double_dict[key.key_combination]['keys'].add(key.double_key)
+#                 # 用于多个相同的双键区分用,如果有多个项都用一个那么只会保留最后一个使用使用字典因为是
+#                 double_dict[key.key_combination][key.double_key] = item.uuid
+#         return double_dict
+
+#         def set_key_data(ui_item):
+#             """
+#             将需要添加快捷键的UIItems 添加到对应的keymaps里面
+#
+#             """
+#             key = ui_item.key
+#             keymaps = key.get_use_keymaps_set()
+#             for keymap in keymaps:
+#                 if keymap not in data:
+#                     data[keymap] = set()
+#                 data[keymap].add(ui_item)
+#
+#         for ui in ui_items_collection_group:
+#             if ui.key.is_use_keymaps:
+#                 set_key_data(ui)
+#         return data
+#
+#     @classmethod
+#     def _get_key_dict(cls) -> dict:
+#         """# 初始化,先把应该有的内容填充一下
+#                 for ui in ui_items_collection_group:
+#             if ui.key.is_use_keymaps:
+#                 key_dict =
+#                 data[ui.uuid] = key_dict
+#                 获取初始时需要使用的快捷键字典
+#         Returns:
+#             dict: _description_
+#         """
+#         ui_items_collection_group = bbpy.get.addon.prefs().custom_ui.ui_items_collection_group
+#         return {ui.uuid:
+#                 {key: None for key in ui.key.get_use_keymaps_set()}
+#                 for ui in ui_items_collection_group
+#                 if ui.key.is_use_keymaps}
+#
+#     def __get_kmi_data__(self=None, del_all_key=False) -> dict:
+#         """记录每一个uuid的key和对应的keymaps 的kmi
+#
+#         删除快捷键也使用此函数
+#
+#         Args:
+#             self (_type_, optional): _description_. Defaults to None.
+#             del_all_key (bool, optional): 如果True则删除快捷键. Defaults to False.
+#         Returns:
+#             dict: {uuid:{keymaps_name:kmi,...}}
+#         """
+#         data = Data._get_key_dict()
+#         idname = ExecuteOperator.bl_idname
+#         keymaps = Data.configs_keymaps()
+#
+#         for keymap in keymaps:  # 先清理一遍
+#             for kmi in keymap.keymap_items:
+#                 if kmi.idname == idname:  # 是ui的操作符
+#                     uuid = kmi.properties.uuid
+#                     is_add = len(uuid) and (uuid in data)
+#                     if is_add and (not del_all_key):  # 如果有并且id在ui数据里面 uuid则记录
+#                         data[uuid][keymap.name] = kmi
+#                     else:  # 没有uuid或是uuid没有在表里面 就把这一个快捷键删掉
+#                         print(
+#                             f'{addon_name} {keymap.name}.keymap_items.remove({kmi})')
+#                         keymap.keymap_items.remove(kmi)
+#         return data
+#
 #
 # class KeyMap(PropertyGroup, Data):
 #     """存快捷键信息
@@ -159,7 +282,7 @@ def unregister():
 #
 #             # keys = list(dic.keys())
 #             # values = list(dic.values())
-#             # idx = values.index(value)
+#             # idx = values._index(value)
 #             # key = keys[idx]
 #             # return key
 #
@@ -195,7 +318,7 @@ def unregister():
 #         Returns:
 #             UIElementItem: _description_
 #         """
-#         return self.prefs.ui_items.get(self.uuid)
+#         return self.prefs.ui_items_collection_group.get(self.uuid)
 #
 #     @property
 #     def _map_type_key(self) -> str:
@@ -365,26 +488,6 @@ def unregister():
 #         self.is_update = False
 #
 #         self.update_key_data(context)
-#
-#     def update_key_data(self, context: 'bpy.context'):
-#         """更新uuid项的所有快捷键,将所有的设置赋予到对应快捷键上面
-#         循环在所有快捷键里面,如果idname和uuid匹配将会把所有的数据进行设置(需要操作的数据很多,但不是很卡)
-#
-#         Args:
-#             context (_type_): _description_
-#         """
-#
-#         if self.key_unable_update():
-#             return
-#
-#         self.is_update = True
-#         print(f'{addon_name} update_key_data id:{self.uuid}')
-#
-#         if self.any and (not all((self.ctrl, self.alt, self.shift, self.oskey, self.any))):
-#             self.any = False
-#
-#         self.for_set_keymaps_data()
-#         self.is_update = False
 #
 #     uuid: StringProperty(options={'HIDDEN'}, update=update_key_data)
 #
@@ -826,9 +929,9 @@ def unregister():
 #             """
 #             from bl_keymap_utils import keymap_hierarchy
 #             self.keymap_hierarchy = keymap_hierarchy.generate()
-#             ui_items = self.prefs.ui_items
+#             ui_items_collection_group = self.prefs.ui_items_collection_group
 #
-#             if self.uuid not in ui_items:
+#             if self.uuid not in ui_items_collection_group:
 #                 self.report({'ERROR': f'{self.uuid} not in data items'})
 #                 return {'CANCELLED'}
 #

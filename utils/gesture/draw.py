@@ -187,7 +187,7 @@ def unregister():
 #         Data.injection_attribute(cls)
 #         print('Panel __load__')
 #         pref = cls.prefs
-#         for ui in pref.ui_items:
+#         for ui in pref.ui_items_collection_group:
 #             ui._init_panel()
 #
 #     @property
@@ -236,7 +236,7 @@ def unregister():
 #             'bl_idname': self._panel_name(space),
 #             'space': space,
 #             'draw': _draw_panel,
-#             'ui': property(lambda self: self.prefs.ui_items.get(self.uuid)),
+#             'ui': property(lambda self: self.prefs.ui_items_collection_group.get(self.uuid)),
 #             # TODO 'poll': _poll,
 #         }
 #
@@ -324,8 +324,8 @@ def unregister():
 #         if not ul:
 #             return []
 #         act_index = self.active_ui_index
-#         index = -1 if act_index >= ul else act_index
-#         need = self.ui[index]
+#         _index = -1 if act_index >= ul else act_index
+#         need = self.ui[_index]
 #         if not need:
 #             return self.__get_element_items__([need, ])
 #         while True:
@@ -414,7 +414,7 @@ def unregister():
 #
 #     # property
 #
-#     def set_name(self, value) -> None:
+#     def _set_name(self, value) -> None:
 #         """
 #         自动排序添加名称,不允许同名或为空字符串
 #
@@ -426,7 +426,7 @@ def unregister():
 #         if value == '' or (self['ui_name'] == value):
 #             return
 #
-#         names = prefs.foreach_get_attribute('ui_items', 'ui_name')
+#         names = prefs.foreach_get_attribute('ui_items_collection_group', 'ui_name')
 #         nums_len = UUID_PREFIX_NUMS_LEN
 #
 #         if value in names:
@@ -445,7 +445,7 @@ def unregister():
 #         """
 #         self['ui_name'] = value
 #
-#     def get_name(self) -> str:
+#     def _get_name(self) -> str:
 #         """
 #         获取ui_name的数据
 #         """
@@ -459,7 +459,7 @@ def unregister():
 #         pref = bbpy.get.addon.prefs().custom_ui
 #         uid = self.generate_uuid(slice=slice)
 #
-#         if uid in pref.ui_items:
+#         if uid in pref.ui_items_collection_group:
 #             # uid重复,重新生成一次,跳到下一次生成,这一次不用了
 #             return self.gen_uuid(slice=7)
 #         self.name = self.uuid = uid
@@ -535,7 +535,7 @@ def unregister():
 #     tag: StringProperty()
 #
 #     ui_name: StringProperty(default='The is a name String',
-#                             set=set_name, get=get_name)
+#                             set=_set_name, get=_get_name)
 #
 #     description: StringProperty(default='这是一个描述')
 #

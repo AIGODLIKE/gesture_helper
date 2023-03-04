@@ -7,7 +7,7 @@ from .log import log
 from .utils import PublicClass, PublicIndex
 from ..ui.ui_list import DrawElement, DrawUIElement
 
-from .gesture import ElementItem
+from .gesture import ElementGroup
 from .property import (
     PieProperty,
     pie_property_items,
@@ -23,7 +23,7 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             new = self.element_items.add()
-            # new.name = 'New Element'
+            new.name = 'New Element'
             return {'FINISHED'}
 
     class Del(Operator, PublicClass):
@@ -36,7 +36,7 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             try:
-                self.element_items.remove(self.active_element.index)
+                self.active_element.remove()
             except Exception as e:
                 log.info(e.args)
             return {'FINISHED'}
@@ -58,7 +58,7 @@ class AddonOperator:
         bl_label = 'Export Element'
 
         def execute(self, context: bpy.types.Context):
-            self.active_element.export_json()
+            self.active_element.json_export()
             return {'FINISHED'}
 
     class Import(Operator, PublicClass, ImportHelper):
@@ -66,17 +66,17 @@ class AddonOperator:
         bl_label = 'Import  Element'
 
         def execute(self, context: bpy.types.Context):
-            self.active_element.import_json()
+            self.active_element.json_import()
             return {'FINISHED'}
 
     class Move(Operator, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_move'
         bl_label = 'Move Element'
 
-        next: BoolProperty()
+        is_next: BoolProperty()
 
         def execute(self, context: bpy.types.Context):
-            self.active_element.move(self.next)
+            self.active_element.move(self.is_next)
             return {'FINISHED'}
 
 
@@ -87,11 +87,15 @@ class GestureAddonPreferences(AddonPreferences,
                               AddonOperator):
     bl_idname = ADDON_NAME
 
-    gesture_element_items: CollectionProperty(type=ElementItem)
+    gesture_element_collection_group: CollectionProperty(type=ElementGroup)
 
     @property
     def _items(self):
-        return self.gesture_element_items
+        return self.gesture_element_collection_group
+
+    @property
+    def _index_items(self):
+        return self._items
 
     def register_key(self):
         ...
@@ -113,10 +117,10 @@ class GestureAddonPreferences(AddonPreferences,
         from ..ui.draw import DrawPreferences
         DrawPreferences(self.layout)
 
-    def export_json(self, path):
+    def json_export(self, path):
         ...
 
-    def import_json(self, path):
+    def json_import(self, path):
         ...
 
 
@@ -147,11 +151,11 @@ def unregister():
     #     # prop = bbpy.get.addon.prefs().custom_ui
     #     # event = bbpy.context.event
     #     # if event and (event.shift or event.ctrl):
-    #     #     prop.ui_items[self.active_index].is_select = prop.ui_items[self.active_index].is_select ^ True
+    #     #     prop.ui_items_collection_group[self.active_index].is_select = prop.ui_items_collection_group[self.active_index].is_select ^ True
     #     # else:
-    #     #     for i in prop.ui_items:
+    #     #     for i in prop.ui_items_collection_group:
     #     #         i.is_select = False
-    #     #     prop.ui_items[self.active_index].is_select = True
+    #     #     prop.ui_items_collection_group[self.active_index].is_select = True
     #     ...
     #
     # def update_full_windows(self, context):
@@ -172,7 +176,7 @@ def unregister():
     #     """
     #     如果禁用的话    需要禁用所有快捷键,不做删除,以免太卡了
     #     """
-    #     for ui in self.ui_items:
+    #     for ui in self.ui_items_collection_group:
     #         print(ui, 'update_enable')
     #
     #         if ui.key.is_use_keymaps:
@@ -186,7 +190,7 @@ def unregister():
     # is_full_windows: BoolProperty(
     #     name='全窗口显示', default=False, update=update_full_windows)
     #
-    # ui_items: CollectionProperty(type=UIItem)
+    # ui_items_collection_group: CollectionProperty(type=UIItem)
     # active_index: IntProperty(update=update_active_index)
     #
     # # ui element property
@@ -360,7 +364,7 @@ def unregister():
     #                 print(type(item), item)
     #
     #                 if 'type' in item:
-    #                     add = self.prefs.ui_items.add()
+    #                     add = self.prefs.ui_items_collection_group.add()
     #                     add.type = item['type']
     #                     add.__init__(item)
     #
@@ -406,7 +410,7 @@ def unregister():
     #     def data(self):
     #         import json
     #         data = []
-    #         for i in self.prefs.ui_items:
+    #         for i in self.prefs.ui_items_collection_group:
     #             if self.is_select:
     #                 if i.is_select:
     #                     data.append(i.item_data)

@@ -152,7 +152,7 @@ def unregister():
 #
 #     @property
 #     def gestures_direction(self, split=22.5) -> int:
-#         """获取手势的朝向 index(8个方向)
+#         """获取手势的朝向 _index(8个方向)
 #
 #         Args:
 #             split (float, optional): _description_. Defaults to 22.5.
@@ -220,8 +220,8 @@ def unregister():
 #         switch_dire = {3: 4, 4: 3}
 #         dire = switch_dire[dire] if dire in switch_dire else dire
 #
-#         index = dire-1  # ERROR上下颠倒
-#         return items[index] if dire else None
+#         _index = dire-1  # ERROR上下颠倒
+#         return items[_index] if dire else None
 #
 #     @property
 #     def gestures_is_allow_child(self) -> bool:
@@ -309,15 +309,15 @@ def unregister():
 #         """
 #
 #         if self.is_popup_gestures:
-#             for index, mouse in enumerate(self.mouse_point[:-1]):
+#             for _index, mouse in enumerate(self.mouse_point[:-1]):
 #                 distance = self.__gestures_distance__(mouse_co=mouse)
 #                 if distance < 10:
 #                     print('\t\tdistance < 10')
 #                     print(self.mouse_point)
 #                     print(self.gestures_items)
 #                     self.exit_pie()
-#                     self.mouse_point[index+1:] = []
-#                     self.gestures_items[index:] = []
+#                     self.mouse_point[_index+1:] = []
+#                     self.gestures_items[_index:] = []
 #                     self.is_normal_exit = False
 #                     return True
 #         return False
@@ -736,7 +736,7 @@ def unregister():
 #
 # class Property:
 #     # property()
-#     item = property(lambda self: self.prefs.ui_items.get(
+#     item = property(lambda self: self.prefs.ui_items_collection_group.get(
 #         self.uuid), doc='通过self.uuid获取需要绘制的项')
 #     child = property(lambda self: self.item.ui.get(
 #         self.child_gestures_uuid), doc='反回child_gestures_uuid项')
@@ -974,7 +974,7 @@ def unregister():
 #         Data.injection_attribute(self)
 #         self.is_debug = bbpy.get.addon.prefs().debug.custom_ui
 #
-#         self.item_len = len(self.prefs.ui_items)
+#         self.item_len = len(self.prefs.ui_items_collection_group)
 #         enable_ui = self.act_ui_item and self.prefs.edit_ui_item
 #         self.edit_mode = (enable_ui and len(self.act_ui_item.ui))
 #
@@ -983,7 +983,7 @@ def unregister():
 #                 layout, 'draw_keymaps_ui_head', label='ui property')
 #
 #             if is_draw:
-#                 lay.label(text='ui_items'+str(len(self.prefs.ui_items)))
+#                 lay.label(text='ui_items_collection_group'+str(len(self.prefs.ui_items_collection_group)))
 #                 lay.separator(factor=5)
 #                 for pro in self.prefs.bl_rna.properties:
 #                     if pro.identifier not in ('name', 'rna_type'):
@@ -1072,7 +1072,7 @@ def unregister():
 #                          icon='SORT_ASC').next = True
 #
 #             row.template_list(uilist.UI_UL_Custom_ui.__name__, '',
-#                               self.prefs, 'ui_items',
+#                               self.prefs, 'ui_items_collection_group',
 #                               self.prefs, 'active_index',
 #                               rows=rows,
 #                               )
