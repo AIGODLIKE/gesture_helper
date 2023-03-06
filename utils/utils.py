@@ -183,13 +183,13 @@ class PublicClass:
 
     @property
     def active_ui_element(self):
-        if self.active_element:
-            act = self.active_element
+        act = self.active_element
+        if act and act.ui_items_collection_group:
             return act.ui_items_collection_group[act.active_index]
 
     @property
     def is_debug(self):
-        return get_debug()
+        return get_debug() and self.pref.is_debug
 
 
 class PublicName(_Miss):

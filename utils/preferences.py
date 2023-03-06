@@ -88,6 +88,7 @@ class GestureAddonPreferences(AddonPreferences,
     bl_idname = ADDON_NAME
 
     gesture_element_collection_group: CollectionProperty(type=ElementGroup)
+    is_debug: BoolProperty()
 
     @property
     def _items(self):

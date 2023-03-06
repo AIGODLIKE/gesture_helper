@@ -14,7 +14,9 @@ class DrawPreferences(PublicClass):
 
     def draw_pref(self):
         layout = self.layout
+        layout.prop(self.pref, 'is_debug')
         row = layout.split()
+
         self.draw_element_item(row)
 
         self.draw_element_ui_list(row)
@@ -31,16 +33,17 @@ class DrawPreferences(PublicClass):
         col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
         col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
 
-    def draw_property(self, layout, point):
+    def draw_properties(self, layout, point):
+        col = layout.column(align=True)
         if self.is_debug and point:
-            for i in point.bl_rna.propertys:
-                layout.row(point, i)
+            for i in point.bl_rna.properties:
+                col.prop(point, i.identifier)
 
     def draw_element_item(self, layout):
         row = layout.row(align=True)
         from ..utils.preferences import GestureAddonPreferences
         self.draw_crud(row, GestureAddonPreferences)
-
+        row = row.column()
         row.template_list(DrawElement.bl_idname,
                           DrawElement.bl_idname,
                           self.pref,
@@ -48,13 +51,14 @@ class DrawPreferences(PublicClass):
                           self.pref,
                           'active_index'
                           )
-        self.draw_property(layout, self.active_element)
+        self.draw_properties(row, self.active_element)
 
     def draw_element_ui_list(self, layout):
         row = layout.row(align=True)
         self.draw_crud(row, ElementGroup)
 
         if self.pref.active_element:
+            row = row.column()
             row.template_list(DrawUIElement.bl_idname,
                               DrawUIElement.bl_idname,
                               self.pref.active_element,
@@ -62,7 +66,7 @@ class DrawPreferences(PublicClass):
                               self.pref.active_element,
                               'active_index'
                               )
-            self.draw_property(layout, self.active_ui_element)
+            self.draw_properties(row, self.active_ui_element)
         else:
             row.label(text="Not Gesture Element")
 
@@ -70,7 +74,6 @@ class DrawPreferences(PublicClass):
         ...
 
     def draw_preferences(self, layout):
-
         for key, value in self.pref.rna_type.properties.items():
             layout.prop(self, key)
 

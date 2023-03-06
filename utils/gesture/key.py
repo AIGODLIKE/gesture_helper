@@ -2,8 +2,8 @@ from bpy.types import KeyMapItem
 
 
 class KeyMap:
-    key_list = list()
-    key_map_item: 'list[KeyMapItem]'
+    key_list = list()  # 总表
+    key_map_item: 'list[KeyMapItem]'  # 每个元素的表
 
     @property
     def is_use_keymap(self):
