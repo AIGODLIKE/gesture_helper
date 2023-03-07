@@ -1,30 +1,41 @@
 import bpy
-from bpy.props import CollectionProperty, BoolProperty, IntProperty, StringProperty
+from bpy.props import CollectionProperty, BoolProperty, StringProperty
 from bpy.types import AddonPreferences, Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from .log import log
-from .utils import PublicClass, PublicIndex
-from ..ui.ui_list import DrawElement, DrawUIElement
-
 from .gesture import ElementGroup
+from .log import log
 from .property import (
     PieProperty,
-    pie_property_items,
-    SKIP_DEFAULT,
-    ADDON_NAME
+    ADDON_NAME, CUSTOM_UI_TYPE_ITEMS
 )
+from .utils import PublicClass, PublicIndex, PublicPopup
 
 
 class AddonOperator:
-    class Add(Operator, PublicClass):
+    class Add(PublicPopup, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_add'
         bl_label = 'Add Element'
+        add_type: StringProperty()
+        add_name: StringProperty()
 
         def execute(self, context: bpy.types.Context):
             new = self.element_items.add()
-            new.name = 'New Element'
+            new.name = self.add_name
+            new.element_type = self.add_type
             return {'FINISHED'}
+
+        def draw_menu(self, menu, context):
+            column = menu.layout.column(align=True)
+            for identifier, name, _ in CUSTOM_UI_TYPE_ITEMS:
+                if len(identifier):
+                    op = column.operator(self.bl_idname, text=name)
+                    op.add_type = identifier
+                    op.add_name = "New " + name
+                    op.is_popup_menu = False
+                else:
+                    column.label(text=name)
+                    column.separator()
 
     class Del(Operator, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_del'

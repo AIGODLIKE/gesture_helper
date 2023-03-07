@@ -2,7 +2,7 @@ import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, FloatProperty, IntProperty
 from bpy.types import PropertyGroup
 
-from ..property import ui_emboss_enum, ui_alignment, ui_direction
+from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS
 from ..utils import PublicClass, PublicName, PublicMove
 
 
@@ -150,6 +150,8 @@ class RelationProperty(ElementProperty):
 
 
 class UiCollectionGroupElement(RelationProperty):  # ui项
+    ui_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS)
+
     def remove(self):
         self.parent_element.ui_items_collection_group.remove(self._index)
 

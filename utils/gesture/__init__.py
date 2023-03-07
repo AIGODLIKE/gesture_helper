@@ -1,5 +1,5 @@
 import bpy.utils
-from bpy.props import BoolProperty, CollectionProperty
+from bpy.props import BoolProperty, CollectionProperty, EnumProperty, StringProperty
 from bpy.types import PropertyGroup, Operator
 
 from . import (
@@ -11,22 +11,38 @@ from . import (
 )
 from .element import UiCollectionGroupElement
 from ..log import log
-from ..utils import PublicClass, PublicName, PublicIndex, PublicMove
+from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS
+from ..utils import PublicClass, PublicName, PublicIndex, PublicMove, PublicPopup
 
 
 class ElementOperator:
-    class Add(Operator, PublicClass):
+    class Add(PublicPopup, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_add'
         bl_label = 'Add Ui Element'
+
+        add_type: StringProperty()
+        add_name: StringProperty()
+        is_add_select_structure_type: BoolProperty()
 
         @classmethod
         def poll(cls, context):
             return len(cls.pref_().element_items)
 
+        def draw_menu(self, menu, context):
+            column = menu.layout.column(align=True)
+            for identifier, name, _ in UI_ELEMENT_TYPE_ENUM_ITEMS:
+                if len(identifier):
+                    op = column.operator(self.bl_idname, text=name)
+                    op.add_name = 'New ' + name
+                    op.add_type = identifier
+                else:
+                    column.separator()
+                    column.label(text=name)
+
         def execute(self, context: bpy.types.Context):
-            name = 'name'
             new = self.active_element.ui_items_collection_group.add()
-            new.set_name(name)
+            new.set_name(self.add_name)
+            new.ui_type = self.add_type
             log.debug(f'ElementGroup add ui_element {new.name}')
             return {'FINISHED'}
 
@@ -125,6 +141,7 @@ class ElementCRUD(PropertyGroup,
 
 class ElementGroup(ElementCRUD):  # 元素项
     ui_items_collection_group: CollectionProperty(type=UiCollectionGroupElement)
+    element_type: EnumProperty(items=CUSTOM_UI_TYPE_ITEMS, )
 
 
 mod_tuple = (

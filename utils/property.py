@@ -2,13 +2,96 @@ from bpy.app.translations import contexts as i18n_contexts
 from bpy.props import IntProperty
 
 from .log import log
-from .utils import from_bl_rna_get_bl_property_data
 
 from bpy.types import EnumPropertyItem, UILayout, PreferencesView, KeyMapItem
 
 from os.path import dirname, basename
 
 ADDON_NAME = basename(dirname(dirname(__file__)))
+
+exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
+
+_base_data = {'name': 'name',
+              'description': 'description',
+              'options': 'options',
+              'override': 'override',
+              #   'tags': 'tags', ERROR
+              }
+_generic_data = {**_base_data,
+                 'default': 'default',
+                 'subtype': 'subtype',
+                 }
+
+_math_property = {**_generic_data,
+                  'hard_min': 'min',  # change
+                  'hard_max': 'max',  # change
+                  'soft_min': 'soft_min',
+                  'soft_max': 'soft_max',
+                  'step': 'step',
+                  }
+
+_float_property = {**_math_property,
+                   'precision': 'precision',
+                   'unit': 'unit',
+                   }
+
+property_data = {  # 属性参数
+    'EnumProperty': {'items': 'items',
+                     **_generic_data},
+
+    'StringProperty': {**_generic_data},
+
+    'PointerProperty': {'type': 'type',
+                        **_base_data},
+    'CollectionProperty': {'type': 'type',
+                           **_base_data},
+
+    'BoolProperty': {**_generic_data},
+    'BoolVectorProperty': {'size': 'size',
+                           **_generic_data},
+
+    'FloatProperty': _float_property,
+    'FloatVectorProperty': {'size': 'size',
+                            **_float_property},
+
+    'IntProperty': _math_property,
+    'IntVectorProperty': {'size': 'size', **_math_property},
+}
+
+
+def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, msgctxt=None, fill_copy=False) -> dict:
+    bl_rna = getattr(parent_prop, 'bl_rna', None)
+    if not bl_rna:
+        print(Exception(f'{parent_prop} no bl_rna'))
+        return dict()
+
+    ret_data = {}
+    pro = bl_rna.properties[property_name]
+    typ = pro.type
+    property_fill_name = type(pro.type_recast()).__name__
+
+    def get_t(text, msg):
+        import bpy
+        return bpy.app.translations.pgettext_iface(
+            text, msgctxt=msg)
+
+    if fill_copy:
+        # 获取输入属性的所有参数
+        for i in property_data[property_fill_name]:
+            prop = getattr(pro, i, None)
+            if prop is not None:
+                index = property_data[property_fill_name][i]
+                ret_data[index] = prop
+
+    if typ == 'ENUM':
+        ret_data['items'] = [(i.identifier,
+                              get_t(i.name, msgctxt) if msgctxt else i.name,
+                              i.description,
+                              i.icon,
+                              i.value)
+                             for i in pro.enum_items]
+    return ret_data
+
 
 rna_data = from_bl_rna_get_bl_property_data
 
@@ -115,12 +198,12 @@ DEFAULT_KEYMAPS = {'3D View', 'Window'}  # 默认添加keymaps
 TIME_DEFAULT = {'max': 2000, 'min': -1, 'default': 300}
 SKIP_DEFAULT = {'options': {'HIDDEN', 'SKIP_SAVE', }}
 # ui items property
-CUSTOM_UI_TYPE_ITEMS = (('panel', 'Panel', '绘制面板可在窗口工具栏或是侧边栏显示'),
-                        ('menu', 'Menu', '菜单,指定快捷键设置弹出菜单'),
-                        ('menu_pie', 'Pie Panel',
-                         '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
-                        # ('layout',      'Layout',       ''), TODO
-                        )
+CUSTOM_UI_TYPE_ITEMS = (
+    ('panel', 'Panel(TODO)', '绘制面板可在窗口工具栏或是侧边栏显示'),
+    ('menu', 'Menu(TODO)', '菜单,指定快捷键设置弹出菜单'),
+    ('menu_pie', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
+    ('layout', 'Layout(TODO)', ''),  # TODO
+)
 
 UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
     'box': [],
@@ -208,22 +291,22 @@ UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
 }
 
 UI_ELEMENT_TYPE_ENUM_ITEMS = [  # ui layout类型
-    # ('separator_spacer',   'Separator Spacer', ''), TODO 用作Separator的附加属性
-    ('label', 'Label', '',),
-    ('separator', 'Separator', '',),
+    # ('separator_spacer',   'Separator Spacer', ''), #TODO 用作Separator的附加属性
     ('', 'General', '',),
+    ('separator', 'Separator', '',),
 
-    ('row', 'Row', '',),
-    ('box', 'Box', '',),
-    ('split', 'Split', '',),
-    ('column', 'Column', '',),
-    ('menu_pie', 'Menu Pie', '',),
-    ('', 'Layout', '',),
+    ('', 'Layout', '',),  # todo
+    ('label', 'Label', '',),  # todo
+    ('row', 'Row', '',),  # todo
+    ('box', 'Box', '',),  # todo
+    ('split', 'Split', '',),  # todo
+    ('column', 'Column', '',),  # todo
 
-    ('menu', 'Menu', '',),
-    ('prop', 'Prop', '',),
-    ('operator', 'Operator', '',),
     ('', 'other', '',),
+    ('menu_pie', 'Menu Pie', '',),  # todo
+    ('menu', 'Menu', '',),  # todo
+    ('prop', 'Prop', '',),  # todo
+    ('operator', 'Operator', '',),  # todo
     # operator_menu_hold
     # operator_enum
     # operator_menu_enum
