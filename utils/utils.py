@@ -234,6 +234,7 @@ class PublicPopup(Operator):
                                 default=True,
                                 **SKIP_DEFAULT,
                                 )
+    title: str
 
     def draw_menu(self, menu, context):
         menu.layout.label(text='label')

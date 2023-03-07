@@ -11,7 +11,7 @@ from . import (
 )
 from .element import UiCollectionGroupElement
 from ..log import log
-from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS
+from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, UI_ELEMENT_SELECT_STRUCTURE_TYPE
 from ..utils import PublicClass, PublicName, PublicIndex, PublicMove, PublicPopup
 
 
@@ -19,27 +19,47 @@ class ElementOperator:
     class Add(PublicPopup, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_add'
         bl_label = 'Add Ui Element'
+        bl_description = '''默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nAlt 添加到无父级'''
 
         add_type: StringProperty()
         add_name: StringProperty()
-        is_add_select_structure_type: BoolProperty()
+        is_select_structure: BoolProperty()
+        add_method: StringProperty()
 
         @classmethod
         def poll(cls, context):
             return len(cls.pref_().element_items)
 
+        @property
+        def element_enum(self):
+            return UI_ELEMENT_SELECT_STRUCTURE_TYPE if self.is_select_structure else UI_ELEMENT_TYPE_ENUM_ITEMS
+
         def draw_menu(self, menu, context):
             column = menu.layout.column(align=True)
-            for identifier, name, _ in UI_ELEMENT_TYPE_ENUM_ITEMS:
+            for identifier, name, _ in self.element_enum:
                 if len(identifier):
                     op = column.operator(self.bl_idname, text=name)
                     op.add_name = 'New ' + name
                     op.add_type = identifier
+                    op.add_method = self.add_method
                 else:
                     column.separator()
                     column.label(text=name)
 
+        def invoke(self, context, event):
+            if event.ctrl:
+                self.add_method = 'peer'
+                self.title = '添加到同级'
+            elif event.alt:
+                self.title = '无父级'
+                self.add_method = 'no_parent'
+            else:
+                self.title = '添加到活动元素子级'
+
+            return super().invoke(context, event)
+
         def execute(self, context: bpy.types.Context):
+            # todo add_method
             new = self.active_element.ui_items_collection_group.add()
             new.set_name(self.add_name)
             new.ui_type = self.add_type

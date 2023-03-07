@@ -55,7 +55,6 @@ class DrawPreferences(PublicClass):
 
     def draw_element_ui_list(self, layout):
         row = layout.row(align=True)
-        self.draw_crud(row, ElementGroup)
 
         if self.pref.active_element:
             row = row.column()
@@ -69,6 +68,7 @@ class DrawPreferences(PublicClass):
             self.draw_properties(row, self.active_ui_element)
         else:
             row.label(text="Not Gesture Element")
+        self.draw_crud(row, ElementGroup)
 
     def draw_element_ui_property(self):
         ...

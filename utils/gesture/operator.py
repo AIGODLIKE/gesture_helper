@@ -1148,7 +1148,7 @@ def unregister():
 #         op = col.operator(ElementChange.ElementAdd.bl_idname,
 #                           text='', icon='RNA_ADD')
 #         op.uuid = item.uuid
-#         op.is_add_select_structure_type = True
+#         op.is_select_structure = True
 #         if ui:
 #             op.ui_element_uuid
 #
