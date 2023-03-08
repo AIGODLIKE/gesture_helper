@@ -6,7 +6,7 @@ from bpy.types import PropertyGroup
 
 from ..log import log
 from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, \
-    UI_ELEMENT_SELECT_STRUCTURE_TYPE, SELECT_STRUCTURE
+    UI_ELEMENT_SELECT_STRUCTURE_TYPE, SELECT_STRUCTURE, CTEXT_ENUM_ITEMS
 from ..utils import PublicClass, PublicName, PublicMove
 
 
@@ -15,14 +15,6 @@ class UiElement(PropertyGroup,
                 PublicClass,
                 PublicMove
                 ):
-    ...
-
-
-class ElementProperty(UiElement):
-    @property
-    def _items(self):
-        return self.ui_element_items[self._parent_element_key]
-
     default_float = {'min': 0,
                      'soft_max': 20,
                      'soft_min': 0.15,
@@ -56,9 +48,9 @@ class ElementProperty(UiElement):
     text: StringProperty(name='文字', default='text', update=_update_text)
 
     # enum
-    # ctext: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
-    # text_ctxt: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
-    # heading_ctxt: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
+    ctext: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
+    text_ctxt: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
+    heading_ctxt: EnumProperty(items=CTEXT_ENUM_ITEMS, name='翻译类型')
 
     # int
     columns: IntProperty()
@@ -105,15 +97,16 @@ class ElementProperty(UiElement):
     even_rows: BoolProperty()
 
 
-class RelationProperty(ElementProperty):
-    def move(self, is_next=True):
-        parent = self.parent_element
-        col = parent.ui_items_collection_group
+class ElementProperty(UiElement):
+    @property
+    def _items(self):
+        return self.ui_element_items[self._parent_element_key]
 
-        self.move_collection_element(col,
-                                     parent,
-                                     is_next=is_next)
-        self.check_parent_element()
+
+class RelationProperty(ElementProperty):
+    @property
+    def collection(self):
+        return self.parent_element.ui_items_collection_group
 
     def check_parent_element(self):
         """找父级元素,如果没有的话"""
@@ -123,80 +116,166 @@ class RelationProperty(ElementProperty):
                     self[self._parent_element_key] = i['name']
 
     @property
-    def parent_element(self):  # 反回父级元素,如果没有直接报错
-        return self.element_items[self._parent_element_name]
-
-    @property
     def _parent_element_name(self):
         if self._parent_element_key not in self:
             self.check_parent_element()
         return self[self._parent_element_key]
 
     @property
-    @cache
-    def children(self):  # 迭代子级ui
-        if self._child_ui_key in self:
-            # return [(i, *i.child_ui) for i in self.child_ui]
-            re = []
-            for i in self.child_ui:
-                re.append(i)
-                re.extend(i.child_ui)
-            return re
-
-    @property
-    @cache
-    def child(self):  # 子级ui
-        return [ui for ui in self.parent_element.ui_items_collection_group if
-                self in self._child_ui_key and ui.name in self[self._child_ui_key]]
-
-    @cache
-    def _get_parent(self):
-        if self._parent_ui_key in self:
-            key = self[self._parent_ui_key]
-            return self.parent_element.ui_items_collection_group[key]
-
-    def _set_parent(self, value: str):
-        self._get_parent.cache_clear()
-        if self.parent_element.ui_items_collection_group.get(value):
-            self[self._parent_ui_key] = value
-            log.info(f'{self} set parent {value}')
-        else:
-            log.debug(f'{self} set parent error not find {value}')
-
-    parent = property(_get_parent, _set_parent, )
+    def parent_element(self):  # 反回父级元素,如果没有直接报错
+        return self.element_items[self._parent_element_name]
 
     @staticmethod
     @cache
-    def get_level(self):
-        return -1
+    def _get_children(self):  # 迭代子级ui
+        key = self._child_ui_key
+        ret = []
+        if key not in self:
+            return ret
+        for i in self.child:
+            ret.append(i)
+            ret.extend(i.child)
+        return ret
+        # return [(i, *i.child[:]) for i in self.child_ui]
+
+    @staticmethod
+    @cache
+    def _get_child(self):  # 子级ui
+        key = self._child_ui_key
+        return list(ui for ui in self.collection if key in self and ui.name in self[key])
+
+    def _set_child(self, child: 'UiCollectionGroupElement'):
+        key = self._child_ui_key
+        if key not in self:
+            self[key] = []
+        ls = self[key]
+        self[key] = (ls if type(ls) == list else ls.to_list()) + [child.name]
+
+    def ___del_child(self, child: 'UiCollectionGroupElement'):
+        key = self._child_ui_key
+        if key not in self:
+            return
+        if child.name in self[key]:
+            ls = list(self[key])
+            ls.remove(child.name)
+            self[key] = ls
+
+    @staticmethod
+    @cache
+    def _get_parent(self):
+        _key = self._parent_ui_key
+        if _key in self:
+            key = self[_key]
+            col = self.collection
+            if key not in col:
+                log.error(f'{self} hava parent key but not in list find {key}')
+                self[_key] = None
+                return
+            return col[key]
+
+    def _set_parent(self, parent: 'UiCollectionGroupElement'):
+        name = getattr(parent, 'name', None)
+        key = self._parent_ui_key
+
+        if self == parent:
+            log.info(f'{self.name} set parent error parent is self')
+        elif parent and name in self.collection:
+            self[key] = name
+            parent.child = self
+            log.info(f'{self} set parent {name}')
+        else:
+            log.debug(f'{self} set parent error {name}\n{parent}')
+        self.update_relation()
+
+    def _del_parent(self):
+        log.debug(f'del_parent {self}')
+        parent_key = self._parent_ui_key
+
+        for c in self.child:
+            c.parent = self.parent
+
+        if self.parent:
+            self.parent.___del_child(self)
+
+        self[parent_key] = None
+        self.clear_element_cache()
+
+    child = property(_get_child, _set_child)  # 删除及设置使用parent调用
+    parent = property(_get_parent, _set_parent, _del_parent)
+    children = property(_get_children)
 
     @property
     def level(self) -> int:
-        return self.get_level(self)
+        if 'level' not in self:
+            return 114
+            self.update_relation()
+        return self['level']
 
     @classmethod
     def clear_element_cache(cls):
-        cls.get_level.cache_clear()
+        log.debug('clear_element_cache')
         cls._get_parent.cache_clear()
+        cls._get_child.cache_clear()
+        cls._get_children.cache_clear()
+
+    def update_relation(self):
+        """更新级数和父级子级
+        -添加时
+        删除时
+        移动时
+        改名时
+        """
+        not_parent = []
+        self.clear_element_cache()
+        log.debug('update_relation')
+
+        def set_level(item, level):
+            item['level'] = level + 1
+            for i in item.child:
+                set_level(i, item.level)
+
+        for el in self.collection:
+            if not el.parent:
+                el['level'] = 0
+                not_parent.append(el)
+                set_level(el, el.level)
+        log.debug('update_relation for el in self.collection')
+        self.parent_element[self._children_ui_element_not_parent_key] = [i.name for i in not_parent]
 
 
-class UiCollectionGroupElement(RelationProperty):  # ui项
+class CRUD(RelationProperty):
+    def move(self, is_next=True):
+        parent = self.parent_element
+        col = parent.ui_items_collection_group
+
+        self.move_collection_element(col,
+                                     parent,
+                                     is_next=is_next)
+        self.check_parent_element()
+
+
+class UiCollectionGroupElement(CRUD):  # ui项
     ui_element_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS + UI_ELEMENT_SELECT_STRUCTURE_TYPE, )
 
     @property
     def is_select_structure(self):
         return self.ui_element_type.lower() in SELECT_STRUCTURE
 
-    def remove(self):
+    def remove(self, remove_child=False):
+        if remove_child:
+            for i in self.child:
+                i.remove(remove_child)
+        self._del_parent()
         self.parent_element.ui_items_collection_group.remove(self._index)
 
     def copy(self):
         new = self.parent_element.ui_items_collection_group.add()
         new[self._parent_element_key] = self._parent_element_name
         new.set_name(self.name)
+        new.parent = self.parent
 
     def move_to(self, to):
-        ...
+        self.parent = to
 
     @property
     def _items(self):

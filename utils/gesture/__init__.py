@@ -11,8 +11,11 @@ from . import (
 )
 from .element import UiCollectionGroupElement
 from ..log import log
-from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, UI_ELEMENT_SELECT_STRUCTURE_TYPE, \
-    SELECT_STRUCTURE, SKIP_DEFAULT
+from ..property import (
+    CUSTOM_UI_TYPE_ITEMS,
+    UI_ELEMENT_TYPE_ENUM_ITEMS,
+    UI_ELEMENT_SELECT_STRUCTURE_TYPE,
+    SKIP_DEFAULT)
 from ..utils import PublicClass, PublicName, PublicIndex, PublicMove, PublicPopup
 
 
@@ -20,7 +23,7 @@ class ElementOperator:
     class Add(PublicPopup, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_add'
         bl_label = 'Add Ui Element'
-        bl_description = '''\n默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nAlt 添加到无父级'''
+        bl_description = '''\n默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nShift 添加到无父级'''
 
         add_type: StringProperty()
         add_name: StringProperty()
@@ -38,15 +41,15 @@ class ElementOperator:
             return UI_ELEMENT_SELECT_STRUCTURE_TYPE if self.is_select_structure else UI_ELEMENT_TYPE_ENUM_ITEMS
 
         @property
-        def parent_name(self):
+        def parent_element(self):
             act = self.active_ui_element
             if self.add_method == 'no_parent':
-                return ''
+                return
             elif self.add_method == 'peer':
                 parent = act.parent
-                return parent.name if parent else ''
+                return parent
             else:
-                return act.name if act else ''
+                return act
 
         def draw_menu(self, menu, context):
             column = menu.layout.column(align=True)
@@ -64,7 +67,7 @@ class ElementOperator:
             if event.ctrl:
                 self.add_method = 'peer'
                 self.title = '添加到同级'
-            elif event.alt:
+            elif event.shift:
                 self.title = '无父级'
                 self.add_method = 'no_parent'
             else:
@@ -77,8 +80,8 @@ class ElementOperator:
             new = self.active_element.ui_items_collection_group.add()
             new.set_name(self.add_name)
             new.ui_element_type = self.add_type
-            new.parent = self.parent_name
-            log.debug(f'ElementGroup add ui_element {new.name}')
+            new.parent = self.parent_element
+            log.debug(f'ElementGroup add ui_element {new.name}\n')
             return {'FINISHED'}
 
     class ElementCollectPoll:
@@ -189,6 +192,17 @@ class ElementCRUD(PropertyGroup,
 
 class ElementGroup(ElementCRUD):  # 元素项
     ui_items_collection_group: CollectionProperty(type=UiCollectionGroupElement)
+
+    @property
+    def ui_draw_order(self):
+        key = self._children_ui_element_not_parent_key
+        ret = []
+        collection = self.ui_items_collection_group
+        for i in self[key]:
+            item = collection[i]
+            ret.append(item)
+            ret.extend(item.children)
+        return ret
 
 
 mod_tuple = (

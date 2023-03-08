@@ -9,23 +9,6 @@ from .log import log
 from .property import SKIP_DEFAULT
 
 
-def set_ctext_enum():
-    """将翻译上下文enum的名称改为正常并且去掉__doc__
-    """
-    data = []
-    for item in dir(i18n_contexts):
-        prop = getattr(i18n_contexts, item, None)
-        if prop and type(prop) == str:
-            if item in ('__doc__',):
-                continue
-            if 'id_' == item[:3]:
-                add = item[3:].replace('_', ' ')
-            else:
-                add = item.replace('_', ' ')
-            data.append((item, add.title(), ''))
-    return data
-
-
 @cache
 def get_pref():
     from .property import ADDON_NAME
@@ -55,9 +38,10 @@ class _Miss:
 
 
 class PublicClass:
-    _parent_element_key = 'parent_element_key'
-    _parent_ui_key = 'parent_ui_emm'
-    _child_ui_key = 'child_ui_key_emm'
+    _parent_element_key = 'parent_element_key'  # 父元素key
+    _parent_ui_key = 'parent_ui_emm'  # 父ui元素key
+    _child_ui_key = 'child_ui_key_emm'  # 子ui元素列表key
+    _children_ui_element_not_parent_key = 'children_ui_element_not_parent_key'  # 没有子级元素的子项列表key,放在父元素里面存着
 
     @staticmethod
     def cache_clear():

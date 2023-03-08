@@ -329,7 +329,24 @@ CANNOT_ACT_AS_CHILD = (  # 无法作为子级 除选择结构外
 )
 
 
-# CTEXT_ENUM_ITEMS =
+def set_ctext_enum():
+    """将翻译上下文enum的名称改为正常并且去掉__doc__    """
+    data = []
+    for item in dir(i18n_contexts):
+        prop = getattr(i18n_contexts, item, None)
+        if prop and type(prop) == str:
+            if item in ('__doc__',):
+                continue
+            if 'id_' == item[:3]:
+                add = item[3:].replace('_', ' ')
+            else:
+                add = item.replace('_', ' ')
+            data.append((item, add.title(), ''))
+    return data
+
+
+CTEXT_ENUM_ITEMS = set_ctext_enum()
+
 
 class PieProperty:
     pie_animation_timeout: IntProperty(**pie_animation_timeout_data)

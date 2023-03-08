@@ -1,7 +1,7 @@
 import bpy.utils
 from bpy.types import UIList
 
-from ui.utils import space_layout
+from .utils import space_layout
 
 
 def draw_default_filter(self, layout):
@@ -59,7 +59,7 @@ class DrawUIElement(UIList):
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
                   icon, active_data, active_property, index, flt_flag):
-        layout = space_layout(layout, 0, level=item.level)
+        layout = space_layout(layout, 1, level=item.level)
         row = layout.row(align=True)
         row.prop(
             item,
@@ -67,10 +67,8 @@ class DrawUIElement(UIList):
             text='',
         )
         row.separator()
-        row.label(text='emm')
-        row.label(text=item.parent)
-        row.label(text=item.level)
-
+        row.label(text=str(item.parent))
+        row.label(text=str(item.level))
 
 class_tuple = (
     DrawElement,
