@@ -198,12 +198,12 @@ DEFAULT_KEYMAPS = {'3D View', 'Window'}  # 默认添加keymaps
 TIME_DEFAULT = {'max': 2000, 'min': -1, 'default': 300}
 SKIP_DEFAULT = {'options': {'HIDDEN', 'SKIP_SAVE', }}
 # ui items property
-CUSTOM_UI_TYPE_ITEMS = (
+CUSTOM_UI_TYPE_ITEMS = [
     ('panel', 'Panel(TODO)', '绘制面板可在窗口工具栏或是侧边栏显示'),
     ('menu', 'Menu(TODO)', '菜单,指定快捷键设置弹出菜单'),
     ('menu_pie', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
     ('layout', 'Layout(TODO)', ''),  # TODO
-)
+]
 
 UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
     'box': [],
@@ -291,7 +291,7 @@ UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
 }
 
 UI_ELEMENT_TYPE_ENUM_ITEMS = [  # ui layout类型
-    # ('separator_spacer',   'Separator Spacer', ''), #TODO 用作Separator的附加属性
+    ('separator_spacer', 'Separator Spacer', ''),  # TODO 用作Separator的附加属性
     ('', 'General', '',),
     ('separator', 'Separator', '',),
 
@@ -315,8 +315,8 @@ UI_ELEMENT_TYPE_ENUM_ITEMS = [  # ui layout类型
     # ('',            'popup_menu', ''), TODO
 ]
 
-SELECT_STRUCTURE = ('if', 'elif', 'else',)
-UI_ELEMENT_SELECT_STRUCTURE_TYPE = [(i, i, '')  # 选择结构
+SELECT_STRUCTURE = ('if', 'elif', 'else')
+UI_ELEMENT_SELECT_STRUCTURE_TYPE = [(i.upper(), i, '')  # 选择结构
                                     for i in SELECT_STRUCTURE
                                     ]
 

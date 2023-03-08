@@ -106,6 +106,21 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
     return extend_bool, out_lay
 
 
+def space_layout(layout: 'bpy.types.UILayout', space: int, level: int) -> 'bpy.types.UILayout':
+    """
+    设置间隔
+    """
+    if level == 0:
+        return layout.column()
+        level = 0.0001  # Tweak so that a percentage of 0 won't split by half
+    indent = level * space / bpy.context.region.width
+
+    split = layout.split(factor=indent)
+    col = split.column()
+    col = split.column()
+    return col
+
+
 def register():
     ...
 

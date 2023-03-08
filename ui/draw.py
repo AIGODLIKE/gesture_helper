@@ -23,14 +23,19 @@ class DrawPreferences(PublicClass):
 
     @staticmethod
     def draw_crud(layout, cls):
+        is_ui_element = cls == ElementGroup
         col = layout.column(align=True)
         col.operator(cls.Add.bl_idname, text='', icon='ADD')
-        col.operator(cls.Del.bl_idname, text='', icon='REMOVE')
         col.operator(cls.Copy.bl_idname, text='', icon='COPYDOWN')
+        col.operator(cls.Del.bl_idname, text='', icon='REMOVE')
+        if is_ui_element:
+            col.operator(cls.Add.bl_idname, text='', icon='RNA_ADD').is_select_structure = True  # 添加选择结构
 
         col.separator()
 
         col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
+        if is_ui_element:
+            col.operator(cls.Move.bl_idname, text='', icon='GRIP').is_next = False
         col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
 
     def draw_properties(self, layout, point):
@@ -57,15 +62,15 @@ class DrawPreferences(PublicClass):
         row = layout.row(align=True)
 
         if self.pref.active_element:
-            row = row.column()
-            row.template_list(DrawUIElement.bl_idname,
+            col = row.column()
+            col.template_list(DrawUIElement.bl_idname,
                               DrawUIElement.bl_idname,
                               self.pref.active_element,
                               'ui_items_collection_group',
                               self.pref.active_element,
                               'active_index'
                               )
-            self.draw_properties(row, self.active_ui_element)
+            self.draw_properties(col, self.active_ui_element)
         else:
             row.label(text="Not Gesture Element")
         self.draw_crud(row, ElementGroup)

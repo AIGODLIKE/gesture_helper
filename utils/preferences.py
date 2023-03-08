@@ -86,6 +86,10 @@ class AddonOperator:
 
         is_next: BoolProperty()
 
+        @classmethod
+        def poll(cls, context):
+            return GestureAddonPreferences.Del.poll(context)
+
         def execute(self, context: bpy.types.Context):
             self.active_element.move(self.is_next)
             return {'FINISHED'}

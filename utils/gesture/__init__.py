@@ -11,7 +11,8 @@ from . import (
 )
 from .element import UiCollectionGroupElement
 from ..log import log
-from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, UI_ELEMENT_SELECT_STRUCTURE_TYPE
+from ..property import CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, UI_ELEMENT_SELECT_STRUCTURE_TYPE, \
+    SELECT_STRUCTURE, SKIP_DEFAULT
 from ..utils import PublicClass, PublicName, PublicIndex, PublicMove, PublicPopup
 
 
@@ -19,11 +20,13 @@ class ElementOperator:
     class Add(PublicPopup, PublicClass):
         bl_idname = 'gesture_helper.gesture_element_ui_add'
         bl_label = 'Add Ui Element'
-        bl_description = '''默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nAlt 添加到无父级'''
+        bl_description = '''\n默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nAlt 添加到无父级'''
 
         add_type: StringProperty()
         add_name: StringProperty()
-        is_select_structure: BoolProperty()
+        is_select_structure: BoolProperty(default=False,
+                                          **SKIP_DEFAULT,
+                                          )
         add_method: StringProperty()
 
         @classmethod
@@ -33,6 +36,17 @@ class ElementOperator:
         @property
         def element_enum(self):
             return UI_ELEMENT_SELECT_STRUCTURE_TYPE if self.is_select_structure else UI_ELEMENT_TYPE_ENUM_ITEMS
+
+        @property
+        def parent_name(self):
+            act = self.active_ui_element
+            if self.add_method == 'no_parent':
+                return ''
+            elif self.add_method == 'peer':
+                parent = act.parent
+                return parent.name if parent else ''
+            else:
+                return act.name if act else ''
 
         def draw_menu(self, menu, context):
             column = menu.layout.column(align=True)
@@ -62,7 +76,8 @@ class ElementOperator:
             # todo add_method
             new = self.active_element.ui_items_collection_group.add()
             new.set_name(self.add_name)
-            new.ui_type = self.add_type
+            new.ui_element_type = self.add_type
+            new.parent = self.parent_name
             log.debug(f'ElementGroup add ui_element {new.name}')
             return {'FINISHED'}
 
@@ -70,7 +85,8 @@ class ElementOperator:
 
         @classmethod
         def poll(cls, context):
-            return cls.pref_().active_element
+            pref = cls.pref_()
+            return pref.active_element and pref.active_ui_element
 
     class Del(Operator, PublicClass, ElementCollectPoll):
         bl_idname = 'gesture_helper.gesture_element_ui_del'
@@ -95,6 +111,16 @@ class ElementOperator:
         bl_label = 'Move Element'
 
         is_next: BoolProperty()
+        move_relation: BoolProperty()
+        move_to: StringProperty()
+
+        def invoke(self, context, event):
+            if self.move_relation:
+                ...
+                log.debug(f'move {self.active_ui_element}')
+                return {'FINISHED'}
+            else:
+                return self.execute(context)
 
         def execute(self, context: bpy.types.Context):
             self.active_ui_element.move(is_next=self.is_next)
@@ -106,8 +132,7 @@ class ElementProperty(PublicClass,
                       PublicName,
                       PublicMove,
                       ElementOperator):
-    def move(self, is_next=True):
-        self.move_collection_element(self.element_items, self.pref, is_next=is_next)
+    element_type: EnumProperty(items=CUSTOM_UI_TYPE_ITEMS)
 
     @property
     def _items(self):
@@ -158,10 +183,12 @@ class ElementCRUD(PropertyGroup,
         new.name = self.name
         log.debug(f'copy element {self.name} to {new.name}\n')
 
+    def move(self, is_next=True):
+        self.move_collection_element(self.element_items, self.pref, is_next=is_next)
+
 
 class ElementGroup(ElementCRUD):  # 元素项
     ui_items_collection_group: CollectionProperty(type=UiCollectionGroupElement)
-    element_type: EnumProperty(items=CUSTOM_UI_TYPE_ITEMS, )
 
 
 mod_tuple = (

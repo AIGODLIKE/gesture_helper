@@ -1,8 +1,12 @@
+from functools import cache
+
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, FloatProperty, IntProperty
 from bpy.types import PropertyGroup
 
-from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS
+from ..log import log
+from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, \
+    UI_ELEMENT_SELECT_STRUCTURE_TYPE, SELECT_STRUCTURE
 from ..utils import PublicClass, PublicName, PublicMove
 
 
@@ -129,7 +133,8 @@ class RelationProperty(ElementProperty):
         return self[self._parent_element_key]
 
     @property
-    def children_ui(self):  # 迭代子级ui
+    @cache
+    def children(self):  # 迭代子级ui
         if self._child_ui_key in self:
             # return [(i, *i.child_ui) for i in self.child_ui]
             re = []
@@ -139,18 +144,48 @@ class RelationProperty(ElementProperty):
             return re
 
     @property
-    def child_ui(self):  # 子级ui
+    @cache
+    def child(self):  # 子级ui
         return [ui for ui in self.parent_element.ui_items_collection_group if
                 self in self._child_ui_key and ui.name in self[self._child_ui_key]]
 
-    @property
-    def parent_ui(self):  # 父级ui
+    @cache
+    def _get_parent(self):
         if self._parent_ui_key in self:
-            return self.parent_element.ui_items_collection_group[self._parent_ui_key]
+            key = self[self._parent_ui_key]
+            return self.parent_element.ui_items_collection_group[key]
+
+    def _set_parent(self, value: str):
+        self._get_parent.cache_clear()
+        if self.parent_element.ui_items_collection_group.get(value):
+            self[self._parent_ui_key] = value
+            log.info(f'{self} set parent {value}')
+        else:
+            log.debug(f'{self} set parent error not find {value}')
+
+    parent = property(_get_parent, _set_parent, )
+
+    @staticmethod
+    @cache
+    def get_level(self):
+        return -1
+
+    @property
+    def level(self) -> int:
+        return self.get_level(self)
+
+    @classmethod
+    def clear_element_cache(cls):
+        cls.get_level.cache_clear()
+        cls._get_parent.cache_clear()
 
 
 class UiCollectionGroupElement(RelationProperty):  # ui项
-    ui_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS)
+    ui_element_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS + UI_ELEMENT_SELECT_STRUCTURE_TYPE, )
+
+    @property
+    def is_select_structure(self):
+        return self.ui_element_type.lower() in SELECT_STRUCTURE
 
     def remove(self):
         self.parent_element.ui_items_collection_group.remove(self._index)
