@@ -1,5 +1,5 @@
 import bpy.utils
-from bpy.props import FloatProperty
+from bpy.props import FloatProperty, IntProperty
 from bpy.types import UIList
 
 from ..utils.utils import PublicClass
@@ -62,11 +62,15 @@ class DrawElement(PublicUIList):
 class DrawUIElement(PublicUIList):
     bl_idname = 'DRAW_UL_ui_element'
 
-    split_facter: FloatProperty(default=1, min=0)
+    space_size: IntProperty(default=15,
+                            min=1,
+                            max=40,
+                            name='间隔',
+                            )
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
                   icon, active_data, active_property, index, flt_flag):
-        layout = space_layout(layout, self.split_facter, level=item.level)
+        layout = space_layout(layout, self.space_size, level=item.level)
         row = layout.row(align=True)
         row.prop(
             item,
@@ -80,7 +84,7 @@ class DrawUIElement(PublicUIList):
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         column = layout.column(align=True)
         super().draw_filter(context, column)
-        column.prop(self, 'split_facter')
+        column.prop(self, 'space_size')
 
 
 class_tuple = (

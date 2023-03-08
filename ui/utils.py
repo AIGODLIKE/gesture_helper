@@ -112,10 +112,9 @@ def space_layout(layout: 'bpy.types.UILayout', space: int, level: int) -> 'bpy.t
     """
     if level == 0:
         return layout.column()
-        level = 0.0001  # Tweak so that a percentage of 0 won't split by half
     indent = level * space / bpy.context.region.width
 
-    split = layout.split(factor=indent)
+    split = layout.split(factor=indent, align=True)
     col = split.column()
     col = split.column()
     return col
