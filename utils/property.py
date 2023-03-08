@@ -355,13 +355,3 @@ class PieProperty:
     pie_menu_radius: IntProperty(**pie_menu_radius_data)
     pie_menu_threshold: IntProperty(**pie_menu_threshold_data)
     pie_tap_timeout: IntProperty(**pie_tap_timeout_data)
-
-
-def register():
-    ...
-    log.debug(f'addon {ADDON_NAME} register')
-    print(__file__)
-
-
-def unregister():
-    ...

@@ -169,7 +169,6 @@ class RelationProperty(ElementProperty):
             col = self.collection
             if key not in col:
                 log.error(f'{self} hava parent key but not in list find {key}')
-                self[_key] = None
                 return
             return col[key]
 

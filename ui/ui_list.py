@@ -1,25 +1,30 @@
 import bpy.utils
+from bpy.props import FloatProperty
 from bpy.types import UIList
 
+from ..utils.utils import PublicClass
 from .utils import space_layout
 
 
-def draw_default_filter(self, layout):
-    sp = layout.split()
-    row = sp.row(align=True)
-    row.prop(self, 'filter_name', text='')
-    row.prop(self, 'use_filter_invert', icon='ARROW_LEFTRIGHT')
+class PublicUIList(UIList,
+                   PublicClass
+                   ):
+    def draw_filter(self, context, layout):
+        sp = layout.split()
+        row = sp.row(align=True)
+        row.prop(self, 'filter_name', text='')
+        row.prop(self, 'use_filter_invert', icon='ARROW_LEFTRIGHT', text='')
 
-    row = sp.row(align=True)
-    row.pref(self, 'use_filter_sort_alpha', icon='ICON_NONE', text='')
-    row.pref(self,
-             'use_filter_sort_reverse',
-             icon='UILST_FLT_SORT_REVERSE' if self.use_filter_sort_reverse else 'ICON_SORT_ASC',
-             text=''
-             )
+        row = sp.row(align=True)
+        row.prop(self, 'use_filter_sort_alpha', text='')
+        row.prop(self,
+                 'use_filter_sort_reverse',
+                 icon='SORT_DESC' if self.use_filter_sort_reverse else 'SORT_ASC',
+                 text=''
+                 )
 
 
-class DrawElement(UIList):
+class DrawElement(PublicUIList):
     bl_idname = 'DRAW_UL_element'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
@@ -36,7 +41,7 @@ class DrawElement(UIList):
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         from ..utils.preferences import GestureAddonPreferences
         col = layout.column()
-        draw_default_filter(self, col)
+        super().draw_filter(context, col)
 
         row = col.row(align=True)
 
@@ -54,12 +59,14 @@ class DrawElement(UIList):
                      )
 
 
-class DrawUIElement(UIList):
+class DrawUIElement(PublicUIList):
     bl_idname = 'DRAW_UL_ui_element'
+
+    split_facter: FloatProperty(default=1, min=0)
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
                   icon, active_data, active_property, index, flt_flag):
-        layout = space_layout(layout, 1, level=item.level)
+        layout = space_layout(layout, self.split_facter, level=item.level)
         row = layout.row(align=True)
         row.prop(
             item,
@@ -67,8 +74,14 @@ class DrawUIElement(UIList):
             text='',
         )
         row.separator()
-        row.label(text=str(item.parent))
+        row.label(text=str(item.parent.name if item.parent else None))
         row.label(text=str(item.level))
+
+    def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
+        column = layout.column(align=True)
+        super().draw_filter(context, column)
+        column.prop(self, 'split_facter')
+
 
 class_tuple = (
     DrawElement,

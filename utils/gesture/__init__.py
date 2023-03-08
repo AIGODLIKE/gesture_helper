@@ -82,6 +82,8 @@ class ElementOperator:
             new.ui_element_type = self.add_type
             new.parent = self.parent_element
             log.debug(f'ElementGroup add ui_element {new.name}\n')
+            self.tag_redraw(context)
+
             return {'FINISHED'}
 
     class ElementCollectPoll:
@@ -97,6 +99,8 @@ class ElementOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_ui_element.remove()
+            self.tag_redraw(context)
+
             return {'FINISHED'}
 
     class Copy(Operator, PublicClass,
@@ -106,6 +110,8 @@ class ElementOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_ui_element.copy()
+            self.tag_redraw(context)
+
             return {'FINISHED'}
 
     class Move(Operator, PublicClass,
@@ -116,10 +122,10 @@ class ElementOperator:
         is_next: BoolProperty()
         move_relation: BoolProperty()
         move_to: StringProperty()
+        move_from: StringProperty()
 
         def invoke(self, context, event):
             if self.move_relation:
-                ...
                 log.debug(f'move {self.active_ui_element}')
                 return {'FINISHED'}
             else:
@@ -127,6 +133,7 @@ class ElementOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_ui_element.move(is_next=self.is_next)
+            self.tag_redraw(context)
             return {'FINISHED'}
 
 

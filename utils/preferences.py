@@ -23,6 +23,7 @@ class AddonOperator:
             new = self.element_items.add()
             new.name = self.add_name
             new.element_type = self.add_type
+            self.tag_redraw(context)
             return {'FINISHED'}
 
         def draw_menu(self, menu, context):
@@ -50,6 +51,7 @@ class AddonOperator:
                 self.active_element.remove()
             except Exception as e:
                 log.info(e.args)
+            self.tag_redraw(context)
             return {'FINISHED'}
 
     class Copy(Operator, PublicClass):
@@ -62,6 +64,10 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_element.copy()
+
+
+            self.tag_redraw(context)
+
             return {'FINISHED'}
 
     class Export(Operator, PublicClass, ExportHelper):
@@ -70,6 +76,7 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_element.json_export()
+            self.tag_redraw(context)
             return {'FINISHED'}
 
     class Import(Operator, PublicClass, ImportHelper):
@@ -78,6 +85,7 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_element.json_import()
+            self.tag_redraw(context)
             return {'FINISHED'}
 
     class Move(Operator, PublicClass):
@@ -92,6 +100,9 @@ class AddonOperator:
 
         def execute(self, context: bpy.types.Context):
             self.active_element.move(self.is_next)
+
+            self.tag_redraw(context)
+
             return {'FINISHED'}
 
 
@@ -156,6 +167,7 @@ register_class, unregister_class = bpy.utils.register_classes_factory(class_tupl
 def register():
     register_class()
     GestureAddonPreferences.register()
+    GestureAddonPreferences.cache_clear()
 
 
 def unregister():

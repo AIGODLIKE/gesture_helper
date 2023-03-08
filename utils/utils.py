@@ -1,7 +1,6 @@
 from functools import cache
 
 import bpy
-from bpy.app.translations import contexts as i18n_contexts
 from bpy.props import StringProperty, IntProperty, BoolProperty
 from bpy.types import Operator
 
@@ -18,7 +17,7 @@ def get_pref():
 @cache
 def get_debug():
     import os
-    return os.getlogin() in ('EM1', 'EMM')
+    return os.getlogin() in ('EM1', 'EMM', 'Emm')
 
 
 class _Miss:
@@ -79,6 +78,11 @@ class PublicClass:
     @property
     def is_debug(self):
         return get_debug() and self.pref.is_debug
+
+    @staticmethod
+    def tag_redraw(context):
+        if context.area:
+            context.area.tag_redraw()
 
 
 class PublicName(_Miss):

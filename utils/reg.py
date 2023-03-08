@@ -1,7 +1,7 @@
 from . import (
     update,
     gesture,
-    property,
+    # property,
     preferences,
 )
 from .. import ui
@@ -11,7 +11,7 @@ mod_tuple = (
     
     update,
     gesture,
-    property,
+    # property,
     preferences,
 )
 
