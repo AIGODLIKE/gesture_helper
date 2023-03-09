@@ -78,6 +78,7 @@ class DrawUIElement(PublicUIList):
             text='',
         )
         row.separator()
+        row.label(text=item.ui_element_type)
         row.label(text=str(item.parent.name if item.parent else None))
         row.label(text=str(item.level))
 

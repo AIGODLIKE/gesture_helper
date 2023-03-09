@@ -5,7 +5,7 @@ from ..utils.gesture import ElementGroup
 from .ui_list import DrawElement, DrawUIElement
 
 
-class PublicClass(PublicClass):
+class PublicDraw(PublicClass):
 
     @staticmethod
     def draw_crud(layout, cls):
@@ -21,7 +21,11 @@ class PublicClass(PublicClass):
 
         col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
         if is_ui_element:
-            col.operator(cls.Move.bl_idname, text='', icon='GRIP').is_next = False
+            act = cls.pref_().active_ui_element
+            op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
+            if act:
+                op.move_from = act.name
+
         col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
 
     def draw_properties(self, layout, point):
@@ -35,7 +39,7 @@ class PublicClass(PublicClass):
             layout.prop(self, key)
 
 
-class DrawPreferences(PublicClass):
+class DrawPreferences(PublicDraw):
 
     def __init__(self, layout: bpy.types.UILayout, draw=True):
         self.layout = layout
@@ -85,7 +89,7 @@ class DrawPreferences(PublicClass):
     def draw_element_ui_property(self, layout):
         act = self.active_ui_element
         if act and self.is_debug:
-            layout.label(text='parent\t\t' + str(act.parent))
+            layout.label(text='parent\t\t' + str(act.parent.name if act.parent else None))
             layout.label(text='child\t\t' + str(list(i.name for i in act.child)))
             layout.label(text='children\t\t' + str(list(i.name for i in act.children)))
         self.draw_properties(layout, act)

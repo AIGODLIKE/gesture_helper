@@ -77,13 +77,15 @@ class ElementOperator:
 
         def execute(self, context: bpy.types.Context):
             # todo add_method
+            parent = self.parent_element
+
             new = self.active_element.ui_items_collection_group.add()
             new.set_name(self.add_name)
             new.ui_element_type = self.add_type
-            new.parent = self.parent_element
-            log.debug(f'ElementGroup add ui_element {new.name}\n')
-            self.tag_redraw(context)
+            new.parent = parent
 
+            log.debug(f'ElementGroup add ui_element {new.name}\nparent:{parent}\nadd_type\t{self.add_type}\n')
+            self.tag_redraw(context)
             return {'FINISHED'}
 
     class ElementCollectPoll:
@@ -120,19 +122,25 @@ class ElementOperator:
         bl_label = 'Move Element'
 
         is_next: BoolProperty()
+
+        def invoke(self, context, event):
+            return self.execute(context)
+
+        def execute(self, context: bpy.types.Context):
+            self.active_ui_element.move(is_next=self.is_next)
+            self.tag_redraw(context)
+            return {'FINISHED'}
+
+    class MoveRelation(Operator, PublicClass,
+                       ElementCollectPoll):
+        bl_idname = 'gesture_helper.gesture_element_ui_move_relation'
+        bl_label = 'Move relation'
         move_relation: BoolProperty()
         move_to: StringProperty()
         move_from: StringProperty()
 
-        def invoke(self, context, event):
-            if self.move_relation:
-                log.debug(f'move {self.active_ui_element}')
-                return {'FINISHED'}
-            else:
-                return self.execute(context)
-
         def execute(self, context: bpy.types.Context):
-            self.active_ui_element.move(is_next=self.is_next)
+            print(self.bl_label)
             self.tag_redraw(context)
             return {'FINISHED'}
 
@@ -225,6 +233,7 @@ class_tuple = (
     ElementGroup.Del,
     ElementGroup.Copy,
     ElementGroup.Move,
+    ElementGroup.MoveRelation,
 )
 register_class, unregister_class = bpy.utils.register_classes_factory(class_tuple)
 

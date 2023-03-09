@@ -41,6 +41,7 @@ class PublicClass:
     _parent_ui_key = 'parent_ui_emm'  # 父ui元素key
     _child_ui_key = 'child_ui_key_emm'  # 子ui元素列表key
     _children_ui_element_not_parent_key = 'children_ui_element_not_parent_key'  # 没有子级元素的子项列表key,放在父元素里面存着
+    is_update: BoolProperty(default=True)
 
     @staticmethod
     def cache_clear():
@@ -139,8 +140,8 @@ class PublicName(_Miss):
     def _set_name(self, value):
         keys = self._keys
         not_update = ('name' in self and value == self['name'] and keys.count(value) < 2)
-        if not_update:
-            log.debug(f'not_update name {self}')
+        if not_update or not value:
+            log.debug(f'not_set name\t"{self["name"]}" value to\t"{value}"')
             return
         name = self._get_effective_name(value)
 
@@ -152,6 +153,9 @@ class PublicName(_Miss):
 
         if getattr(self, 'change_name', False):
             self.change_name(name)
+
+    def change_name(self, name):
+        ...
 
     def set_name(self, name):
         self['name'] = self.name = name
