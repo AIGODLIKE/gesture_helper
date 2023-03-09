@@ -21,10 +21,7 @@ class PublicDraw(PublicClass):
 
         col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
         if is_ui_element:
-            act = cls.pref_().active_ui_element
             op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
-            if act:
-                op.move_from = act.name
 
         col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
 

@@ -41,6 +41,13 @@ class PublicClass:
     _parent_ui_key = 'parent_ui_emm'  # 父ui元素key
     _child_ui_key = 'child_ui_key_emm'  # 子ui元素列表key
     _children_ui_element_not_parent_key = 'children_ui_element_not_parent_key'  # 没有子级元素的子项列表key,放在父元素里面存着
+    _not_copy_list = (
+        # _parent_element_key,
+        # _parent_ui_key,
+        'is_update',
+        _child_ui_key,
+        _children_ui_element_not_parent_key,
+    )
     is_update: BoolProperty(default=True)
 
     @staticmethod
@@ -98,7 +105,7 @@ class PublicName(_Miss):
     @classmethod
     def _suffix_is_number(cls, string: str) -> bool:
         _i = cls._get_suffix(string)
-        if _i == -1:
+        if _i == -1 or len(string) < 3:
             return False
         return True
 
@@ -146,15 +153,16 @@ class PublicName(_Miss):
         name = self._get_effective_name(value)
 
         log.debug(f'set name {name}')
+        old_name = self['name'] if 'name' in name else None
+
         self['name'] = name
 
+        if getattr(self, 'change_name', False):
+            self.change_name(old_name, name)
         if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
             self.chick_name()
 
-        if getattr(self, 'change_name', False):
-            self.change_name(name)
-
-    def change_name(self, name):
+    def change_name(self, old_name, new_name):
         ...
 
     def set_name(self, name):

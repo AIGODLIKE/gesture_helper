@@ -1,4 +1,4 @@
-from functools import cache
+from functools import cache, wraps
 
 import bpy
 from bpy.props import EnumProperty, StringProperty, BoolProperty, FloatProperty, IntProperty
@@ -8,6 +8,24 @@ from ..log import log
 from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, \
     UI_ELEMENT_SELECT_STRUCTURE_TYPE, SELECT_STRUCTURE, CTEXT_ENUM_ITEMS
 from ..utils import PublicClass, PublicName, PublicMove
+
+
+def have_update(func):
+    @wraps(func)
+    def up(*args, **kwargs):
+        self = args[0]
+        a = None
+        if self.is_update:  # 如果之前是可更新的才存后面解开
+            a = True
+            self.is_update = False
+        ret = func(*args, **kwargs)
+        if a:
+            self.is_update = True
+        log.debug(f'have_update {func}')
+        self.update()
+        return ret
+
+    return up
 
 
 class UiElement(PropertyGroup,
@@ -112,6 +130,7 @@ class RelationProperty(ElementProperty):
     def collection(self):
         return self.parent_element.ui_items_collection_group
 
+    @have_update
     def check_parent_element(self):
         """找父级元素,如果没有的话
         更新一下所有的ui元素"""
@@ -119,22 +138,22 @@ class RelationProperty(ElementProperty):
         if key not in self:
             log.debug('check_parent_element \temm')
             for i in self.element_items:  # 元素项
+                el_n = i['name']
                 for j in i.ui_items_collection_group.values():  # ui项
-                    j[key] = i['name']
+                    j[key] = el_n
 
-    @staticmethod
+    # @staticmethod
     @cache
     def _parent_element(self):
         key = self._parent_element_key
         if key not in self:
             self.check_parent_element()
-            self.update()
-
+            self.clear_element_cache()
         return self.element_items[self[key]]
 
     @property
     def parent_element(self):  # 反回父级元素,如果没有直接报错
-        return self._parent_element(self)
+        return self._parent_element()
 
     @staticmethod
     @cache
@@ -167,6 +186,7 @@ class RelationProperty(ElementProperty):
                 return
             return col[key]
 
+    @have_update
     def _set_parent(self, parent: 'UiCollectionGroupElement'):
         name = getattr(parent, 'name', None)
         key = self._parent_ui_key
@@ -177,9 +197,13 @@ class RelationProperty(ElementProperty):
             self[key] = name
             log.info(f'{self} set parent {name}')
         else:
-            log.debug(f'{self} set parent error {name}\n{parent}')
-        self.update()
+            if key in self:
+                del self[key]
+                log.debug(f'{self} del parent {name}\n{parent}')
+            else:
+                log.debug(f'not define parent {self}')
 
+    @have_update
     def _del_parent(self):
         log.debug(f'del_parent {self}')
         parent_key = self._parent_ui_key
@@ -189,40 +213,54 @@ class RelationProperty(ElementProperty):
 
         if parent_key in self:  # 将数据从self删除
             del self[parent_key]
-        self.update()
 
-    child = property(_get_child)  # 删除及设置使用parent调用
+    child = property(_get_child)  # 交由更新方法托管
     parent = property(_get_parent, _set_parent, _del_parent)
     children = property(_get_children)
 
     @property
     def level(self) -> int:
-        if 'level' not in self:
-            self.update()
         return self['level']
 
     @classmethod
     def clear_element_cache(cls):
-        log.debug('clear_element_cache')
         cls._get_parent.cache_clear()
         cls._get_child.cache_clear()
         cls._get_children.cache_clear()
         cls._parent_element.cache_clear()
 
     def update(self):
-        if self.is_update:
+        if self.is_update:  # 锁避免重复调用
             self.clear_element_cache()
             self.update_relation()
+            log.debug(f'update {self}\n')
 
     def update_level(self):
         def set_level(item, level):
             item['level'] = level + 1
-            for i in item.child:
-                set_level(i, item.level)
+            for j in item.child:
+                set_level(j, item.level)
 
         for r in self.parent_element[self._children_ui_element_not_parent_key]:
             i = self.collection[r]
             set_level(i, 0)
+
+    def update_child(self):
+        ck = self._child_ui_key
+        not_parent = []
+
+        for el in self.collection:
+            parent = el.parent
+            if parent:
+                if ck not in parent or type(parent[ck]) != list:
+                    parent[ck] = [el.name, ]
+                else:
+                    parent[ck] += [el.name, ]
+
+            else:
+                not_parent.append(el)
+
+        self.parent_element[self._children_ui_element_not_parent_key] = [i.name for i in not_parent]
 
     def update_relation(self):
         """更新级数和父级子级
@@ -232,38 +270,43 @@ class RelationProperty(ElementProperty):
         改名时
         copy
         """
-        self.clear_element_cache()
-        ck = self._child_ui_key
-        not_parent = []
-        child_dict = {i: (list(list(i[ck])) if ck in i else []) for i in self.collection.values()}
-
-        for el in self.collection:
-            el[ck] = []
-            parent = el.parent
-            if parent:
-                if el not in child_dict[parent]:
-                    child_dict[parent].append(el)
-            else:
-                not_parent.append(el)
-
-        log.debug(f'update_relation ')
-        for p, c in child_dict.items():
-            p[ck] = [j.name for j in c]
-            log.debug(f'\t{p.name}:{p[ck]}')
-
-        self.parent_element[self._children_ui_element_not_parent_key] = [i.name for i in not_parent]
+        self.update_child()
         self.update_level()
 
-    def change_name(self, name):
-        log.debug(f'change_name {name}\n{self.child}')
-        key = self._parent_ui_key
+    @have_update
+    def change_name(self, old_name, new_name):
+        log.debug(f'change_name {new_name}\n{self.child}')
+        pk = self._parent_ui_key
+        ck = self._child_ui_key
         for i in self.child:
-            i[key] = name
-            log.debug(f'\t {i}\t{i[key]}')
-        self.update()
+            i[pk] = new_name
+            log.debug(f'\t {i}\t{i[pk]}')
+        if self.parent:
+            cl = list(self.parent[ck])
+            for index, j in enumerate(cl):
+                if j == old_name:
+                    cl[index] = new_name
+                break
+            self.parent[ck] = cl
 
 
 class CRUD(RelationProperty):
+
+    def remove(self, remove_child=False):
+
+        def up_child(it):
+            for j in it.child:
+                j.parent = it.parent
+
+        if remove_child:
+            for i in self.child:
+                i.remove(remove_child)
+        up_child(self)
+        log.debug(f'remove {self.name}  re_child = {remove_child}')
+        self.parent_element.ui_items_collection_group.remove(self._index)
+        self.clear_element_cache()
+
+    @have_update
     def move(self, is_next=True):
         parent = self.parent_element
         col = parent.ui_items_collection_group
@@ -273,50 +316,44 @@ class CRUD(RelationProperty):
                                      is_next=is_next)
         self.check_parent_element()
 
+    @have_update
+    def copy(self, copy_child=False, parent: 'UiCollectionGroupElement' = None):
+        new = self.parent_element.ui_items_collection_group.add()
+        key = self._parent_ui_key
+
+        def co(f, t):
+            for i in list(f.keys()):  # 复制所有属性过去
+
+                if i in ('name',
+                         *self._not_copy_list,
+                         ):  # 不设置子级和
+                    continue
+                elif i == key and parent:
+                    t[i] = parent.name
+                else:
+                    t[i] = f[i]
+
+        new.set_name(self.name)
+        co(self, new)
+        if copy_child:
+            for c in self.child:
+                c.copy(copy_child, new)
+        log.debug(f'copy {self.name} to {new.name}')
+
+    @have_update
+    def move_to(self, to):
+        self.parent = to
+
 
 class UiCollectionGroupElement(CRUD):  # ui项
     ui_element_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS + UI_ELEMENT_SELECT_STRUCTURE_TYPE, )
 
+    # def __str__(self):
+    #     return self.__class__.__name__ + self['name']
+
     @property
     def is_select_structure(self):
         return self.ui_element_type.lower() in SELECT_STRUCTURE
-
-    def remove(self, remove_child=False):
-        def r(it):
-            for j in it.child:
-                j.parent = it.parent
-
-        if remove_child:
-            for i in self.child:
-                i.remove(remove_child)
-
-        r(self)
-        self.parent_element.ui_items_collection_group.remove(self._index)
-        self.update()
-
-    def copy(self, copy_child=False, parent=None):
-        new = self.parent_element.ui_items_collection_group.add()
-
-        def co(f, t, p):
-            for i in list(f.keys()):  # 复制所有属性过去
-                k = self._parent_ui_key
-                if i == k and p:
-                    t[i] = p
-                else:
-                    t[i] = f[i]
-
-        co(self, new, parent)
-        new.set_name(self.name)
-        if copy_child:
-            self.is_update = False
-            for c in self.child:
-                c.copy(copy_child, new.name)
-            self.is_update = True
-        self.update()
-
-    def move_to(self, to):
-        self.parent = to
-        self.update()
 
     @property
     def _items(self):

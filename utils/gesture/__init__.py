@@ -30,7 +30,7 @@ class ElementOperator:
         is_select_structure: BoolProperty(default=False,
                                           **SKIP_DEFAULT,
                                           )
-        add_method: StringProperty()
+        add_method: StringProperty(**SKIP_DEFAULT, )
 
         @classmethod
         def poll(cls, context):
@@ -46,8 +46,7 @@ class ElementOperator:
             if self.add_method == 'no_parent':
                 return
             elif self.add_method == 'peer':
-                parent = act.parent
-                return parent
+                return act.parent
             else:
                 return act
 
@@ -71,12 +70,11 @@ class ElementOperator:
                 self.title = '无父级'
                 self.add_method = 'no_parent'
             else:
-                self.title = '添加到活动元素子级'
-
+                self.title = ''
+            log.debug(f'event {event.ctrl, event.shift, event.alt}')
             return super().invoke(context, event)
 
         def execute(self, context: bpy.types.Context):
-            # todo add_method
             parent = self.parent_element
 
             new = self.active_element.ui_items_collection_group.add()
@@ -98,22 +96,22 @@ class ElementOperator:
     class Del(Operator, PublicClass, ElementCollectPoll):
         bl_idname = 'gesture_helper.gesture_element_ui_del'
         bl_label = 'Del Ui Element'
+        bl_description = '删除元素\nCtrl 删除子级'
 
-        def execute(self, context: bpy.types.Context):
-            self.active_ui_element.remove()
+        def invoke(self, context: bpy.types.Context, event):
+            self.active_ui_element.remove(remove_child=event.ctrl)
             self.tag_redraw(context)
-
             return {'FINISHED'}
 
     class Copy(Operator, PublicClass,
                ElementCollectPoll):
         bl_idname = 'gesture_helper.gesture_element_ui_copy'
         bl_label = 'Add Ui Element'
+        bl_description = '复制元素\nCtrl 复制子级'
 
-        def execute(self, context: bpy.types.Context):
-            self.active_ui_element.copy()
+        def invoke(self, context: bpy.types.Context, event):
+            self.active_ui_element.copy(copy_child=event.ctrl)
             self.tag_redraw(context)
-
             return {'FINISHED'}
 
     class Move(Operator, PublicClass,
@@ -122,9 +120,6 @@ class ElementOperator:
         bl_label = 'Move Element'
 
         is_next: BoolProperty()
-
-        def invoke(self, context, event):
-            return self.execute(context)
 
         def execute(self, context: bpy.types.Context):
             self.active_ui_element.move(is_next=self.is_next)
@@ -135,12 +130,17 @@ class ElementOperator:
                        ElementCollectPoll):
         bl_idname = 'gesture_helper.gesture_element_ui_move_relation'
         bl_label = 'Move relation'
-        move_relation: BoolProperty()
+
         move_to: StringProperty()
-        move_from: StringProperty()
+
+        def to(self):
+            self.active_element
+            return self.move_to
 
         def execute(self, context: bpy.types.Context):
-            print(self.bl_label)
+            # if self.move_to:
+            #     self.active_ui_element.move_to()
+
             self.tag_redraw(context)
             return {'FINISHED'}
 
