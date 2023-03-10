@@ -167,9 +167,9 @@ class ElementProperty(PublicClass,
 
 class ElementCRUD(PropertyGroup,
                   ElementProperty):  # 增删查改
-    def change_name(self, name):
+    def change_name(self, old_name, new_name):
         for i in self.ui_items_collection_group:
-            i[self._parent_element_key] = name
+            i[self._parent_element_key] = new_name
 
     def remove(self):
         self.element_items.remove(self._index)
@@ -195,10 +195,16 @@ class ElementCRUD(PropertyGroup,
 
         copy_property(item.ui_items_collection_group, self.ui_items_collection_group)
 
+    def update_ui_element(self):
+        if len(self.ui_items_collection_group):
+            self.ui_items_collection_group[-1].update()
+
     def copy(self):
         new = self.element_items.add()
         new.copy_from(self)
         new.name = self.name
+        new.update_ui_element()
+        
         log.debug(f'copy element {self.name} to {new.name}\n')
 
     def move(self, is_next=True):

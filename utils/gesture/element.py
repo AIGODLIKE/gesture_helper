@@ -146,7 +146,7 @@ class RelationProperty(ElementProperty):
     @cache
     def _parent_element(self):
         key = self._parent_element_key
-        if key not in self:
+        if key not in self or self[key] not in self.element_items:
             self.check_parent_element()
             self.clear_element_cache()
         return self.element_items[self[key]]

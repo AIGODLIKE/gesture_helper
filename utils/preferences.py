@@ -65,7 +65,6 @@ class AddonOperator:
         def execute(self, context: bpy.types.Context):
             self.active_element.copy()
 
-
             self.tag_redraw(context)
 
             return {'FINISHED'}
