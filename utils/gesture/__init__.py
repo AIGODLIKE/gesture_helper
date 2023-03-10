@@ -46,7 +46,7 @@ class ElementOperator:
             if self.add_method == 'no_parent':
                 return
             elif self.add_method == 'peer':
-                return act.parent
+                return act.parent if act else None
             else:
                 return act
 
@@ -71,7 +71,6 @@ class ElementOperator:
                 self.add_method = 'no_parent'
             else:
                 self.title = ''
-            log.debug(f'event {event.ctrl, event.shift, event.alt}')
             return super().invoke(context, event)
 
         def execute(self, context: bpy.types.Context):
@@ -80,9 +79,9 @@ class ElementOperator:
             new = self.active_element.ui_items_collection_group.add()
             new.set_name(self.add_name)
             new.ui_element_type = self.add_type
+            log.debug(f'ElementGroup add ui_element {new.name}\n\tparent:{parent}\n\tadd_type\t{self.add_type}')
             new.parent = parent
 
-            log.debug(f'ElementGroup add ui_element {new.name}\nparent:{parent}\nadd_type\t{self.add_type}\n')
             self.tag_redraw(context)
             return {'FINISHED'}
 
@@ -122,7 +121,13 @@ class ElementOperator:
         is_next: BoolProperty()
 
         def execute(self, context: bpy.types.Context):
-            self.active_ui_element.move(is_next=self.is_next)
+            act = self.active_ui_element
+            act_name = act.name
+            act.move(is_next=self.is_next)
+
+            index = self.active_ui_element.collection[act_name]._index
+            self.active_element.active_index = index
+
             self.tag_redraw(context)
             return {'FINISHED'}
 
@@ -211,13 +216,12 @@ class ElementGroup(ElementCRUD):  # 元素项
 
     @property
     def ui_draw_order(self):
-        key = self._children_ui_element_not_parent_key
         ret = []
         collection = self.ui_items_collection_group
-        for i in self[key]:
+        for i in self[self._children_ui_element_not_parent_key]:
             item = collection[i]
-            ret.append(item)
-            ret.extend(item.children)
+            ret.append(item.name)
+            ret.extend([i.name for i in item.children])
         return ret
 
 

@@ -19,10 +19,12 @@ def have_update(func):
             a = True
             self.parent_element.is_update = False
         ret = func(*args, **kwargs)
+        log.debug(f'have_update {func}')
         if a:
             self.parent_element.is_update = True
-        log.debug(f'have_update {func}')
-        self.update()
+            act = self.active_ui_element
+            if act:
+                act.update()
         return ret
 
     return up
@@ -151,7 +153,6 @@ class RelationProperty(ElementProperty):
                 for j in i.ui_items_collection_group.values():  # ui项
                     j[key] = el_n
 
-    # @staticmethod
     @cache
     def _parent_element(self):
         key = self._parent_element_key
@@ -228,6 +229,9 @@ class RelationProperty(ElementProperty):
 
     @property
     def level(self) -> int:
+        if 'level' not in self:
+            self.parent_element.is_update = True
+            self.update()
         return self['level']
 
     @classmethod
@@ -242,6 +246,7 @@ class RelationProperty(ElementProperty):
         if self.parent_element.is_update:  # 锁避免重复调用
             self.clear_element_cache()
             self.update_relation()
+            self.clear_element_cache()
             log.debug(f'update {self}\n')
 
     def update_level(self):
@@ -260,8 +265,7 @@ class RelationProperty(ElementProperty):
 
         for el in self.collection:
             parent = el.parent
-            if ck not in el:
-                el[ck] = []
+            el[ck] = []
 
             if parent:
                 if ck not in parent or type(parent[ck]) != list:
@@ -286,51 +290,67 @@ class RelationProperty(ElementProperty):
         """
         self.update_child()
         self.update_level()
+        self.update_location()
 
     @have_update
     def change_name(self, old_name, new_name):
         log.debug(f'change_name {new_name}\n\tchild:{self.child}')
         pk = self._parent_ui_key
-        ck = self._child_ui_key
         for i in self.child:
             i[pk] = new_name
             log.debug(f'set child parent_element\t {i}\t{i[pk]}')
-        if self.parent and ck in self.parent and old_name and new_name:  # 如果有父级就将父级的子级列表项更改为新名称
-            cl = list(self.parent[ck])
-            cl[cl.index(old_name)] = new_name
-            self.parent[ck] = cl
 
 
 class CRUD(RelationProperty):
 
+    @have_update
     def remove(self, remove_child=False):
         pe = self.parent_element
+        col = pe.ui_items_collection_group
 
-        def up_child(it):
-            for j in it.child:
-                j.parent = it.parent
+        if self.child and not remove_child:  # 继承子级
+            for i in self.child:
+                i.parent = self.parent
 
         if remove_child:
-            for i in self.child:
-                i.remove(remove_child)
-        up_child(self)
-        log.debug(f'remove {self.name}  re_child = {remove_child}')
-        if self.name in self.roots:
-            new = self.roots.copy()
-            new.remove(self.name)
-            self.roots = new
+            for j in [i.name for i in self.children][::-1]:
+                log.debug(f'remove child {j}')
+                col.remove(self.collection[j]._index)
 
-        pe.ui_items_collection_group.remove(self._index)
-        self.clear_element_cache()
+        col.remove(self._index)
+        log.debug(f'remove {self.name}  re_child = {remove_child}')
 
     @have_update
     def move(self, is_next=True):
-        parent = self.parent_element
-        col = parent.ui_items_collection_group
+        ck = self._child_ui_key
+        npk = self._children_ui_element_not_parent_key
+        col = self.collection
 
-        self.move_collection_element(col,
-                                     parent,
-                                     is_next=is_next)
+        def mv(item_list, key):
+            new_list = item_list[key]
+            nlen = len(new_list)
+            index = new_list.index(self.name)
+            ni = (0 if nlen - 1 == index else index + 1) if is_next else (-1 if index == 0 else index - 1)
+
+            a = col.keys().index(new_list[index])
+            b = col.keys().index(new_list[ni])
+            print(new_list)
+            print(index, ni)
+            log.debug(f'{a, b} move item {new_list[index]} {new_list[ni]}')
+
+        args = (self.parent, ck) if self.parent else (self.parent_element, npk)
+        mv(*args)
+
+    def update_location(self):
+        log.debug('update_location')
+        self.clear_element_cache()
+        col = self.collection
+        for index, key in enumerate(self.parent_element.ui_draw_order):
+            value = self.collection[key]
+            self.clear_element_cache()
+            vi = value._index
+            col.move(vi, index)
+            log.debug(f'{index}\t{vi}\t\t{value.name}')
 
     @have_update
     def copy(self, copy_child=False, parent: 'UiCollectionGroupElement' = None):
