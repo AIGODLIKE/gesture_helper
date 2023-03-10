@@ -15,12 +15,12 @@ def have_update(func):
     def up(*args, **kwargs):
         self = args[0]
         a = None
-        if self.is_update:  # 如果之前是可更新的才存后面解开
+        if self.parent_element.is_update:  # 如果之前是可更新的才存后面解开
             a = True
-            self.is_update = False
+            self.parent_element.is_update = False
         ret = func(*args, **kwargs)
         if a:
-            self.is_update = True
+            self.parent_element.is_update = True
         log.debug(f'have_update {func}')
         self.update()
         return ret
@@ -130,7 +130,16 @@ class RelationProperty(ElementProperty):
     def collection(self):
         return self.parent_element.ui_items_collection_group
 
-    @have_update
+    @staticmethod
+    @cache
+    def _roots(self):
+        return self.parent_element[self._children_ui_element_not_parent_key]
+
+    def _set_roots(self, value: list):
+        self.parent_element[self._children_ui_element_not_parent_key] = value
+
+    roots = property(_roots, _set_roots)
+
     def check_parent_element(self):
         """找父级元素,如果没有的话
         更新一下所有的ui元素"""
@@ -147,8 +156,8 @@ class RelationProperty(ElementProperty):
     def _parent_element(self):
         key = self._parent_element_key
         if key not in self or self[key] not in self.element_items:
-            self.check_parent_element()
             self.clear_element_cache()
+            self.check_parent_element()
         return self.element_items[self[key]]
 
     @property
@@ -164,9 +173,8 @@ class RelationProperty(ElementProperty):
             return ret
         for i in self.child:
             ret.append(i)
-            ret.extend(i.child)
+            ret.extend(i.children)
         return ret
-        # return [(i, *i.child[:]) for i in self.child_ui]
 
     @staticmethod
     @cache
@@ -224,13 +232,14 @@ class RelationProperty(ElementProperty):
 
     @classmethod
     def clear_element_cache(cls):
-        cls._get_parent.cache_clear()
+        cls._roots.cache_clear()
         cls._get_child.cache_clear()
+        cls._get_parent.cache_clear()
         cls._get_children.cache_clear()
         cls._parent_element.cache_clear()
 
     def update(self):
-        if self.is_update:  # 锁避免重复调用
+        if self.parent_element.is_update:  # 锁避免重复调用
             self.clear_element_cache()
             self.update_relation()
             log.debug(f'update {self}\n')
@@ -241,9 +250,9 @@ class RelationProperty(ElementProperty):
             for j in item.child:
                 set_level(j, item.level)
 
-        for r in self.parent_element[self._children_ui_element_not_parent_key]:
+        for r in self.roots:
             i = self.collection[r]
-            set_level(i, 0)
+            set_level(i, -1)
 
     def update_child(self):
         ck = self._child_ui_key
@@ -251,6 +260,9 @@ class RelationProperty(ElementProperty):
 
         for el in self.collection:
             parent = el.parent
+            if ck not in el:
+                el[ck] = []
+
             if parent:
                 if ck not in parent or type(parent[ck]) != list:
                     parent[ck] = [el.name, ]
@@ -259,8 +271,10 @@ class RelationProperty(ElementProperty):
 
             else:
                 not_parent.append(el)
+        not_parent_list = [i.name for i in not_parent]
 
-        self.parent_element[self._children_ui_element_not_parent_key] = [i.name for i in not_parent]
+        self.roots = not_parent_list
+        print(f'not parent key list {self.roots}')
 
     def update_relation(self):
         """更新级数和父级子级
@@ -275,24 +289,22 @@ class RelationProperty(ElementProperty):
 
     @have_update
     def change_name(self, old_name, new_name):
-        log.debug(f'change_name {new_name}\n{self.child}')
+        log.debug(f'change_name {new_name}\n\tchild:{self.child}')
         pk = self._parent_ui_key
         ck = self._child_ui_key
         for i in self.child:
             i[pk] = new_name
-            log.debug(f'\t {i}\t{i[pk]}')
-        if self.parent:
+            log.debug(f'set child parent_element\t {i}\t{i[pk]}')
+        if self.parent and ck in self.parent and old_name and new_name:  # 如果有父级就将父级的子级列表项更改为新名称
             cl = list(self.parent[ck])
-            for index, j in enumerate(cl):
-                if j == old_name:
-                    cl[index] = new_name
-                break
+            cl[cl.index(old_name)] = new_name
             self.parent[ck] = cl
 
 
 class CRUD(RelationProperty):
 
     def remove(self, remove_child=False):
+        pe = self.parent_element
 
         def up_child(it):
             for j in it.child:
@@ -303,7 +315,12 @@ class CRUD(RelationProperty):
                 i.remove(remove_child)
         up_child(self)
         log.debug(f'remove {self.name}  re_child = {remove_child}')
-        self.parent_element.ui_items_collection_group.remove(self._index)
+        if self.name in self.roots:
+            new = self.roots.copy()
+            new.remove(self.name)
+            self.roots = new
+
+        pe.ui_items_collection_group.remove(self._index)
         self.clear_element_cache()
 
     @have_update
@@ -314,7 +331,6 @@ class CRUD(RelationProperty):
         self.move_collection_element(col,
                                      parent,
                                      is_next=is_next)
-        self.check_parent_element()
 
     @have_update
     def copy(self, copy_child=False, parent: 'UiCollectionGroupElement' = None):
@@ -340,12 +356,88 @@ class CRUD(RelationProperty):
                 c.copy(copy_child, new)
         log.debug(f'copy {self.name} to {new.name}')
 
+    # ----  move to --- cache
+    _parent_element_move_key = 'moved_item'  # 被移动项
+    _can_be_moved_key = 'can_be_moved_key'
+
     @have_update
-    def move_to(self, to):
-        self.parent = to
+    def moved(self):
+        mk = self._parent_element_move_key
+        move = self.collection[self.parent_element[mk]]
+        move.parent = self
+
+        del self.parent_element[self._parent_element_move_key]  # 删掉tag
+        self.clear_move_cache()
+
+    @staticmethod
+    @cache
+    def _is_move_mode(self):
+        return self._parent_element_move_key in self.parent_element
+
+    @staticmethod
+    @cache
+    def _is_can_move(self):
+        k = self._can_be_moved_key
+        ok = k in self and self[k]
+        return self.is_move_mode and ok
+
+    is_can_move = property(_is_can_move)
+    is_move_mode = property(_is_move_mode)
+
+    def tab_move_tag(self):
+        """标记此项是被移动项"""
+        key = self._parent_element_move_key
+        mk = self._can_be_moved_key
+
+        def up(a):
+            not_move_list = self.children + [self, ]
+            for i in self.collection:
+                if a:
+                    del i[mk]
+                else:
+                    i[mk] = i not in not_move_list
+
+        if key in self.parent_element:
+            del self.parent_element[key]
+            up(True)
+        else:
+            self.parent_element[key] = self.name
+            up(False)
+        self.clear_move_cache()
+
+    @classmethod
+    def clear_move_cache(cls):
+        cls._is_can_move.cache_clear()
+        cls._is_move_mode.cache_clear()
 
 
-class UiCollectionGroupElement(CRUD):  # ui项
+class DrawUIList(CRUD):
+
+    def draw_move_button(self, layout: 'bpy.types.UILayout'):
+        from . import ElementOperator
+        icon = 'CHECKMARK' if self.is_can_move else 'X'
+        row = layout.row()
+        row.enabled = self.is_can_move
+        row.context_pointer_set('move_to', self)
+        row.operator(ElementOperator.MoveRelation.bl_idname, text='', icon=icon)
+
+    def draw_ui_list(self, layout, ui_list: 'DrawUIElement'):
+        row = layout.row(align=True)
+        row.prop(
+            self,
+            'name',
+            text='',
+        )
+        row.separator()
+        row.label(text=self.ui_element_type)
+        row.label(text=str(self.parent.name if self.parent else None))
+        row.label(text=str(self.level))
+
+        if self.is_move_mode:
+            self.draw_move_button(row)
+
+
+class UiCollectionGroupElement(DrawUIList):  # ui项
     ui_element_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS + UI_ELEMENT_SELECT_STRUCTURE_TYPE, )
 
     # def __str__(self):

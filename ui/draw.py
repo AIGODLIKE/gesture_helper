@@ -1,7 +1,7 @@
 import bpy
 
 from ..utils.utils import PublicClass
-from ..utils.gesture import ElementGroup
+from ..utils.gesture import ElementGroup, ElementOperator
 from .ui_list import DrawElement, DrawUIElement
 
 
@@ -81,7 +81,14 @@ class DrawPreferences(PublicDraw):
             self.draw_element_ui_property(col)
         else:
             row.label(text="Not Gesture Element")
-        self.draw_crud(row, ElementGroup)
+        self.draw_element_ui_right_crud(row)
+
+    def draw_element_ui_right_crud(self, layout):
+        act = self.active_ui_element
+        if act and act.is_move_mode:
+            layout.operator(ElementOperator.MoveRelation.bl_idname, text='', icon='X')
+        else:
+            self.draw_crud(layout, ElementGroup)
 
     def draw_element_ui_property(self, layout):
         act = self.active_ui_element

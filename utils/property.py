@@ -199,10 +199,10 @@ TIME_DEFAULT = {'max': 2000, 'min': -1, 'default': 300}
 SKIP_DEFAULT = {'options': {'HIDDEN', 'SKIP_SAVE', }}
 # ui items property
 CUSTOM_UI_TYPE_ITEMS = [
-    ('panel', 'Panel(TODO)', '绘制面板可在窗口工具栏或是侧边栏显示'),
-    ('menu', 'Menu(TODO)', '菜单,指定快捷键设置弹出菜单'),
-    ('menu_pie', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
-    ('layout', 'Layout(TODO)', ''),  # TODO
+    ('PANEL', 'Panel(TODO)', '绘制面板可在窗口工具栏或是侧边栏显示'),
+    ('MENU', 'Menu(TODO)', '菜单,指定快捷键设置弹出菜单'),
+    ('MENU_PIE', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
+    ('LAYOUT', 'Layout(TODO)', ''),  # TODO
 ]
 
 UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
@@ -291,22 +291,22 @@ UI_LAYOUT_INCOMING_ITEMS = {  # uilayout 需传入参数
 }
 
 UI_ELEMENT_TYPE_ENUM_ITEMS = [  # ui layout类型
-    ('separator_spacer', 'Separator Spacer', ''),  # TODO 用作Separator的附加属性
+    ('SEPARATOR_SPACER', 'Separator Spacer', ''),  # TODO 用作Separator的附加属性
     ('', 'General', '',),
-    ('separator', 'Separator', '',),
+    ('SEPARATOR', 'Separator', '',),
 
     ('', 'Layout', '',),  # todo
-    ('label', 'Label', '',),  # todo
-    ('row', 'Row', '',),  # todo
-    ('box', 'Box', '',),  # todo
-    ('split', 'Split', '',),  # todo
-    ('column', 'Column', '',),  # todo
+    ('LABEL', 'Label', '',),  # todo
+    ('ROW', 'Row', '',),  # todo
+    ('BOX', 'Box', '',),  # todo
+    ('SPLIT', 'Split', '',),  # todo
+    ('COLUMN', 'Column', '',),  # todo
 
     ('', 'other', '',),
-    ('menu_pie', 'Menu Pie', '',),  # todo
-    ('menu', 'Menu', '',),  # todo
-    ('prop', 'Prop', '',),  # todo
-    ('operator', 'Operator', '',),  # todo
+    ('MENU_PIE', 'Menu Pie', '',),  # todo
+    ('MENU', 'Menu', '',),  # todo
+    ('PROP', 'Prop', '',),  # todo
+    ('OPERATOR', 'Operator', '',),  # todo
     # operator_menu_hold
     # operator_enum
     # operator_menu_enum

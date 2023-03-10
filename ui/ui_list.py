@@ -71,17 +71,8 @@ class DrawUIElement(PublicUIList):
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
                   icon, active_data, active_property, index, flt_flag):
         layout = space_layout(layout, self.space_size, level=item.level)
-        row = layout.row(align=True)
-        row.prop(
-            item,
-            'name',
-            text='',
-        )
-        row.separator()
-        row.label(text=item.ui_element_type)
-        row.label(text=str(item.parent.name if item.parent else None))
-        row.label(text=str(item.level))
-
+        item.draw_ui_list(layout, self)
+        
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         column = layout.column(align=True)
         super().draw_filter(context, column)

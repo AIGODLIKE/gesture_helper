@@ -131,16 +131,11 @@ class ElementOperator:
         bl_idname = 'gesture_helper.gesture_element_ui_move_relation'
         bl_label = 'Move relation'
 
-        move_to: StringProperty()
-
-        def to(self):
-            self.active_element
-            return self.move_to
-
         def execute(self, context: bpy.types.Context):
-            # if self.move_to:
-            #     self.active_ui_element.move_to()
-
+            if getattr(context, 'move_to', False):
+                context.move_to.moved()
+            else:
+                self.active_ui_element.tab_move_tag()
             self.tag_redraw(context)
             return {'FINISHED'}
 
@@ -204,7 +199,7 @@ class ElementCRUD(PropertyGroup,
         new.copy_from(self)
         new.name = self.name
         new.update_ui_element()
-        
+
         log.debug(f'copy element {self.name} to {new.name}\n')
 
     def move(self, is_next=True):
