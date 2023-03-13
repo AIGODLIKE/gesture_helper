@@ -152,7 +152,7 @@ def unregister():
 #
 #     @property
 #     def gestures_direction(self, split=22.5) -> int:
-#         """获取手势的朝向 _index(8个方向)
+#         """获取手势的朝向 index_(8个方向)
 #
 #         Args:
 #             split (float, optional): _description_. Defaults to 22.5.
@@ -220,8 +220,8 @@ def unregister():
 #         switch_dire = {3: 4, 4: 3}
 #         dire = switch_dire[dire] if dire in switch_dire else dire
 #
-#         _index = dire-1  # ERROR上下颠倒
-#         return items[_index] if dire else None
+#         index_ = dire-1  # ERROR上下颠倒
+#         return items[index_] if dire else None
 #
 #     @property
 #     def gestures_is_allow_child(self) -> bool:
@@ -309,15 +309,15 @@ def unregister():
 #         """
 #
 #         if self.is_popup_gestures:
-#             for _index, mouse in enumerate(self.mouse_point[:-1]):
+#             for index_, mouse in enumerate(self.mouse_point[:-1]):
 #                 distance = self.__gestures_distance__(mouse_co=mouse)
 #                 if distance < 10:
 #                     print('\t\tdistance < 10')
 #                     print(self.mouse_point)
 #                     print(self.gestures_items)
 #                     self.exit_pie()
-#                     self.mouse_point[_index+1:] = []
-#                     self.gestures_items[_index:] = []
+#                     self.mouse_point[index_+1:] = []
+#                     self.gestures_items[index_:] = []
 #                     self.is_normal_exit = False
 #                     return True
 #         return False

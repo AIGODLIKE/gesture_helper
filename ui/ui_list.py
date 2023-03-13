@@ -71,12 +71,20 @@ class DrawUIElement(PublicUIList):
     def draw_item(self, context, layout: bpy.types.UILayout, data, item,
                   icon, active_data, active_property, index, flt_flag):
         layout = space_layout(layout, self.space_size, level=item.level)
-        item.draw_ui_list(layout, self)
-        
+        row = layout.row(align=True)
+        item.draw_ui_list(row, self)
+        if self.is_debug:
+            row.label(text=str(index))
+
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         column = layout.column(align=True)
         super().draw_filter(context, column)
         column.prop(self, 'space_size')
+
+    def filter_items(self, context, data, propname):
+        flt_flags = data.show_flags
+        flt_neworder = []
+        return flt_flags, flt_neworder
 
 
 class_tuple = (

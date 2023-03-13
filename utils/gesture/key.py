@@ -282,7 +282,7 @@ class KeyMap:
 #
 #             # keys = list(dic.keys())
 #             # values = list(dic.values())
-#             # idx = values._index(value)
+#             # idx = values.index_(value)
 #             # key = keys[idx]
 #             # return key
 #

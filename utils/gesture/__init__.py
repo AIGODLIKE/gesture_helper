@@ -125,7 +125,7 @@ class ElementOperator:
             act_name = act.name
             act.move(is_next=self.is_next)
 
-            index = self.active_ui_element.collection[act_name]._index
+            index = self.active_ui_element.collection[act_name].index_
             self.active_element.active_index = index
 
             self.tag_redraw(context)
@@ -161,7 +161,7 @@ class ElementProperty(PublicClass,
         return self.ui_items_collection_group
 
     @property
-    def _index(self):  # 用于删除时的索引
+    def index_(self):  # 用于删除时的索引
         return self.element_items.values().index(self)
 
 
@@ -172,7 +172,7 @@ class ElementCRUD(PropertyGroup,
             i[self._parent_element_key] = new_name
 
     def remove(self):
-        self.element_items.remove(self._index)
+        self.element_items.remove(self.index_)
 
     def copy_from(self, item: 'ElementGroup'):
         self.active_index = item.active_index
@@ -223,6 +223,12 @@ class ElementGroup(ElementCRUD):  # 元素项
             ret.append(item.name)
             ret.extend([i.name for i in item.children])
         return ret
+
+    @property
+    def show_flags(self):
+        fl = 2 ** 30
+
+        return [fl if i.is_show else 0 for i in self.ui_items_collection_group]
 
 
 mod_tuple = (

@@ -324,8 +324,8 @@ def unregister():
 #         if not ul:
 #             return []
 #         act_index = self.active_ui_index
-#         _index = -1 if act_index >= ul else act_index
-#         need = self.ui[_index]
+#         index_ = -1 if act_index >= ul else act_index
+#         need = self.ui[index_]
 #         if not need:
 #             return self.__get_element_items__([need, ])
 #         while True:

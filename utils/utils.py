@@ -32,7 +32,7 @@ class _Miss:
         return self._items.keys()
 
     @property
-    def _index(self):
+    def index_(self):
         ...
 
 
@@ -152,7 +152,7 @@ class PublicName(_Miss):
             return
         name = self._get_effective_name(value)
 
-        log.debug(f'set name {name}')
+        log.debug(f'set name \'{name}\'')
         old_name = self['name'] if 'name' in name else None
 
         self['name'] = name

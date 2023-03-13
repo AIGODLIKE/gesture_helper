@@ -1,9 +1,9 @@
+from __future__ import annotations
 from functools import cache, wraps
 
 import bpy
-from bpy.props import EnumProperty, StringProperty, BoolProperty, FloatProperty, IntProperty
+from bpy.props import EnumProperty, StringProperty, BoolProperty, FloatProperty, IntProperty, PointerProperty
 from bpy.types import PropertyGroup
-
 from ..log import log
 from ..property import ui_emboss_enum, ui_alignment, ui_direction, CUSTOM_UI_TYPE_ITEMS, UI_ELEMENT_TYPE_ENUM_ITEMS, \
     UI_ELEMENT_SELECT_STRUCTURE_TYPE, SELECT_STRUCTURE, CTEXT_ENUM_ITEMS
@@ -244,10 +244,13 @@ class RelationProperty(ElementProperty):
 
     def update(self):
         if self.parent_element.is_update:  # 锁避免重复调用
-            self.clear_element_cache()
-            self.update_relation()
-            self.clear_element_cache()
-            log.debug(f'update {self}\n')
+            self._update()
+
+    def _update(self):
+        self.clear_element_cache()
+        self.update_relation()
+        self.clear_element_cache()
+        log.debug(f'update {self}\n')
 
     def update_level(self):
         def set_level(item, level):
@@ -315,9 +318,9 @@ class CRUD(RelationProperty):
         if remove_child:
             for j in [i.name for i in self.children][::-1]:
                 log.debug(f'remove child {j}')
-                col.remove(self.collection[j]._index)
+                col.remove(self.collection[j].index_)
 
-        col.remove(self._index)
+        col.remove(self.index_)
         log.debug(f'remove {self.name}  re_child = {remove_child}')
 
     @have_update
@@ -328,18 +331,24 @@ class CRUD(RelationProperty):
 
         def mv(item_list, key):
             new_list = item_list[key]
-            nlen = len(new_list)
+            new_len = len(new_list)
             index = new_list.index(self.name)
-            ni = (0 if nlen - 1 == index else index + 1) if is_next else (-1 if index == 0 else index - 1)
+            ni = (0 if new_len - 1 == index else index + 1) if is_next else (-1 if index == 0 else index - 1)
 
             a = col.keys().index(new_list[index])
             b = col.keys().index(new_list[ni])
-            print(new_list)
-            print(index, ni)
+            col.move(a, b)
             log.debug(f'{a, b} move item {new_list[index]} {new_list[ni]}')
 
         args = (self.parent, ck) if self.parent else (self.parent_element, npk)
-        mv(*args)
+        try:
+            mv(*args)
+        except ValueError:
+            self.clear_cache()
+            self.move(is_next)
+
+        self.update_location()
+        self.clear_cache()
 
     def update_location(self):
         log.debug('update_location')
@@ -348,7 +357,7 @@ class CRUD(RelationProperty):
         for index, key in enumerate(self.parent_element.ui_draw_order):
             value = self.collection[key]
             self.clear_element_cache()
-            vi = value._index
+            vi = value.index_
             col.move(vi, index)
             log.debug(f'{index}\t{vi}\t\t{value.name}')
 
@@ -387,7 +396,9 @@ class CRUD(RelationProperty):
         move.parent = self
 
         del self.parent_element[self._parent_element_move_key]  # 删掉tag
-        self.clear_move_cache()
+        self.clear_cache()
+        self.update_location()
+        self.clear_cache()
 
     @staticmethod
     @cache
@@ -423,15 +434,67 @@ class CRUD(RelationProperty):
         else:
             self.parent_element[key] = self.name
             up(False)
-        self.clear_move_cache()
+        self.clear_cache()
 
     @classmethod
     def clear_move_cache(cls):
         cls._is_can_move.cache_clear()
         cls._is_move_mode.cache_clear()
 
+    @classmethod
+    def clear_cache(cls):
+        cls.clear_element_cache()
+        cls.clear_move_cache()
 
-class DrawUIList(CRUD):
+
+class ShowItem(CRUD):
+
+    def _get_show(self, context):
+        sk = self._show_key
+        if sk not in self:
+            return True
+
+        is_show = self[sk]
+        return is_show
+
+    def _set_show(self, value):
+        self['is_expand'] = value
+
+    is_expand: BoolProperty(update=_up_show, default=True)
+    _show_key = 'is_show'
+
+    def _up_show(self, context):
+        self.update_show()
+
+    @have_update
+    def update_show(self):
+        sk = self._show_key
+
+        def up(it):
+            for i in it.child:
+                if it.is_expand:
+                    i[sk] = True
+                    up(i)
+                else:
+                    i[sk] = False
+                    for j in i.children:
+                        j[sk] = False
+
+        ite = (self.collection[r] for r in self.roots)
+        for t in ite:
+            t[sk] = True
+            up(t)
+        log.debug('update_show')
+
+    @property
+    def is_show(self):
+        sk = self._show_key
+        if sk not in self:
+            self.update_show()
+        return self[sk]
+
+
+class DrawUIList(ShowItem):
 
     def draw_move_button(self, layout: 'bpy.types.UILayout'):
         from . import ElementOperator
@@ -441,8 +504,22 @@ class DrawUIList(CRUD):
         row.context_pointer_set('move_to', self)
         row.operator(ElementOperator.MoveRelation.bl_idname, text='', icon=icon)
 
+    def draw_expand_button(self, layout):
+        row = layout.row(   )
+        ec = 'DOWNARROW_HLT' if self.is_expand else 'RIGHTARROW'
+        icon = ec if self.child else 'DOT'
+        row.enabled = bool(self.child)
+        row.emboss = 'NONE'
+        row.prop(
+            self,
+            'is_expand',
+            text='',
+            icon=icon
+        )
+
     def draw_ui_list(self, layout, ui_list: 'DrawUIElement'):
         row = layout.row(align=True)
+        self.draw_expand_button(row)
         row.prop(
             self,
             'name',
@@ -459,6 +536,7 @@ class DrawUIList(CRUD):
 
 class UiCollectionGroupElement(DrawUIList):  # ui项
     ui_element_type: EnumProperty(items=UI_ELEMENT_TYPE_ENUM_ITEMS + UI_ELEMENT_SELECT_STRUCTURE_TYPE, )
+    sub: PointerProperty(type=UiCollectionGroupElement)
 
     # def __str__(self):
     #     return self.__class__.__name__ + self['name']
@@ -474,7 +552,7 @@ class UiCollectionGroupElement(DrawUIList):  # ui项
         return self.element_items[key].ui_items_collection_group
 
     @property
-    def _index(self):
+    def index_(self):
         return self.parent_element.ui_items_collection_group.values().index(self)
 
     def register_key(self):
