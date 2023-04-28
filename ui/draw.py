@@ -1,106 +1,107 @@
 import bpy
 
-
-def _get_blender_icon(icon_style):
-    """反回图标名称
-
-    Args:
-        icon_style (类型或直接输入两个已设置的图标, optional): 图标风格,也可以自已设置图标id. Defaults to 'TRIA' | 'ARROW' | 'TRI' | (str, str).
-    Returns:
-        (str,str): _description_
-    """
-    icon_data = {
-        'TRI': ('DISCLOSURE_TRI_DOWN', 'DISCLOSURE_TRI_RIGHT'),
-        'TRIA': ('TRIA_DOWN', 'TRIA_RIGHT'),
-        'SORT': ('SORT_ASC', 'SORT_DESC'),
-        'ARROW': ('DOWNARROW_HLT', 'RIGHTARROW'),
-        'CHECKBOX': ('CHECKBOX_HLT', 'CHECKBOX_DEHLT'),
-        'RESTRICT_SELECT': ('RESTRICT_SELECT_OFF', 'RESTRICT_SELECT_ON'),
-        'FAKE': ('FAKE_USER_OFF', 'FAKE_USER_ON'),
-    }
-    if icon_style in icon_data:
-        return icon_data[icon_style]
-    else:
-        return icon_data['TRI']
+from ..utils.utils import PublicClass
+from ..utils.gesture import ElementGroup, ElementOperator
+from .ui_list import DrawElement, DrawUIElement
 
 
-def icon_two(bool_prop, style='CHECKBOX', custom_icon: tuple[str, str] = None, ) -> str:
-    """输入一个布尔值,反回图标类型str
-    Args:
-        bool_prop (_type_): _description_
-        custom_icon (tuple[str, str], optional): 输入两个自定义的图标名称,True反回前者. Defaults to None.
-        style (str, optional): 图标的风格. Defaults to 'CHECKBOX'.
-    Returns:
-        str: 反回图标str
-    """
-    icon_true, icon_false = custom_icon if custom_icon else _get_blender_icon(
-        style)
-    return icon_true if bool_prop else icon_false
+class PublicDraw(PublicClass):
+
+    @staticmethod
+    def draw_crud(layout, cls):
+        is_ui_element = cls == ElementGroup
+        col = layout.column(align=True)
+        col.operator(cls.Add.bl_idname, text='', icon='ADD')
+        col.operator(cls.Copy.bl_idname, text='', icon='COPYDOWN')
+        col.operator(cls.Del.bl_idname, text='', icon='REMOVE')
+        if is_ui_element:
+            col.operator(cls.Add.bl_idname, text='', icon='RNA_ADD').is_select_structure = True  # 添加选择结构
+
+        col.separator()
+
+        col.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
+        if is_ui_element:
+            op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
+
+        col.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
+
+    def draw_properties(self, layout, point):
+        col = layout.column(align=True)
+        if self.is_debug and point:
+            for i in point.bl_rna.properties:
+                col.prop(point, i.identifier)
+
+    def draw_preferences(self, layout):
+        for key, value in self.pref.rna_type.properties.items():
+            layout.prop(self, key)
 
 
-def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, align=True, alignment='LEFT',
-                   default_extend=False, style='BOX', icon_style='ARROW', draw_func=None, draw_func_data={}):
-    """
-    使用bpy.context.window_manager来设置并存储属性
-    if style == 'COLUMN':
-        lay = layout.column()
-    # "TRIA,ARROW,TRI""TRIA,ARROW,TRI"
-    #: str("BOUND,BOX")
-    enum in [‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’], default LEFT
+class DrawPreferences(PublicDraw):
 
-    draw_func(layout,**)
-    draw_func_data{}
-    """
-    extend = bpy.context.window_manager.bbpy_ui
+    def __init__(self, layout: bpy.types.UILayout, draw=True):
+        self.layout = layout
+        if draw:
+            self.draw_pref()
 
-    extend_prop_name = prop_name + '_extend'
-    extend_bool = getattr(extend, extend_prop_name, None)
-    if not isinstance(extend_bool, bool):
-        # 如果没有则当场新建一个属性
-        extend.default_bool_value = default_extend
-        extend.add_ui_extend_bool_property = extend_prop_name
-        extend_bool = getattr(extend, extend_prop_name)
+    def draw_pref(self):
+        layout = self.layout
+        layout.prop(self.pref, 'is_debug')
+        row = layout.split()
 
-    icon = icon_two(extend_bool, style=icon_style)
+        self.draw_element_collection_left(row)
 
-    lay = layout.column()
-    if style == 'BOX':
-        if extend_bool:
-            col = layout.column(align=True)
-            lay = col.box()
-    else:
-        lay = layout
+        self.draw_element_ui_collection_right(row)
 
-    row = lay.row(align=align)
+    def draw_element_collection_left(self, layout):
+        row = layout.row(align=True)
+        from ..utils.preferences import GestureAddonPreferences
+        self.draw_crud(row, GestureAddonPreferences)
+        row = row.column()
+        row.template_list(DrawElement.bl_idname,
+                          DrawElement.bl_idname,
+                          self.pref,
+                          'gesture_element_collection_group',
+                          self.pref,
+                          'active_index'
+                          )
+        self.draw_properties(row, self.active_element)
 
-    row.alignment = alignment
-    row.prop(extend, extend_prop_name,
-             icon=icon,
-             text='',
-             toggle=1,
-             icon_only=True,
-             emboss=False
-             )
+    def draw_element_ui_collection_right(self, layout):
+        row = layout.row(align=True)
 
-    if draw_func:
-        # 使用传入的绘制方法
-        draw_func(layout=row, **draw_func_data)
-    else:
-        row.prop(extend, extend_prop_name,
-                 text=label if label else extend_prop_name,
-                 toggle=1,
-                 expand=True,
-                 emboss=False
-
-                 )
-
-    if style == 'BOX':
-        if extend_bool:
-            out_lay = col.column(align=True).box()
+        if self.pref.active_element:
+            col = row.column()
+            col.template_list(DrawUIElement.bl_idname,
+                              DrawUIElement.bl_idname,
+                              self.pref.active_element,
+                              'ui_items_collection_group',
+                              self.pref.active_element,
+                              'active_index'
+                              )
+            self.draw_element_ui_property(col)
         else:
-            out_lay = lay
+            row.label(text="Not Gesture Element")
+        self.draw_element_ui_right_crud(row)
 
-    else:
-        out_lay = lay
+    def draw_element_ui_right_crud(self, layout):
+        act = self.active_ui_element
+        if act and act.is_move_mode:
+            layout.operator(ElementOperator.MoveRelation.bl_idname, text='', icon='X')
+        else:
+            self.draw_crud(layout, ElementGroup)
 
-    return extend_bool, out_lay
+    def draw_element_ui_property(self, layout):
+        act = self.active_ui_element
+        if act and self.is_debug:
+            layout.label(text='parent\t\t' + str(act.parent.name if act.parent else None))
+            layout.label(text='child\t\t' + str(list(i.name for i in act.child)))
+            layout.label(text='children\t\t' + str(list(i.name for i in act.children)))
+        self.draw_properties(layout, act)
+
+
+def register():
+    ...
+
+
+def unregister():
+    ...
