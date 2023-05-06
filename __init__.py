@@ -3,15 +3,17 @@ bl_info = {"name": "Gesture Helper",
            "author": "AIGODLIKE Community(BlenderCN辣椒,小萌新)",
            "version": (1, 0),
            "blender": (3, 0, 0),
-           # "location": "Tool Panel",
+           "location": "Tool Panel",
            "support": "COMMUNITY",
            # "category": "3D View",
            }
 
+from .utils import reg
+
 
 def register():
-    ...
+    reg.register()
 
 
 def unregister():
-    ...
+    reg.unregister()
