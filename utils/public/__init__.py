@@ -2,8 +2,10 @@ from functools import cache
 from os.path import basename, dirname, realpath
 
 import bpy
-from bpy_types import AddonPreferences
-from bpy.types import UILayout
+from bpy.types import UILayout, AddonPreferences
+
+from .public_data import PublicData
+from .public_func import PublicMethod
 
 
 class Preferences:
@@ -25,6 +27,5 @@ class CacheHandler(Preferences):
         cls.pref_.cache_clear()
 
 
-class PublicClass(CacheHandler):
+class PublicClass(CacheHandler, PublicData, PublicMethod):
     layout: UILayout
-    ...

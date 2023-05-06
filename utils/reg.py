@@ -28,11 +28,11 @@ reg_tuple = (
 def register_module_factory(module):
     def reg():
         for mod in module:
-            mod.reg()
+            mod.register()
 
     def un_reg():
         for mod in reversed(module):
-            mod.reg()
+            mod.unregister()
 
     return reg, un_reg
 
