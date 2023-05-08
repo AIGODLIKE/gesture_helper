@@ -1,9 +1,12 @@
-import bpy.utils
+from .public import register_module_factory
 from .. import (
     gesture_ui,
     locale,
-    res
+    res,
+    ops,
+    ui
 )
+
 from . import (
     log,
     preferences,
@@ -12,32 +15,22 @@ from . import (
     gesture_system,  # model
 )
 
-reg_tuple = (
-    log,
-    preferences,
-    update,
-
+modules_tuple = (
     # module
     gesture_system,
     gesture_ui,
     locale,
     res,
+    ops,
+    ui,
+
+    # .py
+    log,
+    preferences,
+    update,
 )
 
-
-def register_module_factory(module):
-    def reg():
-        for mod in module:
-            mod.register()
-
-    def un_reg():
-        for mod in reversed(module):
-            mod.unregister()
-
-    return reg, un_reg
-
-
-register_mod, unregister_mod = register_module_factory(reg_tuple)
+register_mod, unregister_mod = register_module_factory(modules_tuple)
 
 
 def register():

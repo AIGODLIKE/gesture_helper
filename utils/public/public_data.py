@@ -4,6 +4,8 @@ from bpy.types import EnumPropertyItem, UILayout
 
 from ..property import get_rna_data
 
+from os.path import basename, dirname, realpath
+
 
 def get_i18n_enum():
     data = []
@@ -82,7 +84,7 @@ class PublicEnum:
         return [(i.upper(), i, i)
                 for i in enum]
 
-    ENUM_TYPE_UI = [
+    ENUM_TYPE_UI_SYSTEM = [
         ('GESTURE', 'Gesture', 'emm'),
         ('MENU', 'Menu', 'menu'),
         ('MENU_PIE', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
@@ -115,7 +117,7 @@ class PublicEnum:
 
     ENUM_TYPE_SELECT_STRUCTURE = from_each_as_enum(PublicTuple.SELECT_STRUCTURE_ELEMENT)
 
-    ENUM_iCON = get_rna_data(EnumPropertyItem, 'icon')
+    ENUM_ICON = get_rna_data(EnumPropertyItem, 'icon')
 
     ENUM_UI_LAYOUT_EMBOSS = get_rna_data(UILayout, 'emboss')
     ENUM_UI_LAYOUT_ALIGNMENT = get_rna_data(UILayout, 'alignment')
@@ -129,3 +131,5 @@ class PublicData(PublicEnum, PublicTuple):
 
     PROP_DEFAULT_TIME = {'max': 2000, 'min': -1, 'default': 300}
     PROP_DEFAULT_SKIP = {'options': {'HIDDEN', 'SKIP_SAVE', }}
+
+    G_ADDON_NAME = basename(dirname(dirname(dirname(realpath(__file__)))))  # addon folder path name

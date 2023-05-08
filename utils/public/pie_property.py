@@ -3,8 +3,7 @@ from ..property import get_rna_data
 
 
 # pie property  # 饼菜单所需属性
-
-class PieData:
+class PieProperty:
     PIE_PROPERTY_ITEMS = ['pie_animation_timeout',
                           'pie_tap_timeout',
                           'pie_initial_timeout',
@@ -31,7 +30,7 @@ class PieData:
     PIE_MENU_RADIUS_DATA['default'] = 100
     PIE_MENU_THRESHOLD_DATA['default'] = 20
     PIE_MENU_CONFIRM_DATA['default'] = 60
-    
+
     PIE_ANIMATION_TIMEOUT_DATA['min'] = PIE_TAP_TIMEOUT_DATA['min'] = PIE_INITIAL_TIMEOUT_DATA['min'] = \
         PIE_MENU_RADIUS_DATA['min'] = PIE_MENU_THRESHOLD_DATA['min'] = PIE_MENU_CONFIRM_DATA['min'] = -1
     PIE_ANIMATION_TIMEOUT_DATA['soft_min'] = PIE_TAP_TIMEOUT_DATA['soft_min'] = PIE_INITIAL_TIMEOUT_DATA['soft_min'] = \
