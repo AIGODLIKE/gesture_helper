@@ -1,6 +1,6 @@
 from bpy.app.translations import contexts as i18n_contexts
 
-from bpy.types import EnumPropertyItem, UILayout
+from bpy.types import EnumPropertyItem, UILayout, PreferencesView
 
 from ..property import get_rna_data
 
@@ -84,38 +84,45 @@ class PublicEnum:
         return [(i.upper(), i, i)
                 for i in enum]
 
-    ENUM_TYPE_UI_SYSTEM = [
+    ENUM_SELECT_STRUCTURE_TYPE = from_each_as_enum(PublicTuple.SELECT_STRUCTURE_ELEMENT)
+
+    ENUM_UI_TYPE = [
+        ('UI_LAYOUT', 'UI Layout', ''),
+        ('SELECT_STRUCTURE', 'Select Structure', ''),
+    ]
+    ENUM_UI_SYSTEM_TYPE = [
         ('GESTURE', 'Gesture', 'emm'),
         ('MENU', 'Menu', 'menu'),
         ('MENU_PIE', 'Pie Panel', '饼菜单,指定快捷键设置弹出饼菜单,也可设置为手势系统,通过手势来'),
         ('LAYOUT', 'Layout', 'layout'),
     ]
-    ENUM_TYPE_UI_LAYOUT = {
-        # ('SEPARATOR_SPACER', 'Separator Spacer', ''),  # TODO 用作Separator的附加属性
+    ENUM_UI_LAYOUT_TYPE = [
         ('', 'General', '',),
+        ('LABEL', 'Label', '',),
         ('SEPARATOR', 'Separator', '',),
+        ('SEPARATOR_SPACER', 'Separator Spacer', ''),  # TODO 用作Separator的附加属性
 
         ('', 'Layout', '',),
-        ('LABEL', 'Label', '',),
         ('ROW', 'Row', '',),
+        ('COLUMN', 'Column', '',),
         ('BOX', 'Box', '',),
         ('SPLIT', 'Split', '',),
-        ('COLUMN', 'Column', '',),
+
+        ('', 'Emm', '',),
+        ('PROP', 'Prop', '',),
+        ('OPERATOR', 'Operator', '',),
 
         ('', 'other', '',),
         ('MENU_PIE', 'Menu Pie', '',),
         ('MENU', 'Menu', '',),
-        ('PROP', 'Prop', '',),
-        ('OPERATOR', 'Operator', '',),
+
         # operator_menu_hold
         # operator_enum
         # operator_menu_enum
         # template_operator_search
         # popup_menu_pie
         # ('',            'popup_menu', ''),
-    }
-
-    ENUM_TYPE_SELECT_STRUCTURE = from_each_as_enum(PublicTuple.SELECT_STRUCTURE_ELEMENT)
+    ]
 
     ENUM_ICON = get_rna_data(EnumPropertyItem, 'icon')
 
@@ -133,3 +140,37 @@ class PublicData(PublicEnum, PublicTuple):
     PROP_DEFAULT_SKIP = {'options': {'HIDDEN', 'SKIP_SAVE', }}
 
     G_ADDON_NAME = basename(dirname(dirname(dirname(realpath(__file__)))))  # addon folder path name
+
+
+class PieProperty:
+    PIE_PROPERTY_ITEMS = ['pie_animation_timeout',
+                          'pie_tap_timeout',
+                          'pie_initial_timeout',
+                          'pie_menu_radius',
+                          'pie_menu_threshold',
+                          'pie_menu_confirm',
+                          ]
+    PIE_ANIMATION_TIMEOUT_DATA = get_rna_data(
+        PreferencesView, 'pie_animation_timeout', fill_copy=True)
+    PIE_TAP_TIMEOUT_DATA = get_rna_data(
+        PreferencesView, 'pie_tap_timeout', fill_copy=True)
+    PIE_INITIAL_TIMEOUT_DATA = get_rna_data(
+        PreferencesView, 'pie_initial_timeout', fill_copy=True)
+    PIE_MENU_RADIUS_DATA = get_rna_data(
+        PreferencesView, 'pie_menu_radius', fill_copy=True)
+    PIE_MENU_THRESHOLD_DATA = get_rna_data(
+        PreferencesView, 'pie_menu_threshold', fill_copy=True)
+    PIE_MENU_CONFIRM_DATA = get_rna_data(
+        PreferencesView, 'pie_menu_confirm', fill_copy=True)
+    # custom element property   default
+    PIE_ANIMATION_TIMEOUT_DATA['default'] = 6
+    PIE_TAP_TIMEOUT_DATA['default'] = 20
+    PIE_INITIAL_TIMEOUT_DATA['default'] = 0
+    PIE_MENU_RADIUS_DATA['default'] = 100
+    PIE_MENU_THRESHOLD_DATA['default'] = 20
+    PIE_MENU_CONFIRM_DATA['default'] = 60
+
+    PIE_ANIMATION_TIMEOUT_DATA['min'] = PIE_TAP_TIMEOUT_DATA['min'] = PIE_INITIAL_TIMEOUT_DATA['min'] = \
+        PIE_MENU_RADIUS_DATA['min'] = PIE_MENU_THRESHOLD_DATA['min'] = PIE_MENU_CONFIRM_DATA['min'] = -1
+    PIE_ANIMATION_TIMEOUT_DATA['soft_min'] = PIE_TAP_TIMEOUT_DATA['soft_min'] = PIE_INITIAL_TIMEOUT_DATA['soft_min'] = \
+        PIE_MENU_RADIUS_DATA['soft_min'] = PIE_MENU_THRESHOLD_DATA['soft_min'] = PIE_MENU_CONFIRM_DATA['soft_min'] = 0

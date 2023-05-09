@@ -1,17 +1,26 @@
 import bpy
-from bpy.props import CollectionProperty, IntProperty
+from bpy.props import CollectionProperty, IntProperty, BoolProperty
 from bpy.types import AddonPreferences
 
+from ..ops.crud.systems_crud import SystemAdd, SystemMove, SystemCopy, SystemDel
+from ..ops.crud.ui_element_crud import ElementAdd, ElementMove, ElementDel, ElementCopy
 from ..ui.template_list import UiSystemList, UiElementList
-from .gesture_system import SystemItem
+from .system import SystemItem
 from .public import PublicClass, PublicData
 
 
 class DrawPreferences(PublicClass):
 
     def draw_preferences(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
-        self.draw_ui_system(context, layout)
-        self.draw_ui_element(context, layout)
+        sp = layout.split(factor=0.5)
+
+        sub_row = sp.row(align=True)
+        self.draw_ui_system_crud(context, sub_row)
+        self.draw_ui_system(context, sub_row)
+
+        sub_row = sp.row(align=True)
+        self.draw_ui_element(context, sub_row)
+        self.draw_ui_element_crud(context, sub_row)
 
     def draw_ui_system(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         pref = self.pref
@@ -19,12 +28,19 @@ class DrawPreferences(PublicClass):
             UiSystemList.bl_idname,
             UiSystemList.bl_idname,
             pref,
-            'ui_system',
+            'systems',
             pref,
             'active_index', )
 
-    def draw_ui_system_crud(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
-        ...
+    @staticmethod
+    def draw_ui_system_crud(context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
+        column = layout.column(align=True)
+        column.operator(SystemAdd.bl_idname, icon='ADD', text='')
+        column.operator(SystemCopy.bl_idname, icon='COPYDOWN', text='')
+        column.operator(SystemDel.bl_idname, icon='REMOVE', text='')
+        column.separator()
+        column.operator(SystemMove.bl_idname, text='', icon='SORT_DESC').is_next = False
+        column.operator(SystemMove.bl_idname, text='', icon='SORT_ASC').is_next = True
 
     def draw_ui_element(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         pref = self.pref
@@ -40,8 +56,17 @@ class DrawPreferences(PublicClass):
         else:
             layout.label(text='Select or new element')
 
-    def draw_ui_element_crud(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
-        ...
+    @staticmethod
+    def draw_ui_element_crud(context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
+        column = layout.column(align=True)
+        column.operator(ElementAdd.bl_idname, icon='ADD', text='')
+        column.operator(ElementCopy.bl_idname, icon='COPYDOWN', text='')
+        column.operator(ElementDel.bl_idname, icon='REMOVE', text='')
+        column.separator()
+        column.operator(ElementMove.bl_idname, text='', icon='SORT_DESC').is_next = False
+        column.operator(ElementMove.bl_idname, text='', icon='SORT_ASC').is_next = True
+
+        #     op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
 
     def draw_top_bar(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         ...
@@ -50,11 +75,12 @@ class DrawPreferences(PublicClass):
 class PreferencesProperty:
     """inherited to addon preferences by this class
     """
-    ui_system: CollectionProperty(name='UI Collection Items',
-                                  description='Element Item',
-                                  type=SystemItem
-                                  )
+    systems: CollectionProperty(name='UI Collection Items',
+                                description='Element Item',
+                                type=SystemItem
+                                )
     active_index: IntProperty(name='gesture active index')
+    enabled_systems: BoolProperty(name='Use all Systems')
 
 
 class GesturePreferences(PublicClass, PreferencesProperty, AddonPreferences):
@@ -62,8 +88,6 @@ class GesturePreferences(PublicClass, PreferencesProperty, AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text=self.bl_idname)
-        layout.label(text='emmmoiasejoif')
         DrawPreferences().draw_preferences(context, layout)
 
 

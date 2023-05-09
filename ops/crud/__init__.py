@@ -1,8 +1,10 @@
-from ..utils.public import register_module_factory
-from . import crud
+from ...utils.public import register_module_factory
+from . import systems_crud, ui_element_crud
 
 modules_tuple = (
-    crud,
+    systems_crud,
+    ui_element_crud,
+
 )
 
 register_mod, unregister_mod = register_module_factory(modules_tuple)

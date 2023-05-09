@@ -12,12 +12,12 @@ from . import (
     preferences,
     update,
 
-    gesture_system,  # model
+    system,  # model
 )
 
 modules_tuple = (
     # module
-    gesture_system,
+    system,
     gesture_ui,
     locale,
     res,

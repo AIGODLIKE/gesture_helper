@@ -21,8 +21,8 @@ class UiElementList(UIList,
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
         layout.prop(item, 'name')
-        layout.label(text=str(item.parent_element))
-        layout.prop(item, 'type')
+        # layout.label(text=str(item.parent_collection_property))
+        layout.prop(item, 'ui_layout_type')
 
 
 classes_tuple = (
