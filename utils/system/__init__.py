@@ -9,12 +9,12 @@ from .ui_element import UiElement
 
 from ..public import PublicClass, register_module_factory
 from ..public.public_data import PublicData
-from ..public.public_property import PublicPropertyGroup, PublicNoRepeatName
+from ..public.public_property import PublicPropertyGroup, PublicCollectionNoRepeatName
 
 
 class SystemItem(PublicClass,
                  PublicPropertyGroup,
-                 PublicNoRepeatName,
+                 PublicCollectionNoRepeatName,
                  ):
     """UI System Item
     """

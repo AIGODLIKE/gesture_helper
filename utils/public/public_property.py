@@ -4,37 +4,64 @@ from bpy.props import StringProperty
 from bpy.types import PropertyGroup
 
 
-class IntFaceProp:
+class PublicPropertyGroup(PropertyGroup,
+                          ):
+
+    def set_active_index(self, index):
+        """需要重写,用作移动时设置列表活动索引
+        :param index:
+        :return:
+        """
+        ...
+
     @property
     def parent_collection_property(self) -> 'PropertyGroup':
+        """需要重写,获取父集合属性
+
+        :return:
+        """
         return object
 
     @cache
     def _parent_collection_property(self) -> 'PropertyGroup':
+        """缓存,父级正常情况下不会变
+        :return:
+        """
         return self.parent_collection_property
 
     @classmethod
     def cache_clear_parent_collection_property(cls):
+        """清理缓存
+        :return:
+        """
         cls._parent_collection_property.cache_clear()
-
-
-class PublicPropertyGroup(PropertyGroup,
-                          IntFaceProp,
-                          ):
 
     @property
     def items(self) -> 'iter':
+        """通过设置父级集合属性拿每一个集㕣元素
+
+        :return:
+        """
         return self.parent_collection_property.values()
 
     @property
     def index(self) -> int:
+        """反回当前项在集合属性内的索引"""
         if self in self.items:
             return self.items.index(self)
 
-    def remove(self):
+    def remove(self) -> None:
+        """通过索引删除自身
+        :return:
+        """
         self.parent_collection_property.remove(self.index)
 
     def move(self, is_next=True):
+        """移动此元素在集合内的位置,如果在头或尾部会做处理
+
+        :param is_next: bool ,向下移
+        :return:
+        """
         le = len(self.items)
         index = self.index
         le1 = le - 1
@@ -44,14 +71,68 @@ class PublicPropertyGroup(PropertyGroup,
         active_index = le1 if next_index == -1 else next_index
         self.set_active_index(active_index)
 
-    def set_active_index(self, index):
-        ...
 
-    def copy(self):
-        ...
+class PublicRelationship(PropertyGroup):
+    items: iter
+    _parent_key = 'parent_name'
+    parent_collection_property: PropertyGroup
+
+    # Parent
+    @cache
+    def _get_parent_relationship(self):
+        try:
+            key = self[self._parent_key]
+            parent = self.parent_collection_property[key]
+            if self != parent:
+                return parent
+        except KeyError:
+            ...
+
+    def _set_parent_relationship(self, value):
+        if type(value) == str:
+            self[self._parent_key] = value
+        else:
+            self[self._parent_key] = value.name
+        self.cache_clear_relationship()
+
+    def _del_parent_relationship(self):
+        del self[self._parent_key]
+        self.cache_clear_relationship()
+
+    def change_name(self, old, new):
+        """修改名称时调用此方法,同时修改子级的父项"""
+        print('change_name', old, new, self.children)
+        for child in self.children:
+            child.parent = new
+
+    parent = property(fget=_get_parent_relationship, fset=_set_parent_relationship, fdel=_del_parent_relationship)
+
+    # Child
+    @cache
+    def _get_children(self) -> 'list':
+        return [i for i in self.items if i.parent == self]
+
+    @property
+    def children(self) -> 'list':
+        return self._get_children()
+
+    @property
+    def children_recursion(self) -> 'list':
+        children = []
+        for child in self.children:
+            children.append(child)
+            children.extend(child.children)
+        return children
+
+    @classmethod
+    def cache_clear_relationship(cls):
+        cls._get_children.cache_clear()
+        cls._get_parent_relationship.cache_clear()
 
 
-class PublicNoRepeatName:
+class PublicCollectionNoRepeatName(PropertyGroup):
+    items: 'iter'
+
     @property
     def _name_keys(self):
         return [i.name for i in self.items]
@@ -111,19 +192,15 @@ class PublicNoRepeatName:
         not_update = ('name' in self and value == self['name'] and keys.count(value) < 2)
         if not_update or not value:
             return
-        name = self._get_effective_name(value)
+        new_name = self._get_effective_name(value)
 
-        old_name = self['name'] if 'name' in name else None
-
-        self['name'] = name
+        old_name = self['name'] if 'name' in self else None
 
         if getattr(self, 'change_name', False):
-            self.change_name(old_name, name)
+            self.change_name(old_name, new_name)
+        self['name'] = new_name
         if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
             self.chick_name()
-
-    def change_name(self, old_name, new_name):
-        ...
 
     def set_name(self, name):
         self['name'] = self.name = name
