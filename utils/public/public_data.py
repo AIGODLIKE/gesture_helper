@@ -67,7 +67,7 @@ class PublicTuple:
                      #  'icon_value',
                      ],
         'uilayout': ['activate_init', 'active', 'scale_x', 'scale_y', 'ui_units_x', 'ui_units_y', 'active_default',
-                     'alert', 'use_property_decorate', 'use_property_split', 'emboss_enum', 'enabled', 'alignment',
+                     'alert', 'use_property_decorate', 'use_property_split', 'emboss_enum', 'nabled', 'alignment',
                      #  'direction', only read
                      #  'operator_context', operator
                      ],

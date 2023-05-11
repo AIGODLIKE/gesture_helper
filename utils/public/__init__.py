@@ -42,6 +42,10 @@ class PublicProperty:
             except IndexError:
                 ...
 
+    @property
+    def ui_prop(self):
+        return self.pref.ui_property
+
 
 class CacheHandler(PublicProperty):
     @classmethod

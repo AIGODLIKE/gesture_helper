@@ -77,12 +77,16 @@ class PublicRelationship(PropertyGroup):
     _parent_key = 'parent_name'
     parent_collection_property: PropertyGroup
 
+    def update_parent(self, context):
+        self.cache_clear_relationship()
+
+    parent_name: StringProperty(update=update_parent)
+
     # Parent
     @cache
     def _get_parent_relationship(self):
         try:
-            key = self[self._parent_key]
-            parent = self.parent_collection_property[key]
+            parent = self.parent_collection_property[self.parent_name]
             if self != parent:
                 return parent
         except KeyError:
@@ -131,6 +135,10 @@ class PublicRelationship(PropertyGroup):
 
 
 class PublicCollectionNoRepeatName(PropertyGroup):
+    """
+    用来避免名称重复的类,将会代理name属性,如果更改了名称将会判断是否重复,如果重复将会在后缀上加上.001
+    需要实例化items函数反回的应是此元素的集合属性,用于遍历所有的元素
+    """
     items: 'iter'
 
     @property
@@ -164,11 +172,6 @@ class PublicCollectionNoRepeatName(PropertyGroup):
 
         return self['name']
 
-    def chick_name(self):
-        # for key in self._name_keys:
-        #     self._items[key]._set_name(key)
-        ...
-
     def _get_effective_name(self, value):
 
         def _get_number(n):
@@ -200,10 +203,7 @@ class PublicCollectionNoRepeatName(PropertyGroup):
             self.change_name(old_name, new_name)
         self['name'] = new_name
         if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
-            self.chick_name()
-
-    def set_name(self, name):
-        self['name'] = self.name = name
+            raise ValueError('发现重复名称 !!', keys)
 
     def _update_name(self, context):
         ...
@@ -214,3 +214,8 @@ class PublicCollectionNoRepeatName(PropertyGroup):
         set=_set_name,
         update=_update_name,
     )
+
+
+class TempProperty:
+    _temp_key = 'temp_property_gesture'
+
