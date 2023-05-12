@@ -1,7 +1,0 @@
-
-def register():
-    ...
-
-
-def unregister():
-    ...

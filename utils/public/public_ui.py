@@ -1,4 +1,8 @@
 import bpy
+from bpy.props import BoolProperty
+from bpy_types import Operator
+
+from .public_data import PublicData
 
 
 class PublicUi:
@@ -75,3 +79,31 @@ class PublicUi:
                      toggle=True,
                      icon_only=True,
                      )
+
+
+class PublicPopupMenu(Operator):
+    title: str
+    bl_label: str
+    bl_idname: str
+    is_popup_menu: BoolProperty(name='弹出菜单',
+                                description='''是否为弹出菜单,如果为True则弹出菜单,''',
+                                default=True,
+                                **PublicData.PROP_DEFAULT_SKIP,
+                                )
+
+    def execute(self, context):
+        print(self.bl_label)
+        return {'FINISHED'}
+
+    def draw_menu(self, menu, context):
+        layout = menu.layout
+        layout.label(text=self.bl_label)
+        ops = layout.operator(self.bl_idname)
+        ops.is_popup_menu = False
+
+    def invoke(self, context, event):
+        if self.is_popup_menu:
+            context.window_manager.popup_menu(
+                self.draw_menu, title=getattr(self, 'title', self.bl_label))
+            return {'FINISHED'}
+        return self.execute(context)

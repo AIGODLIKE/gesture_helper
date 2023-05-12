@@ -1,10 +1,10 @@
-from bpy.app.translations import contexts as i18n_contexts
+from os.path import basename, dirname, realpath
 
+from bpy.app.translations import contexts as i18n_contexts
+from bpy.props import EnumProperty
 from bpy.types import EnumPropertyItem, UILayout, PreferencesView
 
 from ..property import get_rna_data
-
-from os.path import basename, dirname, realpath
 
 
 def get_i18n_enum():
@@ -174,3 +174,26 @@ class PieProperty:
         PIE_MENU_RADIUS_DATA['min'] = PIE_MENU_THRESHOLD_DATA['min'] = PIE_MENU_CONFIRM_DATA['min'] = -1
     PIE_ANIMATION_TIMEOUT_DATA['soft_min'] = PIE_TAP_TIMEOUT_DATA['soft_min'] = PIE_INITIAL_TIMEOUT_DATA['soft_min'] = \
         PIE_MENU_RADIUS_DATA['soft_min'] = PIE_MENU_THRESHOLD_DATA['soft_min'] = PIE_MENU_CONFIRM_DATA['soft_min'] = 0
+
+
+class ElementType:
+    """在添加项和元素中继承使用"""
+    ui_type: EnumProperty(items=PublicData.ENUM_UI_TYPE)
+    ui_layout_type: EnumProperty(items=PublicData.ENUM_UI_LAYOUT_TYPE)
+    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE)
+
+    @property
+    def enum_type_data(self) -> 'list[tuple[str,str,str]]':
+        return PublicData.ENUM_UI_LAYOUT_TYPE if self.is_ui_layout_type else PublicData.ENUM_SELECT_STRUCTURE_TYPE
+
+    @property
+    def is_select_structure_type(self) -> bool:
+        return self.ui_type == 'SELECT_STRUCTURE'
+
+    @property
+    def is_ui_layout_type(self) -> bool:
+        return self.ui_type == 'UI_LAYOUT'
+
+    @property
+    def type(self) -> str:
+        return self.ui_layout_type if self.is_ui_layout_type else self.select_structure_type

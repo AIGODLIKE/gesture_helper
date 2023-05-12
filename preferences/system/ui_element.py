@@ -1,49 +1,54 @@
 from __future__ import annotations
 
 import bpy
-from bpy.props import EnumProperty, CollectionProperty, BoolProperty
+from bpy.props import CollectionProperty, BoolProperty, IntProperty
 from bpy.types import PropertyGroup
 
-from ..public import PublicClass, PublicData
-from ..public.public_property import PublicPropertyGroup
-from ..public.public_ui import PublicUi
+from ...utils.public import PublicClass
+from ...utils.public.public_data import ElementType
+from ...utils.public.public_property import PublicPropertyGroup
+from ...utils.public.public_ui import PublicUi
 
 
 class ElementProp(PublicClass,
+                  ElementType,
                   PublicPropertyGroup, ):
-    ui_type: EnumProperty(items=PublicData.ENUM_UI_TYPE)
-    ui_layout_type: EnumProperty(items=PublicData.ENUM_UI_LAYOUT_TYPE)
-    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE)
     children_element: CollectionProperty(type=UiElement)
+
+    def update_index(self, context):
+        if self.parent_element:
+            index = self['active_index']
+            self.parent_element.children_element[index].is_selected = True
+
+    active_index: IntProperty(update=update_index)
     _selected_key = 'is_selected'
 
-    def _get_selected(self):
+    def _get_selected(self) -> bool:
         key = self._selected_key
         if key in self:
             return self[key]
         return False
 
-    def _set_selected(self, value):
+    def _set_selected(self, value) -> None:
         key = self._selected_key
-        # for i in self.parent_system.ui_element:
-        #     ...
+        for element in self.parent_system.children_element_recursion:
+            element['is_selected'] = (element == self)
         self[key] = value
-        print('set selected', value)
 
-    def _update_selected(self, context):
-        bpy.app.debug_events = True
-        print('_update_selected')
-        bpy.context.area.tag_redraw()
-        bpy.app.debug_events = False
+    def _update_selected(self, context) -> None:
+        ...
 
-    is_expand: BoolProperty()
-    is_enabled: BoolProperty(default=True)
-    is_selected: BoolProperty(get=_get_selected, set=_set_selected,
+    is_expand: BoolProperty(name='Expand Show Child Element',
+                            default=True)
+    is_enabled: BoolProperty(name='Enabled Element Show, If False Not Show Child And Draw',
+                             default=True)
+    is_selected: BoolProperty(get=_get_selected,
+                              set=_set_selected,
                               update=_update_selected,
                               )
 
     @property
-    def children_recursion(self):
+    def children_recursion(self) -> 'list[UiElement]':
         """反回递归所有子级"""
         recursion = []
         for child in self.children_element:
@@ -54,8 +59,11 @@ class ElementProp(PublicClass,
     def is_available(self) -> bool:
         return self.parent_system
 
-    def set_active_index(self, index):
-        self.parent_system.active_index = index
+    def set_active_index(self, index) -> None:
+        if self.is_direct_child:
+            self.parent_system.active_index = index
+        else:
+            self.parent_element.active_index = index
 
     @property
     def parent_system(self):
@@ -65,12 +73,34 @@ class ElementProp(PublicClass,
                 return s
 
     @property
+    def parent_element(self) -> 'UiElement':
+        if self.is_nest_child:
+            for element in self.parent_system.children_element_recursion:
+                if self in element.children_element:
+                    return element
+
+    @property
     def parent_collection_property(self) -> 'PropertyGroup':
-        if self in self.parent_system.ui_element:
-            return self.parent_system.ui_element  # 直接子项
+        if self.is_direct_child:
+            return self.parent_system.ui_element  # 直接子级
         for element in self.parent_system.children_element_recursion:
             if self in element.children_element.values():
-                return element.children_element  # 嵌套子项
+                return element.children_element  # 嵌套子级
+
+    @property
+    def is_nest_child(self) -> bool:
+        """是嵌套子级
+        a----
+         this-
+        """
+        return not self.is_direct_child
+
+    @property
+    def is_direct_child(self) -> bool:
+        """
+        :return:
+        """
+        return self in self.parent_system.ui_element.values()
 
 
 class ElementUi(ElementProp,
@@ -104,11 +134,23 @@ class ElementUi(ElementProp,
         name = row.row()
         name.emboss = 'NORMAL'
         name.prop(self, 'name', text='')
-        row.prop(self, 'ui_layout_type', text='')
+        row.label(text=self.type)
         row.label(text=str(self.level))
 
 
-class UiElement(ElementUi,
+class ElementLogic(ElementUi):
+    ...
+
+
+class ElementDrawEdit(ElementLogic):
+    ...
+
+
+class ElementDrawLayout(ElementDrawEdit):
+    ...
+
+
+class UiElement(ElementDrawLayout,
                 ):
     ...
 

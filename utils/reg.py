@@ -9,15 +9,16 @@ from .. import (
 
 from . import (
     log,
-    preferences,
     update,
 
-    system,  # model
+    # model
 )
+
+from .. import preferences
 
 modules_tuple = (
     # module
-    system,
+    preferences,
     gesture_ui,
     locale,
     res,
@@ -26,7 +27,6 @@ modules_tuple = (
 
     # .py
     log,
-    preferences,
     update,
 )
 

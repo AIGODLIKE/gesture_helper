@@ -1,13 +1,13 @@
 import bpy
 from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty
-from bpy.types import AddonPreferences
-from bpy_types import PropertyGroup
+from bpy.types import AddonPreferences, UILayout, PropertyGroup
 
-from .public import PublicClass, PublicData
+from . import system
 from .system import SystemItem
 from ..ops.crud.systems_crud import SystemOps
 from ..ops.crud.ui_element_crud import ElementOps
 from ..ui.template_list import UiSystemList, UiElementList
+from ..utils.public import PublicClass, PublicData
 
 
 class DrawPreferences(PublicClass):
@@ -19,7 +19,11 @@ class DrawPreferences(PublicClass):
         self.draw_ui_system_crud(context, sub_row)
         self.draw_ui_system(context, sub_row)
 
-        sub_row = sp.row(align=True)
+        col = sp.column()
+        if self.active_system:
+            self.active_system.key.draw(col)
+
+        sub_row = col.row(align=True)
         self.draw_ui_element(context, sub_row)
         self.draw_ui_element_crud(context, sub_row)
 
@@ -55,19 +59,25 @@ class DrawPreferences(PublicClass):
     @staticmethod
     def draw_ui_element_crud(context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         DrawPreferences.draw_crud(layout, ElementOps)
-        layout.operator(ElementOps.Refresh.bl_idname, text='', icon='FILE_REFRESH')
+        # layout.operator(ElementOps.Refresh.bl_idname, text='', icon='FILE_REFRESH')
         #     op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
 
     @staticmethod
-    def draw_crud(layout, cls):
+    def draw_crud(layout, cls) -> 'UILayout':
+        is_element = (cls == ElementOps)
         column = layout.column(align=True)
-        column.operator(cls.Add.bl_idname, icon='ADD', text='')
+        add = column.operator(cls.Add.bl_idname, icon='ADD', text='')
         column.operator(cls.Copy.bl_idname, icon='COPYDOWN', text='')
         column.operator(cls.Del.bl_idname, icon='REMOVE', text='')
+        if is_element:
+            add.ui_type = 'UI_LAYOUT'
+            sel_add = column.operator(cls.Add.bl_idname, icon='RNA_ADD', text='')
+            sel_add.ui_type = 'SELECT_STRUCTURE'
         column.separator()
         column.operator(cls.Move.bl_idname, text='', icon='SORT_DESC').is_next = False
         column.operator(cls.Move.bl_idname, text='', icon='SORT_ASC').is_next = True
         column.separator()
+        return column
 
     def draw_top_bar(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         ...
@@ -105,10 +115,14 @@ class PreferencesProperty:
                                 )
     active_index: IntProperty(name='gesture active index')
     enabled_systems: BoolProperty(name='Use all Systems')
-    ui_property: PointerProperty(type=UiProperty)
+    ui_property: PointerProperty(name='Ui Property',
+                                 type=UiProperty,
+                                 description="Control the display settings on the addon interface")
 
 
-class GesturePreferences(PublicClass, PreferencesProperty, AddonPreferences):
+class GesturePreferences(PublicClass,
+                         PreferencesProperty,
+                         AddonPreferences):
     bl_idname = PublicData.G_ADDON_NAME
 
     def draw(self, context):
@@ -124,8 +138,10 @@ register_class, unregister_class = bpy.utils.register_classes_factory(classes_tu
 
 
 def register():
+    system.register()
     register_class()
 
 
 def unregister():
+    system.unregister()
     unregister_class()

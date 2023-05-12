@@ -1,16 +1,16 @@
 import bpy.utils
-from bpy.types import PropertyGroup
-from bpy.props import CollectionProperty, IntProperty, BoolProperty
-
+from bpy.props import BoolProperty, CollectionProperty, IntProperty, PointerProperty
 from bpy.props import EnumProperty
+from bpy.types import PropertyGroup
+
+from . import key
 from . import ui_element
-
+from .key import SystemKey
 from .ui_element import UiElement
-
-from ..public import PublicClass, register_module_factory
-from ..public.public_data import PublicData
-from ..public.public_property import PublicPropertyGroup, PublicCollectionNoRepeatName
-from ..public.public_ui import PublicUi
+from ...utils.public import PublicClass, register_module_factory
+from ...utils.public.public_data import PublicData
+from ...utils.public.public_property import PublicCollectionNoRepeatName, PublicPropertyGroup
+from ...utils.public.public_ui import PublicUi
 
 
 class SystemProp(PublicClass,
@@ -66,13 +66,17 @@ class SystemItem(SystemDraw
                  ):
     """UI System Item
     """
-    ...
+    key: PointerProperty(type=SystemKey)
+
+    def copy(self):  # TODO
+        ...
 
 
 classes_tuple = (
     SystemItem,
 )
 modules_tuple = (
+    key,
     ui_element,
 )
 
