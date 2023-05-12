@@ -1,12 +1,12 @@
 import bpy
-from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty
-from bpy.types import AddonPreferences, UILayout, PropertyGroup
+from bpy.props import BoolProperty, CollectionProperty, FloatProperty, IntProperty, PointerProperty
+from bpy.types import AddonPreferences, PropertyGroup, UILayout
 
 from . import system
 from .system import SystemItem
 from ..ops.crud.systems_crud import SystemOps
 from ..ops.crud.ui_element_crud import ElementOps
-from ..ui.template_list import UiSystemList, UiElementList
+from ..ui.template_list import UiElementList, UiSystemList
 from ..utils.public import PublicClass, PublicData
 
 
@@ -15,14 +15,16 @@ class DrawPreferences(PublicClass):
     def draw_preferences(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         sp = layout.split(factor=self.ui_prop.system_element_split_factor)
 
-        sub_row = sp.row(align=True)
+        col = sp.column()
+        sub_row = col.row(align=True)
         self.draw_ui_system_crud(context, sub_row)
-        self.draw_ui_system(context, sub_row)
+        sub_col = col.column(align=True)
+        self.draw_ui_system(context, sub_col)
+        sys_item = self.active_system
+        if sys_item and sys_item.is_draw_key:
+            self.active_system.key.draw(sub_col)
 
         col = sp.column()
-        if self.active_system:
-            self.active_system.key.draw(col)
-
         sub_row = col.row(align=True)
         self.draw_ui_element(context, sub_row)
         self.draw_ui_element_crud(context, sub_row)

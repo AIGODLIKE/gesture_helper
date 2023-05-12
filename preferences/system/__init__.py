@@ -45,6 +45,10 @@ class SystemProp(PublicClass,
     is_selected: BoolProperty(name='Selected Item')
     is_enabled: BoolProperty(name='Use this System', default=True)
 
+    @property
+    def is_draw_key(self):
+        return True
+
 
 class SystemDraw(SystemProp):
     def draw(self, layout):

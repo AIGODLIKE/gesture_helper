@@ -45,10 +45,12 @@ class PublicProperty:
         return self.pref.ui_property
 
 
-class CacheHandler(PublicProperty):
+class CacheHandler(PublicProperty,
+                   PublicMethod):
     @classmethod
     def clear_cache(cls):
         cls.pref_.cache_clear()
+
     @staticmethod
     def tag_redraw(context):
         if context.area:
@@ -86,4 +88,3 @@ def register_module_factory(module):
             mod.unregister()
 
     return reg, un_reg
-
