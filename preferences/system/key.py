@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import CollectionProperty, StringProperty
-from bpy.types import PropertyGroup
+from bpy.types import PropertyGroup, Operator
 from bpy.app.translations import contexts as i18n_contexts
 from idprop.types import IDPropertyGroup
 
@@ -83,9 +83,9 @@ class SystemKey(KeyProperty):
 
     def draw(self, layout):
         self.draw_kmi(layout, self.temp_kmi)
-        self.update_key()
+        self.from_temp_key_update_data()
 
-    def update_key(self):
+    def from_temp_key_update_data(self):
 
         data = self.kmi_data
         if self.is_change_system:
@@ -174,10 +174,19 @@ class SystemKey(KeyProperty):
                 subrow.prop(kmi, "key_modifier", text="", event=True)
 
 
+class SetKeyMaps(Operator):
+    bl_idname = PublicOperator.ops_id_name('set_key_maps')
+    bl_label = 'Set Key Maps'
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
 classes_tuple = (
     KeyMapItem,
     SystemKey,
     TempModifierKeyOps,
+    SetKeyMaps,
 )
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)
 

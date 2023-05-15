@@ -18,7 +18,7 @@ class DrawPreferences(PublicClass):
         col = sp.column()
         sub_row = col.row(align=True)
         self.draw_ui_system_crud(context, sub_row)
-        sub_col = col.column(align=True)
+        sub_col = sub_row.column(align=True)
         self.draw_ui_system(context, sub_col)
         sys_item = self.active_system
         if sys_item and sys_item.is_draw_key:
@@ -131,6 +131,14 @@ class GesturePreferences(PublicClass,
         layout = self.layout
         DrawPreferences().draw_preferences(context, layout)
 
+    @staticmethod
+    def register():
+        ...
+
+    @staticmethod
+    def unregister():
+        ...
+
 
 classes_tuple = (
     UiProperty,
@@ -142,8 +150,10 @@ register_class, unregister_class = bpy.utils.register_classes_factory(classes_tu
 def register():
     system.register()
     register_class()
+    GesturePreferences.register()
 
 
 def unregister():
+    GesturePreferences.unregister()
     system.unregister()
     unregister_class()

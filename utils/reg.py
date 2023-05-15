@@ -8,6 +8,8 @@ from .. import (
 )
 
 from . import (
+    property,
+
     log,
     update,
 
@@ -17,6 +19,8 @@ from . import (
 from .. import preferences
 
 modules_tuple = (
+    property,
+
     # module
     preferences,
     gesture_ui,
