@@ -1,10 +1,12 @@
 import bpy
-from bpy.props import CollectionProperty, StringProperty
-from bpy.types import PropertyGroup, Operator
 from bpy.app.translations import contexts as i18n_contexts
+from bpy.props import BoolProperty, StringProperty
+from bpy.types import Operator, PropertyGroup
 from idprop.types import IDPropertyGroup
 
+from ...utils.property import RegUiProp
 from ...utils.public import PublicClass, PublicOperator
+from ...utils.public.public_ui import PublicUi
 
 ui_events_keymaps = i18n_contexts.ui_events_keymaps
 
@@ -20,13 +22,15 @@ class TempModifierKeyOps(PublicOperator):
         return {'FINISHED'}
 
 
-class KeyMapItem(PropertyGroup):
-    emm: StringProperty()
-
-
 class KeyProperty(PropertyGroup,
                   PublicClass):
     _key_data = 'data'
+
+    @property
+    def parent_system(self):
+        for s in self.pref.systems:
+            if s.key == self:
+                return s
 
     def _get_key_data(self) -> 'dict':
         key = self._key_data
@@ -79,9 +83,11 @@ class KeyProperty(PropertyGroup,
 
 
 class SystemKey(KeyProperty):
-    key_maps: CollectionProperty(type=KeyMapItem)
+    key_maps: list
 
     def draw(self, layout):
+        layout.context_pointer_set('system', self.parent_system)
+
         self.draw_kmi(layout, self.temp_kmi)
         self.from_temp_key_update_data()
 
@@ -121,6 +127,7 @@ class SystemKey(KeyProperty):
         row = split.row(align=True)
         row.prop(kmi, "show_expanded", text="", emboss=False)
         row.prop(kmi, "active", text="", emboss=False)
+        row.operator(SetKeyMaps.bl_idname)
 
         row = split.row()
         row.prop(kmi, "map_type", text="")
@@ -174,16 +181,99 @@ class SystemKey(KeyProperty):
                 subrow.prop(kmi, "key_modifier", text="", event=True)
 
 
-class SetKeyMaps(Operator):
+class SetKeyMaps(Operator, PublicClass, PublicUi):
     bl_idname = PublicOperator.ops_id_name('set_key_maps')
     bl_label = 'Set Key Maps'
+    keymap_hierarchy: list
+    layout: 'bpy.types.UILayout'
+
+    def invoke(self, context, event):
+        from bl_keymap_utils import keymap_hierarchy
+        self.keymap_hierarchy = keymap_hierarchy.generate()
+        self.init_invoke()
+        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 300})
+
+    @property
+    def key_maps(self):
+        k = self.active_system.key
+        key = 'key_maps'
+        items = list(k[key]) if key in k else []
+        return items
+
+    def init_invoke(self):
+        key_maps = self.key_maps
+
+        def _d(it):
+            for name, space_type, window_type, child in it:
+                select = name + '_selected'
+                expand = name + '_expand'
+
+                sel = RegUiProp.temp_prop(select)
+                exp = RegUiProp.temp_prop(expand)
+                s = RegUiProp.from_name_get_id(select)
+                e = RegUiProp.from_name_get_id(expand)
+                setattr(sel, s, name in key_maps)
+                _d(child)
+
+        _d(self.keymap_hierarchy)
 
     def execute(self, context):
+        rsc = []
+
+        def _d(it):
+            for name, space_type, window_type, child in it:
+                select = name + '_selected'
+
+                sel = RegUiProp.temp_prop(select)
+                s = RegUiProp.from_name_get_id(select)
+                if getattr(sel, s, False):
+                    rsc.append(name)
+                _d(child)
+
+        _d(self.keymap_hierarchy)
+        self.active_system.key['key_maps'] = rsc
+        print(rsc)
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout.column()
+        layout.emboss = 'NONE'
+        layout.label(text=self.pref.active_system.name)
+        row = layout.row()
+        self.selected_list = []
+        self.draw_key(row.column(), self.keymap_hierarchy, 0)
+        self.draw_selected(row.column())
+
+    def draw_selected(self, layout):
+        for sel, s, name in self.selected_list:
+            row = layout.row()
+            row.prop(sel, s, text='', icon=self.icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
+            row.label(text=name)
+
+    def draw_key(self, layout, items, level):
+        for name, space_type, window_type, child in items:
+            row = self.space_layout(layout, self.ui_prop.child_element_office, level).row(align=True)
+            select = name + '_selected'
+            expand = name + '_expand'
+
+            sel = RegUiProp.temp_prop(select)
+            exp = RegUiProp.temp_prop(expand)
+            s = RegUiProp.from_name_get_id(select)
+            e = RegUiProp.from_name_get_id(expand)
+            if child:
+                row.prop(exp, e, text='', icon=self.icon_two(getattr(exp, e, False), 'TRIA'))
+            row.prop(sel, s, text='', icon=self.icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
+            row.label(text=name)
+            is_sel = getattr(sel, s, False)
+
+            if is_sel:
+                self.selected_list.append((sel, s, name))
+
+            if getattr(exp, e, False):
+                self.draw_key(layout, child, level + 1)
 
 
 classes_tuple = (
-    KeyMapItem,
     SystemKey,
     TempModifierKeyOps,
     SetKeyMaps,

@@ -4,7 +4,7 @@ from bpy.app.translations import contexts as i18n_contexts
 from bpy.props import EnumProperty
 from bpy.types import EnumPropertyItem, UILayout, PreferencesView
 
-from ..property import get_rna_data
+from ..utils import get_rna_data
 
 
 def get_i18n_enum():

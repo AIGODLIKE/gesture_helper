@@ -1,4 +1,4 @@
-from ..property import get_rna_data
+from ..utils import get_rna_data
 from bpy.app.translations import contexts as i18n_contexts
 from bpy.types import KeyMapItem
 
