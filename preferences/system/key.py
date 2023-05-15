@@ -1,9 +1,10 @@
 import bpy
 from bpy.app.translations import contexts as i18n_contexts
-from bpy.props import BoolProperty, StringProperty
-from bpy.types import Operator, PropertyGroup
+from bpy.props import StringProperty
+from bpy.types import Operator, PropertyGroup, KeyMapItem
 from idprop.types import IDPropertyGroup
 
+from ...ops.system_ops import SystemOps
 from ...utils.property import RegUiProp
 from ...utils.public import PublicClass, PublicOperator
 from ...utils.public.public_ui import PublicUi
@@ -22,9 +23,47 @@ class TempModifierKeyOps(PublicOperator):
         return {'FINISHED'}
 
 
+class KeyMaps:
+    _key_maps = 'key_maps'
+
+    @property
+    def keymap_hierarchy(self):
+        from bl_keymap_utils import keymap_hierarchy
+        return keymap_hierarchy.generate()
+
+    @property
+    def keymap_hierarchy_dict(self):
+        rsc = {}
+
+        def g(items):
+            for name, a, b, child in items:
+                rsc[name] = (name, a, b)
+                g(child)
+
+        g(self.keymap_hierarchy)
+        return rsc
+
+    def _get_key_maps(self):
+        key = self._key_maps
+        return self[key] if key in self and self[key] else []
+
+    def _set_key_maps(self, value):
+        self[self._key_maps] = list(value)
+
+    key_maps = property(fget=_get_key_maps, fset=_set_key_maps)
+
+    @property
+    def keyconfigs(self):
+        return bpy.context.window_manager.keyconfigs
+
+    @property
+    def active_keyconfig(self):
+        return self.keyconfigs.active
+
+
 class KeyProperty(PropertyGroup,
                   PublicClass):
-    _key_data = 'data'
+    _key_data = 'key_data'
 
     @property
     def parent_system(self):
@@ -34,10 +73,12 @@ class KeyProperty(PropertyGroup,
 
     def _get_key_data(self) -> 'dict':
         key = self._key_data
-        if key in self:
-            return {k: dict(v) if type(v) == IDPropertyGroup else v
-                    for (k, v) in
-                    dict(self[key]).items()}
+        default = {'type': 'NONE', 'value': 'PRESS'}
+        if key in self and dict(self[key]):
+            default.update({k: dict(v) if type(v) == IDPropertyGroup else v
+                            for (k, v) in
+                            dict(self[key]).items()})
+        return default
 
     def _set_key_data(self, value) -> None:
         key = self._key_data
@@ -82,8 +123,8 @@ class KeyProperty(PropertyGroup,
         )
 
 
-class SystemKey(KeyProperty):
-    key_maps: list
+class SystemKey(KeyMaps, KeyProperty):
+    key_maps_kmi = {}  # class static data save kmi data
 
     def draw(self, layout):
         layout.context_pointer_set('system', self.parent_system)
@@ -107,6 +148,7 @@ class SystemKey(KeyProperty):
             print(data)
             print(self.key_data)
             self.key_data = data
+            self.update()
             self.tag_redraw(bpy.context)
 
     @staticmethod
@@ -180,6 +222,35 @@ class SystemKey(KeyProperty):
 
                 subrow.prop(kmi, "key_modifier", text="", event=True)
 
+    def get_keymap(self, name, space_type, region_type):
+        keymaps = self.active_keyconfig.keymaps
+        return keymaps.get(name, keymaps.new(name, space_type=space_type, region_type=region_type))
+
+    def register_key(self):
+        if self.parent_system not in SystemKey.key_maps_kmi:
+            SystemKey.key_maps_kmi[self.parent_system] = []
+        key_data = self.key_data
+        for key_map in self.key_maps:
+            name, space_type, region_type = self.keymap_hierarchy_dict[key_map]
+            keymap = self.get_keymap(name, space_type, region_type)
+            kmi = keymap.keymap_items.new(SystemOps.bl_idname, key_data['type'], key_data['value'])
+
+            self.set_property_data(kmi, key_data)
+            self.set_kmi_system(self.parent_system.name)
+            
+            print(keymap, kmi)
+            SystemKey.key_maps_kmi[self.parent_system].append((keymap, kmi))
+
+    def unregister_key(self):
+        for keymap, kmi in SystemKey.key_maps_kmi[self.parent_system]:
+            keymap.keymap_items.remove(kmi)
+
+        del SystemKey.key_maps_kmi[self.parent_system]
+
+    def update(self):
+        self.unregister_key()
+        self.register_key()
+
 
 class SetKeyMaps(Operator, PublicClass, PublicUi):
     bl_idname = PublicOperator.ops_id_name('set_key_maps')
@@ -233,6 +304,7 @@ class SetKeyMaps(Operator, PublicClass, PublicUi):
         _d(self.keymap_hierarchy)
         self.active_system.key['key_maps'] = rsc
         print(rsc)
+        self.active_system.key.update()
         return {'FINISHED'}
 
     def draw(self, context):

@@ -13,7 +13,7 @@ class ElementPoll:
         return pref.active_ui_element
 
 
-class ElementOps:
+class ElementCRUD:
     class Add(PublicOperator,
               ElementType,
               PublicPopupMenu):  # TODO
@@ -123,11 +123,11 @@ class ElementOps:
 
 
 classes_tuple = (
-    ElementOps.Add,
-    ElementOps.Del,
-    ElementOps.Copy,
-    ElementOps.Move,
-    ElementOps.Refresh,
+    ElementCRUD.Add,
+    ElementCRUD.Del,
+    ElementCRUD.Copy,
+    ElementCRUD.Move,
+    ElementCRUD.Refresh,
 )
 
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)

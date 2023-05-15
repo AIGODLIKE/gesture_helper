@@ -4,8 +4,8 @@ from bpy.types import AddonPreferences, PropertyGroup, UILayout
 
 from . import system
 from .system import SystemItem
-from ..ops.crud.systems_crud import SystemOps
-from ..ops.crud.ui_element_crud import ElementOps
+from ..ops.crud.systems_crud import SystemCURD
+from ..ops.crud.ui_element_crud import ElementCRUD
 from ..ui.template_list import UiElementList, UiSystemList
 from ..utils.public import PublicClass, PublicData
 
@@ -42,7 +42,7 @@ class DrawPreferences(PublicClass):
     @staticmethod
     def draw_ui_system_crud(context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         # TODO
-        DrawPreferences.draw_crud(layout, SystemOps)
+        DrawPreferences.draw_crud(layout, SystemCURD)
 
     def draw_ui_element(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         pref = self.pref
@@ -60,13 +60,13 @@ class DrawPreferences(PublicClass):
 
     @staticmethod
     def draw_ui_element_crud(context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
-        DrawPreferences.draw_crud(layout, ElementOps)
-        # layout.operator(ElementOps.Refresh.bl_idname, text='', icon='FILE_REFRESH')
+        DrawPreferences.draw_crud(layout, ElementCRUD)
+        # layout.operator(ElementCRUD.Refresh.bl_idname, text='', icon='FILE_REFRESH')
         #     op = col.operator(cls.MoveRelation.bl_idname, text='', icon='GRIP')
 
     @staticmethod
     def draw_crud(layout, cls) -> 'UILayout':
-        is_element = (cls == ElementOps)
+        is_element = (cls == ElementCRUD)
         column = layout.column(align=True)
         add = column.operator(cls.Add.bl_idname, icon='ADD', text='')
         column.operator(cls.Copy.bl_idname, icon='COPYDOWN', text='')
@@ -131,13 +131,15 @@ class GesturePreferences(PublicClass,
         layout = self.layout
         DrawPreferences().draw_preferences(context, layout)
 
-    @staticmethod
-    def register():
-        ...
+    @classmethod
+    def register_pref(cls):
+        for item in cls.pref_().systems:
+            item.register_system()
 
-    @staticmethod
-    def unregister():
-        ...
+    @classmethod
+    def unregister_pref(cls):
+        for item in cls.pref_().systems:
+            item.unregister_system()
 
 
 classes_tuple = (
@@ -150,10 +152,10 @@ register_class, unregister_class = bpy.utils.register_classes_factory(classes_tu
 def register():
     system.register()
     register_class()
-    GesturePreferences.register()
+    GesturePreferences.register_pref()
 
 
 def unregister():
-    GesturePreferences.unregister()
+    GesturePreferences.unregister_pref()
     system.unregister()
     unregister_class()

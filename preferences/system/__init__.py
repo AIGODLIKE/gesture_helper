@@ -72,6 +72,21 @@ class SystemItem(SystemDraw
     """
     key: PointerProperty(type=SystemKey)
 
+    @property
+    def is_have_key(self):
+        return self.system_type not in ('LAYOUT',)
+
+    def register_system(self):
+        if self.is_have_key:
+            self.key.register_key()
+
+    def unregister_system(self):
+        self.key.unregister_key()
+
+    def remove(self):
+        self.unregister_system()
+        super().remove()
+
     def copy(self):  # TODO
         ...
 
