@@ -26,6 +26,10 @@ class DrawPreferences(PublicClass):
 
         col = sp.column()
         sub_row = col.row(align=True)
+        act = self.active_ui_element
+        if act:
+            self.active_ui_element.draw_active_ui_element_parameter(col)
+            
         self.draw_ui_element(context, sub_row)
         self.draw_ui_element_crud(context, sub_row)
 
@@ -105,7 +109,7 @@ class UiProperty(PropertyGroup):
     child_element_office: IntProperty(name="UI Element Child Office Factor",
                                       default=50,
                                       min=10,
-                                      max=100)
+                                      max=250)
 
 
 class PreferencesProperty:

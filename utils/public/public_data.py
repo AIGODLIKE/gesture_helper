@@ -124,17 +124,17 @@ class PublicEnum:
         # ('',            'popup_menu', ''),
     ]
 
-    ENUM_ICON = get_rna_data(EnumPropertyItem, 'icon')
-
-    ENUM_UI_LAYOUT_EMBOSS = get_rna_data(UILayout, 'emboss')
-    ENUM_UI_LAYOUT_ALIGNMENT = get_rna_data(UILayout, 'alignment')
-    ENUM_UI_LAYOUT_DIRECTION = get_rna_data(UILayout, 'direction')
-    ENUM_OPERATOR_CONTEXT = get_rna_data(UILayout, 'operator_context')
     ENUM_CTEXT = get_i18n_enum()
 
 
 class PublicData(PublicEnum, PublicTuple):
     DEFAULT_KEYMAPS = {'3D View', 'Window'}  # 默认添加keymaps
+
+    PROP_ICON = get_rna_data(EnumPropertyItem, 'icon')
+    PROP_UI_LAYOUT_EMBOSS = get_rna_data(UILayout, 'emboss')
+    PROP_UI_LAYOUT_ALIGNMENT = get_rna_data(UILayout, 'alignment')
+    PROP_UI_LAYOUT_DIRECTION = get_rna_data(UILayout, 'direction')
+    PROP_OPERATOR_CONTEXT = get_rna_data(UILayout, 'operator_context')
 
     PROP_DEFAULT_TIME = {'max': 2000, 'min': -1, 'default': 300}
     PROP_DEFAULT_SKIP = {'options': {'HIDDEN', 'SKIP_SAVE', }}
@@ -179,8 +179,8 @@ class PieProperty:
 class ElementType:
     """在添加项和元素中继承使用"""
     ui_type: EnumProperty(items=PublicData.ENUM_UI_TYPE)
-    ui_layout_type: EnumProperty(items=PublicData.ENUM_UI_LAYOUT_TYPE)
-    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE)
+    ui_layout_type: EnumProperty(items=PublicData.ENUM_UI_LAYOUT_TYPE, default='LABEL')
+    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE, default='IF')
 
     @property
     def enum_type_data(self) -> 'list[tuple[str,str,str]]':

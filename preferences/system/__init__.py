@@ -1,6 +1,5 @@
-import bpy.utils
-from bpy.props import BoolProperty, CollectionProperty, IntProperty, PointerProperty
-from bpy.props import EnumProperty
+import bpy
+from bpy.props import BoolProperty, CollectionProperty, IntProperty, PointerProperty, StringProperty, EnumProperty
 from bpy.types import PropertyGroup
 
 from . import key
@@ -66,7 +65,8 @@ class SystemDraw(SystemProp):
         sp_row.prop(self, 'system_type', text='')
 
 
-class SystemItem(SystemDraw
+class SystemItem(SystemDraw,
+                 PublicData,
                  ):
     """UI System Item
     """
@@ -87,6 +87,31 @@ class SystemItem(SystemDraw
     def unregister_system(self):
         print('unregister_system', self.name, self.system_type)
         self.key.unregister_key()
+
+    def update_ui_layout(self):
+        """更新UI Layout的"""
+        print('update_ui_layout', self.name)
+
+        def update_select_structure(items):
+            last_type = 'None'
+            last_item = None
+            for item in items:
+                update_select_structure(item.children_element)
+                it_type = item.type.lower()
+                if it_type in self.SELECT_STRUCTURE_ELEMENT:
+                    if it_type == 'if':
+                        item.is_available_select_structure = True
+                    elif it_type in ('elif', 'else'):
+                        last = bool(last_item and last_item.is_available_select_structure)
+                        item.is_available_select_structure = last and (last_type in ('if', 'elif'))
+                    else:
+                        item.is_available_select_structure = True
+                else:
+                    item.is_available_select_structure = True
+                last_type = it_type
+                last_item = item
+
+        update_select_structure(self.ui_element)
 
     def remove(self):
         self.unregister_system()

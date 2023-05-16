@@ -54,10 +54,10 @@ class ElementCRUD:
                         op.is_popup_menu = False
                         op.event = self.event
 
-                    if self.is_select_structure_type:
-                        op.select_structure_type = identifier
-                    elif self.is_ui_layout_type:
-                        op.ui_layout_type = identifier
+                        if self.is_select_structure_type:
+                            op.select_structure_type = identifier
+                        elif self.is_ui_layout_type:
+                            op.ui_layout_type = identifier
                 else:
                     col.separator()
                     col.label(text=name)
@@ -81,6 +81,7 @@ class ElementCRUD:
             a.name = self.add_name
             a.ui_layout_type = self.ui_layout_type
             a.select_structure_type = self.select_structure_type
+            a.parent_system.update_ui_layout()
 
         def invoke(self, context, event):
             if self.is_popup_menu:

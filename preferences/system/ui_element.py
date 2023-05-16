@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 import bpy
-from bpy.props import CollectionProperty, BoolProperty, IntProperty
+from bpy.props import BoolProperty, CollectionProperty, IntProperty
 from bpy.types import PropertyGroup
 
+from .ui_prop import ElementUILayoutProp, UIProp
 from ...utils.public import PublicClass
-from ...utils.public.public_data import ElementType
+from ...utils.public.public_data import ElementType, PublicData
 from ...utils.public.public_property import PublicPropertyGroup
 from ...utils.public.public_ui import PublicUi
 
 
 class ElementProp(PublicClass,
                   ElementType,
-                  PublicPropertyGroup, ):
+                  PublicPropertyGroup,
+                  ElementUILayoutProp,
+                  UIProp,
+                  ):
     children_element: CollectionProperty(type=UiElement)
 
     def update_index(self, context):
@@ -56,7 +60,7 @@ class ElementProp(PublicClass,
         return recursion
 
     @property
-    def is_available(self) -> bool:
+    def is_alert(self) -> bool:
         return self.parent_system
 
     def set_active_index(self, index) -> None:
@@ -76,7 +80,7 @@ class ElementProp(PublicClass,
     def parent_element(self) -> 'UiElement':
         if self.is_nest_child:
             for element in self.parent_system.children_element_recursion:
-                if self in element.children_element:
+                if self in element.children_element.values():
                     return element
 
     @property
@@ -103,9 +107,40 @@ class ElementProp(PublicClass,
         return self in self.parent_system.ui_element.values()
 
 
-class ElementUi(ElementProp,
-                PublicUi,
-                ):
+class ElementLogic(ElementProp):
+    is_available_select_structure: BoolProperty(name='是有效的选择结构', default=True, )
+
+    @property
+    def is_alert(self):
+        is_sel = self.is_select_structure_type and self.is_available_select_structure
+        is_ui = self.is_ui_layout_type
+        return not (is_sel or is_ui)
+
+
+class ElementCRUD(ElementLogic):
+
+    def copy(self):
+        add = self.parent_collection_property.add()
+        self.set_property_data(add, self.props_data(self))
+        self.parent_system.update_ui_layout()
+
+    def remove(self):
+        parent = self.parent_system
+        super().remove()
+        parent.update_ui_layout()
+
+    def move(self, is_next=True):
+        super().move(is_next)
+        self.parent_system.update_ui_layout()
+
+
+class ElementDrawEdit(ElementCRUD):
+    ...
+
+
+class ElementDrawLayout(ElementDrawEdit,
+                        PublicData,
+                        PublicUi):
     level: int  # item nest level
 
     def draw(self, layout, level):
@@ -124,30 +159,39 @@ class ElementUi(ElementProp,
 
     def draw_lift(self, layout):
         row = self.space_layout(layout, self.ui_prop.child_element_office, self.level).row(align=True)
+        row.alert = self.is_alert
         row.prop(self, 'is_enabled', text='', icon=self.icon_two(self.is_enabled, 'CHECKBOX'))
         if len(self.children_element):
             row.prop(self, 'is_expand', text='', icon=self.icon_two(self.is_expand, 'TRIA'))
 
     def draw_right(self, layout):
         row = layout.row(align=True)
-        row.prop(self, 'is_selected', text='', icon=self.icon_two(self.is_selected, 'RESTRICT_SELECT'))
+        sel = row.row(align=True)
+        sel.alert = self.is_alert
+        sel.prop(self, 'is_selected', text='', icon=self.icon_two(self.is_selected, 'RESTRICT_SELECT'))
         name = row.row()
         name.emboss = 'NORMAL'
         name.prop(self, 'name', text='')
         row.label(text=self.type)
         row.label(text=str(self.level))
 
+    def draw_active_ui_element_parameter(self, layout):
+        act_type = self.type.lower()
+        if act_type in ('',):
+            getattr(self, f'draw_{act_type}', None)(layout)
+            return
 
-class ElementLogic(ElementUi):
-    ...
+        for prop in self.UI_LAYOUT_INCOMING_ARGUMENTS[act_type]:
+            if prop in ('index',):
+                getattr(self, f'draw_{prop}', None)(layout)
+            else:
+                layout.prop(self, prop)
 
+    def draw_advanced_parameter(self, layout):
+        ...
 
-class ElementDrawEdit(ElementLogic):
-    ...
-
-
-class ElementDrawLayout(ElementDrawEdit):
-    ...
+    def draw_index(self, layout):
+        ...
 
 
 class UiElement(ElementDrawLayout,
