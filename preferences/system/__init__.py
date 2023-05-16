@@ -62,7 +62,7 @@ class SystemDraw(SystemProp):
                     )
 
         sp_row = split.row(align=True)
-        sp_row.prop(self, 'name')
+        sp_row.prop(self, 'name', text='')
         sp_row.prop(self, 'system_type', text='')
 
 
@@ -93,9 +93,10 @@ class SystemItem(SystemDraw
         super().remove()
 
     def copy(self):  # TODO
-
         cp = self.parent_collection_property.add()
-        cp.name = self.name
+        self.set_property_data(cp, self.props_data(self))
+        cp.key.key_data = self.key.key_data
+        cp.key.key_maps = self.key.key_maps
 
 
 classes_tuple = (

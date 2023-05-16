@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty, BoolVectorProperty, StringProperty
 
 from ...utils.public import PublicClass, PublicOperator
-from ...utils.public.public_data import ElementType
+from ...utils.public.public_data import ElementType, PublicData
 from ...utils.public.public_ui import PublicPopupMenu
 
 
@@ -16,24 +16,43 @@ class ElementPoll:
 class ElementCRUD:
     class Add(PublicOperator,
               ElementType,
+              PublicData,
               PublicPopupMenu):  # TODO
         bl_idname = PublicOperator.ops_id_name('element_add')
         bl_label = 'Add Element'
         bl_description = '''\n默认将会添加作为活动元素子级\nCtrl 添加在同级之下\nShift 添加到无父级'''
 
+        @classmethod
+        def poll(cls, context):
+            act = ElementPoll.poll(context)
+            if not act:
+                return True
+            return act and act.type.lower() in cls.TYPE_ALLOW_CHILD
+
         add_name: StringProperty(default='New Element')
         event: BoolVectorProperty(size=3)
+
+        def is_have_child(self, identifier):
+            act = self.active_ui_element
+            if act:
+                act_type = act.type.lower()
+                if identifier in self.CANNOT_ACT_AS_CHILD:
+                    return act_type in self.SELECT_STRUCTURE_ELEMENT
+                return True
+            else:
+                return True
 
         def draw_menu(self, menu, context):
             col = menu.layout.column(align=True)
             col.operator_context = 'INVOKE_DEFAULT'
             for identifier, name, _ in self.enum_type_data:
                 if len(identifier):
-                    op = col.operator(self.bl_idname, text=name)
-                    op.ui_type = self.ui_type
-                    op.add_name = "New " + name
-                    op.is_popup_menu = False
-                    op.event = self.event
+                    if self.is_have_child(identifier.lower()):
+                        op = col.operator(self.bl_idname, text=name)
+                        op.ui_type = self.ui_type
+                        op.add_name = "New " + name
+                        op.is_popup_menu = False
+                        op.event = self.event
 
                     if self.is_select_structure_type:
                         op.select_structure_type = identifier

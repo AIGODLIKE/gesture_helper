@@ -130,7 +130,7 @@ class SystemKey(KeyMaps, KeyProperty):
     def draw(self, layout):
         layout.context_pointer_set('system', self.parent_system)
 
-        self.draw_kmi(layout, self.temp_kmi)
+        self.draw_kmi(layout, self.temp_kmi, self.key_maps)
         self.from_temp_key_update_data()
 
     def from_temp_key_update_data(self):
@@ -153,7 +153,7 @@ class SystemKey(KeyMaps, KeyProperty):
             self.tag_redraw(bpy.context)
 
     @staticmethod
-    def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy'):
+    def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
         map_type = kmi.map_type
 
         col = layout.column()
@@ -193,7 +193,6 @@ class SystemKey(KeyMaps, KeyProperty):
         # Expanded, additional event settings
         if kmi.show_expanded:
             box = col.box()
-
             if map_type not in {'TEXTINPUT', 'TIMER'}:
                 sub = box.column()
                 subrow = sub.row(align=True)
@@ -222,6 +221,10 @@ class SystemKey(KeyMaps, KeyProperty):
                 subrow.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
 
                 subrow.prop(kmi, "key_modifier", text="", event=True)
+
+            col = box.column(align=True)
+            for key in key_maps:
+                col.label(text=key)
 
     def get_keymap(self, name, space_type, region_type):
         keymaps = self.active_keyconfig.keymaps

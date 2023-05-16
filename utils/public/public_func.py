@@ -81,13 +81,12 @@ class PublicMethod:
                 print(typ, pro, value, e)
 
     @staticmethod
-    def set_property_data(prop, data: dict, mode='ADD'):
+    def set_property_data(prop, data: dict):
         """_summary_
 
         Args:
             prop (_type_): _description_
             data (_type_): _description_
-            mode (str, enum in ['ADD', 'COVER', 'DUPLICATE_REMOVAL']):Defaults to 'ADD'.
         """
         for key, item in data.items():
             pr = getattr(prop, key, None)
