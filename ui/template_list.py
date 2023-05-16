@@ -13,7 +13,7 @@ class UiSystemList(UIList,
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw(layout)
+        item.draw_ui_list_item(layout)
 
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         self.draw_default_ui_list_filter(self, layout)
@@ -30,7 +30,7 @@ class UiElementList(UIList,
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw(layout.column(), 0)
+        item.draw_ui_list_item(layout.column(), 0)
 
     def draw_filter(self, context: 'bpy.context', layout: 'bpy.types.UILayout'):
         self.draw_default_ui_list_filter(self, layout)

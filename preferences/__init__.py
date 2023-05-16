@@ -22,16 +22,18 @@ class DrawPreferences(PublicClass):
         self.draw_ui_system(context, sub_col)
         sys_item = self.active_system
         if sys_item and sys_item.is_draw_key:
-            self.active_system.key.draw(sub_col)
+            self.active_system.key.draw_key(sub_col)
 
         col = sp.column()
         sub_row = col.row(align=True)
         act = self.active_ui_element
         if act:
             self.active_ui_element.draw_active_ui_element_parameter(col)
-            
+
         self.draw_ui_element(context, sub_row)
         self.draw_ui_element_crud(context, sub_row)
+        if self.active_system:
+            self.active_system.draw_ui_layout(col.box())
 
     def draw_ui_system(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         pref = self.pref

@@ -50,7 +50,7 @@ class SystemProp(PublicClass,
 
 
 class SystemDraw(SystemProp):
-    def draw(self, layout):
+    def draw_ui_list_item(self, layout):
         split = layout.split(factor=self.ui_prop.system_split_factor)
         sp_row = split.row(align=True)
         sp_row.emboss = 'NONE'
@@ -63,6 +63,11 @@ class SystemDraw(SystemProp):
         sp_row = split.row(align=True)
         sp_row.prop(self, 'name', text='')
         sp_row.prop(self, 'system_type', text='')
+
+    def draw_ui_layout(self, layout):
+        for ui in self.ui_element:
+            if ui.is_draw:
+                ui.draw_ui_layout(layout)
 
 
 class SystemItem(SystemDraw,

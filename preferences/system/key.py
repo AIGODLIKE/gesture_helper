@@ -127,7 +127,7 @@ class KeyProperty(PropertyGroup,
 class SystemKey(KeyMaps, KeyProperty):
     key_maps_kmi = {}  # class static data save kmi data
 
-    def draw(self, layout):
+    def draw_key(self, layout):
         layout.context_pointer_set('system', self.parent_system)
 
         self.draw_kmi(layout, self.temp_kmi, self.key_maps)

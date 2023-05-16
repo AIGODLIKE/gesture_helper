@@ -106,6 +106,11 @@ class ElementProp(PublicClass,
         """
         return self in self.parent_system.ui_element.values()
 
+    @property
+    def is_draw(self) -> bool:
+        """是否可绘制"""
+        return self.is_enabled
+
 
 class ElementLogic(ElementProp):
     is_available_select_structure: BoolProperty(name='是有效的选择结构', default=True, )
@@ -135,36 +140,30 @@ class ElementCRUD(ElementLogic):
 
 
 class ElementDrawEdit(ElementCRUD):
-    ...
-
-
-class ElementDrawLayout(ElementDrawEdit,
-                        PublicData,
-                        PublicUi):
     level: int  # item nest level
 
-    def draw(self, layout, level):
+    def draw_ui_list_item(self, layout, level):
         self.level = level
         layout.emboss = 'NONE'
         split = layout.row().split(factor=self.ui_prop.element_split_factor)
         # split.enabled = self.is_enabled
 
-        self.draw_lift(split)
-        self.draw_right(split)
+        self.draw_ui_list_item_lift(split)
+        self.draw_ui_list_item_right(split)
 
         if self.is_expand:
             level += 1
             for child in self.children_element:
-                child.draw(layout, level)
+                child.draw_ui_list_item(layout, level)
 
-    def draw_lift(self, layout):
+    def draw_ui_list_item_lift(self, layout):
         row = self.space_layout(layout, self.ui_prop.child_element_office, self.level).row(align=True)
         row.alert = self.is_alert
         row.prop(self, 'is_enabled', text='', icon=self.icon_two(self.is_enabled, 'CHECKBOX'))
         if len(self.children_element):
             row.prop(self, 'is_expand', text='', icon=self.icon_two(self.is_expand, 'TRIA'))
 
-    def draw_right(self, layout):
+    def draw_ui_list_item_right(self, layout):
         row = layout.row(align=True)
         sel = row.row(align=True)
         sel.alert = self.is_alert
@@ -178,23 +177,46 @@ class ElementDrawLayout(ElementDrawEdit,
     def draw_active_ui_element_parameter(self, layout):
         act_type = self.type.lower()
         if act_type in ('',):
-            getattr(self, f'draw_{act_type}', None)(layout)
+            getattr(self, f'draw_edit_{act_type}', None)(layout)
             return
 
         for prop in self.UI_LAYOUT_INCOMING_ARGUMENTS[act_type]:
             if prop in ('index',):
-                getattr(self, f'draw_{prop}', None)(layout)
+                getattr(self, f'draw_edit_{prop}', None)(layout)
             else:
                 layout.prop(self, prop)
 
-    def draw_advanced_parameter(self, layout):
+    def draw_edit_index(self, layout):  # TODO
         ...
 
-    def draw_index(self, layout):
+    def draw_edit_icon(self, layout):  # TODO
+        ...
+
+    def draw_advanced_parameter(self, layout):  # TODO
         ...
 
 
-class UiElement(ElementDrawLayout,
+class ElementDrawUiLayout(ElementDrawEdit,
+                          PublicData,
+                          PublicUi):
+    @property
+    def ui_layout_args(self):
+        return {i: self[i] for i in self.UI_LAYOUT_INCOMING_ARGUMENTS[self.type.lower()] if i in self}
+
+    def draw_ui_layout(self, layout):
+        ui_tp = self.type.lower()
+
+        if self.is_select_structure_type:
+            lay = layout
+        else:
+            lay = getattr(layout, ui_tp, None)(**self.ui_layout_args)
+
+        if self.is_draw:
+            for child in self.children_element:
+                child.draw_ui_layout(lay)
+
+
+class UiElement(ElementDrawUiLayout,
                 ):
     ...
 
