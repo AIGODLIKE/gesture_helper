@@ -7,11 +7,11 @@ from ..utils.public import PublicOperator
 
 class SystemOps(Operator):
     bl_idname = PublicOperator.ops_id_name('gesture_ops')
-    bl_label = '操作符'
+    bl_label = 'Gesture Ui操作符'
     system: StringProperty()
 
     def execute(self, context):
-        print(self.system)
+        print(self.bl_idname, self.system)
         return {'FINISHED'}
 
 

@@ -15,12 +15,12 @@ ui_events_keymaps = i18n_contexts.ui_events_keymaps
 class TempModifierKeyOps(PublicOperator):
     _temp_kmi_key = 'temp_kmi_key_gesture_helper'
     bl_idname = PublicOperator.ops_id_name(_temp_kmi_key)
-    bl_label = 'emm'
+    bl_label = 'Temp Kmi Key Gesture Helper'
 
     system: StringProperty()
 
     def execute(self, context):
-        return {'FINISHED'}
+        return {'PASS_THROUGH'}
 
 
 class KeyMaps:
@@ -45,7 +45,7 @@ class KeyMaps:
 
     def _get_key_maps(self):
         key = self._key_maps
-        return self[key] if key in self and self[key] else []
+        return self[key] if key in self and len(self[key]) else ['Window']
 
     def _set_key_maps(self, value):
         self[self._key_maps] = list(value)
@@ -110,8 +110,9 @@ class KeyProperty(PropertyGroup,
     def is_change_system(self) -> bool:
         return self.kmi_system != self.active_system.name or not self.key_data
 
-    def set_kmi_system(self, value):
-        self.temp_kmi.properties.system = value
+    @staticmethod
+    def set_kmi_system(kmi, value):
+        kmi.properties.system = value
 
     @property
     def kmi_data(self):
@@ -136,8 +137,8 @@ class SystemKey(KeyMaps, KeyProperty):
 
         data = self.kmi_data
         if self.is_change_system:
-            self.set_kmi_system(self.active_system.name)
-            print('is_change_system')
+            self.set_kmi_system(self.temp_kmi, self.active_system.name)
+            print('is_change_system', self.active_system.name, self.active_system.system_type)
             if self.key_data:
                 self.set_property_data(self.temp_kmi, self.key_data)
             else:
@@ -236,16 +237,17 @@ class SystemKey(KeyMaps, KeyProperty):
             kmi = keymap.keymap_items.new(SystemOps.bl_idname, key_data['type'], key_data['value'])
 
             self.set_property_data(kmi, key_data)
-            self.set_kmi_system(self.parent_system.name)
-            
-            print(keymap, kmi)
+            self.set_kmi_system(kmi, self.parent_system.name)
+
+            print('\t', self.parent_system.name, '\t', keymap.name, kmi.name, kmi.idname)
             SystemKey.key_maps_kmi[self.parent_system].append((keymap, kmi))
 
     def unregister_key(self):
-        for keymap, kmi in SystemKey.key_maps_kmi[self.parent_system]:
-            keymap.keymap_items.remove(kmi)
+        if self.parent_system in SystemKey.key_maps_kmi:
+            for keymap, kmi in SystemKey.key_maps_kmi[self.parent_system]:
+                keymap.keymap_items.remove(kmi)
 
-        del SystemKey.key_maps_kmi[self.parent_system]
+            del SystemKey.key_maps_kmi[self.parent_system]
 
     def update(self):
         self.unregister_key()
@@ -268,7 +270,7 @@ class SetKeyMaps(Operator, PublicClass, PublicUi):
     def key_maps(self):
         k = self.active_system.key
         key = 'key_maps'
-        items = list(k[key]) if key in k else []
+        items = list(k[key]) if key in k else ['Window', ]
         return items
 
     def init_invoke(self):

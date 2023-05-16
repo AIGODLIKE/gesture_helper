@@ -198,14 +198,16 @@ class PublicCollectionNoRepeatName(PropertyGroup):
         new_name = self._get_effective_name(value)
 
         old_name = self['name'] if 'name' in self else None
-
+        self['name'] = new_name
         if getattr(self, 'change_name', False):
             self.change_name(old_name, new_name)
-        self['name'] = new_name
         if (len(keys) - len(set(keys))) >= 1:  # 有重复的名称
             raise ValueError('发现重复名称 !!', keys)
 
     def _update_name(self, context):
+        ...
+
+    def change_name(self, old, new):
         ...
 
     name: StringProperty(
@@ -218,4 +220,3 @@ class PublicCollectionNoRepeatName(PropertyGroup):
 
 class TempProperty:
     _temp_key = 'temp_property_gesture'
-

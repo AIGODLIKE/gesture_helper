@@ -152,10 +152,8 @@ register_class, unregister_class = bpy.utils.register_classes_factory(classes_tu
 def register():
     system.register()
     register_class()
-    GesturePreferences.register_pref()
 
 
 def unregister():
-    GesturePreferences.unregister_pref()
     system.unregister()
     unregister_class()

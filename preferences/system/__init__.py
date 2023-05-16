@@ -72,15 +72,20 @@ class SystemItem(SystemDraw
     """
     key: PointerProperty(type=SystemKey)
 
+    def change_name(self, old, new):
+        self.key.update()
+
     @property
     def is_have_key(self):
         return self.system_type not in ('LAYOUT',)
 
     def register_system(self):
+        print('register_system', self.name, self.system_type)
         if self.is_have_key:
-            self.key.register_key()
+            self.key.update()
 
     def unregister_system(self):
+        print('unregister_system', self.name, self.system_type)
         self.key.unregister_key()
 
     def remove(self):
@@ -88,7 +93,9 @@ class SystemItem(SystemDraw
         super().remove()
 
     def copy(self):  # TODO
-        ...
+
+        cp = self.parent_collection_property.add()
+        cp.name = self.name
 
 
 classes_tuple = (
