@@ -1,9 +1,9 @@
 import bpy
 from bpy.props import BoolProperty, BoolVectorProperty, StringProperty
 
-from ...utils.public import PublicClass, PublicOperator
-from ...utils.public.public_data import ElementType, PublicData
-from ...utils.public.public_ui import PublicPopupMenu
+from ..utils.public import PublicClass, PublicOperator
+from ..utils.public.public_data import ElementType, PublicData
+from ..utils.public.public_ui import PublicPopupMenu
 
 
 class ElementPoll:
@@ -24,10 +24,13 @@ class ElementCRUD:
 
         @classmethod
         def poll(cls, context):
-            act = ElementPoll.poll(context)
-            if not act:
+            act_el = ElementPoll.poll(context)
+            act_sys = cls.pref_().active_system
+            if not act_el:
                 return True
-            return act and act.type.lower() in cls.TYPE_ALLOW_CHILD
+            elif act_sys.is_gesture_type:
+                return act_el.type.lower() in cls.TYPE_ALLOW_CHILD + ['menu', ]
+            return act_el.type.lower() in cls.TYPE_ALLOW_CHILD
 
         add_name: StringProperty(default='New Element')
         event: BoolVectorProperty(size=3)
@@ -47,22 +50,35 @@ class ElementCRUD:
             col.operator_context = 'INVOKE_DEFAULT'
             for identifier, name, _ in self.enum_type_data:
                 if len(identifier):
-                    if self.is_have_child(identifier.lower()):
-                        op = col.operator(self.bl_idname, text=name)
-                        op.ui_type = self.ui_type
-                        op.add_name = "New " + name
-                        op.is_popup_menu = False
-                        op.event = self.event
+                    getattr(self, f'draw_add_{self.ui_type.lower()}', None)(col, identifier, name)
 
-                        if self.is_select_structure_type:
-                            op.select_structure_type = identifier
-                        elif self.is_ui_layout_type:
-                            op.ui_layout_type = identifier
                 else:
                     col.separator()
                     col.label(text=name)
 
-        def add_element(self, event: 'bpy.types.Event'):
+        def draw_add_select_structure(self, layout, identifier, name):
+            ops = self.draw_add_operator(layout, name)
+            ops.select_structure_type = identifier
+
+        def draw_add_ui_layout(self, layout, identifier, name):
+            if self.is_have_child(identifier.lower()):
+                op = self.draw_add_operator(layout, name)
+                op.ui_layout_type = identifier
+
+        def draw_add_gesture(self, layout, identifier, name):
+            ops = self.draw_add_operator(layout, name)
+            ops.gesture_type = identifier
+
+        def draw_add_operator(self, layout, name):
+            """添加操作符"""
+            op = layout.operator(self.bl_idname, text=name)
+            op.ui_type = self.ui_type
+            op.add_name = "New " + name
+            op.is_popup_menu = False
+            op.event = self.event
+            return op
+
+        def add_element_ops(self, event: 'bpy.types.Event'):
             """通过Event判断添加方式"""
             ctrl = event.ctrl or self.event[0]
             alt = event.alt or self.event[1]
@@ -81,13 +97,14 @@ class ElementCRUD:
             a.name = self.add_name
             a.ui_layout_type = self.ui_layout_type
             a.select_structure_type = self.select_structure_type
+            a.gesture_type = self.gesture_type
             a.parent_system.update_ui_layout()
 
         def invoke(self, context, event):
             if self.is_popup_menu:
                 self.event = [event.ctrl, event.alt, event.shift]
                 return super().invoke(context, event)
-            self.add_element(event)
+            self.add_element_ops(event)
             self.tag_redraw(context)
             return {'FINISHED'}
 

@@ -1,8 +1,8 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty
 
-from ...utils.public.public_ui import PublicPopupMenu
-from ...utils.public import PublicOperator, PublicClass, PublicData
+from ..utils.public.public_ui import PublicPopupMenu
+from ..utils.public import PublicOperator, PublicClass, PublicData
 
 
 class SystemPoll:

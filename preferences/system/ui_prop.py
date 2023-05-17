@@ -1,6 +1,11 @@
-from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
+import ast
+import re
 
-from ...utils.public import PublicData
+import bpy
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
+from mathutils import Euler, Matrix, Vector
+
+from ...utils.public import PublicData, TempKey
 
 
 class UILayoutProp(PublicData):
@@ -32,8 +37,8 @@ class UILayoutProp(PublicData):
 
     # UILayout property
 
-    def _update_text(self, context):
-        self._by_text_set_name()
+    # def _update_text(self, context):
+    #     self._by_text_set_name()
 
     text: StringProperty(name='文字',
                          default='text',
@@ -114,7 +119,10 @@ class MenuProp:
 
 
 class GestureProp:
-    ...
+    gestures_direction: EnumProperty(items=PublicData.ENUM_GESTURES_DIRECTION,
+                                     default='NONE',
+                                     name='手势朝向',
+                                     )
 
 
 class PanelProp:
@@ -149,64 +157,10 @@ class PanelProp:
         Returns:
             _type_: _description_
         """
-        items = [
-            # ('EMPTY', 'Empty', '', 'NONE', 0),
-
-            ('VIEW_3D', '3D Viewport',
-             'Manipulate objects in a 3D environment', 'VIEW3D', 1),
-            ('GRAPH_EDITOR', 'Graph Editor',
-             'Edit drivers and keyframe interpolation', 'GRAPH', 2),
-            ('OUTLINER', 'Outliner',
-             'Overview of scene graph and all available data-blocks', 'OUTLINER', 3),
-            ('PROPERTIES', 'Properties',
-             'Edit properties of active object and related data-blocks', 'PROPERTIES', 4),
-            ('FILE_BROWSER', 'File Browser',
-             'Browse for files and assets', 'FILEBROWSER', 5),
-            ('IMAGE_EDITOR', 'UV/Image Editor',
-             'View and edit images and UV Maps', 'IMAGE', 6),
-            ('INFO', 'Info', 'Log of operations, warnings and error messages', 'INFO', 7),
-            ('NODE_EDITOR', 'Node Editor',
-             'Editor for node-based shading and compositing tools', 'NODETREE', 16),
-            ('SEQUENCE_EDITOR', 'Video Sequencer',
-             'Video editing tools', 'SEQUENCE', 8),
-            ('TEXT_EDITOR', 'Text Editor',
-             'Edit scripts and in-file documentation', 'TEXT', 9),
-            ('CLIP_EDITOR', 'Movie Clip Editor',
-             'Motion tracking tools', 'TRACKER', 20),
-            ('DOPESHEET_EDITOR', 'Dope Sheet',
-             'Adjust timing of keyframes', 'ACTION', 12),
-            ('NLA_EDITOR', 'Nonlinear Animation',
-             'Combine and layer Actions', 'NLA', 13),
-            ('CONSOLE', 'Python Console',
-             'Interactive programmatic console for advanced editing and script development', 'CONSOLE', 18),
-            ('PREFERENCES', 'Preferences',
-             'Edit persistent configuration settings', 'PREFERENCES', 19),
-            ('TOPBAR', 'Top Bar',
-             'Global bar at the top of the screen for global per-window settings', 'NONE', 21),
-            ('STATUSBAR', 'Status Bar',
-             'Global bar at the bottom of the screen for general status information', 'NONE', 22),
-            ('SPREADSHEET', 'Spreadsheet',
-             'Explore geometry data in a table', 'SPREADSHEET', 23),
-        ]
-
         space_items = map(
-            lambda i: i[:-1] + ((1 << i[-1]),), items)
+            lambda i: i[:-1] + ((1 << i[-1]),), PublicData.ENUM_SPACE_TYPE)
 
-        matching_dict = {
-            'WINDOW': ('STATUSBAR',),
-            'HEADER': (),
-            'UI': ('CONSOLE', 'PREFERENCES', 'TOPBAR', 'INFO', 'OUTLINER', 'PROPERTIES', 'STATUSBAR',),
-            'TOOLS': ('GRAPH_EDITOR', 'OUTLINER', 'PROPERTIES', 'INFO', 'TEXT_EDITOR', 'DOPESHEET_EDITOR', 'NLA_EDITOR',
-                      'CONSOLE', 'PREFERENCES', 'TOPBAR', 'STATUSBAR'),
-            'TOOL_PROPS': (),
-            'PREVIEW': (),
-            'HUD': (),
-            'NAVIGATION_BAR': (),
-            'FOOTER': (),
-            'TOOL_HEADER': (),
-        }
-
-        return [i for i in space_items if i[0] not in matching_dict[self.region_type]]
+        return [i for i in space_items if i[0] not in PublicData.SPACE_MATCHING_REGION_TYPE[self.region_type]]
 
     space_type: EnumProperty(name='空间类型',
                              items=_space_items,
@@ -222,22 +176,7 @@ class PanelProp:
         self['region_type'] = value
 
     region_type: EnumProperty(name='区域类型',
-                              items=[
-                                  ('UI', 'UI', '',),
-                                  ('TOOLS', 'Tools', '',),
-                                  # ('WINDOW', 'Window', '', 'NONE', 0),
-                                  # ('HEADER', 'Header', '', 'NONE', 1),
-                                  #  ('CHANNELS', 'Channels', '', 'NONE', 2),
-                                  #  ('TEMPORARY', 'Temporary', '', 'NONE', 3),
-                                  #  ('EXECUTE', 'Execute Buttons', '', 'NONE', 10),
-                                  # ('TOOL_PROPS', 'Tool Properties', '', 'NONE', 6),
-                                  # ('PREVIEW', 'Preview', '', 'NONE', 7),
-                                  # ('HUD', 'Floating Region', '', 'NONE', 8),
-                                  # ('NAVIGATION_BAR', 'Navigation Bar', '', 'NONE', 9),
-                                  # ('FOOTER', 'Footer', '', 'NONE', 11),
-                                  # ('TOOL_HEADER', 'Tool Header', '', 'NONE', 12),
-                                  #  ('XR', 'XR', '', 'NONE', 13)
-                              ],
+                              items=PublicData.ENUM_REGION_TYPE,
                               update=_update_panel,
                               default='UI',
                               #   get=_get_region,
@@ -249,13 +188,7 @@ class PanelProp:
     bl_label: StringProperty(
         name='标签', default='Custom Panel Label', update=_update_panel)
 
-    bl_options: EnumProperty(items=[('DEFAULT_CLOSED', 'Default Closed',
-                                     'Defines if the panel has to be open or collapsed at the time of its creation.'),
-                                    ('HIDE_HEADER', 'Hide Header',
-                                     'If set to False, the panel shows a header, which contains a clickable arrow to collapse the panel and the label(see bl_label).'),
-                                    ('HEADER_LAYOUT_EXPAND', 'Expand Header Layout',
-                                     'Allow buttons in the header to stretch and shrink to fill the entire layout width.'),
-                                    ],
+    bl_options: EnumProperty(items=PublicData.ENUM_BL_OPTIONS,
                              description='''Options for this panel type
                             # WARNING 闪退 ('INSTANCED', 'Instanced Panel',
                             #  'Multiple panels with this type can be used as part of a list depending on data external to the UI. Used to create panels for the modifiers and other stacks.'),
@@ -265,18 +198,183 @@ class PanelProp:
                              )
 
 
-class OperatorProp:
+class OperatorProp(TempKey):
+    # def get_operator_func(self) -> 'bpy.types.Operator':
+    #     """获取操作符的方法
+    #
+    #     Returns:
+    #         bpy.types.Operator: _description_
+    #     """
+    #     sp = self.operator.split('.')
+    #     if len(sp) == 2:
+    #         prefix, suffix = sp
+    #         func = getattr(getattr(bpy.ops, prefix), suffix)
+    #         return func
+    #
+    # def running_operator(self) -> None:
+    #     """运行此self的操作符
+    #     """
+    #     try:
+    #         prop = ast.literal_eval(self.operator_property)
+    #         func = self.get_operator_func()
+    #         if func:
+    #             func(self.operator_context, True, **prop)
+    #             print(f'running_operator Element:{self}\t{self.operator}({self.operator_property[1:-1]})\t{func}\n',
+    #                   self.operator_property, self.operator_context,
+    #                   )
+    #     except Exception as e:
+    #         print('running_operator ERROR', e)
+    #
+    def _get_operator_property(self, string: str) -> dict:
+        """将输入的字符串操作符属性转成字典
+        用于传入操作符执行操作符用
+
+        Args:
+            string (str): _description_
+
+        Returns:
+            dict: _description_
+        """
+        tmp_index = 0
+        brackets_index = 0
+        property_dict = {}
+        for index, value in enumerate(string):
+
+            is_zero = (brackets_index == 0)
+            if brackets_index < 0:
+                print(Exception('输入数据错误,无法解析', string))
+            elif value == '(':
+                brackets_index += 1
+            elif value == ')':
+                brackets_index -= 1
+            elif is_zero and value == ',':
+                data = string[tmp_index:index]
+                print(data)
+                sp = data.split('=')
+                if len(sp) == 2:
+                    property_dict[sp[0]] = ast.literal_eval(sp[1])
+            elif is_zero and value == ' ':
+                tmp_index = index + 1
+            else:
+                ...
+        return property_dict
+
+    def _set_operator(self, value: str) -> None:
+        """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
+        掐头去尾
+        bpy.ops.mesh.select_mode(type='VERT')
+        bpy.ops.wm.tool_set_by_id(name="builtin.measure")
+         p  = r'*(*)'
+        Args:
+            value (str): _description_
+        """
+
+        self['operator'] = value
+
+        if value[:8] == 'bpy.ops.':
+            self['operator'] = value = value[8:]
+        if ('(' in value) and (')' in value):
+            suffix = value[-2:]
+            if suffix == '()':
+                self['operator'] = value[:-2]
+            else:
+                self['operator'] = value[:value.index('(')]
+                r = re.search(r'[(].*[)]', value)  # 操作符参数
+                prop_dict = ast.literal_eval(self.operator_property)
+                prop_dict.update(self._get_operator_property(r.group()[1:-1]))
+                self.operator_property = str(prop_dict)
+
+    def _get_operator_string(self) -> str:
+        """获取操作符的字符串
+
+        Returns:
+            str: _description_
+        """
+        if 'operator' not in self:
+            return 'mesh.primitive_monkey_add'
+        return self['operator']
+
+    def get_tmp_kmi_operator_property(self) -> str:
+        """获取临时kmi操作符的属性
+
+        Returns:
+            str: _description_
+        """
+        properties = self.temp_kmi.properties
+        prop_keys = dict(properties.items()).keys()
+        dictionary = {i: getattr(properties, i, None) for i in prop_keys}
+        for item in dictionary:
+            prop = getattr(properties, item, None)
+            typ = type(prop)
+            if prop and typ == Vector:
+                # 属性阵列-浮点数组
+                dictionary[item] = dictionary[item].to_tuple()
+            elif prop and typ == Euler:
+                dictionary[item] = dictionary[item][:]
+            elif prop and typ == Matrix:
+                dictionary[item] = tuple(i[:] for i in dictionary[item])
+        return str(dictionary)
+
+    def from_tmp_kmi_get_operator_property(self) -> None:
+        """从临时kmi里面获取操作符属性
+        """
+        self.operator_property = self.get_tmp_kmi_operator_property()
+
+    @staticmethod
+    def _for_set_prop(prop, pro, pr):
+        for index, j in enumerate(pr):
+            try:
+                getattr(prop, pro)[index] = j
+            except Exception as e:
+                print(e.args)
+
+    def set_operator_property_to(self, properties: 'bpy.types.KeyMapItem.properties') -> None:
+        """注入operator property
+        在绘制项时需要使用此方法
+        set operator property
+        self.operator_property:
+
+        Args:
+            properties (bpy.types.KeyMapItem.properties): _description_
+        """
+        props = ast.literal_eval(self.operator_property)
+        for pro in props:
+            pr = props[pro]
+            if hasattr(properties, pro):
+                if type(pr) == tuple:
+                    # 阵列参数
+                    self._for_set_prop(properties, pro, pr)
+                else:
+                    try:
+                        setattr(properties, pro, props[pro])
+                    except Exception as e:
+                        print(e.args)
+
+    def set_operator_property_to_tmp_kmi(self) -> None:
+        r"""
+        将ui.operator.property设置到tmp_kmi里面
+        """
+        self.set_operator_property_to(self.temp_kmi.properties)
+
+    @property
+    def temp_kmi(self):
+        return self.get_temp_kmi(self.operator)
+
     operator: StringProperty(name='操作符',
                              description='输入操作符,将会自动格式化 bpy.ops.screen.back_to_previous() >> mesh.primitive_monkey_add',
-                             # set=_set_operator,
-                             # get=_get_operator_string,
-                             # update=_operator_update,
+                             set=_set_operator,
+                             get=_get_operator_string,
                              )
     operator_context: EnumProperty(name='操作符上下文',
                                    **PublicData.PROP_OPERATOR_CONTEXT,
                                    )
-
     operator_property: StringProperty(name='操作符属性', default=r'{}', )
+
+    def draw_operator_property_set_layout(self, layout):
+        if self.get_tmp_kmi_operator_property
+        # layout.template_keymap_item_properties(self.temp_kmi)
+
+    def udpate_(self):
 
 
 class PollProp:
@@ -321,3 +419,4 @@ class ElementUILayoutProp(
 
 class UIProp:
     ...
+

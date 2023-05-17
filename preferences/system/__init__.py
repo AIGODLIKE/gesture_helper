@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, CollectionProperty, IntProperty, PointerProperty, StringProperty, EnumProperty
+from bpy.props import BoolProperty, CollectionProperty, EnumProperty, IntProperty, PointerProperty
 from bpy.types import PropertyGroup
 
 from . import key
@@ -45,8 +45,12 @@ class SystemProp(PublicClass,
     is_enabled: BoolProperty(name='Use this System', default=True)
 
     @property
-    def is_draw_key(self):
+    def is_draw_key(self) -> bool:
         return True
+
+    @property
+    def is_gesture_type(self) -> bool:
+        return self.system_type == 'GESTURE'
 
 
 class SystemDraw(SystemProp):
@@ -62,7 +66,7 @@ class SystemDraw(SystemProp):
 
         sp_row = split.row(align=True)
         sp_row.prop(self, 'name', text='')
-        sp_row.prop(self, 'system_type', text='')
+        sp_row.label(text=self.system_type)
 
     def draw_ui_layout(self, layout):
         for ui in self.ui_element:

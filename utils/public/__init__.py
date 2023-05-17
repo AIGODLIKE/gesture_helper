@@ -66,6 +66,25 @@ class PublicOperator(
         return 'emm_operator.' + string
 
 
+class TempKey:
+    @property
+    def keyconfig(self):
+        return bpy.context.window_manager.keyconfigs.active
+
+    @property
+    def temp_keymaps(self):
+        if 'TEMP' not in self.keyconfig.keymaps:
+            self.keyconfig.keymaps.new('TEMP')
+        return self.keyconfig.keymaps['TEMP']
+
+    def get_temp_kmi(self, idname):
+        key = idname
+        keymap_items = self.temp_keymaps.keymap_items
+        if key not in keymap_items:
+            return keymap_items.new(key, 'NONE', 'PRESS')
+        return keymap_items[key]
+
+
 class PublicClass(
     CacheHandler,
 ):

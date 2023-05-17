@@ -4,8 +4,8 @@ from bpy.types import AddonPreferences, PropertyGroup, UILayout
 
 from . import system
 from .system import SystemItem
-from ..ops.crud.systems_crud import SystemCURD
-from ..ops.crud.ui_element_crud import ElementCRUD
+from ..ops.systems_crud import SystemCURD
+from ..ops.ui_element_crud import ElementCRUD
 from ..ui.template_list import UiElementList, UiSystemList
 from ..utils.public import PublicClass, PublicData
 
@@ -31,7 +31,6 @@ class DrawPreferences(PublicClass):
             self.active_ui_element.draw_active_ui_element_parameter(col)
 
         self.draw_ui_element(context, sub_row)
-        self.draw_ui_element_crud(context, sub_row)
         if self.active_system:
             self.active_system.draw_ui_layout(col.box())
 
@@ -61,6 +60,7 @@ class DrawPreferences(PublicClass):
                 'ui_element',
                 system,
                 'active_index', )
+            self.draw_ui_element_crud(context, layout)
         else:
             layout.label(text='Select or new element')
 
@@ -78,7 +78,8 @@ class DrawPreferences(PublicClass):
         column.operator(cls.Copy.bl_idname, icon='COPYDOWN', text='')
         column.operator(cls.Del.bl_idname, icon='REMOVE', text='')
         if is_element:
-            add.ui_type = 'UI_LAYOUT'
+            act_system = cls.Add.pref_().active_system
+            add.ui_type = 'GESTURE' if act_system.is_gesture_type else 'UI_LAYOUT'
             sel_add = column.operator(cls.Add.bl_idname, icon='RNA_ADD', text='')
             sel_add.ui_type = 'SELECT_STRUCTURE'
         column.separator()

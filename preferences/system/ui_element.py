@@ -59,10 +59,6 @@ class ElementProp(PublicClass,
             recursion += [child, *child.children_recursion]
         return recursion
 
-    @property
-    def is_alert(self) -> bool:
-        return self.parent_system
-
     def set_active_index(self, index) -> None:
         if self.is_direct_child:
             self.parent_system.active_index = index
@@ -111,15 +107,29 @@ class ElementProp(PublicClass,
         """是否可绘制"""
         return self.is_enabled
 
+    @property
+    def is_allow_have_child(self) -> bool:
+        """允许拥有子级的"""
+        return self.type.lower() in self.TYPE_ALLOW_CHILD
+
+    @property
+    def is_draw_child(self):
+        """需要绘制子级的"""
+        return self.is_allow_have_child and self.is_enabled
+
 
 class ElementLogic(ElementProp):
     is_available_select_structure: BoolProperty(name='是有效的选择结构', default=True, )
 
     @property
     def is_alert(self):
+        func = getattr(self, f'{self.type}_is_alert', None)
+        if func:
+            return func()
         is_sel = self.is_select_structure_type and self.is_available_select_structure
         is_ui = self.is_ui_layout_type
-        return not (is_sel or is_ui)
+        is_ges = self.is_gesture_type
+        return not (is_sel or is_ui or is_ges)
 
 
 class ElementCRUD(ElementLogic):
@@ -176,7 +186,7 @@ class ElementDrawEdit(ElementCRUD):
 
     def draw_active_ui_element_parameter(self, layout):
         act_type = self.type.lower()
-        if act_type in ('',):
+        if act_type in ('operator',):
             getattr(self, f'draw_edit_{act_type}', None)(layout)
             return
 
@@ -195,6 +205,12 @@ class ElementDrawEdit(ElementCRUD):
     def draw_advanced_parameter(self, layout):  # TODO
         ...
 
+    def draw_edit_operator(self, layout):
+        layout.prop(self, 'operator')
+        layout.prop(self, 'operator_context')
+        layout.prop(self, 'operator_property')
+        # self.draw_operator_property_set_layout(draw_operator_property_set_layout)
+
 
 class ElementDrawUiLayout(ElementDrawEdit,
                           PublicData,
@@ -206,14 +222,26 @@ class ElementDrawUiLayout(ElementDrawEdit,
     def draw_ui_layout(self, layout):
         ui_tp = self.type.lower()
 
+        dr = getattr(self, f'draw_ui_layout_{ui_tp}', None)
         if self.is_select_structure_type:
             lay = layout
+        elif dr:
+            lay = dr(layout)
         else:
             lay = getattr(layout, ui_tp, None)(**self.ui_layout_args)
 
-        if self.is_draw:
+        if self.is_draw_child:
             for child in self.children_element:
                 child.draw_ui_layout(lay)
+
+    def draw_ui_layout_prop(self, layout):
+        ...
+
+    def draw_ui_layout_operator(self, layout):
+        ...
+
+    def draw_ui_layout_menu(self, layout):
+        ...
 
 
 class UiElement(ElementDrawUiLayout,

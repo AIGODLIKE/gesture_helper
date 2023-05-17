@@ -6,7 +6,7 @@ from idprop.types import IDPropertyGroup
 
 from ...ops.system_ops import SystemOps
 from ...utils.property import RegUiProp
-from ...utils.public import PublicClass, PublicOperator
+from ...utils.public import PublicClass, PublicOperator, TempKey
 from ...utils.public.public_ui import PublicUi
 
 ui_events_keymaps = i18n_contexts.ui_events_keymaps
@@ -62,7 +62,9 @@ class KeyMaps:
 
 
 class KeyProperty(PropertyGroup,
-                  PublicClass):
+                  PublicClass,
+                  TempKey,
+                  ):
     _key_data = 'key_data'
 
     @property
@@ -87,20 +89,8 @@ class KeyProperty(PropertyGroup,
     key_data = property(fget=_get_key_data, fset=_set_key_data)
 
     @property
-    def keyconfig(self):
-        return bpy.context.window_manager.keyconfigs.active
-
-    @property
-    def keymaps(self):
-        return self.keyconfig.keymaps['Window']
-
-    @property
     def temp_kmi(self) -> 'KeyMapItem':
-        key = TempModifierKeyOps.bl_idname
-        keymap_items = self.keymaps.keymap_items
-        if key not in keymap_items:
-            return keymap_items.new(key, 'NONE', 'PRESS')
-        return keymap_items[key]
+        return self.get_temp_kmi(TempModifierKeyOps.bl_idname)
 
     @property
     def kmi_system(self):
