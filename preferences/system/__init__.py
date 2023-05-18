@@ -2,10 +2,10 @@ import bpy
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, IntProperty, PointerProperty
 from bpy.types import PropertyGroup
 
-from . import key
-from . import ui_element
-from .key import SystemKey
-from .ui_element import UiElement
+from . import system_key
+from . import element_item
+from .system_key import SystemKey
+from .element_item import UiElementItem
 from ...utils.public import PublicClass, register_module_factory
 from ...utils.public.public_data import PublicData
 from ...utils.public.public_property import PublicCollectionNoRepeatName, PublicPropertyGroup
@@ -38,7 +38,7 @@ class SystemProp(PublicClass,
         """反回所有选中的子级UI元素"""
         return [i for i in self.children_element_recursion if i.is_selected]
 
-    ui_element: CollectionProperty(type=UiElement)
+    ui_element: CollectionProperty(type=UiElementItem)
     system_type: EnumProperty(items=PublicData.ENUM_UI_SYSTEM_TYPE)
     active_index: IntProperty(name='ui element active index')
     is_selected: BoolProperty(name='Selected Item')
@@ -137,8 +137,8 @@ classes_tuple = (
     SystemItem,
 )
 modules_tuple = (
-    key,
-    ui_element,
+    system_key,
+    element_item,
 )
 
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)

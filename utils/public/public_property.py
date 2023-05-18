@@ -216,7 +216,3 @@ class PublicCollectionNoRepeatName(PropertyGroup):
         set=_set_name,
         update=_update_name,
     )
-
-
-class TempProperty:
-    _temp_key = 'temp_property_gesture'

@@ -51,14 +51,14 @@ class DrawPreferences(PublicClass):
 
     def draw_ui_element(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
         pref = self.pref
-        system = pref.active_system
-        if system:
+        active_system = pref.active_system
+        if active_system:
             layout.template_list(
                 UiElementList.bl_idname,
                 UiElementList.bl_idname,
-                system,
+                active_system,
                 'ui_element',
-                system,
+                active_system,
                 'active_index', )
             self.draw_ui_element_crud(context, layout)
         else:

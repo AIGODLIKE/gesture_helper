@@ -1,3 +1,5 @@
+from .utils import reg
+
 bl_info = {
     "name": "Gesture Helper",
     "description": "手势助手,可以快速的使用手势运行blender 操作符或是更改属性",
@@ -8,8 +10,6 @@ bl_info = {
     "support": "COMMUNITY",
     # "category": "3D View",
 }
-
-from .utils import reg
 
 
 def register():

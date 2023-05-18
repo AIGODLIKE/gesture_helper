@@ -4,7 +4,7 @@ from bpy.types import KeyMapItem
 
 
 class KeyData:
-    ENUM_KMI_TYPE = get_rna_data(KeyMapItem, 'type', msgctxt=i18n_contexts)
+    ENUM_KMI_TYPE = get_rna_data(KeyMapItem, 'type', msg_ctxt=i18n_contexts)
     ENUM_KMI_VALUE = get_rna_data(KeyMapItem, 'value')
     ENUM_KMI_MAP_TYPE = get_rna_data(KeyMapItem, 'map_type')
     ENUM_KMI_KEY_MODIFIER = get_rna_data(KeyMapItem, 'key_modifier')
@@ -41,5 +41,6 @@ class KeyData:
             'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F19', 'F20', 'F21',
             'F22', 'F23', 'F24', 'PAUSE', 'INSERT', 'HOME', 'PAGE_UP', 'PAGE_DOWN', 'END', 'MEDIA_PLAY', 'MEDIA_STOP',
             'MEDIA_FIRST', 'MEDIA_LAST',)
-        # 'INBETWEEN_MOUSEMOVE''WINDOW_DEACTIVATE', 'ACTIONZONE_AREA', 'ACTIONZONE_REGION', 'ACTIONZONE_FULLSCREEN', 'XR_ACTION'
+        # 'INBETWEEN_MOUSEMOVE''WINDOW_DEACTIVATE', 'ACTIONZONE_AREA',
+        # 'ACTIONZONE_REGION', 'ACTIONZONE_FULLSCREEN', 'XR_ACTION'
     }

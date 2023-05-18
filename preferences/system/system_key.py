@@ -12,7 +12,7 @@ from ...utils.public.public_ui import PublicUi
 ui_events_keymaps = i18n_contexts.ui_events_keymaps
 
 
-class TempModifierKeyOps(PublicOperator):
+class OperatorTempModifierKey(PublicOperator):
     _temp_kmi_key = 'temp_kmi_key_gesture_helper'
     bl_idname = PublicOperator.ops_id_name(_temp_kmi_key)
     bl_label = 'Temp Kmi Key Gesture Helper'
@@ -23,7 +23,7 @@ class TempModifierKeyOps(PublicOperator):
         return {'PASS_THROUGH'}
 
 
-class KeyMaps:
+class KeyMaps(PropertyGroup):
     _key_maps = 'key_maps'
 
     @property
@@ -53,12 +53,12 @@ class KeyMaps:
     key_maps = property(fget=_get_key_maps, fset=_set_key_maps)
 
     @property
-    def keyconfigs(self):
+    def key_configs(self):
         return bpy.context.window_manager.keyconfigs
 
     @property
     def active_keyconfig(self):
-        return self.keyconfigs.active
+        return self.key_configs.active
 
 
 class KeyProperty(PropertyGroup,
@@ -90,7 +90,7 @@ class KeyProperty(PropertyGroup,
 
     @property
     def temp_kmi(self) -> 'KeyMapItem':
-        return self.get_temp_kmi(TempModifierKeyOps.bl_idname)
+        return self.get_temp_kmi(OperatorTempModifierKey.bl_idname)
 
     @property
     def kmi_system(self):
@@ -124,20 +124,15 @@ class SystemKey(KeyMaps, KeyProperty):
         self.from_temp_key_update_data()
 
     def from_temp_key_update_data(self):
-
         data = self.kmi_data
         if self.is_change_system:
             self.set_kmi_system(self.temp_kmi, self.active_system.name)
-            print('is_change_system', self.active_system.name, self.active_system.system_type)
             if self.key_data:
                 self.set_property_data(self.temp_kmi, self.key_data)
             else:
                 self.key_data = self.kmi_data
             self.tag_redraw(bpy.context)
         elif self.key_data != data:
-            print('change key')
-            print(data)
-            print(self.key_data)
             self.key_data = data
             self.update()
             self.tag_redraw(bpy.context)
@@ -160,7 +155,7 @@ class SystemKey(KeyMaps, KeyProperty):
         row = split.row(align=True)
         row.prop(kmi, "show_expanded", text="", emboss=False)
         row.prop(kmi, "active", text="", emboss=False)
-        row.operator(SetKeyMaps.bl_idname)
+        row.operator(OperatorSetKeyMaps.bl_idname)
 
         row = split.row()
         row.prop(kmi, "map_type", text="")
@@ -171,9 +166,9 @@ class SystemKey(KeyMaps, KeyProperty):
         elif map_type == 'NDOF':
             row.prop(kmi, "type", text="", full_event=True)
         elif map_type == 'TWEAK':
-            subrow = row.row()
-            subrow.prop(kmi, "type", text="")
-            subrow.prop(kmi, "value", text="")
+            sub_row = row.row()
+            sub_row.prop(kmi, "type", text="")
+            sub_row.prop(kmi, "value", text="")
         elif map_type == 'TIMER':
             row.prop(kmi, "type", text="")
         else:
@@ -185,32 +180,32 @@ class SystemKey(KeyMaps, KeyProperty):
             box = col.box()
             if map_type not in {'TEXTINPUT', 'TIMER'}:
                 sub = box.column()
-                subrow = sub.row(align=True)
+                sub_row = sub.row(align=True)
 
                 if map_type == 'KEYBOARD':
-                    subrow.prop(kmi, "type", text="", event=True)
-                    subrow.prop(kmi, "value", text="")
-                    subrow_repeat = subrow.row(align=True)
-                    subrow_repeat.active = kmi.value in {'ANY', 'PRESS'}
-                    subrow_repeat.prop(kmi, "repeat", text="Repeat")
+                    sub_row.prop(kmi, "type", text="", event=True)
+                    sub_row.prop(kmi, "value", text="")
+                    sub_row_repeat = sub_row.row(align=True)
+                    sub_row_repeat.active = kmi.value in {'ANY', 'PRESS'}
+                    sub_row_repeat.prop(kmi, "repeat", text="Repeat")
                 elif map_type in {'MOUSE', 'NDOF'}:
-                    subrow.prop(kmi, "type", text="")
-                    subrow.prop(kmi, "value", text="")
+                    sub_row.prop(kmi, "type", text="")
+                    sub_row.prop(kmi, "value", text="")
 
                 if map_type in {'KEYBOARD', 'MOUSE'} and kmi.value == 'CLICK_DRAG':
-                    subrow = sub.row()
-                    subrow.prop(kmi, "direction")
+                    sub_row = sub.row()
+                    sub_row.prop(kmi, "direction")
 
-                subrow = sub.row()
-                subrow.scale_x = 0.75
-                subrow.prop(kmi, "any", toggle=True)
+                sub_row = sub.row()
+                sub_row.scale_x = 0.75
+                sub_row.prop(kmi, "any", toggle=True)
                 # Use `*_ui` properties as integers aren't practical.
-                subrow.prop(kmi, "shift_ui", toggle=True)
-                subrow.prop(kmi, "ctrl_ui", toggle=True)
-                subrow.prop(kmi, "alt_ui", toggle=True)
-                subrow.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
+                sub_row.prop(kmi, "shift_ui", toggle=True)
+                sub_row.prop(kmi, "ctrl_ui", toggle=True)
+                sub_row.prop(kmi, "alt_ui", toggle=True)
+                sub_row.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
 
-                subrow.prop(kmi, "key_modifier", text="", event=True)
+                sub_row.prop(kmi, "key_modifier", text="", event=True)
 
             col = box.column(align=True)
             for key in key_maps:
@@ -247,11 +242,14 @@ class SystemKey(KeyMaps, KeyProperty):
         self.register_key()
 
 
-class SetKeyMaps(Operator, PublicClass, PublicUi):
+class OperatorSetKeyMaps(Operator, PublicClass, PublicUi):
     bl_idname = PublicOperator.ops_id_name('set_key_maps')
     bl_label = 'Set Key Maps'
-    keymap_hierarchy: list
+
     layout: 'bpy.types.UILayout'
+
+    keymap_hierarchy: list
+    selected_list: list
 
     def invoke(self, context, event):
         from bl_keymap_utils import keymap_hierarchy
@@ -275,9 +273,9 @@ class SetKeyMaps(Operator, PublicClass, PublicUi):
                 expand = name + '_expand'
 
                 sel = RegUiProp.temp_prop(select)
-                exp = RegUiProp.temp_prop(expand)
                 s = RegUiProp.from_name_get_id(select)
-                e = RegUiProp.from_name_get_id(expand)
+
+                RegUiProp.temp_prop(expand)
                 setattr(sel, s, name in key_maps)
                 _d(child)
 
@@ -342,8 +340,8 @@ class SetKeyMaps(Operator, PublicClass, PublicUi):
 
 classes_tuple = (
     SystemKey,
-    TempModifierKeyOps,
-    SetKeyMaps,
+    OperatorTempModifierKey,
+    OperatorSetKeyMaps,
 )
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)
 

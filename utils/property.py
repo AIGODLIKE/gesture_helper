@@ -30,7 +30,7 @@ class RegUiProp(PropertyGroup):
 
     @classmethod
     def temp_prop(cls, name) -> PropertyGroup:
-        prop = getattr(bpy.context.window_manager, cls.key(), None)
+        prop = cls.temp_wm_prop()
         identity = cls.from_name_get_id(name)
         p = getattr(prop, identity, None)
         if not p:
@@ -38,8 +38,8 @@ class RegUiProp(PropertyGroup):
         return prop
 
     @classmethod
-    def get_prop(cls):
-        ...
+    def temp_wm_prop(cls):
+        return getattr(bpy.context.window_manager, cls.key(), None)
 
     def update_add_ui_extend_bool_property(self, context):
         name = self.add_ui_extend_bool_property

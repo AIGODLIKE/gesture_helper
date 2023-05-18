@@ -1,21 +1,6 @@
+from . import (log, property, update)  # model
 from .public import CacheHandler, register_module_factory
-from .. import (
-    gesture_ui,
-    locale,
-    res,
-    ops,
-    ui
-)
-
-from . import (
-    property,
-
-    log,
-    update,
-
-    # model
-)
-
+from .. import gesture_ui, locale, ops, res, ui
 from .. import preferences
 
 modules_tuple = (
@@ -38,10 +23,10 @@ register_mod, unregister_mod = register_module_factory(modules_tuple)
 
 
 def register():
-    CacheHandler.clear_cache()
+    CacheHandler.cache_clear()
     register_mod()
 
 
 def unregister():
-    CacheHandler.clear_cache()
+    CacheHandler.cache_clear()
     unregister_mod()

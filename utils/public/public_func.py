@@ -10,7 +10,9 @@ class PublicMethod:
             prop (_type_): _description_
 
         Returns:
-            _type_: _description_
+            :param prop:
+            :param reversal:
+            :param exclude:
         """
         data = {}
         for index, value in enumerate(prop):
@@ -56,7 +58,8 @@ class PublicMethod:
                         # 可多选枚举
                         pro = list(pro)
                     data[id_name] = pro
-            except Exception:
+            except Exception as e:
+                print(e.args)
                 import traceback
                 traceback.print_exc()
         return data
@@ -64,7 +67,7 @@ class PublicMethod:
     @staticmethod
     def set_prop(prop, path, value):
         pr = getattr(prop, path, None)
-        if pr != None:
+        if pr is not None:
             pro = prop.bl_rna.properties[path]
             typ = pro.type
             try:
@@ -90,7 +93,7 @@ class PublicMethod:
         """
         for key, item in data.items():
             pr = getattr(prop, key, None)
-            if pr != None:
+            if pr is not None:
                 PublicMethod.set_prop(prop, key, item)
 
         # for i in prop.bl_rna.properties:
@@ -98,13 +101,13 @@ class PublicMethod:
         #     if id_name in data:
         #         set_prop(prop, id_name, data[id_name])
 
-    def set_collection_data(prop, data, mode='ADD'):
+    @staticmethod
+    def set_collection_data(prop, data):
         """_summary_
 
         Args:
             prop (_type_): _description_
             data (_type_): _description_
-            mode (str, enum in ['ADD', 'COVER', 'DUPLICATE_REMOVAL']):Defaults to 'ADD'.
         """
         for i in data:
             pro = prop.add()

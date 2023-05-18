@@ -49,7 +49,7 @@ property_data = {  # 属性参数
 }
 
 
-def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, msgctxt=None, fill_copy=False) -> dict:
+def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, msg_ctxt=None, fill_copy=False) -> dict:
     bl_rna = getattr(parent_prop, 'bl_rna', None)
     if not bl_rna:
         print(Exception(f'{parent_prop} no bl_rna'))
@@ -75,7 +75,7 @@ def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, ms
 
     if typ == 'ENUM':
         ret_data['items'] = [(i.identifier,
-                              get_t(i.name, msgctxt) if msgctxt else i.name,
+                              get_t(i.name, msg_ctxt) if msg_ctxt else i.name,
                               i.description,
                               i.icon,
                               i.value)

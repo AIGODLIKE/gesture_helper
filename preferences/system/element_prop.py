@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import ast
-import re
 
 import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
-from mathutils import Euler, Matrix, Vector
+from bpy.types import PropertyGroup
 
+from .element_prop_poll import ElementPropPoll
+from ...utils.public import PublicClass
 from ...utils.public import PublicData, TempKey
+from ...utils.public.public_data import ElementType
+from ...utils.public.public_property import PublicPropertyGroup
 
 
 class UILayoutProp(PublicData):
@@ -77,7 +82,8 @@ class UILayoutProp(PublicData):
             context (_type_): _description_
         """
 
-        self._by_heading_set_name()
+        # self._by_heading_set_name()
+        ...
 
     align: BoolProperty(name='对齐')
     heading: StringProperty(name='标题',
@@ -125,10 +131,10 @@ class GestureProp:
                                      )
 
 
-class PanelProp:
+class PanelProp(PropertyGroup):
     def _update_panel(self, context) -> None:
         """更新面板数据,更改名称或是标题时更新"""
-        self._refresh_panel()
+        # self._refresh_panel()
 
     def _set_space(self, value) -> None:
         """设置空间类型
@@ -148,26 +154,26 @@ class PanelProp:
             return 2
         return self['space_type']
 
-    def _space_items(self, context):
-        """反回空间类型的枚举
-
-        Args:
-            context (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        space_items = map(
-            lambda i: i[:-1] + ((1 << i[-1]),), PublicData.ENUM_SPACE_TYPE)
-
-        return [i for i in space_items if i[0] not in PublicData.SPACE_MATCHING_REGION_TYPE[self.region_type]]
-
-    space_type: EnumProperty(name='空间类型',
-                             items=_space_items,
-                             update=_update_panel,
-                             get=_get_space,
-                             set=_set_space,
-                             )
+    # def _space_items(self, context):
+    #     """反回空间类型的枚举
+    #
+    #     Args:
+    #         context (_type_): _description_
+    #
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     space_items = map(
+    #         lambda i: i[:-1] + ((1 << i[-1]),), PublicData.ENUM_SPACE_TYPE)
+    #
+    #     return [i for i in space_items if i[0] not in PublicData.SPACE_MATCHING_REGION_TYPE[self.region_type]]
+    #
+    # space_type: EnumProperty(name='空间类型',
+    #                          items=_space_items,
+    #                          update=_update_panel,
+    #                          get=_get_space,
+    #                          set=_set_space,
+    #                          )
 
     def _get_region(self):
         return self['region_type']
@@ -191,193 +197,135 @@ class PanelProp:
     bl_options: EnumProperty(items=PublicData.ENUM_BL_OPTIONS,
                              description='''Options for this panel type
                             # WARNING 闪退 ('INSTANCED', 'Instanced Panel',
-                            #  'Multiple panels with this type can be used as part of a list depending on data external to the UI. Used to create panels for the modifiers and other stacks.'),
+                            #  'Multiple panels with this type can be used as part of a list depending on data external
+                             to the UI. Used to create panels for the modifiers and other stacks.'),
                             ''',
                              options={'ENUM_FLAG'},
                              update=_update_panel,
                              )
 
 
-class OperatorProp(TempKey):
-    # def get_operator_func(self) -> 'bpy.types.Operator':
-    #     """获取操作符的方法
-    #
-    #     Returns:
-    #         bpy.types.Operator: _description_
-    #     """
-    #     sp = self.operator.split('.')
-    #     if len(sp) == 2:
-    #         prefix, suffix = sp
-    #         func = getattr(getattr(bpy.ops, prefix), suffix)
-    #         return func
-    #
-    # def running_operator(self) -> None:
-    #     """运行此self的操作符
-    #     """
-    #     try:
-    #         prop = ast.literal_eval(self.operator_property)
-    #         func = self.get_operator_func()
-    #         if func:
-    #             func(self.operator_context, True, **prop)
-    #             print(f'running_operator Element:{self}\t{self.operator}({self.operator_property[1:-1]})\t{func}\n',
-    #                   self.operator_property, self.operator_context,
-    #                   )
-    #     except Exception as e:
-    #         print('running_operator ERROR', e)
-    #
-    def _get_operator_property(self, string: str) -> dict:
-        """将输入的字符串操作符属性转成字典
-        用于传入操作符执行操作符用
+class OperatorProp(TempKey, PropertyGroup):
+    last_operator_element = None
+    last_operator_element_idname = None
 
-        Args:
-            string (str): _description_
+    def get_operator_func(self) -> 'bpy.types.Operator':
+        """获取操作符的方法
 
         Returns:
-            dict: _description_
+            bpy.types.Operator: _description_
         """
-        tmp_index = 0
-        brackets_index = 0
-        property_dict = {}
-        for index, value in enumerate(string):
+        sp = self.operator.split('.')
+        if len(sp) == 2:
+            prefix, suffix = sp
+            func = getattr(getattr(bpy.ops, prefix), suffix)
+            return func
 
-            is_zero = (brackets_index == 0)
-            if brackets_index < 0:
-                print(Exception('输入数据错误,无法解析', string))
-            elif value == '(':
-                brackets_index += 1
-            elif value == ')':
-                brackets_index -= 1
-            elif is_zero and value == ',':
-                data = string[tmp_index:index]
-                print(data)
-                sp = data.split('=')
-                if len(sp) == 2:
-                    property_dict[sp[0]] = ast.literal_eval(sp[1])
-            elif is_zero and value == ' ':
-                tmp_index = index + 1
-            else:
-                ...
-        return property_dict
-
-    def _set_operator(self, value: str) -> None:
-        """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
-        掐头去尾
-        bpy.ops.mesh.select_mode(type='VERT')
-        bpy.ops.wm.tool_set_by_id(name="builtin.measure")
-         p  = r'*(*)'
-        Args:
-            value (str): _description_
+    def running_operator(self) -> None:
+        """运行此self的操作符
         """
-
-        self['operator'] = value
-
-        if value[:8] == 'bpy.ops.':
-            self['operator'] = value = value[8:]
-        if ('(' in value) and (')' in value):
-            suffix = value[-2:]
-            if suffix == '()':
-                self['operator'] = value[:-2]
-            else:
-                self['operator'] = value[:value.index('(')]
-                r = re.search(r'[(].*[)]', value)  # 操作符参数
-                prop_dict = ast.literal_eval(self.operator_property)
-                prop_dict.update(self._get_operator_property(r.group()[1:-1]))
-                self.operator_property = str(prop_dict)
-
-    def _get_operator_string(self) -> str:
-        """获取操作符的字符串
-
-        Returns:
-            str: _description_
-        """
-        if 'operator' not in self:
-            return 'mesh.primitive_monkey_add'
-        return self['operator']
-
-    def get_tmp_kmi_operator_property(self) -> str:
-        """获取临时kmi操作符的属性
-
-        Returns:
-            str: _description_
-        """
-        properties = self.temp_kmi.properties
-        prop_keys = dict(properties.items()).keys()
-        dictionary = {i: getattr(properties, i, None) for i in prop_keys}
-        for item in dictionary:
-            prop = getattr(properties, item, None)
-            typ = type(prop)
-            if prop and typ == Vector:
-                # 属性阵列-浮点数组
-                dictionary[item] = dictionary[item].to_tuple()
-            elif prop and typ == Euler:
-                dictionary[item] = dictionary[item][:]
-            elif prop and typ == Matrix:
-                dictionary[item] = tuple(i[:] for i in dictionary[item])
-        return str(dictionary)
-
-    def from_tmp_kmi_get_operator_property(self) -> None:
-        """从临时kmi里面获取操作符属性
-        """
-        self.operator_property = self.get_tmp_kmi_operator_property()
-
-    @staticmethod
-    def _for_set_prop(prop, pro, pr):
-        for index, j in enumerate(pr):
-            try:
-                getattr(prop, pro)[index] = j
-            except Exception as e:
-                print(e.args)
-
-    def set_operator_property_to(self, properties: 'bpy.types.KeyMapItem.properties') -> None:
-        """注入operator property
-        在绘制项时需要使用此方法
-        set operator property
-        self.operator_property:
-
-        Args:
-            properties (bpy.types.KeyMapItem.properties): _description_
-        """
-        props = ast.literal_eval(self.operator_property)
-        for pro in props:
-            pr = props[pro]
-            if hasattr(properties, pro):
-                if type(pr) == tuple:
-                    # 阵列参数
-                    self._for_set_prop(properties, pro, pr)
-                else:
-                    try:
-                        setattr(properties, pro, props[pro])
-                    except Exception as e:
-                        print(e.args)
-
-    def set_operator_property_to_tmp_kmi(self) -> None:
-        r"""
-        将ui.operator.property设置到tmp_kmi里面
-        """
-        self.set_operator_property_to(self.temp_kmi.properties)
+        try:
+            prop = ast.literal_eval(self.operator_property)
+            func = self.get_operator_func()
+            if func:
+                func(self.operator_context, True, **prop)
+                print(f'running_operator Element:{self}\t{self.operator}({self.operator_property[1:-1]})\t{func}\n',
+                      self.operator_property, self.operator_context,
+                      )
+        except Exception as e:
+            print('running_operator ERROR', e)
 
     @property
     def temp_kmi(self):
         return self.get_temp_kmi(self.operator)
 
+    def _set_operator(self, value: str) -> None:
+        """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
+        掐头去尾
+        """
+        self['operator'] = value
+        if value.startswith('bpy.ops.'):
+            self['operator'] = value = value[8:]
+        if ('(' in value) and (')' in value):
+            if value.endswith('()'):
+                self['operator'] = value[:-2]
+            else:
+                index = value.index('(')
+                self['operator'] = value[:index]
+                self._from_copy_operator_info_get_operator_property(value[index:])
+
+    def _get_operator(self) -> str:
+        if 'operator' not in self:
+            return 'mesh.primitive_monkey_add'
+        return self['operator']
+
+    def _from_copy_operator_info_get_operator_property(self, string):
+        """从复制的操作符信息获取操作符属性"""
+        prop_dict = ast.literal_eval(self.operator_property)
+        prop_dict.update(self._get_operator_property(string))
+        self.operator_property = str(prop_dict)
+        self.set_operator_property_to(self.operator_property, self.temp_kmi.properties)
+
     operator: StringProperty(name='操作符',
-                             description='输入操作符,将会自动格式化 bpy.ops.screen.back_to_previous() >> mesh.primitive_monkey_add',
+                             description='输入操作符,将会自动格式化\n'
+                                         'bpy.ops.screen.back_to_previous() >> mesh.primitive_monkey_add',
                              set=_set_operator,
-                             get=_get_operator_string,
+                             get=_get_operator,
                              )
+
+    operator_property: StringProperty(name='操作符属性', default=r'{}',
+                                      )
+
     operator_context: EnumProperty(name='操作符上下文',
                                    **PublicData.PROP_OPERATOR_CONTEXT,
                                    )
-    operator_property: StringProperty(name='操作符属性', default=r'{}', )
 
     def draw_operator_property_set_layout(self, layout):
-        if self.get_tmp_kmi_operator_property
-        # layout.template_keymap_item_properties(self.temp_kmi)
+        layout.template_keymap_item_properties(self.temp_kmi)
+        self.from_draw_update_operator_stats()
 
-    def udpate_(self):
+    def from_draw_update_operator_stats(self):
+        temp_kmi = self.temp_kmi
+        temp_kmi_prop = self.from_kmi_get_operator_properties(temp_kmi)
+
+        if OperatorProp.last_operator_element != self:  # change element
+            OperatorProp.last_operator_element = self
+            print('change operator element', self.name)
+            self.set_operator_property_to(self.operator_property, temp_kmi.properties)
+
+        elif OperatorProp.last_operator_element_idname != temp_kmi.idname:  # change idname
+            OperatorProp.last_operator_element_idname = temp_kmi.idname
+            self.set_operator_property_to(self.operator_property, temp_kmi.properties)
+            print('change operator idname', temp_kmi.idname)
+        elif temp_kmi_prop != self.operator_property:  # change properties
+            self['operator_property'] = temp_kmi_prop
+
+            print('change operator property', )
 
 
-class PollProp:
+class PollProp(ElementPropPoll):
+
+    @property
+    def poll_bool(self) -> bool:
+        """反回当前self的poll
+
+        Returns:
+            bool: _description_
+        """
+
+        try:
+            poll = self._from_poll_string_get_bool(self.poll_string)
+            self.select_structure_is_alert = False
+            return poll
+        except Exception as e:
+            print(f'ERROR:\tpoll_bool  {self.poll_string}\t', e.args, self.poll_args)
+            self.select_structure_is_alert = True
+            return False
+
+    def _update_string(self, context):
+        a = self.poll_bool
+
+    select_structure_is_alert: BoolProperty()
     poll_string: StringProperty(
         name='条件',
         default='True',
@@ -390,6 +338,7 @@ class PollProp:
     'tool': bpy.context.tool_settings,
     }
     ''',
+        update=_update_string,
     )
 
 
@@ -404,7 +353,12 @@ class PropertyProp:
     property_suffix: StringProperty(default='scale', name='属性后缀')
 
 
-class ElementUILayoutProp(
+class UIProp:
+    ...
+
+
+class ElementProp(
+    UIProp,
     IconProp,
     MenuProp,
     PollProp,
@@ -413,10 +367,48 @@ class ElementUILayoutProp(
     PropertyProp,
     OperatorProp,
     UILayoutProp,
+
+    PublicClass,
+    ElementType,
+    PublicPropertyGroup,
 ):
-    ...
+    _selected_key = 'is_selected'
 
+    def _get_selected(self) -> bool:
+        key = self._selected_key
+        if key in self:
+            return self[key]
+        return False
 
-class UIProp:
-    ...
+    def _set_selected(self, value) -> None:
+        key = self._selected_key
+        for element in self.parent_system.children_element_recursion:
+            element['is_selected'] = (element == self)
+        self[key] = value
 
+    def _update_selected(self, context) -> None:
+        ...
+
+    is_expand: BoolProperty(name='Expand Show Child Element',
+                            default=True)
+    is_enabled: BoolProperty(name='Enabled Element Show, If False Not Show Child And Draw',
+                             default=True)
+    is_selected: BoolProperty(get=_get_selected,
+                              set=_set_selected,
+                              update=_update_selected,
+                              )
+
+    @property
+    def is_draw(self) -> bool:
+        """是否可绘制"""
+        return self.is_enabled
+
+    @property
+    def is_allow_have_child(self) -> bool:
+        """允许拥有子级的"""
+        return self.type.lower() in self.TYPE_ALLOW_CHILD
+
+    @property
+    def is_draw_child(self):
+        """需要绘制子级的"""
+        return self.is_allow_have_child and self.is_enabled
