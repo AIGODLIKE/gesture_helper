@@ -458,14 +458,17 @@ class ElementType:
 
     @property
     def is_select_structure_type(self) -> bool:
+        """是选择结构类型"""
         return self.ui_type == 'SELECT_STRUCTURE'
 
     @property
     def is_ui_layout_type(self) -> bool:
+        """是UI Layout类型"""
         return self.ui_type == 'UI_LAYOUT'
 
     @property
     def is_gesture_type(self) -> bool:
+        """是手势类型"""
         return self.ui_type == 'GESTURE'
 
     @property

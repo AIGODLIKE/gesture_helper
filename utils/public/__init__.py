@@ -88,6 +88,7 @@ class TempKey:
 
     @staticmethod
     def _get_operator_property(string: str) -> dict:
+
         """将输入的字符串操作符属性转成字典
         用于传入操作符执行操作符用
 

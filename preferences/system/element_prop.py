@@ -304,6 +304,7 @@ class OperatorProp(TempKey, PropertyGroup):
 
 
 class PollProp(ElementPropPoll):
+    is_available_select_structure: BoolProperty(name='是有效的选择结构,', default=True, )
 
     @property
     def poll_bool(self) -> bool:
@@ -315,17 +316,14 @@ class PollProp(ElementPropPoll):
 
         try:
             poll = self._from_poll_string_get_bool(self.poll_string)
-            self.select_structure_is_alert = False
             return poll
         except Exception as e:
             print(f'ERROR:\tpoll_bool  {self.poll_string}\t', e.args, self.poll_args)
-            self.select_structure_is_alert = True
             return False
 
     def _update_string(self, context):
         a = self.poll_bool
 
-    select_structure_is_alert: BoolProperty()
     poll_string: StringProperty(
         name='条件',
         default='True',
@@ -373,6 +371,7 @@ class ElementProp(
     PublicPropertyGroup,
 ):
     _selected_key = 'is_selected'
+    children_element: 'list[ElementProp]'
 
     def _get_selected(self) -> bool:
         key = self._selected_key
@@ -397,6 +396,36 @@ class ElementProp(
                               set=_set_selected,
                               update=_update_selected,
                               )
+
+    @property
+    def wait_draw_children_element(self) -> 'iter':
+        """等待绘制项,在绘制时"""
+        src = []
+
+        last_item_key = '_last_wait_child_element_item'
+        last_item = getattr(self, last_item_key, None)
+
+        last_sel_rsc_key = '_last_wait_child_element_select_structure'
+        
+        for child in self.children_element:
+            last_sel_rsc = getattr(self, last_sel_rsc_key, None)
+            is_en = child.is_enabled
+            if is_en:
+                if child.is_select_structure_type:
+                    if child.type == 'IF':
+                        setattr(self, last_sel_rsc_key, child.poll_bool)
+                        if child.poll_bool:
+                            src.append(child)
+                    else:  # elif ,else
+                        if child.poll_bool and (not last_sel_rsc) and self.is_available_select_structure:
+                            src.append(child)
+                            setattr(self, last_sel_rsc_key, child.poll_bool)
+
+                else:
+                    src.append(child)
+                    setattr(self, last_sel_rsc_key, None)
+        setattr(self, last_item_key, self)
+        return src
 
     @property
     def is_draw(self) -> bool:

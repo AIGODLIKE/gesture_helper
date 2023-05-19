@@ -81,7 +81,7 @@ class ElementDrawEdit(ElementProp,
 
     def draw_edit_poll_string(self, layout):
         width = bpy.context.area.width
-        split = layout.split(factor=120 / width, align=True)
+        split = layout.split(factor=160 / width, align=True)
 
         split.prop(self, 'select_structure_type',
                    text='',
@@ -122,7 +122,7 @@ class ElementDrawUiLayout(ElementProp,
             lay = getattr(layout, ui_tp, None)(**self.ui_layout_args)
 
         if self.is_draw_child:
-            for child in self.children_element:
+            for child in self.wait_draw_children_element:
                 child.draw_ui_layout(lay)
 
     def draw_ui_layout_prop(self, layout):

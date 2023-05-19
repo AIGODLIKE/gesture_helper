@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import bpy
-from bpy.props import BoolProperty, CollectionProperty, IntProperty
+from bpy.props import CollectionProperty, IntProperty
 from bpy.types import PropertyGroup
 
 from .element_draw import ElementDrawEdit, ElementDrawGesture, ElementDrawUIListItem, ElementDrawUiLayout
@@ -9,19 +9,30 @@ from .element_prop import ElementProp
 
 
 class ElementLogic(ElementProp):
-    is_available_select_structure: BoolProperty(name='是有效的选择结构', default=True, )
-
-    @property
-    def is_alert(self):
-        func = getattr(self, f'{self.ui_type.lower()}_is_alert', getattr(self, f'{self.type.lower()}_is_alert', None))
+    def _get_self_src(self, key):
+        func = getattr(self, f'is_{key}_{self.ui_type.lower()}', getattr(self, f'is_{key}_{self.type.lower()}', None))
         if isinstance(func, bool):
             return func
         elif getattr(func, '__call__', None):
             return func()
+
+    @property
+    def is_alert(self):
+        alert_pr = self._get_self_src('alert')
+        if alert_pr:
+            return alert_pr
         is_sel = self.is_select_structure_type and self.is_available_select_structure
         is_ui = self.is_ui_layout_type
         is_ges = self.is_gesture_type
         return not (is_sel or is_ui or is_ges)
+
+    @property
+    def is_available(self):
+        """是可用的"""
+        available_pr = self._get_self_src('available')
+        if available_pr:
+            return available_pr
+        return True
 
 
 class ElementCRUD(ElementProp):
