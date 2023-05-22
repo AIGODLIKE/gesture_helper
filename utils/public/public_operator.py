@@ -66,7 +66,7 @@ class PublicOperator(
 
     @property
     def mouse_co(self) -> Vector:
-        return Vector((self._mouse_x, self._mouse_y))
+        return Vector((self.event.mouse_region_x, self.event.mouse_region_y))
 
     @property
     def start_mouse_co(self) -> Vector:

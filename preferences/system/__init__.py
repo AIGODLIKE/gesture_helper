@@ -75,7 +75,6 @@ class SystemDraw(SystemProp):
 
 
 class SystemGesture(SystemDraw):
-    _handler_draw_gesture = []
 
     @property
     def wait_draw_gesture_items(self):
@@ -107,70 +106,6 @@ class SystemGesture(SystemDraw):
             return src
 
         return get_wait(self.ui_element)
-
-    def register_draw_gesture(self):
-        SystemGesture._handler_draw_gesture.append(
-            bpy.types.SpaceView3D.draw_handler_add(self.draw_gesture_system, (), 'WINDOW',
-                                                   'POST_PIXEL'))
-
-    def unregister_draw_gesture(self):
-        while len(SystemGesture._handler_draw_gesture):
-            bpy.types.SpaceView3D.draw_handler_remove(SystemGesture._handler_draw_gesture.pop(), 'WINDOW')
-
-    def draw_gesture_system(self):
-        import gpu
-        from gpu_extras.batch import batch_for_shader
-
-        vertices = (
-            (100, 100), (300, 100),
-            (100, 200), (300, 200))
-
-        indices = (
-            (0, 1, 2), (2, 1, 3))
-
-        shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-        batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
-
-        shader.uniform_float("color", (0, 0.5, 0.5, 1.0))
-        batch.draw(shader)
-
-        # for item in self.wait_draw_gesture_items:
-        #     item.draw_gesturre()
-
-        import blf
-        import bpy
-
-        font_info = {
-            "font_id": 0,
-            "handler": None,
-        }
-
-        import os
-        # Create a new font object, use external ttf file.
-        font_path = bpy.path.abspath('//Zeyada.ttf')
-        # Store the font indice - to use later.
-        if os.path.exists(font_path):
-            font_info["font_id"] = blf.load(font_path)
-        else:
-            # Default font.
-            font_info["font_id"] = 0
-
-        # set the font drawing routine to run every frame
-        # def draw_callback_px(self, context):
-        #     """Draw on the viewports"""
-        #     # BLF drawing routine
-        font_id = font_info["font_id"]
-        blf.position(font_id, 2, 80, 0)
-        blf.size(font_id, 50)
-        blf.draw(font_id, "Hello World")
-        blf.position(font_id, 200, 800, 0)
-        blf.draw(font_id, str([i.name for i in self.wait_draw_gesture_items]))
-
-    def draw_gesture_line(self):
-        ...
-
-    def draw_gesture_points(self):
-        ...
 
 
 class SystemItem(SystemGesture,

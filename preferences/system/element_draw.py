@@ -147,6 +147,7 @@ class ElementDrawUiLayout(ElementProp,
 
 
 class ElementDrawGesture(ElementProp):
-    def draw_gesture(self):
+    def draw_gesture(self, ops):
         # bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_PIXEL')
         ...
+

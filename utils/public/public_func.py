@@ -1,3 +1,8 @@
+import math
+from math import cos, sin
+
+from mathutils import Vector
+
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
 
@@ -112,3 +117,11 @@ class PublicMethod:
         for i in data:
             pro = prop.add()
             PublicMethod.set_property_data(pro, data[i])
+
+    @staticmethod
+    def calculate_point_on_circle(circle_point: Vector, radius: float, angle: float) -> Vector:
+        """计算圆上的任意一点"""
+        degree = math.radians(angle)
+        x = circle_point[0] + radius * cos(degree)
+        y = circle_point[1] + radius * sin(degree)
+        return Vector((x, y))
