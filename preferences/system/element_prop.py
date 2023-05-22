@@ -125,10 +125,20 @@ class MenuProp:
 
 
 class GestureProp:
-    gestures_direction: EnumProperty(items=PublicData.ENUM_GESTURES_DIRECTION,
-                                     default='NONE',
-                                     name='手势朝向',
-                                     )
+    @property
+    def gesture_type_is_direction(self):
+        return self.gesture_position == 'DIRECTION'
+
+    @property
+    def gesture_position_is_down(self):
+
+        return self.gesture_position == 'DOWN'
+
+    gesture_position: EnumProperty(items=PublicData.ENUM_GESTURES_TYPE,
+                                   default='NONE',
+                                   name='',
+                                   )
+    gesture_direction: EnumProperty(items=PublicData.ENUM_GESTURE_DIRECTION)
 
 
 class PanelProp(PropertyGroup):
@@ -406,7 +416,7 @@ class ElementProp(
         last_item = getattr(self, last_item_key, None)
 
         last_sel_rsc_key = '_last_wait_child_element_select_structure'
-        
+
         for child in self.children_element:
             last_sel_rsc = getattr(self, last_sel_rsc_key, None)
             is_en = child.is_enabled

@@ -3,7 +3,6 @@ from __future__ import annotations
 import bpy
 
 from .element_prop import ElementProp
-from ...ops.ui_element_crud import ElementSetPollExpression
 from ...utils.public import PublicData
 from ...utils.public.public_ui import PublicUi
 
@@ -80,6 +79,7 @@ class ElementDrawEdit(ElementProp,
         ...
 
     def draw_edit_poll_string(self, layout):
+        from ...ops.ui_element_crud import ElementSetPollExpression
         width = bpy.context.area.width
         split = layout.split(factor=160 / width, align=True)
 
@@ -101,6 +101,12 @@ class ElementDrawEdit(ElementProp,
             lay.label(text='test')
             lay.label(text='test')
             lay.label(text='test')
+
+    def draw_edit_child_gestures(self, layout):
+        layout.prop(self, 'text')
+        layout.prop(self, 'gesture_position')
+        if self.gesture_type_is_direction:
+            layout.prop(self, 'gesture_direction')
 
 
 class ElementDrawUiLayout(ElementProp,
@@ -136,6 +142,11 @@ class ElementDrawUiLayout(ElementProp,
     def draw_ui_layout_menu(self, layout):
         ...
 
+    def draw_ui_layout_child_gestures(self, layout):
+        ...
+
 
 class ElementDrawGesture(ElementProp):
-    ...
+    def draw_gesture(self):
+        # bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_PIXEL')
+        ...

@@ -127,7 +127,9 @@ class UiElementItem(ElementCRUD,
 
                     ElementProp,
                     ):
-    ...
+
+    def update_select_structure_type(self, context):
+        self.parent_system.update_ui_layout()
 
 
 classes_tuple = (

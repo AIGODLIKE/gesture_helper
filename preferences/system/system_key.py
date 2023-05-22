@@ -4,9 +4,9 @@ from bpy.props import StringProperty
 from bpy.types import Operator, PropertyGroup, KeyMapItem
 from idprop.types import IDPropertyGroup
 
-from ...ops.system_ops import SystemOps
 from ...utils.property import RegUiProp
-from ...utils.public import PublicClass, PublicOperator, TempKey
+from ...utils.public import PublicClass, TempKey
+from ...utils.public.public_operator import PublicOperator
 from ...utils.public.public_ui import PublicUi
 
 ui_events_keymaps = i18n_contexts.ui_events_keymaps
@@ -216,6 +216,7 @@ class SystemKey(KeyMaps, KeyProperty):
         return keymaps.get(name, keymaps.new(name, space_type=space_type, region_type=region_type))
 
     def register_key(self):
+        from ...ops.system_ops import SystemOps
         if self.parent_system not in SystemKey.key_maps_kmi:
             SystemKey.key_maps_kmi[self.parent_system] = []
         key_data = self.key_data

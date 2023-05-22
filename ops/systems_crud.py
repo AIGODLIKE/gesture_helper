@@ -2,7 +2,8 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 
 from ..utils.public.public_ui import PublicPopupMenu
-from ..utils.public import PublicOperator, PublicClass, PublicData
+from ..utils.public import PublicClass, PublicData
+from ..utils.public.public_operator import PublicOperator
 
 
 class SystemPoll:

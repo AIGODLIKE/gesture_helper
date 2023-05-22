@@ -1,9 +1,9 @@
 import bpy
 from bpy.props import BoolProperty, BoolVectorProperty, IntProperty, StringProperty
-from bpy.types import Operator
 
-from ..utils.public import PublicClass, PublicOperator
+from ..utils.public import PublicClass
 from ..utils.public.public_data import ElementType, PublicData, PublicPoll
+from ..utils.public.public_operator import PublicOperator
 from ..utils.public.public_ui import PublicPopupMenu, PublicUi
 
 
@@ -30,7 +30,7 @@ class ElementCRUD:
             if not act_el:
                 return True
             elif act_sys.is_gesture_type:
-                return act_el.type.lower() in cls.TYPE_ALLOW_CHILD + ['menu', ]
+                return act_el.type.lower() in cls.TYPE_ALLOW_CHILD + ['child_gestures', ]
             return act_el.type.lower() in cls.TYPE_ALLOW_CHILD
 
         add_name: StringProperty(default='New Element')

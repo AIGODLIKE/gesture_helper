@@ -189,8 +189,8 @@ class PublicPoll:
 
 
 class PublicProp:
-    SELECT_STRUCTURE_ELEMENT = ('if', 'elif', 'else')
-    GESTURE_UI_TYPE = ('operator', 'menu')
+    SELECT_STRUCTURE_ELEMENT = ['if', 'elif', 'else']
+    GESTURE_UI_TYPE = ['operator', 'child_gestures']
     TYPE_ALLOW_CHILD = [
         *SELECT_STRUCTURE_ELEMENT,
         'box', 'row', 'split', 'column', 'menu_pie'
@@ -309,7 +309,13 @@ class PublicEnum:
 
     ENUM_CTEXT = get_i18n_enum()
 
-    ENUM_GESTURES_DIRECTION = [
+    ENUM_GESTURES_TYPE = [
+        ('DIRECTION', '方向', 'DIRECTION'),
+        ('UP', '顶', 'TRIA_UP_BAR'),
+        ('DOWN', '底', 'TRIA_DOWN'),
+        ('NONE', '无', ''),
+    ]
+    ENUM_GESTURE_DIRECTION = [
         ('1', '左', 'TRIA_LEFT'),
         ('2', '右', 'TRIA_RIGHT'),
         ('4', '上', 'TRIA_UP'),
@@ -318,10 +324,6 @@ class PublicEnum:
         ('6', '右上', ''),
         ('7', '左下', ''),
         ('8', '右下', ''),
-        # 顶 和 底
-        ('9', '顶', 'TRIA_UP_BAR'),
-        ('10', '底', 'TRIA_DOWN'),
-        ('NONE', '无', ''),
     ]
     ENUM_SPACE_TYPE = [
         # ('EMPTY', 'Empty', '', 'NONE', 0),
@@ -441,11 +443,24 @@ class PieProperty:
 
 class ElementType:
     """在添加项和元素中继承使用"""
-    ui_type: EnumProperty(items=PublicData.ENUM_UI_TYPE)
+
+    def update_ui_type(self, context):
+        ...
+
+    def update_select_structure_type(self, context):
+        ...
+
+    ui_type: EnumProperty(items=PublicData.ENUM_UI_TYPE,
+                          update=update_ui_type)
 
     gesture_type: EnumProperty(items=PublicData.ENUM_GESTURE_UI_TYPE, default='OPERATOR')
     ui_layout_type: EnumProperty(items=PublicData.ENUM_UI_LAYOUT_TYPE, default='LABEL')
-    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE, default='IF')
+    select_structure_type: EnumProperty(items=PublicData.ENUM_SELECT_STRUCTURE_TYPE, default='IF',
+                                        update=update_select_structure_type)
+
+    @property
+    def is_else_type(self):
+        return self.select_structure_type == 'ELSE'
 
     @property
     def enum_type_data(self):

@@ -2,7 +2,7 @@ import ast
 from functools import cache
 
 import bpy
-from bpy.types import AddonPreferences, Operator, UILayout
+from bpy.types import AddonPreferences, UILayout
 from mathutils import Euler, Matrix, Vector
 
 from .public_data import PublicData
@@ -57,15 +57,6 @@ class CacheHandler(PublicProperty,
     def tag_redraw(context):
         if context.area:
             context.area.tag_redraw()
-
-
-class PublicOperator(
-    CacheHandler,
-    Operator
-):
-    @staticmethod
-    def ops_id_name(string):
-        return 'emm_operator.' + string
 
 
 class TempKey:
