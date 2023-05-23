@@ -16,24 +16,20 @@ class PointGestureKDTree:
 
     def __init__(self, size=114):
         self.kd_tree = KDTree(size)
-        self.data = dict()
         self.gesture_items = []
         self.points_list = []
 
     def append(self, gesture, point: Vector, is_root=False):
-        index = len(self.data)
+        index = len(self.gesture_items)
         co = (*point, 0)
         self.kd_tree.insert(co, index)
-        self.data[index] = {'co': co, 'gesture': gesture, 'is_root': is_root}
         self.points_list.append(point)
         self.gesture_items.append(gesture)
 
-    def remove(self, gesture):
-        for index, item in self.data.items():
-            if item['gesture'] == gesture:
-                self.points_list.pop(index)
-                self.gesture_items.pop(index)
-                self.data.pop(index)
+    def remove(self, index):
+        val = index + 1
+        self.gesture_items = self.gesture_items[:val]
+        self.points_list = self.points_list[:val]
 
     def __len__(self):
         return self.gesture_items.__len__()
@@ -46,6 +42,12 @@ class GestureProp(PublicOperator,
     start_time: float
     last_move_mouse_time: float
     last_mouse_co: Vector
+
+    @property
+    def find_closest_point(self):
+        tree = self.points_kd_tree.kd_tree
+        tree.balance()
+        return tree.find((*self.mouse_co, 0))
 
     @property
     def wait_draw_gesture_items(self):
@@ -148,6 +150,11 @@ class GestureProp(PublicOperator,
         if key in self.wait_draw_gesture_items:
             return self.wait_draw_gesture_items[key]
 
+    @property
+    def is_return_previous_item(self):
+        point, index, distance = self.find_closest_point
+        return (distance < 10) and (index + 1 != len(self.points_kd_tree.gesture_items))
+
 
 class GestureDraw(GestureProp,
                   PublicGpu):
@@ -229,8 +236,6 @@ class GestureDraw(GestureProp,
         blf.draw(font_id, str(self.gesture_direction_item))
         blf.position(font_id, 200, 300, 0)
         blf.draw(font_id, str(self.wait_draw_gesture_items))
-        blf.position(font_id, 200, 800, 0)
-        blf.draw(font_id, str(self.active_gesture))
         blf.position(font_id, 200, 500, 0)
         blf.draw(font_id,
                  str([
@@ -239,6 +244,10 @@ class GestureDraw(GestureProp,
                      self.gesture_beyond_distance,
                      int(self.gesture_distance),
                  ]))
+        blf.position(font_id, 200, 600, 0)
+        blf.draw(font_id, str([self.is_return_previous_item, self.find_closest_point]))
+        blf.position(font_id, 200, 800, 0)
+        blf.draw(font_id, str(self.active_gesture))
 
 
 class GestureOps(GestureDraw):
@@ -277,6 +286,10 @@ class GestureOps(GestureDraw):
             return {'FINISHED'}
         elif self.is_beyond_distance_event:
             self.points_kd_tree.append(self.gesture_direction_item, self.mouse_co)
+        elif self.is_return_previous_item:
+            point, index, distance = self.find_closest_point
+            print('is_return_previous_item', index)
+            self.points_kd_tree.remove(index)
 
         if (time.time() - self.last_move_mouse_time) > 500:
             self.show_gesture()

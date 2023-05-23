@@ -141,7 +141,7 @@ class GestureProp:
         return self.gesture_position == 'DIRECTION'
 
     gesture_position: EnumProperty(items=PublicData.ENUM_GESTURES_TYPE,
-                                   default='NONE',
+                                   default='DIRECTION',
                                    name='',
                                    )
     gesture_direction: EnumProperty(items=PublicData.ENUM_GESTURE_DIRECTION)
@@ -245,9 +245,10 @@ class OperatorProp(TempKey, PropertyGroup):
             func = self.get_operator_func()
             if func:
                 func(self.operator_context, True, **prop)
-                print(f'running_operator Element:{self}\t{self.operator}({self.operator_property[1:-1]})\t{func}\n',
-                      self.operator_property, self.operator_context,
-                      )
+                print(
+                    f'running_operator :bpy.ops.{self.operator}'
+                    f'({self.operator_context},{self.operator_property[1:-1]})',
+                )
         except Exception as e:
             print('running_operator ERROR', e)
 

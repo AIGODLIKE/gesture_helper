@@ -183,10 +183,9 @@ class ElementDrawGesture(ElementProp, PublicGpu):
         self.is_about_beyond = is_about_beyond
         self.ops = ops
 
+        self.draw_2d_points([self.draw_start_point, ])
         self.draw_background()
         self.draw_text()
-
-        self.draw_2d_points([self.draw_start_point, ])
 
     def draw_background(self):
         x, y = self.draw_start_point
