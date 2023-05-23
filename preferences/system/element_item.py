@@ -131,6 +131,11 @@ class UiElementItem(ElementCRUD,
     def update_select_structure_type(self, context):
         self.parent_system.update_ui_layout()
 
+    @property
+    def wait_draw_children_element_items(self) -> 'iter':
+        """等待绘制项,在绘制时"""
+        return self.parent_system._get_wait_draw_gesture_items(self.children_element)
+
 
 classes_tuple = (
     UiElementItem,

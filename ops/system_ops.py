@@ -7,7 +7,6 @@ from bpy.props import StringProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
 
-from ..utils.public import PublicClass
 from ..utils.public.public_gpu import PublicGpu
 from ..utils.public.public_operator import PublicOperator
 
@@ -21,13 +20,13 @@ class PointGestureKDTree:
         self.gesture_items = []
         self.points_list = []
 
-    def append(self, gesture, point: Vector, is_root=True):
+    def append(self, gesture, point: Vector, is_root=False):
         index = len(self.data)
         co = (*point, 0)
         self.kd_tree.insert(co, index)
         self.data[index] = {'co': co, 'gesture': gesture, 'is_root': is_root}
         self.points_list.append(point)
-        self.gesture_items.append(point)
+        self.gesture_items.append(gesture)
 
     def remove(self, gesture):
         for index, item in self.data.items():
@@ -49,7 +48,19 @@ class GestureProp(PublicOperator,
     last_mouse_co: Vector
 
     @property
-    def is_show_gesture(self):
+    def wait_draw_gesture_items(self):
+        src = {i: None for i in range(8)}
+        act = self.active_gesture
+        items = act.wait_draw_gesture_items if act == self.current_system else act.wait_draw_children_element_items
+
+        for item in items:
+            direction = item.gesture_direction
+            if item.gesture_is_direction_mode and item not in src.values():
+                src[int(direction)] = item
+        return src
+
+    @property
+    def is_show_gesture(self):  # TODO
         return
 
     @property
@@ -67,10 +78,6 @@ class GestureProp(PublicOperator,
     @property
     def is_exit(self):
         return self.event.value == 'RELEASE'
-
-    @property
-    def active_point(self):
-        return self.points_kd_tree.points_list[-1]
 
     @property
     def gesture_direction(self, split=22.5) -> int:
@@ -101,10 +108,6 @@ class GestureProp(PublicOperator,
             return gesture_index(angle)
 
     @property
-    def active_gesture(self):  # TODO
-        return TempDrawGesture()
-
-    @property
     def gesture_distance(self):
         """获取手势相对活动点的移动距离"""
         return (self.mouse_co - self.active_point).magnitude
@@ -125,33 +128,25 @@ class GestureProp(PublicOperator,
         return self._beyond_distance(self.beyond_distance)
 
     @property
-    def gesture_point_item(self):  # TODO
-        """获取手势指向项
-
-        Returns:
-            UIElementItem: _description_
-        """
-        act = self.active_gestures_item
-        dire = self.gestures_direction
-        items = self.item.__get_gestures_direction_items__(act)
-
-        if not dire:
-            return
-
-        switch_dire = {3: 4, 4: 3}
-        dire = switch_dire[dire] if dire in switch_dire else dire
-
-        index = dire - 1  # ERROR上下颠倒
-        return items[index] if dire else None
-
-    @property
     def is_beyond_distance_event(self) -> bool:
         """获取 手势超出距离 并且朝向的项是有效的布尔值
-
-        Returns:
-            _type_: _description_
         """
-        return self.gesture_beyond_distance and self.gesture_point_item
+        item = self.gesture_direction_item
+        return self.gesture_beyond_distance and item and item.gesture_is_have_child
+
+    @property
+    def active_point(self):
+        return self.points_kd_tree.points_list[-1]
+
+    @property
+    def active_gesture(self):
+        return self.points_kd_tree.gesture_items[-1]
+
+    @property
+    def gesture_direction_item(self):
+        key = self.gesture_direction
+        if key in self.wait_draw_gesture_items:
+            return self.wait_draw_gesture_items[key]
 
 
 class GestureDraw(GestureProp,
@@ -186,8 +181,9 @@ class GestureDraw(GestureProp,
         self.draw_2d_points(self.gesture_points)
 
     def draw_gesture_items(self):
-        for i in range(3, 8):
-            TempDrawGesture().draw_gesture(self, i + 1, self.gesture_direction == i)
+        for index, gesture in self.wait_draw_gesture_items.items():
+            if gesture:
+                gesture.draw_gesture(self, self.gesture_direction == int(gesture.gesture_direction))
 
     def draw_test(self):
         import gpu
@@ -204,9 +200,6 @@ class GestureDraw(GestureProp,
 
         shader.uniform_float("color", (0, 0.5, 0.5, 1.0))
         batch.draw(shader)
-
-        # for item in self.wait_draw_gesture_items:
-        #     item.draw_gesturre()
 
         import blf
         import bpy
@@ -231,15 +224,17 @@ class GestureDraw(GestureProp,
         #     """Draw on the viewports"""
         #     # BLF drawing routine
         font_id = font_info["font_id"]
-        blf.position(font_id, 2, 80, 0)
-        blf.size(font_id, 50)
-        blf.draw(font_id, str(self.gesture_direction))
+        blf.position(font_id, 200, 80, 0)
+        blf.size(font_id, 20)
+        blf.draw(font_id, str(self.gesture_direction_item))
+        blf.position(font_id, 200, 300, 0)
+        blf.draw(font_id, str(self.wait_draw_gesture_items))
         blf.position(font_id, 200, 800, 0)
-        # blf.draw(font_id, str([i.name for i in self.wait_draw_gesture_items]))
-        blf.draw(font_id, str(self.test))
+        blf.draw(font_id, str(self.active_gesture))
         blf.position(font_id, 200, 500, 0)
         blf.draw(font_id,
                  str([
+                     self.is_beyond_distance_event,
                      self.gesture_about_beyond_distance,
                      self.gesture_beyond_distance,
                      int(self.gesture_distance),
@@ -247,7 +242,6 @@ class GestureDraw(GestureProp,
 
 
 class GestureOps(GestureDraw):
-    test = []
 
     def clear_gesture_data(self):
         ...
@@ -256,7 +250,6 @@ class GestureOps(GestureDraw):
         GestureDraw.data['ops'] = self
         GestureDraw.data['event'] = event
         GestureDraw.data['context'] = context
-        self.test = event.mouse_x, event.mouse_y
 
     def show_gesture(self):
         self.register_draw_gesture()
@@ -264,7 +257,7 @@ class GestureOps(GestureDraw):
     def invoke_gesture(self, context, event):
         self.update_data(context, event)
         self.init_kd_tree()
-        self.points_kd_tree.append(TempDrawGesture(), self.start_mouse_co)
+        self.points_kd_tree.append(self.current_system, self.start_mouse_co)
         self.last_move_mouse_time = self.start_time = time.time()
         self.last_mouse_co = self.mouse_co
         self.register_draw_gesture()
@@ -282,8 +275,8 @@ class GestureOps(GestureDraw):
         if self.is_exit:
             self.exit()
             return {'FINISHED'}
-        elif self.gesture_beyond_distance and len(self.points_kd_tree) < 5:
-            self.points_kd_tree.append(self.active_gesture, self.mouse_co)
+        elif self.is_beyond_distance_event:
+            self.points_kd_tree.append(self.gesture_direction_item, self.mouse_co)
 
         if (time.time() - self.last_move_mouse_time) > 500:
             self.show_gesture()
@@ -295,65 +288,13 @@ class GestureOps(GestureDraw):
     def exit_gesture(self):
         self.unregister_draw_gesture()
         self.clear_gesture_data()
+        item = self.gesture_direction_item
+        if item:
+            if item and item.gesture_is_operator:
+                item.running_operator()
 
     def init_kd_tree(self):
         self.points_kd_tree = PointGestureKDTree()
-
-
-class TempDrawGesture(PublicClass, PublicGpu):
-    direction: int
-    is_about_beyond: bool
-    is_about_beyond: bool
-    point: Vector
-    width = 50
-    height = 20
-    direction_angle_maps = {
-        1: 4,
-        2: 0,
-        3: -2,
-        4: 2,
-        5: 3,
-        6: 1,
-        7: -3,
-        8: -1,
-
-    }
-
-    @property
-    def start_point(self):
-        w, h = self.width, self.height
-        c_w = w / 2
-        c_h = h / 2
-        direction_map = {
-            1: (-w, -c_h),
-            2: (0, -c_h),
-            3: (-c_w, -h),
-            4: (-c_w, 0),
-            5: (-w, 0),
-            6: (0, 0),
-            7: (-w, -h),
-            8: (0, -h),
-        }
-        return self.point + Vector(direction_map[self.direction])
-
-    def draw_gesture(self, ops, direction, is_about_beyond: bool):
-        a = self.direction_angle_maps[direction]
-        point = self.calculate_point_on_circle(ops.active_point, ops.beyond_distance, a * 45)
-        self.is_about_beyond = is_about_beyond
-        self.direction = direction
-        self.point = point
-        self.draw_2d_points([point, ])
-        self.draw_background()
-        self.draw_text()
-
-    def draw_background(self):
-        x, y = self.start_point
-        color = (0.329412, 0.329412, 0.329412, 1) if self.is_about_beyond else (0.094118, 0.094118, 0.094118, 1)
-        self.draw_2d_rectangle(x, y, x + self.width, y + self.height, color=color)
-
-    def draw_text(self):
-        x, y = self.start_point
-        self.draw_2d_text(str(self.direction), self.height, x, y + self.height, color=(0.85098, 0.85098, 0.85098, 1))
 
 
 class SystemOps(GestureOps,

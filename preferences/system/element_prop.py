@@ -125,14 +125,20 @@ class MenuProp:
 
 
 class GestureProp:
+    # gesture_type: str
+    # is_gesture_type: bool
+
     @property
     def gesture_type_is_direction(self):
         return self.gesture_position == 'DIRECTION'
 
     @property
     def gesture_position_is_down(self):
-
         return self.gesture_position == 'DOWN'
+
+    @property
+    def gesture_is_direction_mode(self):
+        return self.gesture_position == 'DIRECTION'
 
     gesture_position: EnumProperty(items=PublicData.ENUM_GESTURES_TYPE,
                                    default='NONE',
@@ -408,36 +414,6 @@ class ElementProp(
                               )
 
     @property
-    def wait_draw_children_element(self) -> 'iter':
-        """等待绘制项,在绘制时"""
-        src = []
-
-        last_item_key = '_last_wait_child_element_item'
-        last_item = getattr(self, last_item_key, None)
-
-        last_sel_rsc_key = '_last_wait_child_element_select_structure'
-
-        for child in self.children_element:
-            last_sel_rsc = getattr(self, last_sel_rsc_key, None)
-            is_en = child.is_enabled
-            if is_en:
-                if child.is_select_structure_type:
-                    if child.type == 'IF':
-                        setattr(self, last_sel_rsc_key, child.poll_bool)
-                        if child.poll_bool:
-                            src.append(child)
-                    else:  # elif ,else
-                        if child.poll_bool and (not last_sel_rsc) and self.is_available_select_structure:
-                            src.append(child)
-                            setattr(self, last_sel_rsc_key, child.poll_bool)
-
-                else:
-                    src.append(child)
-                    setattr(self, last_sel_rsc_key, None)
-        setattr(self, last_item_key, self)
-        return src
-
-    @property
     def is_draw(self) -> bool:
         """是否可绘制"""
         return self.is_enabled
@@ -451,3 +427,11 @@ class ElementProp(
     def is_draw_child(self):
         """需要绘制子级的"""
         return self.is_allow_have_child and self.is_enabled
+
+    @property
+    def gesture_is_have_child(self) -> bool:
+        return self.gesture_type.lower() in ('child_gestures',) and self.is_gesture_type
+
+    @property
+    def gesture_is_operator(self) -> bool:
+        return self.gesture_type.lower() == 'operator'

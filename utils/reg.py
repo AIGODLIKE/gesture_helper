@@ -30,3 +30,4 @@ def register():
 def unregister():
     CacheHandler.cache_clear()
     unregister_mod()
+    # TODO backups addon data

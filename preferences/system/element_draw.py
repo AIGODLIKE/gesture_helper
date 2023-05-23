@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import bpy
+from mathutils import Vector
 
 from .element_prop import ElementProp
 from ...utils.public import PublicData
+from ...utils.public.public_gpu import PublicGpu
 from ...utils.public.public_ui import PublicUi
 
 
@@ -131,7 +133,7 @@ class ElementDrawUiLayout(ElementProp,
             lay = getattr(layout, ui_tp, None)(**self.ui_layout_args)
 
         if self.is_draw_child:
-            for child in self.wait_draw_children_element:
+            for child in self.wait_draw_children_element_items:
                 child.draw_ui_layout(lay)
 
     def draw_ui_layout_prop(self, layout):
@@ -149,7 +151,50 @@ class ElementDrawUiLayout(ElementProp,
         ...
 
 
-class ElementDrawGesture(ElementProp):
-    def draw_gesture(self, ops):
-        # bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_PIXEL')
-        ...
+class ElementDrawGesture(ElementProp, PublicGpu):
+    direction: int
+    is_about_beyond: bool
+    width = 50
+    height = 20
+    ops: bpy.types.Operator
+
+    @property
+    def draw_start_point(self):
+        ops = self.ops
+        w, h = self.width, self.height
+        c_w = w / 2
+        c_h = h / 2
+
+        direction_angle_maps = {
+            1: (4, (-w, -c_h)),
+            2: (0, (0, -c_h)),
+            3: (-2, (-c_w, -h)),
+            4: (2, (-c_w, 0)),
+            5: (3, (-w, 0)),
+            6: (1, (0, 0)),
+            7: (-3, (-w, -h)),
+            8: (-1, (0, -h)),
+        }
+        direction = direction_angle_maps[int(self.gesture_direction)]
+        point = self.calculate_point_on_circle(ops.active_point, ops.beyond_distance, direction[0] * 45)
+        return point + Vector(direction[1])
+
+    def draw_gesture(self, ops, is_about_beyond: bool):
+        self.is_about_beyond = is_about_beyond
+        self.ops = ops
+
+        self.draw_background()
+        self.draw_text()
+
+        self.draw_2d_points([self.draw_start_point, ])
+
+    def draw_background(self):
+        x, y = self.draw_start_point
+        color = (0.329412, 0.329412, 0.329412, 1) if self.is_about_beyond else (0.094118, 0.094118, 0.094118, 1)
+        self.draw_2d_rectangle(x, y, x + self.width, y + self.height, color=color)
+
+    def draw_text(self):
+        x, y = self.draw_start_point
+        self.draw_2d_text(self.text, self.height,
+                          x, y + self.height,
+                          color=(0.85098, 0.85098, 0.85098, 1))

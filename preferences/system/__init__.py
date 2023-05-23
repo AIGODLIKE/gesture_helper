@@ -76,36 +76,37 @@ class SystemDraw(SystemProp):
 
 class SystemGesture(SystemDraw):
 
+    @classmethod
+    def _get_wait_draw_gesture_items(cls, items):
+        src = []
+        last_item_key = '_last_wait_child_element_item'
+        last_item = getattr(cls, last_item_key, None)
+
+        last_sel_rsc_key = '_last_wait_child_element_select_structure'
+
+        for child in items:
+            last_sel_rsc = getattr(cls, last_sel_rsc_key, None)
+            is_en = child.is_enabled
+            if is_en:
+                if child.is_select_structure_type:
+                    if child.type == 'IF':
+                        setattr(cls, last_sel_rsc_key, child.poll_bool)
+                        if child.poll_bool:
+                            src += cls._get_wait_draw_gesture_items(child.children_element)
+                    else:  # elif ,else
+                        if child.poll_bool and (not last_sel_rsc) and child.is_available_select_structure:
+                            src += cls._get_wait_draw_gesture_items(child.children_element)
+                            setattr(cls, last_sel_rsc_key, child.poll_bool)
+                else:
+                    src.append(child)
+                    setattr(cls, last_sel_rsc_key, None)
+        setattr(cls, last_item_key, cls)
+        return src
+
     @property
     def wait_draw_gesture_items(self):
-        def get_wait(items):
-            src = []
 
-            last_item_key = '_last_wait_child_element_item'
-            last_item = getattr(self, last_item_key, None)
-
-            last_sel_rsc_key = '_last_wait_child_element_select_structure'
-
-            for child in items:
-                last_sel_rsc = getattr(self, last_sel_rsc_key, None)
-                is_en = child.is_enabled
-                if is_en:
-                    if child.is_select_structure_type:
-                        if child.type == 'IF':
-                            setattr(self, last_sel_rsc_key, child.poll_bool)
-                            if child.poll_bool:
-                                src += get_wait(child.children_element)
-                        else:  # elif ,else
-                            if child.poll_bool and (not last_sel_rsc) and child.is_available_select_structure:
-                                src += get_wait(child.children_element)
-                                setattr(self, last_sel_rsc_key, child.poll_bool)
-                    else:
-                        src.append(child)
-                        setattr(self, last_sel_rsc_key, None)
-            setattr(self, last_item_key, self)
-            return src
-
-        return get_wait(self.ui_element)
+        return self._get_wait_draw_gesture_items(self.ui_element)
 
 
 class SystemItem(SystemGesture,
