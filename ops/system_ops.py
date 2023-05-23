@@ -1,20 +1,60 @@
+import time
 from math import pi
 
 import bpy
+import gpu
 from bpy.props import StringProperty
 from mathutils import Vector
+from mathutils.kdtree import KDTree
 
 from ..utils.public import PublicClass
 from ..utils.public.public_gpu import PublicGpu
 from ..utils.public.public_operator import PublicOperator
 
 
-class OpsProp(PublicOperator,
-              ):
+class PointGestureKDTree:
+    kd_tree: KDTree
+
+    def __init__(self, size=114):
+        self.kd_tree = KDTree(size)
+        self.data = dict()
+        self.gesture_items = []
+        self.points_list = []
+
+    def append(self, gesture, point: Vector, is_root=True):
+        index = len(self.data)
+        co = (*point, 0)
+        self.kd_tree.insert(co, index)
+        self.data[index] = {'co': co, 'gesture': gesture, 'is_root': is_root}
+        self.points_list.append(point)
+        self.gesture_items.append(point)
+
+    def remove(self, gesture):
+        for index, item in self.data.items():
+            if item['gesture'] == gesture:
+                self.points_list.pop(index)
+                self.gesture_items.pop(index)
+                self.data.pop(index)
+
+    def __len__(self):
+        return self.gesture_items.__len__()
+
+
+class GestureProp(PublicOperator,
+                  ):
     system: StringProperty()
-    gesture_points = []
-    gesture_items = []
-    active_gesture = None
+    points_kd_tree: PointGestureKDTree
+    start_time: float
+    last_move_mouse_time: float
+    last_mouse_co: Vector
+
+    @property
+    def is_show_gesture(self):
+        return
+
+    @property
+    def gesture_points(self):
+        return self.points_kd_tree.points_list
 
     @property
     def current_system(self):
@@ -30,7 +70,7 @@ class OpsProp(PublicOperator,
 
     @property
     def active_point(self):
-        return self.gesture_points[-1]
+        return self.points_kd_tree.points_list[-1]
 
     @property
     def gesture_direction(self, split=22.5) -> int:
@@ -45,8 +85,11 @@ class OpsProp(PublicOperator,
 
         vector = self.mouse_co - self.active_point
         if vector == Vector((0, 0)):
-            return -1  # 没有任何朝向
-        angle = (180 * vector.angle_signed(Vector((-1, 0)))) / pi
+            return -1  # not move mouse
+        angle = (180 * vector.angle_signed(
+            Vector((-1, 0)),
+            Vector((0, 0)))
+                 ) / pi
 
         max_split = 180 - split
 
@@ -56,6 +99,10 @@ class OpsProp(PublicOperator,
             return 2
         else:
             return gesture_index(angle)
+
+    @property
+    def active_gesture(self):  # TODO
+        return TempDrawGesture()
 
     @property
     def gesture_distance(self):
@@ -78,7 +125,7 @@ class OpsProp(PublicOperator,
         return self._beyond_distance(self.beyond_distance)
 
     @property
-    def gesture_point_item(self):
+    def gesture_point_item(self):  # TODO
         """获取手势指向项
 
         Returns:
@@ -107,16 +154,17 @@ class OpsProp(PublicOperator,
         return self.gesture_beyond_distance and self.gesture_point_item
 
 
-class GestureDraw(OpsProp,
+class GestureDraw(GestureProp,
                   PublicGpu):
     data = {}
     _handler_draw_gesture = []
 
     def register_draw_gesture(self):
-        GestureDraw._handler_draw_gesture.append(
-            bpy.types.SpaceView3D.draw_handler_add(
-                self.draw_gesture_system, (),
-                'WINDOW', 'POST_PIXEL'))
+        if not GestureDraw._handler_draw_gesture:
+            GestureDraw._handler_draw_gesture.append(
+                bpy.types.SpaceView3D.draw_handler_add(
+                    self.draw_gesture_system, (),
+                    'WINDOW', 'POST_PIXEL'))
 
     @staticmethod
     def unregister_draw_gesture():
@@ -124,6 +172,8 @@ class GestureDraw(OpsProp,
             bpy.types.SpaceView3D.draw_handler_remove(GestureDraw._handler_draw_gesture.pop(), 'WINDOW')
 
     def draw_gesture_system(self):
+        gpu.state.blend_set('MULTIPLY')
+
         self.draw_gesture_points()
         self.draw_gesture_line()
         self.draw_gesture_items()
@@ -136,8 +186,8 @@ class GestureDraw(OpsProp,
         self.draw_2d_points(self.gesture_points)
 
     def draw_gesture_items(self):
-        for i in range(8):
-            TempDrawGesture().draw_gesture(self, i + 1, False)
+        for i in range(3, 8):
+            TempDrawGesture().draw_gesture(self, i + 1, self.gesture_direction == i)
 
     def draw_test(self):
         import gpu
@@ -200,7 +250,7 @@ class GestureOps(GestureDraw):
     test = []
 
     def clear_gesture_data(self):
-        self.gesture_points.clear()
+        ...
 
     def update_data(self, context, event):
         GestureDraw.data['ops'] = self
@@ -208,31 +258,53 @@ class GestureOps(GestureDraw):
         GestureDraw.data['context'] = context
         self.test = event.mouse_x, event.mouse_y
 
+    def show_gesture(self):
+        self.register_draw_gesture()
+
     def invoke_gesture(self, context, event):
         self.update_data(context, event)
-        self.gesture_points.append(self.start_mouse_co)
+        self.init_kd_tree()
+        self.points_kd_tree.append(TempDrawGesture(), self.start_mouse_co)
+        self.last_move_mouse_time = self.start_time = time.time()
+        self.last_mouse_co = self.mouse_co
+        self.register_draw_gesture()
 
         context.window_manager.modal_handler_add(self)
-        self.register_draw_gesture()
         return {'RUNNING_MODAL'}
+
+    def update_modal(self):
+        if self.mouse_co != self.last_mouse_co:
+            self.last_move_mouse_time = time.time()
+        self.last_mouse_co = self.mouse_co
 
     def modal_gesture(self, context, event):
         self.update_data(context, event)
         if self.is_exit:
             self.exit()
             return {'FINISHED'}
-        elif self.gesture_beyond_distance:
-            self.gesture_points.append(self.mouse_co)
+        elif self.gesture_beyond_distance and len(self.points_kd_tree) < 5:
+            self.points_kd_tree.append(self.active_gesture, self.mouse_co)
+
+        if (time.time() - self.last_move_mouse_time) > 500:
+            self.show_gesture()
+
         self.tag_redraw(context)
+        self.update_modal()
         return {'RUNNING_MODAL'}
 
     def exit_gesture(self):
         self.unregister_draw_gesture()
         self.clear_gesture_data()
 
+    def init_kd_tree(self):
+        self.points_kd_tree = PointGestureKDTree()
+
 
 class TempDrawGesture(PublicClass, PublicGpu):
     direction: int
+    is_about_beyond: bool
+    is_about_beyond: bool
+    point: Vector
     width = 50
     height = 20
     direction_angle_maps = {
@@ -267,6 +339,7 @@ class TempDrawGesture(PublicClass, PublicGpu):
     def draw_gesture(self, ops, direction, is_about_beyond: bool):
         a = self.direction_angle_maps[direction]
         point = self.calculate_point_on_circle(ops.active_point, ops.beyond_distance, a * 45)
+        self.is_about_beyond = is_about_beyond
         self.direction = direction
         self.point = point
         self.draw_2d_points([point, ])
@@ -275,11 +348,12 @@ class TempDrawGesture(PublicClass, PublicGpu):
 
     def draw_background(self):
         x, y = self.start_point
-        self.draw_2d_rectangle(x, y, x + self.width, y + self.height)
+        color = (0.329412, 0.329412, 0.329412, 1) if self.is_about_beyond else (0.094118, 0.094118, 0.094118, 1)
+        self.draw_2d_rectangle(x, y, x + self.width, y + self.height, color=color)
 
     def draw_text(self):
         x, y = self.start_point
-        self.draw_2d_text(str(self.direction), self.height, x, y)
+        self.draw_2d_text(str(self.direction), self.height, x, y + self.height, color=(0.85098, 0.85098, 0.85098, 1))
 
 
 class SystemOps(GestureOps,

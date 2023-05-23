@@ -69,11 +69,14 @@ class ElementDrawEdit(ElementProp,
     def draw_edit_operator(self, layout):
         # TODO 显示操作符label
         # TODO 自动设置为操作符label
-        layout.prop(self, 'text')
-        layout.prop(self, 'operator')
-        layout.prop(self, 'operator_property')
-        layout.prop(self, 'operator_context')
-        self.draw_operator_property_set_layout(layout)
+        if self.parent_system.is_gesture_type:
+            self.draw_edit_child_gestures(layout.box())
+        box = layout.box()
+        box.prop(self, 'text')
+        box.prop(self, 'operator')
+        box.prop(self, 'operator_property')
+        box.prop(self, 'operator_context')
+        self.draw_operator_property_set_layout(layout.box())
 
     def draw_edit_advanced_parameter(self, layout):  # TODO
         ...
@@ -150,4 +153,3 @@ class ElementDrawGesture(ElementProp):
     def draw_gesture(self, ops):
         # bpy.types.SpaceView3D.draw_handler_add(draw, (), 'WINDOW', 'POST_PIXEL')
         ...
-
