@@ -183,9 +183,10 @@ class ElementDrawGesture(ElementProp, PublicGpu):
         self.is_about_beyond = is_about_beyond
         self.ops = ops
 
-        self.draw_2d_points([self.draw_start_point, ])
+        # self.draw_2d_points([self.draw_start_point, ])
         self.draw_background()
         self.draw_text()
+        self.draw_child_expand_icon()
 
     def draw_background(self):
         x, y = self.draw_start_point
@@ -197,3 +198,9 @@ class ElementDrawGesture(ElementProp, PublicGpu):
         self.draw_2d_text(self.text, self.height,
                           x, y + self.height,
                           color=(0.85098, 0.85098, 0.85098, 1))
+
+    def draw_child_expand_icon(self):
+        if self.gesture_is_direction_mode and self.gesture_is_have_child:
+            o_x, y = self.draw_start_point
+            w, h = self.height
+            x = o_x + (o_x - y)

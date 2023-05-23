@@ -3,10 +3,11 @@ from math import pi
 
 import bpy
 import gpu
-from bpy.props import StringProperty
+from bpy.props import BoolProperty, StringProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
 
+from ..utils.public import PublicData
 from ..utils.public.public_gpu import PublicGpu
 from ..utils.public.public_operator import PublicOperator
 
@@ -38,16 +39,25 @@ class PointGestureKDTree:
 class GestureProp(PublicOperator,
                   ):
     system: StringProperty()
+    show_gesture: BoolProperty(default=False, **PublicData.PROP_DEFAULT_SKIP)
     points_kd_tree: PointGestureKDTree
     start_time: float
-    last_move_mouse_time: float
-    last_mouse_co: Vector
+    mouse_trajectory: list
+    _last_move_mouse_time: float
 
     @property
     def find_closest_point(self):
         tree = self.points_kd_tree.kd_tree
         tree.balance()
         return tree.find((*self.mouse_co, 0))
+
+    @property
+    def last_move_mouse_time(self) -> float:
+        return time.time() - self._last_move_mouse_time
+
+    @last_move_mouse_time.setter
+    def set(self, value):
+        self._last_move_mouse_time = value
 
     @property
     def wait_draw_gesture_items(self):
@@ -176,13 +186,17 @@ class GestureDraw(GestureProp,
     def draw_gesture_system(self):
         gpu.state.blend_set('MULTIPLY')
 
-        self.draw_gesture_points()
-        self.draw_gesture_line()
-        self.draw_gesture_items()
-        self.draw_test()
+        if self.show_gesture:
+            self.draw_gesture_points()
+            self.draw_gesture_line(self.gesture_points + [self.mouse_co, ])
+            self.draw_gesture_items()
+            self.draw_test()
+        else:
+            self.draw_gesture_points()
+            self.draw_gesture_line(self.mouse_trajectory)
 
-    def draw_gesture_line(self):
-        self.draw_2d_line(self.gesture_points + [self.mouse_co, ], (1.0, 0.5, 0.5, 1), 3.4)
+    def draw_gesture_line(self, points):
+        self.draw_2d_line(points, (1.0, 0.5, 0.5, 1), 3.4)
 
     def draw_gesture_points(self):
         self.draw_2d_points(self.gesture_points)
@@ -247,43 +261,37 @@ class GestureDraw(GestureProp,
         blf.position(font_id, 200, 600, 0)
         blf.draw(font_id, str([self.is_return_previous_item, self.find_closest_point]))
         blf.position(font_id, 200, 800, 0)
-        blf.draw(font_id, str(self.active_gesture))
+        blf.draw(font_id, str([self.active_gesture, self.last_move_mouse_time]))
 
 
 class GestureOps(GestureDraw):
-
-    def clear_gesture_data(self):
-        ...
-
     def update_data(self, context, event):
         GestureDraw.data['ops'] = self
         GestureDraw.data['event'] = event
         GestureDraw.data['context'] = context
 
-    def show_gesture(self):
-        self.register_draw_gesture()
-
     def invoke_gesture(self, context, event):
         self.update_data(context, event)
         self.init_kd_tree()
         self.points_kd_tree.append(self.current_system, self.start_mouse_co)
-        self.last_move_mouse_time = self.start_time = time.time()
-        self.last_mouse_co = self.mouse_co
+        self._last_move_mouse_time = self.start_time = time.time()
+        self.mouse_trajectory = [self.mouse_co, ]
         self.register_draw_gesture()
 
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
     def update_modal(self):
-        if self.mouse_co != self.last_mouse_co:
-            self.last_move_mouse_time = time.time()
+        if self.mouse_co != self.mouse_trajectory[-1]:
+            self.mouse_trajectory.append(self.mouse_co)
+            self._last_move_mouse_time = time.time()
+
         self.last_mouse_co = self.mouse_co
 
     def modal_gesture(self, context, event):
         self.update_data(context, event)
         if self.is_exit:
-            self.exit()
-            return {'FINISHED'}
+            return self.exit()
         elif self.is_beyond_distance_event:
             self.points_kd_tree.append(self.gesture_direction_item, self.mouse_co)
         elif self.is_return_previous_item:
@@ -291,8 +299,8 @@ class GestureOps(GestureDraw):
             print('is_return_previous_item', index)
             self.points_kd_tree.remove(index)
 
-        if (time.time() - self.last_move_mouse_time) > 500:
-            self.show_gesture()
+        if self.last_move_mouse_time > 0.2: # 200ms
+            self.show_gesture = True
 
         self.tag_redraw(context)
         self.update_modal()
@@ -300,11 +308,13 @@ class GestureOps(GestureDraw):
 
     def exit_gesture(self):
         self.unregister_draw_gesture()
-        self.clear_gesture_data()
         item = self.gesture_direction_item
-        if item:
-            if item and item.gesture_is_operator:
-                item.running_operator()
+        if item and item.gesture_is_operator:
+            item.running_operator()
+            return {'FINISHED'}
+        else:
+            return {'FINISHED'}
+            return {'PASS_THROUGH'}
 
     def init_kd_tree(self):
         self.points_kd_tree = PointGestureKDTree()
@@ -328,8 +338,9 @@ class SystemOps(GestureOps,
         return getattr(self, f'modal_{self.system_type.lower()}')(context, event)
 
     def exit(self):
-        getattr(self, f'exit_{self.system_type.lower()}')()
+
         self.tag_redraw(bpy.context)
+        return getattr(self, f'exit_{self.system_type.lower()}')()
 
 
 classes_tuple = (

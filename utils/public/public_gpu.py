@@ -1,11 +1,15 @@
 import bgl
 import blf
+import bpy as bpy
 import gpu
+import bpy
 from gpu.shader import from_builtin as get_shader
 from gpu_extras.batch import batch_for_shader
 
 
 class PublicGpu:
+    _image_data = []
+
     @staticmethod
     def draw_2d_line(pos, color, line_width):
         shader = get_shader('2D_UNIFORM_COLOR')
@@ -74,3 +78,27 @@ class PublicGpu:
         blf.size(font_id, size, dpi)
         blf.color(font_id, *color)
         blf.draw(font_id, text)
+
+    @staticmethod
+    def draw_2d_image(image_path, x, y, x2: int, y2: int, width, height):
+        key = f'{width}-{height}-{image_path}'
+
+        if key not in PublicGpu._image_data:
+            image = bpy.data.images.load(image_path)
+            texture = gpu.texture.from_image(image)
+            bpy.data.images.remove(image)
+        else:
+            texture = PublicGpu._image_data
+        from gpu_extras.batch import batch_for_shader
+
+        shader = gpu.shader.from_builtin('2D_IMAGE')
+        batch = batch_for_shader(
+            shader, 'TRI_FAN',
+            {
+                "pos": ((x, y), (x2, y), (x2, y2), (x, y2)),
+                "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
+            },
+        )
+        shader.bind()
+        shader.uniform_sampler("image", texture)
+        batch.draw(shader)

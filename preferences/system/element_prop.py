@@ -246,8 +246,8 @@ class OperatorProp(TempKey, PropertyGroup):
             if func:
                 func(self.operator_context, True, **prop)
                 print(
-                    f'running_operator :bpy.ops.{self.operator}'
-                    f'({self.operator_context},{self.operator_property[1:-1]})',
+                    f'running_operator bpy.ops.{self.operator}'
+                    f'( "{self.operator_context}", {self.operator_property[1:-1]})',
                 )
         except Exception as e:
             print('running_operator ERROR', e)
