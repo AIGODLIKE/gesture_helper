@@ -1,8 +1,7 @@
 import bgl
 import blf
-import bpy as bpy
-import gpu
 import bpy
+import gpu
 from gpu.shader import from_builtin as get_shader
 from gpu_extras.batch import batch_for_shader
 
@@ -13,7 +12,9 @@ class PublicGpu:
     @staticmethod
     def draw_2d_line(pos, color, line_width):
         shader = get_shader('2D_UNIFORM_COLOR')
-        gpu.state.line_width_set(line_width if line_width else 1)
+        size = line_width if line_width else 1
+        gpu.state.line_width_set(size)
+        gpu.state.point_size_set(size)
         batch = batch_for_shader(shader, 'LINE_STRIP', {"pos": pos})
         shader.bind()
         shader.uniform_float("color", color if color else (1.0, 1.0, 1.0, 1))
@@ -80,8 +81,11 @@ class PublicGpu:
         blf.draw(font_id, text)
 
     @staticmethod
-    def draw_2d_image(image_path, x, y, x2: int, y2: int, width, height):
-        key = f'{width}-{height}-{image_path}'
+    def draw_2d_image(image_path, x, y, width, height):
+        key = f'-{image_path}'
+        x2 = x + width
+        y2 = y + height
+        gpu.state.blend_set('ALPHA')
 
         if key not in PublicGpu._image_data:
             image = bpy.data.images.load(image_path)

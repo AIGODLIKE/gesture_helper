@@ -126,14 +126,14 @@ class GestureProp(PublicOperator,
 
     @property
     def beyond_distance(self):
-        return 100
+        return 110
 
     def _beyond_distance(self, distance):
         return self.gesture_distance > (distance + distance * 0.3)
 
     @property
     def gesture_about_beyond_distance(self):
-        return self._beyond_distance(self.beyond_distance - 20)
+        return self._beyond_distance(self.beyond_distance - 40)
 
     @property
     def gesture_beyond_distance(self) -> bool:
@@ -204,24 +204,11 @@ class GestureDraw(GestureProp,
     def draw_gesture_items(self):
         for index, gesture in self.wait_draw_gesture_items.items():
             if gesture:
-                gesture.draw_gesture(self, self.gesture_direction == int(gesture.gesture_direction))
+                direction = self.gesture_direction == int(gesture.gesture_direction)
+                is_about_beyond = direction and self.gesture_about_beyond_distance
+                gesture.draw_gesture(self, is_about_beyond)
 
     def draw_test(self):
-        import gpu
-        from gpu_extras.batch import batch_for_shader
-        vertices = (
-            (100, 100), (300, 100),
-            (100, 200), (300, 200))
-
-        indices = (
-            (0, 1, 2), (2, 1, 3))
-
-        shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-        batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
-
-        shader.uniform_float("color", (0, 0.5, 0.5, 1.0))
-        batch.draw(shader)
-
         import blf
         import bpy
 
@@ -245,12 +232,12 @@ class GestureDraw(GestureProp,
         #     """Draw on the viewports"""
         #     # BLF drawing routine
         font_id = font_info["font_id"]
-        blf.position(font_id, 200, 80, 0)
+        blf.position(font_id, 200, 60, 0)
         blf.size(font_id, 20)
         blf.draw(font_id, str(self.gesture_direction_item))
-        blf.position(font_id, 200, 300, 0)
+        blf.position(font_id, 200, 80, 0)
         blf.draw(font_id, str(self.wait_draw_gesture_items))
-        blf.position(font_id, 200, 500, 0)
+        blf.position(font_id, 200, 100, 0)
         blf.draw(font_id,
                  str([
                      self.is_beyond_distance_event,
@@ -258,9 +245,9 @@ class GestureDraw(GestureProp,
                      self.gesture_beyond_distance,
                      int(self.gesture_distance),
                  ]))
-        blf.position(font_id, 200, 600, 0)
+        blf.position(font_id, 200, 120, 0)
         blf.draw(font_id, str([self.is_return_previous_item, self.find_closest_point]))
-        blf.position(font_id, 200, 800, 0)
+        blf.position(font_id, 200, 140, 0)
         blf.draw(font_id, str([self.active_gesture, self.last_move_mouse_time]))
 
 
@@ -299,7 +286,7 @@ class GestureOps(GestureDraw):
             print('is_return_previous_item', index)
             self.points_kd_tree.remove(index)
 
-        if self.last_move_mouse_time > 0.2: # 200ms
+        if self.last_move_mouse_time > 0.2:  # 200ms
             self.show_gesture = True
 
         self.tag_redraw(context)
@@ -309,7 +296,7 @@ class GestureOps(GestureDraw):
     def exit_gesture(self):
         self.unregister_draw_gesture()
         item = self.gesture_direction_item
-        if item and item.gesture_is_operator:
+        if item and item.gesture_is_operator and self.gesture_about_beyond_distance:
             item.running_operator()
             return {'FINISHED'}
         else:

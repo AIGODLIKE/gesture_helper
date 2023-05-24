@@ -176,7 +176,8 @@ class ElementDrawGesture(ElementProp, PublicGpu):
             8: (-1, (0, -h)),
         }
         direction = direction_angle_maps[int(self.gesture_direction)]
-        point = self.calculate_point_on_circle(ops.active_point, ops.beyond_distance, direction[0] * 45)
+        pie_radius = 120
+        point = self.calculate_point_on_circle(ops.active_point, pie_radius, direction[0] * 45)
         return point + Vector(direction[1])
 
     def draw_gesture(self, ops, is_about_beyond: bool):
@@ -195,12 +196,14 @@ class ElementDrawGesture(ElementProp, PublicGpu):
 
     def draw_text(self):
         x, y = self.draw_start_point
-        self.draw_2d_text(self.text, self.height,
+        self.draw_2d_text(self.text, 15,
                           x, y + self.height,
                           color=(0.85098, 0.85098, 0.85098, 1))
 
     def draw_child_expand_icon(self):
         if self.gesture_is_direction_mode and self.gesture_is_have_child:
+            from ...res import get_path
             o_x, y = self.draw_start_point
-            w, h = self.height
-            x = o_x + (o_x - y)
+            w, h = self.width, self.height
+            x = o_x + (w - h)
+            self.draw_2d_image(get_path('images\\child_expand.png'), x, y, h, h)
