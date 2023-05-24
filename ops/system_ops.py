@@ -53,7 +53,7 @@ class GestureProp(PublicOperator,
 
     @property
     def last_move_mouse_time(self) -> float:
-        return time.time() - self._last_move_mouse_time
+        return (time.time() - self._last_move_mouse_time) * 100
 
     @last_move_mouse_time.setter
     def set(self, value):
@@ -283,10 +283,8 @@ class GestureOps(GestureDraw):
             self.points_kd_tree.append(self.gesture_direction_item, self.mouse_co)
         elif self.is_return_previous_item:
             point, index, distance = self.find_closest_point
-            print('is_return_previous_item', index)
             self.points_kd_tree.remove(index)
-
-        if self.last_move_mouse_time > 0.2:  # 200ms
+        if self.last_move_mouse_time > 200:  # 200ms
             self.show_gesture = True
 
         self.tag_redraw(context)

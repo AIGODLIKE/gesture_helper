@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, CollectionProperty, FloatProperty, IntProperty, PointerProperty
+from bpy.props import BoolProperty, CollectionProperty, EnumProperty, FloatProperty, IntProperty, PointerProperty
 from bpy.types import AddonPreferences, PropertyGroup, UILayout
 
 from . import system
@@ -13,6 +13,19 @@ from ..utils.public import PublicClass, PublicData
 class DrawPreferences(PublicClass):
 
     def draw_preferences(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.prop(self, 'addon_show_type', text='', expand=True)
+        draw_type = getattr(self, 'addon_show_type', 'about')
+        getattr(self, f'draw_{draw_type}')(context, col)
+
+    def draw_about(self, context, layout):
+        layout.label(text='about' + str(self))
+
+    def draw_setting(self, context, layout):
+        layout.label(text='setting' + str(self))
+
+    def draw_editor(self, context, layout):
         sp = layout.split(factor=self.ui_prop.system_element_split_factor)
 
         col = sp.column()
@@ -127,6 +140,7 @@ class PreferencesProperty:
     ui_property: PointerProperty(name='Ui Property',
                                  type=UiProperty,
                                  description="Control the display settings on the addon interface")
+    addon_show_type: EnumProperty(items=PublicData.ENUM_ADDON_SHOW_TYPE)
 
 
 class GesturePreferences(PublicClass,
