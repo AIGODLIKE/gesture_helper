@@ -5,13 +5,20 @@ import gpu
 from gpu.shader import from_builtin as get_shader
 from gpu_extras.batch import batch_for_shader
 
+if bpy.app.version >= (4, 0, 0):
+    SHADER_2D_UNIFORM_COLOR = get_shader('UNIFORM_COLOR')
+    SHADER_2D_IMAGE = get_shader('IMAGE_COLOR')
+else:
+    SHADER_2D_IMAGE = get_shader('2D_IMAGE')
+    SHADER_2D_UNIFORM_COLOR = get_shader('2D_UNIFORM_COLOR')
+
 
 class PublicGpu:
     _image_data = []
 
     @staticmethod
     def draw_2d_line(pos, color, line_width):
-        shader = get_shader('2D_UNIFORM_COLOR')
+        shader = SHADER_2D_UNIFORM_COLOR
         size = line_width if line_width else 1
         gpu.state.line_width_set(size)
         gpu.state.point_size_set(size)
@@ -24,7 +31,7 @@ class PublicGpu:
     @staticmethod
     def draw_2d_points(points, point_size=10, color=(1, 1, 1, 1)):
         bgl.glPointSize(point_size)
-        shader = get_shader('2D_UNIFORM_COLOR')
+        shader = SHADER_2D_UNIFORM_COLOR
         batch = batch_for_shader(shader, 'POINTS', {"pos": points})
         shader.bind()
         shader.uniform_float("color", color)
@@ -57,7 +64,7 @@ class PublicGpu:
         vertices = ((x, y), (x2, y), (x, y2), (x2, y2))
         indices = ((0, 1, 2), (2, 1, 3))
 
-        shader = get_shader('2D_UNIFORM_COLOR')
+        shader = SHADER_2D_UNIFORM_COLOR
         batch = batch_for_shader(shader,
                                  'TRIS', {"pos": vertices},
                                  indices=indices)
@@ -95,7 +102,7 @@ class PublicGpu:
             texture = PublicGpu._image_data
         from gpu_extras.batch import batch_for_shader
 
-        shader = gpu.shader.from_builtin('2D_IMAGE')
+        shader = SHADER_2D_IMAGE
         batch = batch_for_shader(
             shader, 'TRI_FAN',
             {

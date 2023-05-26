@@ -44,6 +44,7 @@ class GestureProp(PublicOperator,
     start_time: float
     mouse_trajectory: list
     _last_move_mouse_time: float
+    last_mouse_co: Vector
 
     @property
     def find_closest_point(self):
@@ -53,11 +54,7 @@ class GestureProp(PublicOperator,
 
     @property
     def last_move_mouse_time(self) -> float:
-        return (time.time() - self._last_move_mouse_time) * 100
-
-    @last_move_mouse_time.setter
-    def set(self, value):
-        self._last_move_mouse_time = value
+        return time.time() - self._last_move_mouse_time
 
     @property
     def wait_draw_gesture_items(self):
@@ -284,7 +281,7 @@ class GestureOps(GestureDraw):
         elif self.is_return_previous_item:
             point, index, distance = self.find_closest_point
             self.points_kd_tree.remove(index)
-        if self.last_move_mouse_time > 200:  # 200ms
+        if self.last_move_mouse_time > 0.2:  # 200ms
             self.show_gesture = True
 
         self.tag_redraw(context)

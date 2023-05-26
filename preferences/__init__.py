@@ -13,17 +13,21 @@ from ..utils.public import PublicClass, PublicData
 class DrawPreferences(PublicClass):
 
     def draw_preferences(self, context: 'bpy.types.Context', layout: 'bpy.types.UILayout'):
-        col = layout.column(align=True)
+        col = layout.column()
         row = col.row(align=True)
-        row.prop(self, 'addon_show_type', text='', expand=True)
-        draw_type = getattr(self, 'addon_show_type', 'about')
-        getattr(self, f'draw_{draw_type}')(context, col)
+        row.prop(self.pref, 'addon_show_type', expand=True)
+        draw_type = getattr(self.pref, 'addon_show_type', 'about')
+        getattr(self, f'draw_{draw_type.lower()}')(context, col)
 
     def draw_about(self, context, layout):
         layout.label(text='about' + str(self))
 
     def draw_setting(self, context, layout):
-        layout.label(text='setting' + str(self))
+        pref = self.pref
+        layout.prop(pref, 'gesture_timeout')
+        layout.prop(pref, 'gesture_radius')
+        layout.prop(pref, 'gesture_radius_threshold')
+        layout.prop(pref, 'gesture_confirm_radius_threshold')
 
     def draw_editor(self, context, layout):
         sp = layout.split(factor=self.ui_prop.system_element_split_factor)
@@ -128,6 +132,18 @@ class UiProperty(PropertyGroup):
                                       max=250)
 
 
+class GestureOpsShowProperty:
+
+    @staticmethod
+    def gen_gesture_prop(default, subtype='PIXEL'):
+        return {'max': 514, 'default': default, 'subtype': subtype, 'min': 20}
+
+    gesture_timeout: IntProperty(name='Gesture TimeOut', **gen_gesture_prop(300, 'TIME'))
+    gesture_radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(120))
+    gesture_radius_threshold: IntProperty(name='Gesture Radius Threshold', **gen_gesture_prop(115))
+    gesture_confirm_radius_threshold: IntProperty(name='Gesture Confirm Radius Threshold', **gen_gesture_prop(115))
+
+
 class PreferencesProperty:
     """inherited to addon preferences by this class
     """
@@ -145,6 +161,7 @@ class PreferencesProperty:
 
 class GesturePreferences(PublicClass,
                          PreferencesProperty,
+                         GestureOpsShowProperty,
                          AddonPreferences):
     bl_idname = PublicData.G_ADDON_NAME
 

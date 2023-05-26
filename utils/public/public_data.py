@@ -390,11 +390,11 @@ class PublicEnum:
         ('HEADER_LAYOUT_EXPAND', 'Expand Header Layout',
          'Allow buttons in the header to stretch and shrink to fill the entire layout width.'),
     ]
-    ENUM_ADDON_SHOW_TYPE = {
+    ENUM_ADDON_SHOW_TYPE = [
         ('EDITOR', 'Editor', 'Editor Gesture'),
         ('SETTING', 'Setting', 'Addon Settings'),
         ('About', 'About', 'Addon About'),
-    }
+    ]
 
 
 class PublicData(PublicEnum, PublicProp):
@@ -444,23 +444,6 @@ class PieProperty:
         PIE_MENU_RADIUS_DATA['min'] = PIE_MENU_THRESHOLD_DATA['min'] = PIE_MENU_CONFIRM_DATA['min'] = -1
     PIE_ANIMATION_TIMEOUT_DATA['soft_min'] = PIE_TAP_TIMEOUT_DATA['soft_min'] = PIE_INITIAL_TIMEOUT_DATA['soft_min'] = \
         PIE_MENU_RADIUS_DATA['soft_min'] = PIE_MENU_THRESHOLD_DATA['soft_min'] = PIE_MENU_CONFIRM_DATA['soft_min'] = 0
-
-
-class GestureProp:
-    PROP_GESTURE_PREFERENCES_PROP = {'max': 514, 'default': 60, 'subtype': 'PIXEL', 'min': 20}
-
-    @classmethod
-    def gen_gesture_prop(cls, default):
-        prop = cls.PROP_GESTURE_PREFERENCES_PROP
-        prop['default'] = default
-        return prop
-
-    TIME_OUT = gen_gesture_prop(300)
-    TIME_OUT['subtype'] = 'TIME'
-    gesture_timeout: IntProperty(name='Gesture TimeOut', **TIME_OUT)
-    gesture_radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(120))
-    gesture_confirm_radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(115))
-    gesture_confirm_radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(115))
 
 
 class ElementType:
