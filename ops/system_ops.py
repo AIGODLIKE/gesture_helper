@@ -296,7 +296,6 @@ class GestureOps(GestureDraw):
             return {'FINISHED'}
         else:
             return {'FINISHED'}
-            return {'PASS_THROUGH'}
 
     def init_kd_tree(self):
         self.points_kd_tree = PointGestureKDTree()

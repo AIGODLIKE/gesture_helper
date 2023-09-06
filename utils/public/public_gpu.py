@@ -83,7 +83,7 @@ class PublicGpu:
                      column=0,
                      ):
         blf.position(font_id, x, y - (size * (column + 1)), 0)
-        blf.size(font_id, size, dpi)
+        blf.size(fontid=font_id, size=size, dpi=dpi)
         blf.color(font_id, *color)
         blf.draw(font_id, text)
 
