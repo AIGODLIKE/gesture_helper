@@ -97,6 +97,7 @@ class ElementCRUD:
             a.select_structure_type = self.select_structure_type
             a.gesture_type = self.gesture_type
             a.parent_system.update_ui_layout()
+            a.add_init()
 
         def invoke(self, context, event):
             if self.is_popup_menu:

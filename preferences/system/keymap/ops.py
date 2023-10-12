@@ -22,7 +22,7 @@ class OperatorSetKeyMaps(Operator, PublicClass, PublicUi):
 
     @property
     def key_maps(self):
-        k = self.active_system.key
+        k = self.active_system.keymap
         key = 'key_maps'
         items = list(k[key]) if key in k else ['Window', ]
         return items
@@ -60,9 +60,9 @@ class OperatorSetKeyMaps(Operator, PublicClass, PublicUi):
                 _d(child)
 
         _d(self.keymap_hierarchy)
-        self.active_system.key['key_maps'] = rsc
+        self.active_system.keymap['key_maps'] = rsc
         print(rsc)
-        self.active_system.key.update()
+        self.active_system.keymap.update()
         return {'FINISHED'}
 
     def draw(self, context):
@@ -105,7 +105,7 @@ class OperatorSetKeyMaps(Operator, PublicClass, PublicUi):
 
 
 class OperatorTempModifierKey(PublicOperator):
-    _temp_kmi_key = 'temp_kmi_key_gesture_helper'
+    _temp_kmi_key = 'gesture_ops_temp_kmi'
     bl_idname = PublicOperator.ops_id_name(_temp_kmi_key)
     bl_label = 'Temp Kmi Key Gesture Helper'
 

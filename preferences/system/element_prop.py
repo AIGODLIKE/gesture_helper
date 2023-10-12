@@ -7,7 +7,7 @@ from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, St
 from bpy.types import PropertyGroup
 
 from .element_prop_poll import ElementPropPoll
-from ...public import PublicData, PublicClass, ElementType, PublicPropertyGroup
+from ...public import PublicData, PublicClass, ElementType, PublicPropertyGroup, TempKey
 
 
 class UILayoutProp(PublicData):
@@ -218,7 +218,7 @@ class PanelProp(PropertyGroup):
                              )
 
 
-class OperatorProp(PropertyGroup):
+class OperatorProp(PropertyGroup, TempKey):
     last_operator_element = None
     last_operator_element_idname = None
 

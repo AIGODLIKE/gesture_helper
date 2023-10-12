@@ -90,7 +90,7 @@ class DrawPreferences(PropertyPreferences):
         self.draw_ui_system(context, sub_col)
         sys_item = self.active_system
         if sys_item and sys_item.is_draw_key:
-            self.active_system.key.draw_key(sub_col)
+            self.active_system.keymap.draw_key(sub_col)
 
         col = sp.column()
         sub_row = col.row(align=True)

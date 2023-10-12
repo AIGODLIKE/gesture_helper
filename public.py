@@ -66,7 +66,10 @@ class PublicProperty:
 
     @property
     def active_system(self):
-        return self.systems[self.pref.active_index]
+        try:
+            return self.systems[self.pref.active_index]
+        except IndexError:
+            ...
 
     @property
     def active_ui_element(self):

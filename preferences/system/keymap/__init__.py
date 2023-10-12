@@ -53,7 +53,7 @@ class KeyProperty(PropertyGroup,
     @property
     def parent_system(self):
         for s in self.pref.systems:
-            if s.key == self:
+            if s.keymap == self:
                 return s
 
     def _get_key_data(self) -> 'dict':

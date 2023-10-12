@@ -113,10 +113,11 @@ class SystemItem(SystemGesture,
                  ):
     """UI System Item
     """
-    key: PointerProperty(type=SystemKeyMap)
+    keymap: PointerProperty(type=SystemKeyMap)
 
     def change_name(self, old, new):
-        self.key.update()
+        print('SystemItem change_name', old, new)
+        self.keymap.update()
 
     @property
     def is_have_key(self):
@@ -125,15 +126,15 @@ class SystemItem(SystemGesture,
     def register_system(self):
         print('register_system', self.name, self.system_type)
         if self.is_have_key:
-            self.key.update()
+            self.keymap.update()
 
     def unregister_system(self):
         print('unregister_system', self.name, self.system_type)
-        self.key.unregister_key()
+        self.keymap.unregister_key()
 
     def update_ui_layout(self):
         """更新UI Layout的"""
-        print('update_ui_layout', self.name)
+        print('SystemItem update_ui_layout', self.name)
 
         def update_select_structure(items):
             last_type = 'None'
@@ -159,12 +160,18 @@ class SystemItem(SystemGesture,
     def remove(self):
         self.unregister_system()
         super().remove()
+        print('SystemItem remove', self, self.name)
 
     def copy(self):  # TODO
         cp = self.parent_collection_property.add()
         self.set_property_data(cp, self.props_data(self))
-        cp.key.key_data = self.key.key_data
-        cp.key.key_maps = self.key.key_maps
+        cp.keymap.key_data = self.keymap.key_data
+        cp.keymap.key_maps = self.keymap.key_maps
+        print('SystemItem copy', self, self.name)
+
+    def add_init(self):
+        print('SystemItem add_init', self, self.name)
+        ...
 
 
 classes_tuple = (
