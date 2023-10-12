@@ -3,20 +3,18 @@ import math
 from functools import cache
 from os.path import basename, dirname, realpath
 
-import bgl
 import blf
 import bmesh
 import bpy
 import gpu
 from bpy.app.translations import contexts as i18n_contexts
 from bpy.props import EnumProperty, StringProperty, BoolProperty
-from bpy.types import EnumPropertyItem, UILayout, PreferencesView, KeyMapItem, AddonPreferences, Operator, PropertyGroup
+from bpy.types import EnumPropertyItem, UILayout, PreferencesView, AddonPreferences, Operator, PropertyGroup
 from gpu.shader import from_builtin as get_shader
 from gpu_extras.batch import batch_for_shader
 from mathutils import Vector, Euler, Matrix
 
 from .utils import get_rna_data
-from .utils.property import RegUiProp
 
 
 def get_i18n_enum():
@@ -32,6 +30,24 @@ def get_i18n_enum():
                 add = item.replace('_', ' ')
             data.append((item, add.title(), ''))
     return data
+
+
+def register_module_factory(module):
+    is_debug = False
+
+    def reg():
+        for mod in module:
+            if is_debug:
+                print('register ', mod)
+            mod.register()
+
+    def un_reg():
+        for mod in reversed(module):
+            if is_debug:
+                print('unregister ', mod)
+            mod.unregister()
+
+    return reg, un_reg
 
 
 class PublicProperty:
@@ -50,11 +66,7 @@ class PublicProperty:
 
     @property
     def active_system(self):
-        index = self.pref.active_index
-        try:
-            return self.systems[index]
-        except IndexError:
-            ...
+        return self.systems[self.pref.active_index]
 
     @property
     def active_ui_element(self):
@@ -73,6 +85,8 @@ class PublicProperty:
 
 
 class PublicMethod:
+    exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
+
     @staticmethod
     def collection_data(prop, exclude=(), reversal=False) -> dict:
         """获取输入集合属性的内容
@@ -87,7 +101,7 @@ class PublicMethod:
         """
         data = {}
         for index, value in enumerate(prop):
-            if value not in exclude_items:
+            if value not in PublicMethod.exclude_items:
                 data[index] = PublicMethod.props_data(value, exclude, reversal)
         return data
 
@@ -112,7 +126,7 @@ class PublicMethod:
                 is_ok = (id_name in exclude) if reversal else (
                         id_name not in exclude)
 
-                is_exclude = id_name not in exclude_items
+                is_exclude = id_name not in PublicMethod.exclude_items
 
                 if is_exclude and is_ok:
                     typ = i.type
@@ -216,8 +230,8 @@ class TempKey:
             self.keyconfig.keymaps.new('TEMP')
         return self.keyconfig.keymaps['TEMP']
 
-    def get_temp_kmi(self, idname):
-        key = idname
+    def get_temp_kmi(self, id_name):
+        key = id_name
         keymap_items = self.temp_keymaps.keymap_items
         if key not in keymap_items:
             return keymap_items.new(key, 'NONE', 'PRESS')
@@ -302,24 +316,6 @@ class PublicClass(
     CacheHandler,
 ):
     layout: UILayout
-
-
-def register_module_factory(module):
-    is_debug = False
-
-    def reg():
-        for mod in module:
-            if is_debug:
-                print('register ', mod)
-            mod.register()
-
-    def un_reg():
-        for mod in reversed(module):
-            if is_debug:
-                print('unregister ', mod)
-            mod.unregister()
-
-    return reg, un_reg
 
 
 class PublicPoll:
@@ -709,7 +705,7 @@ class PublicData(PublicEnum, PublicProp):
     PROP_DEFAULT_TIME = {'max': 2000, 'min': -1, 'default': 300}
     PROP_DEFAULT_SKIP = {'options': {'HIDDEN', 'SKIP_SAVE', }}
 
-    G_ADDON_NAME = basename(dirname(dirname(dirname(realpath(__file__)))))  # addon folder path name
+    G_ADDON_NAME = basename(dirname(realpath(__file__)))  # addon folder path name
 
 
 class PieProperty:
@@ -817,51 +813,6 @@ class PublicBmesh:
             return bm
 
 
-class KeyData:
-    ENUM_KMI_TYPE = get_rna_data(KeyMapItem, 'type', msg_ctxt=i18n_contexts)
-    ENUM_KMI_VALUE = get_rna_data(KeyMapItem, 'value')
-    ENUM_KMI_MAP_TYPE = get_rna_data(KeyMapItem, 'map_type')
-    ENUM_KMI_KEY_MODIFIER = get_rna_data(KeyMapItem, 'key_modifier')
-    ENUM_KMI_VALUE_ENUM = KeyMapItem.bl_rna.properties['type'].enum_items
-    ENUM_KMI_MAP_TYPE['items'].remove(('TIMER', 'Timer', '', 'NONE', 4))
-    ENUM_KMI_MAP_TYPE['items'].remove(('TEXTINPUT', 'Text Input', '', 'NONE', 3))
-    # kmi_value['items'].append(('DOUBLE_KEY',      '双键', '', 'NONE', -114))  TODO ERROR 和手势系统有冲突
-    # kmi_value['items'].append(('LONG_PRESS',      '长按', '', 'NONE', -514))
-    ENUM_KMI_TYPE_CLASSIFY = {
-        'TEXTINPUT': ('TEXTINPUT',),
-        'TIMER': ('TIMER', 'TIMER0', 'TIMER1', 'TIMER2', 'TIMER_JOBS', 'TIMER_AUTOSAVE', 'TIMER_REPORT', 'TIMERREGION'),
-        'MOUSE': (
-            'LEFTMOUSE', 'MIDDLEMOUSE', 'RIGHTMOUSE', 'BUTTON4MOUSE', 'BUTTON5MOUSE', 'BUTTON6MOUSE', 'BUTTON7MOUSE',
-            'PEN', 'ERASER', 'MOUSEMOVE', 'TRACKPADPAN', 'TRACKPADZOOM', 'MOUSEROTATE', 'MOUSESMARTZOOM',
-            'WHEELUPMOUSE', 'WHEELDOWNMOUSE', 'WHEELINMOUSE', 'WHEELOUTMOUSE'),
-        'NDOF': (
-            'NDOF_MOTION', 'NDOF_BUTTON_MENU', 'NDOF_BUTTON_FIT', 'NDOF_BUTTON_TOP', 'NDOF_BUTTON_BOTTOM',
-            'NDOF_BUTTON_LEFT', 'NDOF_BUTTON_RIGHT', 'NDOF_BUTTON_FRONT', 'NDOF_BUTTON_BACK', 'NDOF_BUTTON_ISO1',
-            'NDOF_BUTTON_ISO2', 'NDOF_BUTTON_ROLL_CW', 'NDOF_BUTTON_ROLL_CCW', 'NDOF_BUTTON_SPIN_CW',
-            'NDOF_BUTTON_SPIN_CCW', 'NDOF_BUTTON_TILT_CW', 'NDOF_BUTTON_TILT_CCW', 'NDOF_BUTTON_ROTATE',
-            'NDOF_BUTTON_PANZOOM', 'NDOF_BUTTON_DOMINANT', 'NDOF_BUTTON_PLUS', 'NDOF_BUTTON_MINUS', 'NDOF_BUTTON_1',
-            'NDOF_BUTTON_2', 'NDOF_BUTTON_3', 'NDOF_BUTTON_4', 'NDOF_BUTTON_5', 'NDOF_BUTTON_6', 'NDOF_BUTTON_7',
-            'NDOF_BUTTON_8', 'NDOF_BUTTON_9', 'NDOF_BUTTON_10', 'NDOF_BUTTON_A', 'NDOF_BUTTON_B', 'NDOF_BUTTON_C'),
-
-        'KEYBOARD': (
-            'NONE', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-            'U', 'V', 'W', 'X', 'Y', 'Z', 'ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT',
-            'NINE', 'LEFT_CTRL', 'LEFT_ALT', 'LEFT_SHIFT', 'RIGHT_ALT', 'RIGHT_CTRL', 'RIGHT_SHIFT', 'OSKEY', 'APP',
-            'GRLESS', 'ESC', 'TAB', 'RET', 'SPACE', 'LINE_FEED', 'BACK_SPACE', 'DEL', 'SEMI_COLON', 'PERIOD', 'COMMA',
-            'QUOTE', 'ACCENT_GRAVE', 'MINUS', 'PLUS', 'SLASH', 'BACK_SLASH', 'EQUAL', 'LEFT_BRACKET', 'RIGHT_BRACKET',
-            'LEFT_ARROW', 'DOWN_ARROW', 'RIGHT_ARROW', 'UP_ARROW', 'NUMPAD_2', 'NUMPAD_4', 'NUMPAD_6', 'NUMPAD_8',
-            'NUMPAD_1', 'NUMPAD_3', 'NUMPAD_5', 'NUMPAD_7', 'NUMPAD_9', 'NUMPAD_PERIOD', 'NUMPAD_SLASH',
-            'NUMPAD_ASTERIX', 'NUMPAD_0', 'NUMPAD_MINUS', 'NUMPAD_ENTER', 'NUMPAD_PLUS', 'F1', 'F2', 'F3', 'F4', 'F5',
-            'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'F15', 'F16', 'F17', 'F18', 'F19', 'F20', 'F21',
-            'F22', 'F23', 'F24', 'PAUSE', 'INSERT', 'HOME', 'PAGE_UP', 'PAGE_DOWN', 'END', 'MEDIA_PLAY', 'MEDIA_STOP',
-            'MEDIA_FIRST', 'MEDIA_LAST',)
-        # 'INBETWEEN_MOUSEMOVE''WINDOW_DEACTIVATE', 'ACTIONZONE_AREA',
-        # 'ACTIONZONE_REGION', 'ACTIONZONE_FULLSCREEN', 'XR_ACTION'
-    }
-
-
-exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
-
 if bpy.app.version >= (4, 0, 0):
     SHADER_2D_UNIFORM_COLOR = get_shader('UNIFORM_COLOR')
     SHADER_2D_IMAGE = get_shader('IMAGE_COLOR')
@@ -887,13 +838,13 @@ class PublicGpu:
 
     @staticmethod
     def draw_2d_points(points, point_size=10, color=(1, 1, 1, 1)):
-        bgl.glPointSize(point_size)
+        gpu.state.point_size_size(point_size)
         shader = SHADER_2D_UNIFORM_COLOR
         batch = batch_for_shader(shader, 'POINTS', {"pos": points})
         shader.bind()
         shader.uniform_float("color", color)
         batch.draw(shader)
-        bgl.glPointSize(1)
+        gpu.state.point_size_size(1)
 
     @staticmethod
     def draw_2d_rectangle(x: int, y: int, x2: int, y2: int, color=(0, 0, 0, 1.0)):
@@ -922,9 +873,12 @@ class PublicGpu:
         indices = ((0, 1, 2), (2, 1, 3))
 
         shader = SHADER_2D_UNIFORM_COLOR
-        batch = batch_for_shader(shader,
-                                 'TRIS', {"pos": vertices},
-                                 indices=indices)
+        batch = batch_for_shader(
+            shader,
+            'TRIS',
+            {"pos": vertices},
+            indices=indices
+        )
         shader.bind()
         shader.uniform_float("color", color)
         batch.draw(shader)
@@ -972,12 +926,10 @@ class PublicGpu:
         batch.draw(shader)
 
 
-class PublicOperator(
-    CacheHandler,
-    Operator):
+class PublicOperator(CacheHandler, Operator):
     @staticmethod
     def ops_id_name(string):
-        return 'emm_operator.' + string
+        return f'gesture.{string}'
 
     event: bpy.types.Event
     context: bpy.types.Context
@@ -1344,7 +1296,7 @@ class PublicUi:
         draw_func(layout,**)
         draw_func_data{}
         """
-
+        from .utils.property import RegUiProp
         extend = RegUiProp.temp_wm_prop()
 
         extend_prop_name = prop_name + '_extend'

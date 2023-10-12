@@ -2,13 +2,13 @@ import bpy
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, IntProperty, PointerProperty
 from bpy.types import PropertyGroup
 
+from . import element
+from . import keymap
+from .element import UiElementItem
+from .keymap import SystemKeyMap
 from ...public import (
     PublicClass, PublicPropertyGroup, PublicCollectionNoRepeatName, PublicUi, PublicData,
     register_module_factory)
-from . import element_item
-from . import system_key
-from .element_item import UiElementItem
-from .system_key import SystemKey
 
 
 class SystemProp(PublicClass,
@@ -113,7 +113,7 @@ class SystemItem(SystemGesture,
                  ):
     """UI System Item
     """
-    key: PointerProperty(type=SystemKey)
+    key: PointerProperty(type=SystemKeyMap)
 
     def change_name(self, old, new):
         self.key.update()
@@ -171,8 +171,8 @@ classes_tuple = (
     SystemItem,
 )
 modules_tuple = (
-    system_key,
-    element_item,
+    keymap,
+    element,
 )
 
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)

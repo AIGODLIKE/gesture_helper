@@ -1,24 +1,9 @@
 import bpy
-from bpy.app.translations import contexts as i18n_contexts
-from bpy.props import StringProperty
-from bpy.types import Operator, PropertyGroup, KeyMapItem
+from bpy.types import PropertyGroup
 from idprop.types import IDPropertyGroup
 
-from ...public import PublicOperator, PublicClass, TempKey, PublicUi
-from ...utils.property import RegUiProp
-
-ui_events_keymaps = i18n_contexts.ui_events_keymaps
-
-
-class OperatorTempModifierKey(PublicOperator):
-    _temp_kmi_key = 'temp_kmi_key_gesture_helper'
-    bl_idname = PublicOperator.ops_id_name(_temp_kmi_key)
-    bl_label = 'Temp Kmi Key Gesture Helper'
-
-    system: StringProperty()
-
-    def execute(self, context):
-        return {'PASS_THROUGH'}
+from .ops import OperatorTempModifierKey, OperatorSetKeyMaps
+from ....public import PublicClass, TempKey
 
 
 class KeyMaps(PropertyGroup):
@@ -87,7 +72,7 @@ class KeyProperty(PropertyGroup,
     key_data = property(fget=_get_key_data, fset=_set_key_data)
 
     @property
-    def temp_kmi(self) -> 'KeyMapItem':
+    def temp_kmi(self) -> 'bpy.types.KeyMapItem':
         return self.get_temp_kmi(OperatorTempModifierKey.bl_idname)
 
     @property
@@ -242,106 +227,139 @@ class SystemKey(KeyMaps, KeyProperty):
         self.register_key()
 
 
-class OperatorSetKeyMaps(Operator, PublicClass, PublicUi):
-    bl_idname = PublicOperator.ops_id_name('set_key_maps')
-    bl_label = 'Set Key Maps'
+class SystemKeyMap(KeyMaps, KeyProperty):
+    key_maps_kmi = {}  # class static data save kmi data
 
-    layout: 'bpy.types.UILayout'
+    def draw_key(self, layout):
+        layout.context_pointer_set('system', self.parent_system)
 
-    keymap_hierarchy: list
-    selected_list: list
+        self.draw_kmi(layout, self.temp_kmi, self.key_maps)
+        self.from_temp_key_update_data()
 
-    def invoke(self, context, event):
-        from bl_keymap_utils import keymap_hierarchy
-        self.keymap_hierarchy = keymap_hierarchy.generate()
-        self.init_invoke()
-        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 300})
+    def from_temp_key_update_data(self):
+        data = self.kmi_data
+        if self.is_change_system:
+            self.set_kmi_system(self.temp_kmi, self.active_system.name)
+            if self.key_data:
+                self.set_property_data(self.temp_kmi, self.key_data)
+            else:
+                self.key_data = self.kmi_data
+            self.tag_redraw(bpy.context)
+        elif self.key_data != data:
+            self.key_data = data
+            self.update()
+            self.tag_redraw(bpy.context)
 
-    @property
-    def key_maps(self):
-        k = self.active_system.key
-        key = 'key_maps'
-        items = list(k[key]) if key in k else ['Window', ]
-        return items
+    @staticmethod
+    def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
+        map_type = kmi.map_type
 
-    def init_invoke(self):
-        key_maps = self.key_maps
+        col = layout.column()
 
-        def _d(it):
-            for name, space_type, window_type, child in it:
-                select = name + '_selected'
-                expand = name + '_expand'
+        if kmi.show_expanded:
+            col = col.column(align=True)
+            box = col.box()
+        else:
+            box = col.column()
 
-                sel = RegUiProp.temp_prop(select)
-                s = RegUiProp.from_name_get_id(select)
+        split = box.split()
 
-                RegUiProp.temp_prop(expand)
-                setattr(sel, s, name in key_maps)
-                _d(child)
+        # header bar
+        row = split.row(align=True)
+        row.prop(kmi, "show_expanded", text="", emboss=False)
+        row.prop(kmi, "active", text="", emboss=False)
+        row.operator(OperatorSetKeyMaps.bl_idname)
 
-        _d(self.keymap_hierarchy)
+        row = split.row()
+        row.prop(kmi, "map_type", text="")
+        if map_type == 'KEYBOARD':
+            row.prop(kmi, "type", text="", full_event=True)
+        elif map_type == 'MOUSE':
+            row.prop(kmi, "type", text="", full_event=True)
+        elif map_type == 'NDOF':
+            row.prop(kmi, "type", text="", full_event=True)
+        elif map_type == 'TWEAK':
+            sub_row = row.row()
+            sub_row.prop(kmi, "type", text="")
+            sub_row.prop(kmi, "value", text="")
+        elif map_type == 'TIMER':
+            row.prop(kmi, "type", text="")
+        else:
+            row.label()
 
-    def execute(self, context):
-        rsc = []
+        row.operator("preferences.keyitem_restore", text="", icon='BACK').item_id = kmi.id
+        # Expanded, additional event settings
+        if kmi.show_expanded:
+            box = col.box()
+            if map_type not in {'TEXTINPUT', 'TIMER'}:
+                sub = box.column()
+                sub_row = sub.row(align=True)
 
-        def _d(it):
-            for name, space_type, window_type, child in it:
-                select = name + '_selected'
+                if map_type == 'KEYBOARD':
+                    sub_row.prop(kmi, "type", text="", event=True)
+                    sub_row.prop(kmi, "value", text="")
+                    sub_row_repeat = sub_row.row(align=True)
+                    sub_row_repeat.active = kmi.value in {'ANY', 'PRESS'}
+                    sub_row_repeat.prop(kmi, "repeat", text="Repeat")
+                elif map_type in {'MOUSE', 'NDOF'}:
+                    sub_row.prop(kmi, "type", text="")
+                    sub_row.prop(kmi, "value", text="")
 
-                sel = RegUiProp.temp_prop(select)
-                s = RegUiProp.from_name_get_id(select)
-                if getattr(sel, s, False):
-                    rsc.append(name)
-                _d(child)
+                if map_type in {'KEYBOARD', 'MOUSE'} and kmi.value == 'CLICK_DRAG':
+                    sub_row = sub.row()
+                    sub_row.prop(kmi, "direction")
 
-        _d(self.keymap_hierarchy)
-        self.active_system.key['key_maps'] = rsc
-        print(rsc)
-        self.active_system.key.update()
-        return {'FINISHED'}
+                sub_row = sub.row()
+                sub_row.scale_x = 0.75
+                sub_row.prop(kmi, "any", toggle=True)
+                # Use `*_ui` properties as integers aren't practical.
+                sub_row.prop(kmi, "shift_ui", toggle=True)
+                sub_row.prop(kmi, "ctrl_ui", toggle=True)
+                sub_row.prop(kmi, "alt_ui", toggle=True)
+                sub_row.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
 
-    def draw(self, context):
-        layout = self.layout.column()
-        layout.emboss = 'NONE'
-        layout.label(text=self.pref.active_system.name)
-        row = layout.row()
-        self.selected_list = []
-        self.draw_key(row.column(), self.keymap_hierarchy, 0)
-        self.draw_selected(row.column())
+                sub_row.prop(kmi, "key_modifier", text="", event=True)
 
-    def draw_selected(self, layout):
-        for sel, s, name in self.selected_list:
-            row = layout.row()
-            row.prop(sel, s, text='', icon=self.icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
-            row.label(text=name)
+            col = box.column(align=True)
+            for key in key_maps:
+                col.label(text=key)
 
-    def draw_key(self, layout, items, level):
-        for name, space_type, window_type, child in items:
-            row = self.space_layout(layout, self.ui_prop.child_element_office, level).row(align=True)
-            select = name + '_selected'
-            expand = name + '_expand'
+    def get_keymap(self, name, space_type, region_type):
+        keymaps = self.active_keyconfig.keymaps
+        return keymaps.get(name, keymaps.new(name, space_type=space_type, region_type=region_type))
 
-            sel = RegUiProp.temp_prop(select)
-            exp = RegUiProp.temp_prop(expand)
-            s = RegUiProp.from_name_get_id(select)
-            e = RegUiProp.from_name_get_id(expand)
-            if child:
-                row.prop(exp, e, text='', icon=self.icon_two(getattr(exp, e, False), 'TRIA'))
-            row.prop(sel, s, text='', icon=self.icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
-            row.label(text=name)
-            is_sel = getattr(sel, s, False)
+    def register_key(self):
+        from ....ops.system_ops import SystemOps
+        if self.parent_system not in SystemKey.key_maps_kmi:
+            SystemKey.key_maps_kmi[self.parent_system] = []
+        key_data = self.key_data
+        for key_map in self.key_maps:
+            name, space_type, region_type = self.keymap_hierarchy_dict[key_map]
+            keymap = self.get_keymap(name, space_type, region_type)
+            kmi = keymap.keymap_items.new(SystemOps.bl_idname, key_data['type'], key_data['value'])
 
-            if is_sel:
-                self.selected_list.append((sel, s, name))
+            self.set_property_data(kmi, key_data)
+            self.set_kmi_system(kmi, self.parent_system.name)
 
-            if getattr(exp, e, False):
-                self.draw_key(layout, child, level + 1)
+            print('\t', self.parent_system.name, '\t', keymap.name, kmi.name, kmi.idname)
+            SystemKey.key_maps_kmi[self.parent_system].append((keymap, kmi))
+
+    def unregister_key(self):
+        if self.parent_system in SystemKey.key_maps_kmi:
+            for keymap, kmi in SystemKey.key_maps_kmi[self.parent_system]:
+                keymap.keymap_items.remove(kmi)
+
+            del SystemKey.key_maps_kmi[self.parent_system]
+
+    def update(self):
+        self.unregister_key()
+        self.register_key()
 
 
 classes_tuple = (
-    SystemKey,
-    OperatorTempModifierKey,
+    SystemKeyMap,
     OperatorSetKeyMaps,
+    OperatorTempModifierKey,
 )
 register_class, unregister_class = bpy.utils.register_classes_factory(classes_tuple)
 

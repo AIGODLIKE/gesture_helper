@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty, PointerProperty, StringProperty
 from bpy.types import PropertyGroup
 
-from public import PublicData
+from ..public import PublicData
 
 
 class RegUiProp(PropertyGroup):

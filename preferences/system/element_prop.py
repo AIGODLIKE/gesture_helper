@@ -6,8 +6,8 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
 from bpy.types import PropertyGroup
 
-from ...public import PublicData, PublicClass, ElementType, PublicPropertyGroup, TempKey
 from .element_prop_poll import ElementPropPoll
+from ...public import PublicData, PublicClass, ElementType, PublicPropertyGroup
 
 
 class UILayoutProp(PublicData):
@@ -218,7 +218,7 @@ class PanelProp(PropertyGroup):
                              )
 
 
-class OperatorProp(TempKey, PropertyGroup):
+class OperatorProp(PropertyGroup):
     last_operator_element = None
     last_operator_element_idname = None
 
@@ -299,18 +299,18 @@ class OperatorProp(TempKey, PropertyGroup):
         self.from_draw_update_operator_stats()
 
     def from_draw_update_operator_stats(self):
-        temp_kmi = self.temp_kmi
-        temp_kmi_prop = self.from_kmi_get_operator_properties(temp_kmi)
+        kmi = self.temp_kmi
+        temp_kmi_prop = self.from_kmi_get_operator_properties(kmi)
 
         if OperatorProp.last_operator_element != self:  # change element
             OperatorProp.last_operator_element = self
             print('change operator element', self.name)
-            self.set_operator_property_to(self.operator_property, temp_kmi.properties)
+            self.set_operator_property_to(self.operator_property, kmi.properties)
 
-        elif OperatorProp.last_operator_element_idname != temp_kmi.idname:  # change idname
-            OperatorProp.last_operator_element_idname = temp_kmi.idname
-            self.set_operator_property_to(self.operator_property, temp_kmi.properties)
-            print('change operator idname', temp_kmi.idname)
+        elif OperatorProp.last_operator_element_idname != kmi.idname:  # change idname
+            OperatorProp.last_operator_element_idname = kmi.idname
+            self.set_operator_property_to(self.operator_property, kmi.properties)
+            print('change operator idname', kmi.idname)
         elif temp_kmi_prop != self.operator_property:  # change properties
             self['operator_property'] = temp_kmi_prop
 
@@ -365,12 +365,7 @@ class PropertyProp:
     property_suffix: StringProperty(default='scale', name='属性后缀')
 
 
-class UIProp:
-    ...
-
-
 class ElementProp(
-    UIProp,
     IconProp,
     MenuProp,
     PollProp,

@@ -1,3 +1,5 @@
+import bpy
+
 from .debug import Debug
 
 
@@ -16,8 +18,6 @@ def register_module_factory(module):
 
     return register_module, unregister_module
 
-
-exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
 _base_data = {'name': 'name',
               'description': 'description',
@@ -72,17 +72,10 @@ def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, ms
     if not bl_rna:
         print(Exception(f'{parent_prop} no bl_rna'))
         return dict()
-
     ret_data = {}
     pro = bl_rna.properties[property_name]
     typ = pro.type
     property_fill_name = type(pro.type_recast()).__name__
-
-    def get_t(text, msg):
-        import bpy
-        return bpy.app.translations.pgettext_iface(
-            text, msgctxt=msg)
-
     if fill_copy:
         # 获取输入属性的所有参数
         for i in property_data[property_fill_name]:
@@ -90,14 +83,14 @@ def from_bl_rna_get_bl_property_data(parent_prop: object, property_name: str, ms
             if prop is not None:
                 index = property_data[property_fill_name][i]
                 ret_data[index] = prop
-
     if typ == 'ENUM':
-        ret_data['items'] = [(i.identifier,
-                              get_t(i.name, msg_ctxt) if msg_ctxt else i.name,
-                              i.description,
-                              i.icon,
-                              i.value)
-                             for i in pro.enum_items]
+        ret_data['items'] = [
+            (i.identifier,
+             bpy.app.translations.pgettext_iface(i.name, msg_ctxt) if msg_ctxt else i.name,
+             i.description,
+             i.icon,
+             i.value)
+            for i in pro.enum_items]
     return ret_data
 
 
