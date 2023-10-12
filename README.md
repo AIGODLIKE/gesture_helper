@@ -6,4 +6,10 @@ TODO
         - [ ] 绘制框
         - [ ] 绘制字
         - [ ] 判断手势方向
-    
+- [ ] KeyMaps
+    - 修改Key
+    - 配置Key
+- [ ] Export Import Config
+- [ ] Draw Ui
+- [ ] Preferences
+

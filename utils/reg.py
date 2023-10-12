@@ -1,8 +1,8 @@
-from .public import register_module_factory
-from .. import ui, ops, prefeerences
+from . import register_module_factory
+from .. import ui, ops, preferences
 
 modules_tuple = (
-    ui, ops, prefeerences
+    ui, ops, preferences
 )
 
 register_mod, unregister_mod = register_module_factory(modules_tuple)
