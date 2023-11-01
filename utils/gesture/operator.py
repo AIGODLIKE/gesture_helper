@@ -1,0 +1,2 @@
+
+直接将operator的self传给element,让那个来进行操作
