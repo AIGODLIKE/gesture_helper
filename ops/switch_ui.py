@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import BoolProperty
 
-from utils.public import PublicOperator
+from ..utils.public import PublicOperator
 
 
 class SwitchGestureWindow(PublicOperator):
