@@ -15,12 +15,22 @@ class GestureDraw:
         GestureDraw.public_cure(layout, GestureCURE)
 
     @staticmethod
+    def draw_gesture_key(layout):
+        pref = get_pref()
+        active = pref.active_gesture
+        if active:
+            active.draw_key(layout)
+        else:
+            layout.label(text='Not Select Gesture')
+
+    @staticmethod
     def draw_gesture_list(layout: bpy.types.UILayout):
         from ..ui.ui_list import GestureUIList
         pref = get_pref()
         row = layout.row(align=True)
         GestureDraw.draw_gesture_cure(row)
-        row.template_list(
+        column = row.column(align=True)
+        column.template_list(
             GestureUIList.bl_idname,
             GestureUIList.bl_idname,
             pref,
@@ -28,6 +38,7 @@ class GestureDraw:
             pref,
             'index_gesture',
         )
+        GestureDraw.draw_gesture_key(column)
 
     @staticmethod
     def draw_element_list(layout: bpy.types.UILayout):
@@ -67,7 +78,7 @@ class GestureDraw:
             cls.REMOVE.bl_idname,
             icon='REMOVE',
             text=''
-        ).gesture_name = getattr(pref.active_gesture, 'name', '')
+        )
 
         column.separator()
 

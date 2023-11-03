@@ -23,13 +23,12 @@ class ElementCURE(PublicProperty):
             add.name = 'Element'
             return {"FINISHED"}
 
-    class DEL(PublicOperator):
-        bl_idname = 'gesture.element_del'
+    class REMOVE(PublicOperator):
+        bl_idname = 'gesture.element_remove'
         bl_label = '删除手势项'
-        gesture_name: StringProperty('需要被删除的名称')
 
         def execute(self, context):
-            self.pref.gesture[self.gesture_name].remove()
+            self.pref.active_element.remove()
             return {"FINISHED"}
 
     class MOVE(PublicOperator):

@@ -1,26 +1,89 @@
 from functools import cache
 
 import bpy
-from bpy.props import CollectionProperty, IntProperty, StringProperty, BoolProperty
+from bpy.props import CollectionProperty, IntProperty, BoolProperty
 
 from .element import Element, ElementCURE
 from .key import GestureKey
-from ..public import PublicOperator, PublicProperty, PublicUniqueNamePropertyGroup, get_pref
+from ..public import PublicOperator, PublicUniqueNamePropertyGroup, get_pref
 
 
-class GestureCURE(PublicProperty, GestureKey):
-    # def copy(self, from_element):
-    #     ...
-    # def sort(self, is_next):
-    #     ...
+class GestureProperty(GestureKey):
+    element: CollectionProperty(type=Element)
+    index_element: IntProperty(name='索引')
+
+    # TODO 启用禁用整个系统,主要是keymap
+    enable: BoolProperty(name='启用此手势', default=True)
 
     @property
-    def index(self):
+    def element_iteration(self) -> [Element]:
+        return get_element_iteration(self.element)
+
+    @property
+    def _items_iteration(self):
+        return get_pref().gesture.values()
+
+    def _get_index(self) -> int:
         return get_element_index(self)
+
+    def _set_index(self, value: int) -> None:
+        self.pref.index_gesture = value
+
+    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值')
+
+    @property
+    def is_last(self) -> bool:
+        """
+        反回此手势 是否为最后一个的布尔值
+        用于移动手势位置
+        @rtype: object
+        """
+        return self == self._items_iteration[-1]
+
+    @property
+    def is_first(self) -> bool:
+        """
+        反回此手势 是否为第一个的布尔值
+        用于移动手势位置
+        @return:
+        """
+        return self == self._items_iteration[0]
+
+
+class GestureCURE(GestureProperty):
+    # TODO
+    # def copy(self, from_element):
+    #     ...
+
+    def sort(self, is_next):
+        gesture = self.pref.gesture
+        gl = len(gesture)
+        if is_next:
+            if self.is_last:
+                gesture.move(gl - 1, 0)
+                self.index = 0
+            else:
+                gesture.move(self.index, self.index + 1)
+                self.index = self.index + 1
+        else:
+            if self.is_first:
+                gesture.move(self.index, gl - 1)
+                self.index = gl - 1
+            else:
+                gesture.move(self.index - 1, self.index)
+                self.index = self.index - 1
 
     def remove(self):
         self.unload_key()
+        if self.is_last and self.index != 0:
+            self.index = self.index - 1
         self.pref.gesture.remove(self.index)
+
+    class GesturePoll(PublicOperator):
+
+        @classmethod
+        def poll(cls, context):
+            return cls._pref().active_gesture is not None
 
     class ADD(PublicOperator):
         bl_idname = 'gesture.gesture_add'
@@ -31,7 +94,7 @@ class GestureCURE(PublicProperty, GestureKey):
             add.name = 'Gesture'
             return {"FINISHED"}
 
-    class REMOVE(PublicOperator):
+    class REMOVE(GesturePoll):
         bl_idname = 'gesture.gesture_remove'
         bl_label = '删除手势'
 
@@ -39,13 +102,14 @@ class GestureCURE(PublicProperty, GestureKey):
             self.pref.active_gesture.remove()
             return {"FINISHED"}
 
-    class SORT(PublicOperator):
+    class SORT(GesturePoll):
         bl_idname = 'gesture.gesture_sort'
         bl_label = '排序手势'
 
         is_next: BoolProperty()
 
         def execute(self, context):
+            self.pref.active_gesture.sort(self.is_next)
             return {"FINISHED"}
 
 
@@ -62,31 +126,23 @@ def get_element_index(gesture: 'Gesture') -> int:
     return gesture.pref.gesture.values().index(gesture)
 
 
-class Gesture(
-    PublicUniqueNamePropertyGroup,
-    GestureCURE,
-):
-    element: CollectionProperty(type=Element)
-    index_element: IntProperty(name='索引')
+class GestureUiDraw(PublicUniqueNamePropertyGroup,
+                    GestureCURE):
 
-    # TODO 启用禁用整个系统,主要是keymap
-    enable: BoolProperty(name='启用此手势')
+    def draw_ui(self, layout):
+        layout.prop(self, 'enable')
+        layout.prop(self, 'name', text='')
 
-    @property
-    def element_iteration(self) -> [Element]:
-        return get_element_iteration(self.element)
 
-    @property
-    def _items_iteration(self):
-        return get_pref().gesture.values()
-
+class Gesture(GestureUiDraw):
+    # 使用gpu绘制在界面上
     def draw(self, operator):
         ...
 
 
 operator_list = (
     ElementCURE.ADD,
-    ElementCURE.DEL,
+    ElementCURE.REMOVE,
     ElementCURE.MOVE,
     ElementCURE.SORT,
 

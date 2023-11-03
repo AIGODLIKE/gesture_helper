@@ -104,7 +104,6 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
 
     @property
     def __get_names(self):
-        self.__handler_duplicate_name__()
         return list(map(lambda s: s.name, self._items_iteration))
 
     def _get_name(self):
@@ -115,8 +114,14 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
 
     def _set_name(self, value):
         old_name = self['name'] if 'name' in self else None
-        new_name = self.__generate_new_name__(self.__get_names, value)
+
+        self['name'] = value  # 预先注入名称测试有无多项一样的
+        if self.__get_names.count(value) > 1:  # 避免一直增量
+            new_name = self.__generate_new_name__(self.__get_names, value)
+        else:
+            new_name = value
         self['name'] = new_name
+
         self.__check_duplicate_name__()
 
         func = getattr(self, 'update_name', lambda i, j: i)
@@ -124,10 +129,10 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
             func(new_name, old_name)
 
     def __check_duplicate_name__(self):
-        items = list(self._items_iteration)
-        if len(items) != len(set(items)):
-            for i in list(self._items_iteration):
-                i.name = i.name
+        names = list(self.__get_names)
+        if len(names) != len(set(names)):
+            for i in self._items_iteration:
+                i['name'] = self.__generate_new_name__(self.__get_names, i.name)
 
     name: StringProperty(
         name='名称',

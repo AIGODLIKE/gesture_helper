@@ -1,10 +1,11 @@
-from . import preferences, public
+from . import preferences, public, property
 from .gesture import key
 from .. import ops, ui
 
 module_list = (
     ui,
     ops,
+    property,
     preferences,
 )
 
