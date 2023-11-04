@@ -23,7 +23,7 @@ class OperatorSetKeyMaps(PublicOperator):
 
     @property
     def key_maps(self):
-        return get_pref().active_gesture.keymap
+        return get_pref().active_gesture.keymaps
 
     def init_invoke(self):
         key_maps = self.key_maps
@@ -58,8 +58,7 @@ class OperatorSetKeyMaps(PublicOperator):
                 _d(child)
 
         _d(self.keymap_hierarchy)
-        print(self.bl_idname, rsc)
-        self.active_gesture.keymap = rsc
+        self.active_gesture.keymaps = rsc
         return {'FINISHED'}
 
     def draw(self, context):

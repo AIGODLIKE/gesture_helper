@@ -10,7 +10,7 @@ from bpy.types import KeyMapItem, PropertyGroup
 from idprop.types import IDPropertyGroup
 
 from .. import PropertyGetUtils
-from ..key import get_temp_kmi
+from ..key import get_temp_kmi, get_temp_keymap, add_addon_kmi
 from ..public import PublicProperty
 from ...ops import key
 
@@ -31,7 +31,7 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     # header bar
     row = split.row(align=True)
     row.prop(kmi, "show_expanded", text="", emboss=False)
-    row.prop(kmi, "active", text="", emboss=False)
+    # row.prop(kmi, "active", text="", emboss=False)
     row.operator(key.OperatorSetKeyMaps.bl_idname)
 
     row = split.row()
@@ -96,35 +96,30 @@ class TempKey(PropertyGroup, PublicProperty):
         return dict(
             PropertyGetUtils.props_data(
                 self.temp_kmi,
-                exclude=('name', 'id', 'show_expanded', 'properties', 'idname')
+                exclude=(
+                    'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
+                    'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui'
+                )
             )
         )
 
     @property
     def temp_kmi(self) -> 'KeyMapItem':
-        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname, {'gesture': self.active_gesture.name})
-
-    @property
-    def keymap_hierarchy(self):
-        from bl_keymap_utils import keymap_hierarchy
-        return keymap_hierarchy.generate()
-
-    @property
-    def kmi_gesture(self):
-        return self.temp_kmi.properties.gesture
+        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
 
 
 class UpdateKey(TempKey):
 
     def _set_key(self, value):
         self['key'] = value
+        self.update_key()
 
     def _get_key(self):
         default = {'type': 'NONE', 'value': 'PRESS'}
         if 'key' in self and dict(self['key']):
             default.update(
-                {k: dict(v) if type(v) == IDPropertyGroup else v
-                 for (k, v) in
+                {k: dict(value) if type(value) == IDPropertyGroup else value
+                 for (k, value) in
                  dict(self['key']).items()}
             )
         return default
@@ -137,16 +132,12 @@ class UpdateKey(TempKey):
         self.update_key()
 
     key = property(fget=_get_key, fset=_set_key, doc='用来存快捷键的键位数据')
-
-    keymap = property(fget=_get_keymap, fset=_set_keymap, doc='用来存快捷键可用的区域')
-
-    def update_key(self):
-        caller_name = traceback.extract_stack()[-2][2]
-        print(self, "update_key 被 {} 调用".format(caller_name))
+    keymaps = property(fget=_get_keymap, fset=_set_keymap, doc='用来存快捷键可用的区域')
 
     @property
-    def is_change_gesture(self) -> bool:
-        return (self.kmi_gesture != self.active_gesture.name) or (not self.key)
+    def add_kmi_data(self):
+        from ...ops import gesture
+        return {'idname': gesture.GestureOperator.bl_idname, **self.temp_kmi_data}
 
     def from_temp_key_update_data(self):
         data = self.temp_kmi_data
@@ -155,23 +146,54 @@ class UpdateKey(TempKey):
 
 
 class GestureKey(UpdateKey):
+    __key_data__ = {}  # {self:(keymap:kmi)}
+
     def draw_key(self, layout):
+        layout.context_pointer_set('keymap', get_temp_keymap())
+
         layout.operator(key.OperatorSetKeyMaps.bl_idname)
         layout.operator(key.OperatorTempModifierKey.bl_idname)
 
-        # draw_kmi(layout, self.temp_kmi, self.keymap)
+        draw_kmi(layout, self.temp_kmi, self.keymaps)
         layout.label(text=str(self.key))
-        layout.label(text=str(self.keymap))
-        # layout.label(text=self.temp_kmi)
-
-        # self.from_temp_key_update_data()
+        layout.label(text=str(self.keymaps))
+        layout.label(text=str(self.temp_kmi.id))
+        layout.label(text=str(self.temp_kmi))
+        layout.label(text=str(self.temp_kmi_data))
+        # TODO 在keymap被改时更新
+        # TODO 在key被改时更新
+        self.from_temp_key_update_data()
 
     def load_key(self):
-        # get_temp_kmi(key.OperatorTempModifierKey.bl_idname)
-        ...
+        if not self.enable:
+            return
+
+        if self in GestureKey.__key_data__:  # 还没注销
+            self.unload_key()
+
+        data = GestureKey.__key_data__[self] = []
+        for keymap in self.keymaps:
+            data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
+
+        print('load_key', self.name)
+        print(self.key)
+        print(self.keymaps)
+        print(self.temp_kmi)
+        print(self.temp_kmi_data)
+        print(GestureKey.__key_data__)
+        print()
 
     def unload_key(self):
-        ...
+        if self in GestureKey.__key_data__:  # 如果被禁用了会出现没有快捷键的情况
+            for keymap, kmi in GestureKey.__key_data__[self]:
+                keymap.keymap_items.remove(kmi)
+            GestureKey.__key_data__.pop(self)
+
+    def update_key(self):
+        caller_name = traceback.extract_stack()[-2][2]
+        print("update_key 被 {} 调用".format(caller_name), self)
+        self.unload_key()
+        self.load_key()
 
     @classmethod
     def start_load_key(cls):

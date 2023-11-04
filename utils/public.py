@@ -34,15 +34,9 @@ class PublicCacheData:
         get_element_index.cache_clear()
 
     @staticmethod
-    def key_cache_clear():
-        from .key import get_temp_kmi
-        get_temp_kmi.cache_clear()
-
-    @staticmethod
     def cache_clear():
         PublicCacheData.gesture_cache_clear()
         PublicCacheData.element_cache_clear()
-        PublicCacheData.key_cache_clear()
         get_pref.cache_clear()
 
 
