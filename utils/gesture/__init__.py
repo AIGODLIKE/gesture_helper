@@ -130,7 +130,8 @@ class GestureUiDraw(PublicUniqueNamePropertyGroup,
                     GestureCURE):
 
     def draw_ui(self, layout):
-        layout.prop(self, 'enable')
+        layout.prop(self, 'enable', text='')
+        layout.separator()
         layout.prop(self, 'name', text='')
 
 

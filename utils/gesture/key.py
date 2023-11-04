@@ -8,9 +8,9 @@ import traceback
 import bpy
 from bpy.types import KeyMapItem, PropertyGroup
 from idprop.types import IDPropertyGroup
-from mathutils import Vector, Euler, Matrix
 
-from .. import PropertySetUtils, PropertyGetUtils
+from .. import PropertyGetUtils
+from ..key import get_temp_kmi
 from ..public import PublicProperty
 from ...ops import key
 
@@ -89,52 +89,10 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
             col.label(text=k)
 
 
-def get_temp_kmi(id_name):
-    keyconfig = bpy.context.window_manager.keyconfigs.active
-    if 'TEMP' not in keyconfig.keymaps:
-        keyconfig.keymaps.new('TEMP')
-
-    keymap_items = keyconfig.keymaps['TEMP']
-    if id_name not in keymap_items:
-        return keymap_items.new(id_name, 'NONE', 'PRESS')
-    return keymap_items[id_name]
-
-
-class TempKey:
-
-    # TODO
-    def get_temp_kmi_from_ops_and_property(self, id_name, property):
-        ...
-
-    @staticmethod
-    def from_kmi_get_operator_properties(kmi: 'bpy.types.KeyMapItem') -> str:
-        """获取临时kmi操作符的属性
-        """
-        properties = kmi.properties
-        prop_keys = dict(properties.items()).keys()
-        dictionary = {i: getattr(properties, i, None) for i in prop_keys}
-        for item in dictionary:
-            prop = getattr(properties, item, None)
-            typ = type(prop)
-            if prop and typ == Vector:
-                # 属性阵列-浮点数组
-                dictionary[item] = dictionary[item].to_tuple()
-            elif prop and typ == Euler:
-                dictionary[item] = dictionary[item][:]
-            elif prop and typ == Matrix:
-                dictionary[item] = tuple(i[:] for i in dictionary[item])
-        return str(dictionary)
-
-    @staticmethod
-    def _for_set_prop(prop, pro, pr):
-        for index, j in enumerate(pr):
-            try:
-                getattr(prop, pro)[index] = j
-            except Exception as e:
-                print(e.args)
+class TempKey(PropertyGroup, PublicProperty):
 
     @property
-    def kmi_data(self):
+    def temp_kmi_data(self):
         return dict(
             PropertyGetUtils.props_data(
                 self.temp_kmi,
@@ -144,7 +102,7 @@ class TempKey:
 
     @property
     def temp_kmi(self) -> 'KeyMapItem':
-        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname)
+        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname, {'gesture': self.active_gesture.name})
 
     @property
     def keymap_hierarchy(self):
@@ -152,15 +110,11 @@ class TempKey:
         return keymap_hierarchy.generate()
 
     @property
-    def temp_key(self):
-        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname)
-
-    @property
     def kmi_gesture(self):
         return self.temp_kmi.properties.gesture
 
 
-class UpdateKey(TempKey, PropertyGroup, PublicProperty):
+class UpdateKey(TempKey):
 
     def _set_key(self, value):
         self['key'] = value
@@ -175,14 +129,14 @@ class UpdateKey(TempKey, PropertyGroup, PublicProperty):
             )
         return default
 
-    key = property(fget=_get_key, fset=_set_key, doc='用来存快捷键的键位数据')
-
     def _get_keymap(self):
         return self['keymap'] if 'keymap' in self else ['Window', ]
 
     def _set_keymap(self, value):
         self['keymap'] = value
         self.update_key()
+
+    key = property(fget=_get_key, fset=_set_key, doc='用来存快捷键的键位数据')
 
     keymap = property(fget=_get_keymap, fset=_set_keymap, doc='用来存快捷键可用的区域')
 
@@ -194,36 +148,37 @@ class UpdateKey(TempKey, PropertyGroup, PublicProperty):
     def is_change_gesture(self) -> bool:
         return (self.kmi_gesture != self.active_gesture.name) or (not self.key)
 
-    @staticmethod
-    def set_kmi_gesture(kmi, value):
-        kmi.properties.gesture = value
-
     def from_temp_key_update_data(self):
-        data = self.kmi_data
-        if self.is_change_gesture:
-            self.set_kmi_gesture(self.temp_kmi, self.active_gesture.name)
-            if self.key:
-                PropertySetUtils.set_property_data(self.temp_kmi, self.key)
-            else:
-                self.key = self.kmi_data
-        elif self.key != data:
+        data = self.temp_kmi_data
+        if self.key != data:
             self.key = data
 
 
 class GestureKey(UpdateKey):
-    __gesture_key_map__ = {}  # 静态key数据,用于加载及更新快捷键
-
     def draw_key(self, layout):
         layout.operator(key.OperatorSetKeyMaps.bl_idname)
         layout.operator(key.OperatorTempModifierKey.bl_idname)
-        draw_kmi(layout, self.temp_kmi, self.keymap)
 
-        self.from_temp_key_update_data()
+        # draw_kmi(layout, self.temp_kmi, self.keymap)
+        layout.label(text=str(self.key))
+        layout.label(text=str(self.keymap))
+        # layout.label(text=self.temp_kmi)
 
-    @staticmethod
-    def load_key():
+        # self.from_temp_key_update_data()
+
+    def load_key(self):
+        # get_temp_kmi(key.OperatorTempModifierKey.bl_idname)
         ...
 
-    @staticmethod
-    def unload_key():
+    def unload_key(self):
         ...
+
+    @classmethod
+    def start_load_key(cls):
+        for g in cls._pref().gesture:
+            g.load_key()
+
+    @classmethod
+    def stop_unload_key(cls):
+        for g in cls._pref().gesture:
+            g.unload_key()
