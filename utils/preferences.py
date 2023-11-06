@@ -6,14 +6,25 @@ from . import gesture
 from .public import ADDON_NAME, get_pref, PublicProperty
 
 
+class ElementDraw:
+    @staticmethod
+    def draw_property(layout: 'bpy.types.UILayout') -> None:
+        pref = get_pref()
+        act = pref.active_element
+        if act:
+            act.draw_ui_property(layout)
+        else:
+            layout.label(text='请 选择或添加 一个手势元素')
+
+
 class GestureDraw:
 
     @staticmethod
-    def draw_gesture_cure(layout: bpy.types.UILayout):
+    def draw_gesture_cure(layout: bpy.types.UILayout) -> None:
         GestureDraw.public_cure(layout, gesture.GestureCURE)
 
     @staticmethod
-    def draw_gesture_key(layout):
+    def draw_gesture_key(layout) -> None:
         pref = get_pref()
         active = pref.active_gesture
         if active:
@@ -24,7 +35,7 @@ class GestureDraw:
             layout.label(text='Not Select Gesture')
 
     @staticmethod
-    def draw_gesture_list(layout: bpy.types.UILayout):
+    def draw_gesture(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import GestureUIList
         pref = get_pref()
         row = layout.row(align=True)
@@ -41,14 +52,16 @@ class GestureDraw:
         GestureDraw.draw_gesture_key(column)
 
     @staticmethod
-    def draw_element_list(layout: bpy.types.UILayout):
+    def draw_element(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import ElementUIList
         pref = get_pref()
         ges = pref.active_gesture
         if ges:
             row = layout.row(align=True)
             GestureDraw.draw_element_cure(row)
-            row.template_list(
+
+            column = row.column()
+            column.template_list(
                 ElementUIList.bl_idname,
                 ElementUIList.bl_idname,
                 ges,
@@ -56,16 +69,17 @@ class GestureDraw:
                 ges,
                 'index_element',
             )
+            ElementDraw.draw_property(column)
         else:
             layout.label(text='请添加或选择一个手势')
 
     @staticmethod
-    def draw_element_cure(layout: bpy.types.UILayout):
+    def draw_element_cure(layout: bpy.types.UILayout) -> None:
         from .gesture.element import ElementCURE
         GestureDraw.public_cure(layout, ElementCURE)
 
     @staticmethod
-    def public_cure(layout, cls):
+    def public_cure(layout, cls) -> None:
         pref = get_pref()
 
         column = layout.column(align=True)
@@ -109,10 +123,10 @@ class BlenderPreferencesDraw(GestureDraw):
         layout.label(text='right_layout')
 
         column = layout.column()
-        column.prop(pref, 'enable')
+        column.prop(pref, 'enabled')
         split = column.split()
-        GestureDraw.draw_gesture_list(split)
-        GestureDraw.draw_element_list(split)
+        GestureDraw.draw_gesture(split)
+        GestureDraw.draw_element(split)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
@@ -150,7 +164,7 @@ class GesturePreferences(
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引')
 
-    enable: BoolProperty(
+    enabled: BoolProperty(
         name='启用手势',
         description="""启用禁用整个系统,主要是keymap""",
         default=True, update=lambda self, context: gesture.GestureKey.key_restart())

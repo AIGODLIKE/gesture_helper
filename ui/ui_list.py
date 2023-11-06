@@ -15,5 +15,4 @@ class ElementUIList(UIList):
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        layout.prop(item, 'name')
-        layout.prop(item, 'selected')
+        item.draw_ui(layout)

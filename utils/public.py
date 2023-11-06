@@ -2,7 +2,7 @@ from functools import cache
 from os.path import dirname, basename, realpath
 
 import bpy
-from bpy.props import BoolProperty, StringProperty
+from bpy.props import BoolProperty, StringProperty, CollectionProperty
 from bpy.types import Operator, PropertyGroup
 
 ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
@@ -56,11 +56,11 @@ class PublicProperty(PublicCacheData):
 
     @property
     def active_element(self):
-        try:
-            if self.active_gesture:
-                return self.active_gesture.element[self.active_gesture.index_element]
-        except IndexError:
-            ...
+        act_ges = self.active_gesture
+        if act_ges:
+            for element in act_ges.element_iteration:
+                if element.selected:
+                    return element
 
 
 class PublicOperator(Operator, PublicProperty):
@@ -73,7 +73,7 @@ class PublicOperator(Operator, PublicProperty):
 
 class PublicOnlyOneSelectedPropertyGroup(PropertyGroup, PublicProperty):
     """子级选中"""
-    _items_iteration: []
+    selected_iteration: CollectionProperty
 
     def _get_selected(self):
         if 'selected' not in self:
@@ -81,15 +81,18 @@ class PublicOnlyOneSelectedPropertyGroup(PropertyGroup, PublicProperty):
         return self['selected']
 
     def _set_selected(self, _):
-        for i in self._items_iteration:
+        for i in self.selected_iteration:
             i['selected'] = i == self
 
-    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected)
+    def selected_update(self, context):
+        ...
+
+    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=selected_update)
 
 
 class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
     """不重复名称"""
-    _items_iteration: []
+    collection_iteration: list
 
     @staticmethod
     def __generate_new_name__(names, new_name):
@@ -104,7 +107,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
 
     @property
     def __get_names(self):
-        return list(map(lambda s: s.name, self._items_iteration))
+        return list(map(lambda s: s.name, self.collection_iteration))
 
     def _get_name(self):
         if 'name' not in self:
@@ -131,7 +134,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
     def __check_duplicate_name__(self):
         names = list(self.__get_names)
         if len(names) != len(set(names)):
-            for i in self._items_iteration:
+            for i in self.collection_iteration:
                 i['name'] = self.__generate_new_name__(self.__get_names, i.name)
 
     name: StringProperty(
@@ -140,3 +143,57 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
         get=_get_name,
         set=_set_name
     )
+
+
+class PublicSortAndRemovePropertyGroup(PropertyGroup, PublicProperty):
+    index: int
+    collection: CollectionProperty
+
+    def _get_index(self):
+        return 0
+
+    def _set_index(self, value):
+        ...
+
+    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值,以及移动项')
+
+    @property
+    def is_last(self) -> bool:
+        """
+        反回此手势 是否为最后一个的布尔值
+        用于移动手势位置
+        @rtype: object
+        """
+        return self == self.collection[-1]
+
+    @property
+    def is_first(self) -> bool:
+        """
+        反回此手势 是否为第一个的布尔值
+        用于移动手势位置
+        @return:
+        """
+        return self == self.collection[0]
+
+    def sort(self, is_next):
+        col = self.collection
+        gl = len(col)
+        if is_next:
+            if self.is_last:
+                col.move(gl - 1, 0)
+                self.index = 0
+            else:
+                col.move(self.index, self.index + 1)
+                self.index = self.index + 1
+        else:
+            if self.is_first:
+                col.move(self.index, gl - 1)
+                self.index = gl - 1
+            else:
+                col.move(self.index - 1, self.index)
+                self.index = self.index - 1
+
+    def remove(self):
+        if self.is_last and self.index != 0:  # 被删除项是最后一个
+            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+        self.collection.remove(self.index)
