@@ -15,10 +15,10 @@ def register():
 
     for module in module_list:
         module.register()
-    key.GestureKey.start_load_key()
+    key.GestureKey.key_init()
 
 
 def unregister():
-    key.GestureKey.stop_unload_key()
+    key.GestureKey.key_remove()
     for module in module_list:
         module.unregister()

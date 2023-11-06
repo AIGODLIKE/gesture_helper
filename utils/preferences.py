@@ -3,7 +3,6 @@ from bpy.props import CollectionProperty, IntProperty, BoolProperty
 from bpy.types import AddonPreferences
 
 from . import gesture
-from .gesture import Gesture, ElementCURE
 from .public import ADDON_NAME, get_pref, PublicProperty
 
 
@@ -11,8 +10,7 @@ class GestureDraw:
 
     @staticmethod
     def draw_gesture_cure(layout: bpy.types.UILayout):
-        from .gesture import GestureCURE
-        GestureDraw.public_cure(layout, GestureCURE)
+        GestureDraw.public_cure(layout, gesture.GestureCURE)
 
     @staticmethod
     def draw_gesture_key(layout):
@@ -106,9 +104,12 @@ class BlenderPreferencesDraw(GestureDraw):
     def right_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
         layout.label(text='right_layout')
-        row = layout.row()
-        GestureDraw.draw_gesture_list(row)
-        GestureDraw.draw_element_list(row)
+
+        column = layout.column()
+        column.prop(self, 'enable')
+        split = column.split()
+        GestureDraw.draw_gesture_list(split)
+        GestureDraw.draw_element_list(split)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
@@ -143,14 +144,18 @@ class GesturePreferences(
     bl_idname = ADDON_NAME
 
     # 项配置
-    gesture: CollectionProperty(type=Gesture)
+    gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引')
 
-    # TODO 启用禁用整个系统,主要是keymap
-    enable: BoolProperty(name='启用手势')
+    enable: BoolProperty(
+        name='启用手势',
+        description="""启用禁用整个系统,主要是keymap""",
+        default=True, update=lambda: gesture.GestureKey.key_restart())
 
-    # TODO 移动元素 整个元素需要只有移动操作符可用
-    is_move_element: BoolProperty()
+    is_move_element: BoolProperty(
+        default=False,
+        description="""TODO 移动元素 整个元素需要只有移动操作符可用"""  # TODO
+    )
 
     def draw(self, context):
         from ..ops.switch_ui import SwitchGestureWindow

@@ -12,8 +12,12 @@ class GestureProperty(GestureKey):
     element: CollectionProperty(type=Element)
     index_element: IntProperty(name='索引')
 
-    # TODO 启用禁用整个系统,主要是keymap
-    enable: BoolProperty(name='启用此手势', default=True)
+    enable: BoolProperty(
+        name='启用此手势',
+        description="""启用禁用此手势,主要是keymap的更新""",
+        default=True,
+        update=lambda self: self.key_update()
+    )
 
     @property
     def element_iteration(self) -> [Element]:
@@ -29,7 +33,7 @@ class GestureProperty(GestureKey):
     def _set_index(self, value: int) -> None:
         self.pref.index_gesture = value
 
-    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值')
+    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值,以及移动项')
 
     @property
     def is_last(self) -> bool:
@@ -74,7 +78,7 @@ class GestureCURE(GestureProperty):
                 self.index = self.index - 1
 
     def remove(self):
-        self.unload_key()
+        self.key_unload()
         if self.is_last and self.index != 0:
             self.index = self.index - 1
         self.pref.gesture.remove(self.index)

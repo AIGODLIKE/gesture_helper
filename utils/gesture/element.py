@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import cache
 
-from bpy.props import CollectionProperty, StringProperty, BoolProperty
+from bpy.props import CollectionProperty, BoolProperty, IntProperty
 
 from ..public import (
     PublicOnlyOneSelectedPropertyGroup,
@@ -81,10 +81,11 @@ def get_element_index(element: 'Element') -> int:
     return element.parent_element.element.values().index(element)
 
 
-# TODO 子元素的删除需要单独处理,是子级的子级,不能直接拿到
-class Element(PublicUniqueNamePropertyGroup,
-              PublicOnlyOneSelectedPropertyGroup,
-              ):
+class ElementProperty(PublicUniqueNamePropertyGroup,
+                      PublicOnlyOneSelectedPropertyGroup):
+    index_element: IntProperty()
+    enable: BoolProperty(name='启用', default=True)
+
     element: CollectionProperty(type=Element)
 
     @property
@@ -109,3 +110,8 @@ class Element(PublicUniqueNamePropertyGroup,
     @property
     def element_iteration(self) -> [Element]:
         return get_childes(self)
+
+
+# TODO 子元素的删除需要单独处理,是子级的子级,不能直接拿到
+class Element(ElementProperty):
+    ...
