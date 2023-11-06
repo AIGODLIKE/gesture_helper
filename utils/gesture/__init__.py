@@ -11,7 +11,7 @@ from ..public import PublicOperator, PublicUniqueNamePropertyGroup, get_pref, Pu
 class GestureProperty(GestureKey):
     def update_index(self, context):
         try:
-            el = self.element.values().index(self.index_element)
+            el = self.element.values()[self.index_element]
             if el:
                 el.selected = True
         except IndexError:

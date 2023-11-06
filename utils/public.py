@@ -57,7 +57,7 @@ class PublicProperty(PublicCacheData):
     @property
     def active_element(self):
         act_ges = self.active_gesture
-        if act_ges:
+        if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
                 if element.selected:
                     return element
@@ -84,10 +84,12 @@ class PublicOnlyOneSelectedPropertyGroup(PropertyGroup, PublicProperty):
         for i in self.selected_iteration:
             i['selected'] = i == self
 
-    def selected_update(self, context):
-        ...
+    def __update_selected(self, context):
+        f = getattr(self, 'selected_update')
+        if f:
+            f(context)
 
-    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=selected_update)
+    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=__update_selected)
 
 
 class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
@@ -127,9 +129,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
 
         self.__check_duplicate_name__()
 
-        func = getattr(self, 'update_name', lambda i, j: i)
-        if func:
-            func(new_name, old_name)
+        getattr(self, 'update_name', lambda i, j: i)(new_name, old_name)
 
     def __check_duplicate_name__(self):
         names = list(self.__get_names)
@@ -194,6 +194,8 @@ class PublicSortAndRemovePropertyGroup(PropertyGroup, PublicProperty):
                 self.index = self.index - 1
 
     def remove(self):
+        getattr(self, 'remove_before', lambda: ...)()  # TODO 切片方法 装饰器
         if self.is_last and self.index != 0:  # 被删除项是最后一个
             self.index = self.index - 1  # 索引-1,保持始终有一个所选项
         self.collection.remove(self.index)
+        getattr(self, 'remove_after', lambda: ...)()

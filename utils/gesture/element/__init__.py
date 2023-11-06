@@ -6,8 +6,8 @@ import bpy
 from bpy.props import CollectionProperty, BoolProperty
 
 from .prop import ElementProperty
-from .. import icon_two
-from ..public import (
+from ... import icon_two
+from ...public import (
     PublicOnlyOneSelectedPropertyGroup,
     PublicUniqueNamePropertyGroup,
     PublicOperator,
@@ -37,6 +37,7 @@ class ElementCURE(ElementProperty):
 
         def execute(self, context):
             self.pref.active_element.remove()
+            self.element_cache_clear()
             return {"FINISHED"}
 
     class MOVE(ElementPoll):
@@ -54,6 +55,7 @@ class ElementCURE(ElementProperty):
 
         def execute(self, _):
             self.active_element.sort(self.is_next)
+            self.element_cache_clear()
             return {"FINISHED"}
 
 
@@ -87,7 +89,10 @@ def get_parent_element(element: 'Element') -> 'Element':
 
 @cache
 def get_element_index(element: 'Element') -> int:
-    return element.collection.values().index(element)
+    try:
+        return element.collection.values().index(element)
+    except ValueError:
+        ...
 
 
 class ElementProperty(ElementCURE,
@@ -104,7 +109,8 @@ class ElementProperty(ElementCURE,
     def _set_index(self, value):
         if self.is_root:
             self.parent_gesture['index_element'] = self.index
-            print('_set_index', value)
+        else:
+            self.parent_element['index_element'] = self.index
 
     index = property(
         fget=_get_index,
@@ -146,18 +152,28 @@ class ElementProperty(ElementCURE,
     def is_root(self):
         return self in self.parent_gesture.element.values()
 
-
-# TODO 子元素的删除需要单独处理,是子级的子级,不能直接拿到
-class Element(ElementProperty):
     def selected_update(self, context):
         """
         在选择其它子项的时候自动将活动索引切换
         @rtype: object
         """
-        for (element, index) in enumerate(self.parent_gesture.element):
+        for (index, element) in enumerate(self.parent_gesture.element):
             if self in element.collection_iteration:
                 self.parent_gesture['index_element'] = self.index
 
+    def remove_before(self):
+        col = self.collection
+        gl = len(col)
+        if gl > 1:
+            if self.is_last:
+                self.index = 0
+                col[self.index - 1]['selected'] = True
+            else:
+                col[self.index + 1]['selected'] = True
+
+
+# TODO 子元素的删除需要单独处理,是子级的子级,不能直接拿到
+class Element(ElementProperty):
     def draw_ui(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'enabled', text='', emboss=False)
         layout.prop(self,
@@ -167,6 +183,12 @@ class Element(ElementProperty):
                     emboss=False
                     )
         layout.prop(self, 'name')
+        self.draw_child_element(layout)
+
+    def draw_child_element(self, layout):
+        for element in self.element:
+            box = layout.box()
+            element.draw_ui(box)
 
     def draw_ui_property(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'name')

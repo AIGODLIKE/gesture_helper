@@ -163,6 +163,7 @@ class GesturePreferences(
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引')
+    is_preview: BoolProperty(name='是在预览模式')  # TODO
 
     enabled: BoolProperty(
         name='启用手势',
