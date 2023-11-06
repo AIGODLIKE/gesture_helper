@@ -59,5 +59,4 @@ def add_addon_kmi(keymap, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.typ
     keymap = get_addon_keymap(keymap)
     kmi = keymap.keymap_items.new(**kmi_data)
     simple_set_property(properties, kmi.properties)
-    print('add_addon_kmi', keymap, kmi_data, properties, kmi, keymap)
     return keymap, kmi

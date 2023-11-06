@@ -5,30 +5,52 @@ from functools import cache
 import bpy
 from bpy.props import CollectionProperty, BoolProperty
 
-from .prop import ElementProperty
+from .prop import ElementProperty, ElementAddProperty
 from ... import icon_two
 from ...public import (
     PublicOnlyOneSelectedPropertyGroup,
     PublicUniqueNamePropertyGroup,
     PublicOperator,
-    get_pref, PublicSortAndRemovePropertyGroup
+    get_pref, PublicSortAndRemovePropertyGroup, PublicProperty
 )
 
 
-class ElementCURE(ElementProperty):
-    class ElementPoll(PublicOperator):
+class ElementCURE:
+    class ElementPoll(PublicProperty, PublicOperator):
 
         @classmethod
         def poll(cls, context):
             return cls._pref().active_element is not None
 
-    class ADD(PublicOperator):
+    class ADD(PublicOperator, ElementProperty, ElementAddProperty, PublicProperty):
         bl_idname = 'gesture.element_add'
         bl_label = '添加手势项'
 
+        @property
+        def collection(self):
+            r = self.relationship
+            ae = self.active_element
+            if r == 'SAME' and ae:
+                pe = ae.parent_element
+                # 如果没有同级则快进到根
+                if pe:
+                    return pe.element
+            elif r == 'CHILD' and ae:
+                return ae.element
+            # if r == 'ROOT':
+            return self.active_gesture.element
+
         def execute(self, context):
-            add = self.pref.active_gesture.element.add()
+            print('add element', self.relationship, self.active_element, self.active_gesture)
+            add = self.collection.add()
+            print('add')
+            add.element_type = self.element_type
+            add.selected_type = self.selected_type
+            self.gesture_cache_clear()
+            self.element_cache_clear()
+            print('clear')
             add.name = 'Element'
+            print('finished')
             return {"FINISHED"}
 
     class REMOVE(ElementPoll):
@@ -40,7 +62,7 @@ class ElementCURE(ElementProperty):
             self.element_cache_clear()
             return {"FINISHED"}
 
-    class MOVE(ElementPoll):
+    class MOVE(ElementPoll):  # TODO MOVE COPY
         bl_idname = 'gesture.element_move'
         bl_label = '移动手势项'
 
@@ -147,6 +169,10 @@ class ElementProperty(ElementCURE,
     @property
     def selected_iteration(self) -> [Element]:
         return self.parent_gesture.element_iteration
+
+    @property
+    def names_iteration(self):
+        return self.element_iteration
 
     @property
     def is_root(self):

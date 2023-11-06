@@ -47,7 +47,7 @@ class PublicProperty(PublicCacheData):
         return self._pref()
 
     @property
-    def active_gesture(self):
+    def active_gesture(self) -> 'Gesture':
         index = self.pref.index_gesture
         try:
             return self.pref.gesture[index]
@@ -55,7 +55,7 @@ class PublicProperty(PublicCacheData):
             ...
 
     @property
-    def active_element(self):
+    def active_element(self) -> 'Element':
         act_ges = self.active_gesture
         if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
@@ -63,15 +63,15 @@ class PublicProperty(PublicCacheData):
                     return element
 
 
-class PublicOperator(Operator, PublicProperty):
+class PublicOperator(Operator):
 
-    def invoke(self, context, event):
+    def invoke(self, context, event) -> set:
         PublicCacheData.gesture_cache_clear()
         PublicCacheData.element_cache_clear()
         return self.execute(context)
 
 
-class PublicOnlyOneSelectedPropertyGroup(PropertyGroup, PublicProperty):
+class PublicOnlyOneSelectedPropertyGroup(PropertyGroup):
     """子级选中"""
     selected_iteration: CollectionProperty
 
@@ -92,9 +92,9 @@ class PublicOnlyOneSelectedPropertyGroup(PropertyGroup, PublicProperty):
     selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=__update_selected)
 
 
-class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
+class PublicUniqueNamePropertyGroup(PropertyGroup):
     """不重复名称"""
-    collection_iteration: list
+    names_iteration: list
 
     @staticmethod
     def __generate_new_name__(names, new_name):
@@ -109,7 +109,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
 
     @property
     def __get_names(self):
-        return list(map(lambda s: s.name, self.collection_iteration))
+        return list(map(lambda s: s.name, self.names_iteration))
 
     def _get_name(self):
         if 'name' not in self:
@@ -134,7 +134,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
     def __check_duplicate_name__(self):
         names = list(self.__get_names)
         if len(names) != len(set(names)):
-            for i in self.collection_iteration:
+            for i in self.names_iteration:
                 i['name'] = self.__generate_new_name__(self.__get_names, i.name)
 
     name: StringProperty(
@@ -145,7 +145,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup, PublicProperty):
     )
 
 
-class PublicSortAndRemovePropertyGroup(PropertyGroup, PublicProperty):
+class PublicSortAndRemovePropertyGroup(PropertyGroup):
     index: int
     collection: CollectionProperty
 

@@ -5,7 +5,8 @@ from bpy.props import CollectionProperty, IntProperty, BoolProperty
 
 from .element import Element, ElementCURE
 from .keymap import GestureKey
-from ..public import PublicOperator, PublicUniqueNamePropertyGroup, get_pref, PublicSortAndRemovePropertyGroup
+from ..public import PublicOperator, PublicUniqueNamePropertyGroup, get_pref, PublicSortAndRemovePropertyGroup, \
+    PublicProperty
 
 
 class GestureProperty(GestureKey):
@@ -35,6 +36,10 @@ class GestureProperty(GestureKey):
     def collection_iteration(self) -> list:
         return get_pref().gesture.values()
 
+    @property
+    def names_iteration(self):
+        return self.collection_iteration
+
     def _get_index(self) -> int:
         return get_element_index(self)
 
@@ -62,7 +67,7 @@ class GestureCURE(GestureProperty,
     # def copy(self, from_element):
     #     ...
 
-    class GesturePoll(PublicOperator):
+    class GesturePoll(PublicOperator, PublicProperty):
 
         @classmethod
         def poll(cls, context):

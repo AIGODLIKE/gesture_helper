@@ -1,9 +1,12 @@
 import bpy.utils
-from bpy.props import CollectionProperty, IntProperty, BoolProperty
-from bpy.types import AddonPreferences
+from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty
+from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
+from .gesture.element import ElementProperty, ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty
+
+AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 
 
 class ElementDraw:
@@ -16,11 +19,36 @@ class ElementDraw:
         else:
             layout.label(text='请 选择或添加 一个手势元素')
 
+    @staticmethod
+    def draw_element_add_remove(layout: 'bpy.types.UILayout', cls) -> None:
+        column = layout.column()
+        add = get_pref().add_element_property
+
+        column.prop(add, 'relationship')
+        column.prop(add, 'selected_type')
+        if not add.is_gesture:
+            column.prop(add, 'element_type')
+
+        ops = column.operator(
+            cls.ADD.bl_idname,
+            icon='ADD',
+            text=''
+        )
+        ops.relationship = add.relationship
+        ops.element_type = add.element_type
+        ops.selected_type = add.selected_type
+
+        column.operator(
+            cls.REMOVE.bl_idname,
+            icon='REMOVE',
+            text=''
+        )
+
 
 class GestureDraw:
 
     @staticmethod
-    def draw_gesture_cure(layout: bpy.types.UILayout) -> None:
+    def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
         GestureDraw.public_cure(layout, gesture.GestureCURE)
 
     @staticmethod
@@ -80,19 +108,22 @@ class GestureDraw:
 
     @staticmethod
     def public_cure(layout, cls) -> None:
+        is_element = cls.__name__ == 'ElementCURE'
         pref = get_pref()
-
         column = layout.column(align=True)
-        column.operator(
-            cls.ADD.bl_idname,
-            icon='ADD',
-            text=''
-        )
-        column.operator(
-            cls.REMOVE.bl_idname,
-            icon='REMOVE',
-            text=''
-        )
+        if is_element:
+            ElementDraw.draw_element_add_remove(layout, cls)
+        else:
+            column.operator(
+                cls.ADD.bl_idname,
+                icon='ADD',
+                text=''
+            )
+            column.operator(
+                cls.REMOVE.bl_idname,
+                icon='REMOVE',
+                text=''
+            )
 
         column.separator()
 
@@ -101,7 +132,7 @@ class GestureDraw:
             icon='SORT_DESC',
             text=''
         ).is_next = False
-        if cls.__class__.__name__ == 'ElementCURE':
+        if is_element:
             column.operator(
                 cls.MOVE.bl_idname,
                 icon='CANCEL' if pref.is_move_element else 'GRIP',  # TODO if is move
@@ -156,6 +187,7 @@ class BlenderPreferencesDraw(GestureDraw):
 class GesturePreferences(
     AddonPreferences,
     PublicProperty,
+    ElementProperty,
     BlenderPreferencesDraw,
 ):
     bl_idname = ADDON_NAME
@@ -164,6 +196,8 @@ class GesturePreferences(
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引')
     is_preview: BoolProperty(name='是在预览模式')  # TODO
+
+    add_element_property: PointerProperty(type=AddElementProperty)
 
     enabled: BoolProperty(
         name='启用手势',
@@ -185,9 +219,11 @@ class GesturePreferences(
 
 def register():
     gesture.register()
+    bpy.utils.register_class(AddElementProperty)
     bpy.utils.register_class(GesturePreferences)
 
 
 def unregister():
     gesture.unregister()
     bpy.utils.unregister_class(GesturePreferences)
+    bpy.utils.unregister_class(AddElementProperty)
