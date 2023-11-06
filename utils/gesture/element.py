@@ -81,7 +81,8 @@ def get_element_index(element: 'Element') -> int:
     return element.parent_element.element.values().index(element)
 
 
-class ElementProperty(PublicUniqueNamePropertyGroup,
+class ElementProperty(ElementCURE,
+                      PublicUniqueNamePropertyGroup,
                       PublicOnlyOneSelectedPropertyGroup):
     index_element: IntProperty()
     enable: BoolProperty(name='启用', default=True)

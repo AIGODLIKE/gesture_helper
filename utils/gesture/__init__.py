@@ -16,7 +16,7 @@ class GestureProperty(GestureKey):
         name='启用此手势',
         description="""启用禁用此手势,主要是keymap的更新""",
         default=True,
-        update=lambda self: self.key_update()
+        update=lambda self, context: self.key_update()
     )
 
     @property
@@ -24,7 +24,7 @@ class GestureProperty(GestureKey):
         return get_element_iteration(self.element)
 
     @property
-    def _items_iteration(self):
+    def _items_iteration(self) -> list:
         return get_pref().gesture.values()
 
     def _get_index(self) -> int:
@@ -52,6 +52,13 @@ class GestureProperty(GestureKey):
         @return:
         """
         return self == self._items_iteration[0]
+
+    @property
+    def is_enable(self) -> bool:
+        """
+        @rtype: bool
+        """
+        return self.pref.enable and self.enable
 
 
 class GestureCURE(GestureProperty):
@@ -130,8 +137,8 @@ def get_element_index(gesture: 'Gesture') -> int:
     return gesture.pref.gesture.values().index(gesture)
 
 
-class GestureUiDraw(PublicUniqueNamePropertyGroup,
-                    GestureCURE):
+class GestureUiDraw(GestureCURE,
+                    PublicUniqueNamePropertyGroup):
 
     def draw_ui(self, layout):
         layout.prop(self, 'enable', text='')

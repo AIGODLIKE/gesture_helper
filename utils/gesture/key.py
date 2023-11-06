@@ -136,13 +136,6 @@ class UpdateKey(PropertyGroup, PublicProperty):
         from ...ops import gesture
         return {'idname': gesture.GestureOperator.bl_idname, **self.temp_kmi_data}
 
-    @property
-    def is_registrable_key(self) -> bool:
-        """
-        @rtype: bool
-        """
-        return self.pref.enable and self.enable
-
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
@@ -167,7 +160,7 @@ class GestureKey(UpdateKey):
         self.from_temp_key_update_data()
 
     def key_load(self) -> None:
-        if self.is_registrable_key:
+        if self.is_enable:
             if self in GestureKey.__key_data__:  # 还没注销
                 self.key_unload()
 

@@ -67,7 +67,7 @@ class OperatorSetKeyMaps(PublicOperator):
         layout.label(text=self.pref.active_gesture.name)
         row = layout.row()
         self.selected_list = []
-        self.draw_key(row.column(), self.keymap_hierarchy, 0)
+        self.draw_keymaps(row.column(), self.keymap_hierarchy, 0)
         self.draw_selected(row.column())
 
     def draw_selected(self, layout):
@@ -76,7 +76,7 @@ class OperatorSetKeyMaps(PublicOperator):
             row.prop(sel, s, text='', icon=icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
             row.label(text=name)
 
-    def draw_key(self, layout, items, level):
+    def draw_keymaps(self, layout, items, level):
         from ..utils.property import TempDrawProperty
         for name, space_type, window_type, child in items:
             row = space_layout(layout, 10, level).row(align=True)
@@ -97,7 +97,7 @@ class OperatorSetKeyMaps(PublicOperator):
                 self.selected_list.append((sel, s, name))
 
             if getattr(exp, e, False):
-                self.draw_key(layout, child, level + 1)
+                self.draw_keymaps(layout, child, level + 1)
 
 
 class OperatorTempModifierKey(Operator):

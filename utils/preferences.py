@@ -17,7 +17,9 @@ class GestureDraw:
         pref = get_pref()
         active = pref.active_gesture
         if active:
-            active.draw_key(layout)
+            column = layout.column()
+            column.active = active.is_enable
+            active.draw_key(column)
         else:
             layout.label(text='Not Select Gesture')
 
@@ -102,11 +104,12 @@ class BlenderPreferencesDraw(GestureDraw):
 
     # 绘制右边层
     def right_layout(self: bpy.types.Panel, context: bpy.context):
+        pref = get_pref()
         layout = self.layout
         layout.label(text='right_layout')
 
         column = layout.column()
-        column.prop(self, 'enable')
+        column.prop(pref, 'enable')
         split = column.split()
         GestureDraw.draw_gesture_list(split)
         GestureDraw.draw_element_list(split)
@@ -150,7 +153,7 @@ class GesturePreferences(
     enable: BoolProperty(
         name='启用手势',
         description="""启用禁用整个系统,主要是keymap""",
-        default=True, update=lambda: gesture.GestureKey.key_restart())
+        default=True, update=lambda self, context: gesture.GestureKey.key_restart())
 
     is_move_element: BoolProperty(
         default=False,
@@ -162,6 +165,7 @@ class GesturePreferences(
 
         layout = self.layout
         layout.operator(SwitchGestureWindow.bl_idname)
+        self.right_layout(layout)
 
 
 def register():
