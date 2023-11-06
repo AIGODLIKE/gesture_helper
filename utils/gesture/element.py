@@ -5,7 +5,7 @@ from functools import cache
 import bpy
 from bpy.props import CollectionProperty, BoolProperty
 
-from .property import ElementProperty
+from .prop import ElementProperty
 from .. import icon_two
 from ..public import (
     PublicOnlyOneSelectedPropertyGroup,
