@@ -4,7 +4,7 @@ import bpy
 from bpy.props import CollectionProperty, IntProperty, BoolProperty
 
 from .element import Element, ElementCURE
-from .key import GestureKey
+from .keymap import GestureKey
 from ..public import PublicOperator, PublicUniqueNamePropertyGroup, get_pref, PublicSortAndRemovePropertyGroup
 
 
