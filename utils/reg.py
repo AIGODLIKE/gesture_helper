@@ -1,5 +1,5 @@
 from . import preferences, public, property
-from .gesture import keymap
+from .gesture import gesture_keymap
 from .. import ops, ui
 
 module_list = (
@@ -15,10 +15,10 @@ def register():
 
     for module in module_list:
         module.register()
-    keymap.GestureKey.key_init()
+    keymap.GestureKeymap.key_init()
 
 
 def unregister():
-    keymap.GestureKey.key_remove()
+    keymap.GestureKeymap.key_remove()
     for module in module_list:
         module.unregister()

@@ -3,7 +3,7 @@ from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProp
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
-from .gesture.element import ElementProperty, ElementAddProperty
+from .gesture.element.element_property import ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
@@ -22,12 +22,13 @@ class ElementDraw:
     @staticmethod
     def draw_element_add_remove(layout: 'bpy.types.UILayout', cls) -> None:
         column = layout.column()
+        column.scale_x = 0.5
         add = get_pref().add_element_property
 
-        column.prop(add, 'relationship')
-        column.prop(add, 'selected_type')
+        column.row().prop(add, 'relationship', expand=True, )
+        column.row().prop(add, 'element_type', expand=True, )
         if not add.is_gesture:
-            column.prop(add, 'element_type')
+            column.row().prop(add, 'selected_type', expand=True, )
 
         ops = column.operator(
             cls.ADD.bl_idname,
@@ -49,7 +50,8 @@ class GestureDraw:
 
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
-        GestureDraw.public_cure(layout, gesture.GestureCURE)
+        from .gesture import gesture_cure
+        GestureDraw.public_cure(layout, gesture_cure.GestureCURE)
 
     @staticmethod
     def draw_gesture_key(layout) -> None:
@@ -103,7 +105,7 @@ class GestureDraw:
 
     @staticmethod
     def draw_element_cure(layout: bpy.types.UILayout) -> None:
-        from .gesture.element import ElementCURE
+        from .gesture import ElementCURE
         GestureDraw.public_cure(layout, ElementCURE)
 
     @staticmethod
@@ -184,12 +186,9 @@ class BlenderPreferencesDraw(GestureDraw):
                                )
 
 
-class GesturePreferences(
-    AddonPreferences,
-    PublicProperty,
-    ElementProperty,
-    BlenderPreferencesDraw,
-):
+class GesturePreferences(PublicProperty,
+                         AddonPreferences,
+                         BlenderPreferencesDraw):
     bl_idname = ADDON_NAME
 
     # 项配置
@@ -202,7 +201,7 @@ class GesturePreferences(
     enabled: BoolProperty(
         name='启用手势',
         description="""启用禁用整个系统,主要是keymap""",
-        default=True, update=lambda self, context: gesture.GestureKey.key_restart())
+        default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
 
     is_move_element: BoolProperty(
         default=False,

@@ -60,3 +60,78 @@ def add_addon_kmi(keymap, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.typ
     kmi = keymap.keymap_items.new(**kmi_data)
     simple_set_property(properties, kmi.properties)
     return keymap, kmi
+
+
+def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
+    from ..ops import key
+    map_type = kmi.map_type
+
+    col = layout.column()
+
+    if kmi.show_expanded:
+        col = col.column(align=True)
+        box = col.box()
+    else:
+        box = col.column()
+
+    split = box.split()
+
+    # header bar
+    row = split.row(align=True)
+    row.prop(kmi, "show_expanded", text="", emboss=False)
+    # row.prop(kmi, "active", text="", emboss=False)
+    row.operator(key.OperatorSetKeyMaps.bl_idname)
+
+    row = split.row()
+    row.prop(kmi, "map_type", text="")
+    if map_type == 'KEYBOARD':
+        row.prop(kmi, "type", text="", full_event=True)
+    elif map_type == 'MOUSE':
+        row.prop(kmi, "type", text="", full_event=True)
+    elif map_type == 'NDOF':
+        row.prop(kmi, "type", text="", full_event=True)
+    elif map_type == 'TWEAK':
+        sub_row = row.row()
+        sub_row.prop(kmi, "type", text="")
+        sub_row.prop(kmi, "value", text="")
+    elif map_type == 'TIMER':
+        row.prop(kmi, "type", text="")
+    else:
+        row.label()
+
+    row.operator("preferences.keyitem_restore", text="", icon='BACK').item_id = kmi.id
+    # Expanded, additional event settings
+    if kmi.show_expanded:
+        box = col.box()
+        if map_type not in {'TEXTINPUT', 'TIMER'}:
+            sub = box.column()
+            sub_row = sub.row(align=True)
+
+            if map_type == 'KEYBOARD':
+                sub_row.prop(kmi, "type", text="", event=True)
+                sub_row.prop(kmi, "value", text="")
+                sub_row_repeat = sub_row.row(align=True)
+                sub_row_repeat.active = kmi.value in {'ANY', 'PRESS'}
+                sub_row_repeat.prop(kmi, "repeat", text="Repeat")
+            elif map_type in {'MOUSE', 'NDOF'}:
+                sub_row.prop(kmi, "type", text="")
+                sub_row.prop(kmi, "value", text="")
+
+            if map_type in {'KEYBOARD', 'MOUSE'} and kmi.value == 'CLICK_DRAG':
+                sub_row = sub.row()
+                sub_row.prop(kmi, "direction")
+
+            sub_row = sub.row()
+            sub_row.scale_x = 0.75
+            sub_row.prop(kmi, "any", toggle=True)
+            # Use `*_ui` properties as integers aren't practical.
+            sub_row.prop(kmi, "shift_ui", toggle=True)
+            sub_row.prop(kmi, "ctrl_ui", toggle=True)
+            sub_row.prop(kmi, "alt_ui", toggle=True)
+            sub_row.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
+
+            sub_row.prop(kmi, "key_modifier", text="", event=True)
+
+        col = box.column(align=True)
+        for k in key_maps:
+            col.label(text=k)

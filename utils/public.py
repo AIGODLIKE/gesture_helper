@@ -21,33 +21,42 @@ class PublicCacheData:
 
     @staticmethod
     def gesture_cache_clear():
-        from .gesture import get_element_iteration, get_element_index
-        get_element_iteration.cache_clear()
-        get_element_index.cache_clear()
+        print('gesture_cache_clear')
+        from .gesture import gesture_relationship
+        gesture_relationship.get_element_iteration.cache_clear()
+        gesture_relationship.get_gesture_index.cache_clear()
 
     @staticmethod
     def element_cache_clear():
-        from .gesture.element import get_childes, get_parent_gesture, get_parent_element, get_element_index
-        get_childes.cache_clear()
-        get_parent_gesture.cache_clear()
-        get_parent_element.cache_clear()
-        get_element_index.cache_clear()
+        print('element_cache_clear')
+        from .gesture.element import element_relationship
+        element_relationship.get_childes.cache_clear()
+        element_relationship.get_parent_gesture.cache_clear()
+        element_relationship.get_parent_element.cache_clear()
+        element_relationship.get_element_index.cache_clear()
+
+    @staticmethod
+    def poll_cache_clear():
+        # TODO
+        ...
 
     @staticmethod
     def cache_clear():
+        print('cache_clear')
         PublicCacheData.gesture_cache_clear()
         PublicCacheData.element_cache_clear()
+        PublicCacheData.poll_cache_clear()
         get_pref.cache_clear()
 
 
 class PublicProperty(PublicCacheData):
 
     @property
-    def pref(self) -> 'GesturePreferences':
+    def pref(self):
         return self._pref()
 
     @property
-    def active_gesture(self) -> 'Gesture':
+    def active_gesture(self):
         index = self.pref.index_gesture
         try:
             return self.pref.gesture[index]
@@ -55,7 +64,7 @@ class PublicProperty(PublicCacheData):
             ...
 
     @property
-    def active_element(self) -> 'Element':
+    def active_element(self):
         act_ges = self.active_gesture
         if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
@@ -195,7 +204,5 @@ class PublicSortAndRemovePropertyGroup(PropertyGroup):
 
     def remove(self):
         getattr(self, 'remove_before', lambda: ...)()  # TODO 切片方法 装饰器
-        if self.is_last and self.index != 0:  # 被删除项是最后一个
-            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
         self.collection.remove(self.index)
         getattr(self, 'remove_after', lambda: ...)()

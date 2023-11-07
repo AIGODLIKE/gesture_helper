@@ -6,90 +6,15 @@
 import traceback
 
 import bpy
-from bpy.types import PropertyGroup
 from idprop.types import IDPropertyGroup
 
+from .gesture_public import GesturePublic
 from .. import PropertyGetUtils
-from ..key import get_temp_kmi, get_temp_keymap, add_addon_kmi
-from ..public import PublicProperty
-from ...ops import key
+from ..key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
-def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
-    map_type = kmi.map_type
-
-    col = layout.column()
-
-    if kmi.show_expanded:
-        col = col.column(align=True)
-        box = col.box()
-    else:
-        box = col.column()
-
-    split = box.split()
-
-    # header bar
-    row = split.row(align=True)
-    row.prop(kmi, "show_expanded", text="", emboss=False)
-    # row.prop(kmi, "active", text="", emboss=False)
-    row.operator(key.OperatorSetKeyMaps.bl_idname)
-
-    row = split.row()
-    row.prop(kmi, "map_type", text="")
-    if map_type == 'KEYBOARD':
-        row.prop(kmi, "type", text="", full_event=True)
-    elif map_type == 'MOUSE':
-        row.prop(kmi, "type", text="", full_event=True)
-    elif map_type == 'NDOF':
-        row.prop(kmi, "type", text="", full_event=True)
-    elif map_type == 'TWEAK':
-        sub_row = row.row()
-        sub_row.prop(kmi, "type", text="")
-        sub_row.prop(kmi, "value", text="")
-    elif map_type == 'TIMER':
-        row.prop(kmi, "type", text="")
-    else:
-        row.label()
-
-    row.operator("preferences.keyitem_restore", text="", icon='BACK').item_id = kmi.id
-    # Expanded, additional event settings
-    if kmi.show_expanded:
-        box = col.box()
-        if map_type not in {'TEXTINPUT', 'TIMER'}:
-            sub = box.column()
-            sub_row = sub.row(align=True)
-
-            if map_type == 'KEYBOARD':
-                sub_row.prop(kmi, "type", text="", event=True)
-                sub_row.prop(kmi, "value", text="")
-                sub_row_repeat = sub_row.row(align=True)
-                sub_row_repeat.active = kmi.value in {'ANY', 'PRESS'}
-                sub_row_repeat.prop(kmi, "repeat", text="Repeat")
-            elif map_type in {'MOUSE', 'NDOF'}:
-                sub_row.prop(kmi, "type", text="")
-                sub_row.prop(kmi, "value", text="")
-
-            if map_type in {'KEYBOARD', 'MOUSE'} and kmi.value == 'CLICK_DRAG':
-                sub_row = sub.row()
-                sub_row.prop(kmi, "direction")
-
-            sub_row = sub.row()
-            sub_row.scale_x = 0.75
-            sub_row.prop(kmi, "any", toggle=True)
-            # Use `*_ui` properties as integers aren't practical.
-            sub_row.prop(kmi, "shift_ui", toggle=True)
-            sub_row.prop(kmi, "ctrl_ui", toggle=True)
-            sub_row.prop(kmi, "alt_ui", toggle=True)
-            sub_row.prop(kmi, "oskey_ui", text="Cmd", toggle=True)
-
-            sub_row.prop(kmi, "key_modifier", text="", event=True)
-
-        col = box.column(align=True)
-        for k in key_maps:
-            col.label(text=k)
-
-
-class UpdateKey(PropertyGroup, PublicProperty):
+class GestureKeymap(GesturePublic):
+    __key_data__ = {}  # {self:(keymap:kmi)}
 
     def _set_key(self, value) -> None:
         self['key'] = value
@@ -129,6 +54,7 @@ class UpdateKey(PropertyGroup, PublicProperty):
 
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':
+        from ...ops import key
         return get_temp_kmi(key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
 
     @property
@@ -141,11 +67,8 @@ class UpdateKey(PropertyGroup, PublicProperty):
         if self.key != data:
             self.key = data
 
-
-class GestureKey(UpdateKey):
-    __key_data__ = {}  # {self:(keymap:kmi)}
-
     def draw_key(self, layout) -> None:
+        from ...ops import key
         layout.context_pointer_set('keymap', get_temp_keymap())
 
         layout.operator(key.OperatorSetKeyMaps.bl_idname)
@@ -161,18 +84,18 @@ class GestureKey(UpdateKey):
 
     def key_load(self) -> None:
         if self.is_enable:
-            if self in GestureKey.__key_data__:  # 还没注销
+            if self in GestureKeymap.__key_data__:  # 还没注销
                 self.key_unload()
 
-            data = GestureKey.__key_data__[self] = []
+            data = GestureKeymap.__key_data__[self] = []
             for keymap in self.keymaps:
                 data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 
     def key_unload(self) -> None:
-        if self in GestureKey.__key_data__:  # 如果被禁用了会出现没有快捷键的情况
-            for keymap, kmi in GestureKey.__key_data__[self]:
+        if self in GestureKeymap.__key_data__:  # 如果被禁用了会出现没有快捷键的情况
+            for keymap, kmi in GestureKeymap.__key_data__[self]:
                 keymap.keymap_items.remove(kmi)
-            GestureKey.__key_data__.pop(self)
+            GestureKeymap.__key_data__.pop(self)
 
     def key_update(self) -> None:
         # 在keymap被改时更新
@@ -184,12 +107,14 @@ class GestureKey(UpdateKey):
 
     @classmethod
     def key_init(cls) -> None:
-        for g in cls._pref().gesture:
+        from ..public import get_pref
+        for g in get_pref().gesture:
             g.key_load()
 
     @classmethod
     def key_remove(cls) -> None:
-        for g in cls._pref().gesture:
+        from ..public import get_pref
+        for g in get_pref().gesture:
             g.key_unload()
 
     @classmethod
