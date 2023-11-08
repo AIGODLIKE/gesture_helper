@@ -18,8 +18,8 @@ class Gesture(GestureCURE,
               GestureKeymap,
               GestureProperty,
               GestureRelationship,
-              PropertyGroup,
-              ):
+
+              PropertyGroup):
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
 
@@ -43,10 +43,7 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 
 
 def register():
-    for c in classes_list:
-        print(c.__name__, c)
-        bpy.utils.register_class(c)
-    # register_classes()
+    register_classes()
 
 
 def unregister():

@@ -79,7 +79,7 @@ class Relationship:
 class ElementRelationship(Relationship,
                           PublicUniqueNamePropertyGroup,
                           PublicSortAndRemovePropertyGroup,
-                          PublicOnlyOneSelectedPropertyGroup, ):
+                          PublicOnlyOneSelectedPropertyGroup):
     def _get_index(self) -> int:
         return get_element_index(self)
 

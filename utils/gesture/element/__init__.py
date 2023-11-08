@@ -18,6 +18,6 @@ class Element(ElementCURE,
               ElementPoll,
               ElementProperty,
               ElementRelationship,
-              PropertyGroup,
-              ):
+
+              PropertyGroup):
     element: CollectionProperty(name='子级元素', type=Element)
