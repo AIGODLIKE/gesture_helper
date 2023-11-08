@@ -41,7 +41,7 @@ ENUM_GESTURE_DIRECTION = [
 ]
 ENUM_ELEMENT_TYPE = [
     ('SELECTED_STRUCTURE', 'Selected Structure', ''),
-    ('GESTURE', 'Gesture', ''),
+    ('ELEMENT', 'Element', ''),
 ]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 

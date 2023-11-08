@@ -32,7 +32,7 @@ class ElementDraw:
 
         column.row().prop(add, 'relationship', expand=True, )
         column.row().prop(add, 'element_type', expand=True, )
-        if not add.is_gesture:
+        if not add.is_element:
             column.row().prop(add, 'selected_type', expand=True, )
 
         ops = column.operator(

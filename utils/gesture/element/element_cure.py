@@ -29,6 +29,10 @@ class ElementCURE:
             # if r == 'ROOT':
             return self.active_gesture.element
 
+        @property
+        def add_name(self):
+            return self.element_type if self.is_element else self.selected_type
+
         def execute(self, context):
             # print('add element', self.relationship, self.active_element, self.active_gesture)
             add = self.collection.add()
@@ -37,10 +41,10 @@ class ElementCURE:
 
             if self.active_element:
                 self.active_element.radio = True  # 还是保持默认选择是当前
-                
+
             add.element_type = self.element_type
             add.selected_type = self.selected_type
-            add.name = 'Element'
+            add.name = self.add_name
             self.element_cache_clear()
             self.gesture_cache_clear()
             return {"FINISHED"}

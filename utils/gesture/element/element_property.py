@@ -12,7 +12,7 @@ class ElementAddProperty:
 
     element_type: EnumProperty(
         name='类型',
-        default='GESTURE',
+        default='ELEMENT',
         items=ENUM_ELEMENT_TYPE,
     )
     selected_type: EnumProperty(
@@ -22,8 +22,8 @@ class ElementAddProperty:
     )
 
     @property
-    def is_gesture(self) -> bool:
-        return self.element_type == 'GESTURE'
+    def is_element(self) -> bool:
+        return self.element_type == 'ELEMENT'
 
     @property
     def is_selected_structure(self) -> bool:
