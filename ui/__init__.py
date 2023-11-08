@@ -7,12 +7,12 @@ operator_list = (
     ui_list.ElementUIList,
 )
 
-reg, un_reg = bpy.utils.register_classes_factory(operator_list)
+register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
 
 
 def register():
-    reg()
+    register_classes()
 
 
 def unregister():
-    un_reg()
+    unregister_classes()

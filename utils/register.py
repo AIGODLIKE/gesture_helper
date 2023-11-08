@@ -15,10 +15,10 @@ def register():
 
     for module in module_list:
         module.register()
-    keymap.GestureKeymap.key_init()
+    gesture_keymap.GestureKeymap.key_init()
 
 
 def unregister():
-    keymap.GestureKeymap.key_remove()
+    gesture_keymap.GestureKeymap.key_remove()
     for module in module_list:
         module.unregister()

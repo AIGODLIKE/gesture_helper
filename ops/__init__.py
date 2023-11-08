@@ -1,24 +1,24 @@
-import bpy.utils
+import bpy
 
-from . import switch_ui
-from . import key
 from . import gesture
+from . import set_key
+from . import switch_ui
 
 operator_list = (
     switch_ui.SwitchGestureWindow,
 
-    key.OperatorSetKeyMaps,
-    key.OperatorTempModifierKey,
+    set_key.OperatorSetKeyMaps,
+    set_key.OperatorTempModifierKey,
 
     gesture.GestureOperator
 )
 
-reg, un_reg = bpy.utils.register_classes_factory(operator_list)
+register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
 
 
 def register():
-    reg()
+    register_classes()
 
 
 def unregister():
-    un_reg()
+    unregister_classes()

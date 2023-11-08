@@ -1,4 +1,6 @@
 import bpy
+from bpy.props import CollectionProperty
+from bpy.types import PropertyGroup
 
 from .element import Element
 from .element.element_cure import ElementCURE
@@ -8,6 +10,7 @@ from .gesture_gpu_draw import GestureGpuDraw
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
+from ..public import PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup
 
 
 class Gesture(GestureCURE,
@@ -15,12 +18,16 @@ class Gesture(GestureCURE,
               GestureGpuDraw,
               GestureKeymap,
               GestureProperty,
-              GestureRelationship):
+              GestureRelationship,
+              PropertyGroup,
+              PublicUniqueNamePropertyGroup,
+              PublicSortAndRemovePropertyGroup
+              ):
     # 使用gpu绘制在界面上
-    ...
+    element: CollectionProperty(type=Element)
 
 
-operator_list = (
+classes_list = (
     Element,
 
     ElementCURE.ADD,
@@ -35,12 +42,12 @@ operator_list = (
     GestureCURE.SORT,
 )
 
-reg, un_reg = bpy.utils.register_classes_factory(operator_list)
+register_classes, unregister_classes = bpy.utils.register_classes_factory(classes_list)
 
 
 def register():
-    reg()
+    register_classes()
 
 
 def unregister():
-    un_reg()
+    unregister_classes()

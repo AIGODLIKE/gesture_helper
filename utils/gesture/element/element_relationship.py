@@ -39,10 +39,6 @@ def get_element_index(element) -> int:
 
 
 class Relationship:
-
-    def __hash__(self):
-        return hash(self)
-
     @property
     def parent_element(self):
         return get_parent_element(self)

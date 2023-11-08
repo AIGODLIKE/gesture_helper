@@ -1,6 +1,4 @@
-from bpy.props import CollectionProperty, IntProperty, BoolProperty
-
-from . import Element
+from bpy.props import IntProperty, BoolProperty
 
 
 class GestureProperty:
@@ -13,7 +11,6 @@ class GestureProperty:
         except IndexError:
             ...
 
-    element: CollectionProperty(type=Element)
     index_element: IntProperty(name='索引', update=update_index)
 
     enabled: BoolProperty(

@@ -39,13 +39,13 @@ class GestureRelationship(GesturePublic):
     def names_iteration(self):
         return self.collection_iteration
 
-    def _get_index(self) -> int:
+    def _get_index_(self) -> int:
         return get_gesture_index(self)
 
-    def _set_index(self, value: int) -> None:
+    def _set_index_(self, value: int) -> None:
         get_pref().index_gesture = value
 
-    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
 
     @property
     def collection(self):

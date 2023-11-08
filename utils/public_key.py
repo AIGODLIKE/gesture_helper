@@ -63,7 +63,7 @@ def add_addon_kmi(keymap, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.typ
 
 
 def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
-    from ..ops import key
+    from ..ops import set_key
     map_type = kmi.map_type
 
     col = layout.column()
@@ -80,7 +80,7 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     row = split.row(align=True)
     row.prop(kmi, "show_expanded", text="", emboss=False)
     # row.prop(kmi, "active", text="", emboss=False)
-    row.operator(key.OperatorSetKeyMaps.bl_idname)
+    row.operator(set_key.OperatorSetKeyMaps.bl_idname)
 
     row = split.row()
     row.prop(kmi, "map_type", text="")

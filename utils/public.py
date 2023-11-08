@@ -84,21 +84,21 @@ class PublicOnlyOneSelectedPropertyGroup(PropertyGroup):
     """子级选中"""
     selected_iteration: CollectionProperty
 
-    def _get_selected(self):
+    def __get_selected__(self):
         if 'selected' not in self:
-            self._set_selected(True)
-        return self['selected']
+            self.__set_selected__(True)
+        return bool(self['selected'])
 
-    def _set_selected(self, _):
+    def __set_selected__(self, _):
         for i in self.selected_iteration:
             i['selected'] = i == self
 
-    def __update_selected(self, context):
+    def __update_selected__(self, context):
         f = getattr(self, 'selected_update')
         if f:
             f(context)
 
-    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=__update_selected)
+    selected: BoolProperty(name='单选', get=__get_selected__, set=__set_selected__, update=__update_selected__)
 
 
 class PublicUniqueNamePropertyGroup(PropertyGroup):

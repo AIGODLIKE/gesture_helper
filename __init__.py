@@ -1,4 +1,4 @@
-from .utils import reg
+from .utils import register as reg
 
 bl_info = {
     "name": "Gesture Helper",

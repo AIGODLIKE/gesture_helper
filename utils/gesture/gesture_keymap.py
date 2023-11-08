@@ -10,7 +10,7 @@ from idprop.types import IDPropertyGroup
 
 from .gesture_public import GesturePublic
 from .. import PropertyGetUtils
-from ..key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
+from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
 class GestureKeymap(GesturePublic):
@@ -54,8 +54,8 @@ class GestureKeymap(GesturePublic):
 
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':
-        from ...ops import key
-        return get_temp_kmi(key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
+        from ...ops import set_key
+        return get_temp_kmi(set_key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
 
     @property
     def add_kmi_data(self) -> dict:
@@ -68,11 +68,11 @@ class GestureKeymap(GesturePublic):
             self.key = data
 
     def draw_key(self, layout) -> None:
-        from ...ops import key
+        from ...ops import set_key
         layout.context_pointer_set('keymap', get_temp_keymap())
 
-        layout.operator(key.OperatorSetKeyMaps.bl_idname)
-        layout.operator(key.OperatorTempModifierKey.bl_idname)
+        layout.operator(set_key.OperatorSetKeyMaps.bl_idname)
+        layout.operator(set_key.OperatorTempModifierKey.bl_idname)
 
         draw_kmi(layout, self.temp_kmi, self.keymaps)
         layout.label(text=str(self.key))
