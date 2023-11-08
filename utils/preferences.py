@@ -1,5 +1,5 @@
 import bpy.utils
-from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty
+from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
@@ -7,6 +7,11 @@ from .gesture.element.element_property import ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
+
+
+class DrawProperty(PropertyGroup):
+    element_split_factor: FloatProperty(name='拆分系数', default=0.06, max=1, min=0.001)
+    element_split_space: IntProperty(name='拆分空间', default=200, min=5000, max=100000)
 
 
 class ElementDraw:
@@ -197,6 +202,7 @@ class GesturePreferences(PublicProperty,
     is_preview: BoolProperty(name='是在预览模式')  # TODO
 
     add_element_property: PointerProperty(type=AddElementProperty)
+    draw_property: PointerProperty(type=DrawProperty)
 
     enabled: BoolProperty(
         name='启用手势',
@@ -216,13 +222,20 @@ class GesturePreferences(PublicProperty,
         self.right_layout(layout)
 
 
+classes_list = (
+    DrawProperty,
+    AddElementProperty,
+    GesturePreferences,
+)
+
+register_classes, unregister_classes = bpy.utils.register_classes_factory(classes_list)
+
+
 def register():
     gesture.register()
-    bpy.utils.register_class(AddElementProperty)
-    bpy.utils.register_class(GesturePreferences)
+    register_classes()
 
 
 def unregister():
+    unregister_classes()
     gesture.unregister()
-    bpy.utils.unregister_class(GesturePreferences)
-    bpy.utils.unregister_class(AddElementProperty)

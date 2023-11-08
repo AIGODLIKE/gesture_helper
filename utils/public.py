@@ -5,6 +5,8 @@ import bpy
 from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
+from .public_cache import PublicCacheData
+
 ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
 
 
@@ -13,47 +15,19 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
-class PublicCacheData:
+class PublicProperty(PublicCacheData):
 
     @staticmethod
     def _pref():
         return get_pref()
 
-    @staticmethod
-    def gesture_cache_clear():
-        print('gesture_cache_clear')
-        from .gesture import gesture_relationship
-        gesture_relationship.get_element_iteration.cache_clear()
-        gesture_relationship.get_gesture_index.cache_clear()
-
-    @staticmethod
-    def element_cache_clear():
-        print('element_cache_clear')
-        from .gesture.element import element_relationship
-        element_relationship.get_childes.cache_clear()
-        element_relationship.get_parent_gesture.cache_clear()
-        element_relationship.get_parent_element.cache_clear()
-        element_relationship.get_element_index.cache_clear()
-
-    @staticmethod
-    def poll_cache_clear():
-        # TODO
-        ...
-
-    @staticmethod
-    def cache_clear():
-        print('cache_clear')
-        PublicCacheData.gesture_cache_clear()
-        PublicCacheData.element_cache_clear()
-        PublicCacheData.poll_cache_clear()
-        get_pref.cache_clear()
-
-
-class PublicProperty(PublicCacheData):
-
     @property
     def pref(self):
         return self._pref()
+
+    @property
+    def draw_property(self):
+        return self.pref.draw_property
 
     @property
     def active_gesture(self):
@@ -83,7 +57,7 @@ class PublicOperator(Operator):
 class PublicUniqueNamePropertyGroup:
     """不重复名称"""
 
-    # names_iteration: list
+    names_iteration: list
 
     @staticmethod
     def __generate_new_name__(names, new_name):
@@ -100,37 +74,18 @@ class PublicUniqueNamePropertyGroup:
     def __get_names(self):
         return list(map(lambda s: s.name, self.names_iteration))
 
-    def _get_name(self):
-        if 'name' not in self:
-            self['name'] = 'Name'
-            self.name = 'Name'
-        return self['name']
-
-    def _set_name(self, value):
-        old_name = self['name'] if 'name' in self else None
-
-        self['name'] = value  # 预先注入名称测试有无多项一样的
-        if self.__get_names.count(value) > 1:  # 避免一直增量
-            new_name = self.__generate_new_name__(self.__get_names, value)
-        else:
-            new_name = value
-        self['name'] = new_name
-
-        self.__check_duplicate_name__()
-
-        getattr(self, 'update_name', lambda i, j: i)(new_name, old_name)
-
-    def __check_duplicate_name__(self):
+    def __check_duplicate_name__(self, context):
         names = list(self.__get_names)
         if len(names) != len(set(names)):
             for i in self.names_iteration:
-                i['name'] = self.__generate_new_name__(self.__get_names, i.name)
+                if self.__get_names.count(i.name) > 1:
+                    self.cache_clear()
+                    i.name = self.__generate_new_name__(self.__get_names, i.name)
 
     name: StringProperty(
         name='名称',
         description='不允许名称重复,如果名称重复则编号 e.g .001 .002 .999 支持重命名到999',
-        get=_get_name,
-        set=_set_name
+        update=__check_duplicate_name__
     )
 
 

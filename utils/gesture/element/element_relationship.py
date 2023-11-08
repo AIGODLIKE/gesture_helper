@@ -1,11 +1,9 @@
 from functools import cache
 
-import bpy
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, StringProperty
 
 from ...public import (get_pref,
-                       PublicUniqueNamePropertyGroup,
-                       PublicSortAndRemovePropertyGroup)
+                       PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
 
 
 @cache
@@ -68,27 +66,18 @@ class Relationship:
     def element_iteration(self):
         return get_childes(self)
 
-    # TODO Element Relationship Level
-    @property
-    def level(self) -> int:
-        return 0
-
 
 class RadioSelect:
 
     def _update_radio(self, context):
 
         for i in self.radio_iteration:
-            print('item\t', i, i == self, type(i == self))
             i['radio'] = i == self
-
         f = getattr(self, 'selected_update')
         if f:
             f(context)
 
     radio: BoolProperty(name='单选',
-                        # get=_get_radio,
-                        # set=_set_radio,
                         update=_update_radio
                         )
 
@@ -98,10 +87,11 @@ class RadioSelect:
 
 
 class ElementRelationship(
-    RadioSelect,
     PublicUniqueNamePropertyGroup,
+    RadioSelect,
     PublicSortAndRemovePropertyGroup,
     Relationship):
+
     def _get_index(self) -> int:
         return get_element_index(self)
 

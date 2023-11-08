@@ -1,4 +1,4 @@
-from bpy.props import EnumProperty, BoolProperty, CollectionProperty
+from bpy.props import EnumProperty, BoolProperty, CollectionProperty, IntProperty
 
 from ...enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE, ENUM_RELATIONSHIP, ENUM_GESTURE_DIRECTION
 
@@ -48,3 +48,4 @@ class ElementProperty(ElementDirectionProperty):
         name='作为子级',
         default=False
     )
+    level: IntProperty(name="TODO Element Relationship Level", default=0)

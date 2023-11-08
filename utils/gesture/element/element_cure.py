@@ -34,7 +34,10 @@ class ElementCURE:
             add = self.collection.add()
             self.element_cache_clear()
             self.gesture_cache_clear()
-            # self.active_element.radio = True  # 还是保持默认选择是当前
+
+            if self.active_element:
+                self.active_element.radio = True  # 还是保持默认选择是当前
+                
             add.element_type = self.element_type
             add.selected_type = self.selected_type
             add.name = 'Element'

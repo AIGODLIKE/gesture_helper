@@ -2,42 +2,47 @@
 # 预览绘制
 import bpy
 
-from ... import icon_two, space_layout
+from ... import icon_two
+from ...public import get_pref
+
+
+def split_layout(layout: 'bpy.types.UILayout', level: int):
+    prop = get_pref().draw_property
+    factor = prop.element_split_factor
+    space = prop.element_split_space
+    indent = (level + 1) * space / bpy.context.region.width * factor
+    return layout.split(factor=indent)
 
 
 class ElementDraw:
-
-    def __getitem__(self, item):
-        return item
-
-    def draw_ui(self, layout: 'bpy.types.UILayout', level: int) -> None:
+    def draw_ui(self, layout: 'bpy.types.UILayout'):
         column = layout.column(align=True)
-        row = column.row(align=True)
-        row.label(text=str(level))
-        row.label(text=str(self.index))
-        row.prop(self, 'enabled', text='')
+
+        split = split_layout(column, self.level)
+
+        left = split.row(align=True)
+        left.prop(self,
+                  'radio',
+                  text='',
+                  icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+                  emboss=False)
+        left.prop(self, 'enabled', text='')
+        left.label(text=str(self.level))
+
+        right = split.row(align=True)
+        right.prop(self, 'name', text='')
         if len(self.element):
-            row.prop(self,
-                     'show_child',
-                     text='',
-                     icon=icon_two(self.show_child, 'TRI'),
-                     emboss=False)
-        else:
-            row.separator()
+            right.prop(self,
+                       'show_child',
+                       text='',
+                       icon=icon_two(self.show_child, 'TRI'),
+                       emboss=False)
 
-        row.prop(self,
-                 'radio',
-                 text='',
-                 icon=icon_two(self.radio, 'RESTRICT_SELECT'),
-                 emboss=False)
-        row.prop(self, 'name')
+        right.label(text=str(self.index))
+
         if self.show_child:
-            self.draw_child_element(column, level)
-
-    def draw_child_element(self, layout, level: int):
-        for element in self.element:
-            space = space_layout(layout, 1, level)
-            element.draw_ui(space, level + 1)
+            for element in self.element:
+                element.draw_ui(column.column(align=True))
 
     def draw_ui_property(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'name')

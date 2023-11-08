@@ -1,6 +1,8 @@
 import bpy
 from bpy_types import UIList
 
+from ..utils.public import PublicProperty
+
 
 class GestureUIList(UIList):
     bl_idname = 'DRAW_UL_gesture_items'
@@ -10,9 +12,16 @@ class GestureUIList(UIList):
         item.draw_ui(layout)
 
 
-class ElementUIList(UIList):
+class ElementUIList(UIList,
+                    PublicProperty):
     bl_idname = 'DRAW_UL_element_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw_ui(layout, 0)
+        item.draw_ui(layout.column(align=True))
+
+    def draw_filter(self, context, layout):
+        # Nothing much to say here, it's usual UI code...
+        row = layout.row()
+        row.prop(self.draw_property, 'element_split_space')
+        row.prop(self.draw_property, 'element_split_factor')

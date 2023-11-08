@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bpy.props import CollectionProperty
+from bpy.props import CollectionProperty, StringProperty
 from bpy.types import PropertyGroup
 
 from .element_cure import ElementCURE
