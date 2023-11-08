@@ -2,11 +2,10 @@
 # 预览绘制
 import bpy
 
-from .element_public import ElementPublic
 from ... import icon_two, space_layout
 
 
-class ElementDraw(ElementPublic):
+class ElementDraw:
 
     def __getitem__(self, item):
         return item

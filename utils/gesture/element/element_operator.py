@@ -1,11 +1,10 @@
 from bpy.props import StringProperty, EnumProperty, CollectionProperty
 
-from .element_public import ElementPublic
 from ...enum import ENUM_OPERATOR_CONTEXT
 
 
 # 直接将operator的self传给element,让那个来进行操作
-class ElementOperator(ElementPublic):
+class ElementOperator:
     operator_bl_idname: StringProperty(name='操作符 Id Name',
                                        description='默认为添加猴头',
                                        default='mesh.primitive_monkey_add')

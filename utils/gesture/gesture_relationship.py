@@ -2,8 +2,7 @@ from functools import cache
 
 import bpy
 
-from .gesture_public import GesturePublic
-from ..public import get_pref
+from ..public import get_pref, PublicUniqueNamePropertyGroup, PublicSortAndRemovePropertyGroup
 
 
 @cache
@@ -25,7 +24,8 @@ def get_gesture_index(gesture) -> int:
     return gesture.pref.gesture.values().index(gesture)
 
 
-class GestureRelationship(GesturePublic):
+class GestureRelationship(PublicUniqueNamePropertyGroup,
+                          PublicSortAndRemovePropertyGroup):
 
     @property
     def element_iteration(self):

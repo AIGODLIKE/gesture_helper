@@ -8,12 +8,11 @@ import traceback
 import bpy
 from idprop.types import IDPropertyGroup
 
-from .gesture_public import GesturePublic
 from .. import PropertyGetUtils
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
-class GestureKeymap(GesturePublic):
+class GestureKeymap:
     __key_data__ = {}  # {self:(keymap:kmi)}
 
     def _set_key(self, value) -> None:

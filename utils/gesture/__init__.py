@@ -10,7 +10,6 @@ from .gesture_gpu_draw import GestureGpuDraw
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
-from ..public import PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup
 
 
 class Gesture(GestureCURE,
@@ -20,8 +19,6 @@ class Gesture(GestureCURE,
               GestureProperty,
               GestureRelationship,
               PropertyGroup,
-              PublicUniqueNamePropertyGroup,
-              PublicSortAndRemovePropertyGroup
               ):
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
@@ -46,7 +43,10 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 
 
 def register():
-    register_classes()
+    for c in classes_list:
+        print(c.__name__, c)
+        bpy.utils.register_class(c)
+    # register_classes()
 
 
 def unregister():

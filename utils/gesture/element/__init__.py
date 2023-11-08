@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bpy.props import CollectionProperty
+from bpy.types import PropertyGroup
 
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
@@ -16,5 +17,7 @@ class Element(ElementCURE,
               ElementOperator,
               ElementPoll,
               ElementProperty,
-              ElementRelationship):
+              ElementRelationship,
+              PropertyGroup,
+              ):
     element: CollectionProperty(name='子级元素', type=Element)

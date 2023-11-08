@@ -3,7 +3,7 @@ from os.path import dirname, basename, realpath
 
 import bpy
 from bpy.props import BoolProperty, StringProperty, CollectionProperty
-from bpy.types import Operator, PropertyGroup
+from bpy.types import Operator
 
 ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
 
@@ -80,7 +80,7 @@ class PublicOperator(Operator):
         return self.execute(context)
 
 
-class PublicOnlyOneSelectedPropertyGroup(PropertyGroup):
+class PublicOnlyOneSelectedPropertyGroup:
     """子级选中"""
     selected_iteration: CollectionProperty
 
@@ -101,7 +101,7 @@ class PublicOnlyOneSelectedPropertyGroup(PropertyGroup):
     selected: BoolProperty(name='单选', get=__get_selected__, set=__set_selected__, update=__update_selected__)
 
 
-class PublicUniqueNamePropertyGroup(PropertyGroup):
+class PublicUniqueNamePropertyGroup:
     """不重复名称"""
     names_iteration: list
 
@@ -154,7 +154,7 @@ class PublicUniqueNamePropertyGroup(PropertyGroup):
     )
 
 
-class PublicSortAndRemovePropertyGroup(PropertyGroup):
+class PublicSortAndRemovePropertyGroup:
     index: int
     collection: CollectionProperty
 
