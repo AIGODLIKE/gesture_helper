@@ -7,7 +7,7 @@ class GestureProperty:
         try:
             el = self.element.values()[self.index_element]
             if el:
-                el.selected = True
+                el.radio = True
         except IndexError:
             ...
 

@@ -10,6 +10,7 @@ from .gesture_gpu_draw import GestureGpuDraw
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
+from ..public import PublicProperty
 
 
 class Gesture(GestureCURE,
@@ -18,6 +19,8 @@ class Gesture(GestureCURE,
               GestureKeymap,
               GestureProperty,
               GestureRelationship,
+              
+              PublicProperty,
 
               PropertyGroup):
     # 使用gpu绘制在界面上

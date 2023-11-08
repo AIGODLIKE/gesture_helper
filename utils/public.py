@@ -2,7 +2,7 @@ from functools import cache
 from os.path import dirname, basename, realpath
 
 import bpy
-from bpy.props import BoolProperty, StringProperty, CollectionProperty
+from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
 ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
@@ -68,7 +68,7 @@ class PublicProperty(PublicCacheData):
         act_ges = self.active_gesture
         if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
-                if element.selected:
+                if element.radio:
                     return element
 
 
@@ -80,30 +80,10 @@ class PublicOperator(Operator):
         return self.execute(context)
 
 
-class PublicOnlyOneSelectedPropertyGroup:
-    """子级选中"""
-    selected_iteration: CollectionProperty
-
-    def _get_selected(self):
-        if 'selected' not in self:
-            self._set_selected(True)
-        return bool(self['selected'])
-
-    def _set_selected(self, _):
-        for i in self.selected_iteration:
-            i['selected'] = i == self
-
-    def _update_selected(self, context):
-        f = getattr(self, 'selected_update')
-        if f:
-            f(context)
-
-    selected: BoolProperty(name='单选', get=_get_selected, set=_set_selected, update=_update_selected)
-
-
 class PublicUniqueNamePropertyGroup:
     """不重复名称"""
-    names_iteration: list
+
+    # names_iteration: list
 
     @staticmethod
     def __generate_new_name__(names, new_name):
@@ -122,8 +102,8 @@ class PublicUniqueNamePropertyGroup:
 
     def _get_name(self):
         if 'name' not in self:
-            self['name'] = 'Gesture'
-            self.name = 'Gesture'
+            self['name'] = 'Name'
+            self.name = 'Name'
         return self['name']
 
     def _set_name(self, value):

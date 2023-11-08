@@ -26,9 +26,9 @@ class ElementDraw:
             row.separator()
 
         row.prop(self,
-                 'selected',
+                 'radio',
                  text='',
-                 icon=icon_two(self.selected, 'RESTRICT_SELECT'),
+                 icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                  emboss=False)
         row.prop(self, 'name')
         if self.show_child:

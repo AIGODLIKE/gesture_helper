@@ -1,9 +1,11 @@
 from functools import cache
 
+import bpy
+from bpy.props import BoolProperty
+
 from ...public import (get_pref,
                        PublicUniqueNamePropertyGroup,
-                       PublicSortAndRemovePropertyGroup,
-                       PublicOnlyOneSelectedPropertyGroup)
+                       PublicSortAndRemovePropertyGroup)
 
 
 @cache
@@ -66,20 +68,40 @@ class Relationship:
     def element_iteration(self):
         return get_childes(self)
 
-    @property
-    def selected_iteration(self):
-        return self.parent_gesture.element_iteration
-
     # TODO Element Relationship Level
     @property
     def level(self) -> int:
         return 0
 
 
-class ElementRelationship(Relationship,
-                          PublicUniqueNamePropertyGroup,
-                          PublicSortAndRemovePropertyGroup,
-                          PublicOnlyOneSelectedPropertyGroup):
+class RadioSelect:
+
+    def _update_radio(self, context):
+
+        for i in self.radio_iteration:
+            print('item\t', i, i == self, type(i == self))
+            i['radio'] = i == self
+
+        f = getattr(self, 'selected_update')
+        if f:
+            f(context)
+
+    radio: BoolProperty(name='单选',
+                        # get=_get_radio,
+                        # set=_set_radio,
+                        update=_update_radio
+                        )
+
+    @property
+    def radio_iteration(self):
+        return self.parent_gesture.element_iteration
+
+
+class ElementRelationship(
+    RadioSelect,
+    PublicUniqueNamePropertyGroup,
+    PublicSortAndRemovePropertyGroup,
+    Relationship):
     def _get_index(self) -> int:
         return get_element_index(self)
 
@@ -95,10 +117,6 @@ class ElementRelationship(Relationship,
         doc='通过当前项的index,来设置索引的index值,以及移动项')
 
     @property
-    def names_iteration(self):
-        return self.parent_gesture.element_iteration
-
-    @property
     def is_root(self):
         return self in self.parent_gesture.element.values()
 
@@ -111,6 +129,10 @@ class ElementRelationship(Relationship,
             for (index, element) in enumerate(self.parent_gesture.element):
                 if self in element.collection_iteration:
                     self.parent_gesture['index_element'] = self.index
+
+    @property
+    def names_iteration(self):
+        return self.parent_gesture.element_iteration
 
     def remove_before(self):
         for e in self.element:
