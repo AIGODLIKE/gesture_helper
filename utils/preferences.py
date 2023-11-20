@@ -11,7 +11,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 
 class DrawProperty(PropertyGroup):
     element_split_factor: FloatProperty(name='拆分系数', default=0.06, max=1, min=0.001)
-    element_split_space: IntProperty(name='拆分空间', default=1000, min=500, max=100000)
+    element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=False)
 
 
 class ElementDraw:

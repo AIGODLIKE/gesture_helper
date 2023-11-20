@@ -9,9 +9,7 @@ from ...public import get_pref
 def split_layout(layout: 'bpy.types.UILayout', level: int):
     prop = get_pref().draw_property
     factor = prop.element_split_factor
-    space = prop.element_split_space
-    indent = (level + 1) * space / bpy.context.region.width * factor + .1
-    return layout.split(factor=indent)
+    return layout.split(factor=factor)
 
 class ElementDraw:
     def draw_ui(self, layout: 'bpy.types.UILayout'):
@@ -26,23 +24,26 @@ class ElementDraw:
                   icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                   emboss=False)
         left.prop(self, 'enabled', text='')
-        left.label(text=str(self.level))
 
         right = split.row(align=True)
-        right.prop(self, 'name', text='')
 
-        right.label(text=str(self.index))
+        right_split = right.split(factor=0.4)
+        right_split.prop(self, 'name', text='')
 
         if len(self.element):
-            right.prop(self,
+            right_split.prop(self,
                        'show_child',
                        text='',
                        icon=icon_two(self.show_child, 'TRI'),
                        emboss=False)
-
-        if self.show_child:
-            for element in self.element:
-                element.draw_ui(column.column(align=True))
+            if self.show_child:
+                child = column.box().column(align=True)
+                child.enabled = self.enabled
+                for element in self.element:
+                    element.draw_ui(child)
+                child.separator()
+        else:
+            right_split.separator()
 
     def draw_ui_property(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'name')

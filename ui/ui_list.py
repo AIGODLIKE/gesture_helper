@@ -23,5 +23,5 @@ class ElementUIList(UIList,
     def draw_filter(self, context, layout):
         # Nothing much to say here, it's usual UI code...
         row = layout.row()
-        row.prop(self.draw_property, 'element_split_space')
         row.prop(self.draw_property, 'element_split_factor')
+        row.prop(self.draw_property, 'element_show_enabled_button')
