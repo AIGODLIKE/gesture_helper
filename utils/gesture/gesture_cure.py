@@ -19,7 +19,8 @@ class GestureCURE:
         bl_label = '添加手势'
 
         def execute(self, context):
-            add = self.pref.gesture.add()
+            add = self.pref.gesture.add_gesture('Gesture')
+            self.cache_clear()
             add.name = 'Gesture'
             return {"FINISHED"}
 
@@ -31,6 +32,7 @@ class GestureCURE:
             act = self.pref.active_gesture
             act.key_unload()
             act.remove()
+            self.cache_clear()
             return {"FINISHED"}
 
     class SORT(GesturePoll):
@@ -41,4 +43,5 @@ class GestureCURE:
 
         def execute(self, context):
             self.pref.active_gesture.sort(self.is_next)
+            self.cache_clear()
             return {"FINISHED"}

@@ -7,23 +7,6 @@ from ...public import (get_pref,
 
 
 @cache
-def get_childes(element):
-    childes = element.element.values()
-    if len(childes):
-        for child in childes:
-            childes.extend(get_childes(child))
-    return childes
-
-
-@cache
-def get_parent_gesture(element):
-    for g in get_pref().gesture:
-        if element in g.element_iteration:
-            return g
-    raise Exception("没有拿到父级")
-
-
-@cache
 def get_parent_element(element):
     for e in element.parent_gesture.element_iteration:
         if element in e.element.values():
@@ -41,17 +24,20 @@ def get_element_index(element) -> int:
 class Relationship:
     @property
     def parent_element(self):
-        return get_parent_element(self)
+        from ...public_cache import PublicCache
+        return PublicCache.__element_parent_element_cache__[self]
 
     @property
     def parent_gesture(self):
-        return get_parent_gesture(self)
+        from ...public_cache import PublicCache
+        return PublicCache.__element_parent_gesture_cache__[self]
 
     @property
     def collection_iteration(self) -> list:
+        from ...public_cache import PublicCache
         items = []
-        for e in self.parent_gesture.element:
-            items.extend(get_childes(e))
+        for element in self.parent_gesture.element:
+            items.extend(PublicCache.__element_child_iteration__[element])
         return items
 
     @property
@@ -64,7 +50,8 @@ class Relationship:
 
     @property
     def element_iteration(self):
-        return get_childes(self)
+        from ...public_cache import PublicCache
+        return PublicCache.__gesture_element_iteration__[self.parent_gesture]
 
 
 class RadioSelect:
@@ -72,10 +59,12 @@ class RadioSelect:
     def _update_radio(self, context):
 
         for i in self.radio_iteration:
+            print(i == self, i, self)
             i['radio'] = i == self
         f = getattr(self, 'selected_update')
         if f:
             f(context)
+        print('self.radio_iteration', self.radio_iteration)
 
     radio: BoolProperty(name='单选',
                         update=_update_radio

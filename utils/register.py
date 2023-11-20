@@ -13,7 +13,7 @@ module_list = (
 def register():
     for module in module_list:
         module.register()
-    public_cache.PublicCacheData.cache_clear()
+    public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_init()
 
 

@@ -5,7 +5,7 @@ import bpy
 from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
-from .public_cache import PublicCacheData
+from .public_cache import PublicCacheFunc
 
 ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
 
@@ -15,7 +15,7 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
-class PublicProperty(PublicCacheData):
+class PublicProperty(PublicCacheFunc):
 
     @staticmethod
     def _pref():
@@ -49,8 +49,8 @@ class PublicProperty(PublicCacheData):
 class PublicOperator(Operator):
 
     def invoke(self, context, event) -> set:
-        PublicCacheData.gesture_cache_clear()
-        PublicCacheData.element_cache_clear()
+        PublicCacheFunc.gesture_cache_clear()
+        PublicCacheFunc.element_cache_clear()
         return self.execute(context)
 
 

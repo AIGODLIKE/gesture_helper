@@ -1,22 +1,6 @@
 from functools import cache
 
-import bpy
-
 from ..public import get_pref, PublicUniqueNamePropertyGroup, PublicSortAndRemovePropertyGroup
-
-
-@cache
-def get_element_iteration(gesture: 'bpy.types.PropertyGroup'):
-    items = []
-
-    def get_element(j):
-        for f in j.element:
-            get_element(f)
-        items.append(j)
-
-    for i in gesture:
-        get_element(i)
-    return items
 
 
 @cache
@@ -29,7 +13,8 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
 
     @property
     def element_iteration(self):
-        return get_element_iteration(self.element)
+        from ..public_cache import PublicCache
+        return PublicCache.__gesture_element_iteration__[self]
 
     @property
     def collection_iteration(self) -> list:
