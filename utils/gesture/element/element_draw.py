@@ -10,9 +10,8 @@ def split_layout(layout: 'bpy.types.UILayout', level: int):
     prop = get_pref().draw_property
     factor = prop.element_split_factor
     space = prop.element_split_space
-    indent = (level + 1) * space / bpy.context.region.width * factor
+    indent = (level + 1) * space / bpy.context.region.width * factor + .1
     return layout.split(factor=indent)
-
 
 class ElementDraw:
     def draw_ui(self, layout: 'bpy.types.UILayout'):
@@ -31,14 +30,15 @@ class ElementDraw:
 
         right = split.row(align=True)
         right.prop(self, 'name', text='')
+
+        right.label(text=str(self.index))
+
         if len(self.element):
             right.prop(self,
                        'show_child',
                        text='',
                        icon=icon_two(self.show_child, 'TRI'),
                        emboss=False)
-
-        right.label(text=str(self.index))
 
         if self.show_child:
             for element in self.element:
