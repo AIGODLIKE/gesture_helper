@@ -11,8 +11,11 @@ def split_layout(layout: 'bpy.types.UILayout', level: int):
     factor = prop.element_split_factor
     return layout.split(factor=factor)
 
+
 class ElementDraw:
     def draw_ui(self, layout: 'bpy.types.UILayout'):
+        pref = get_pref()
+
         column = layout.column(align=True)
 
         split = split_layout(column, self.level)
@@ -23,7 +26,8 @@ class ElementDraw:
                   text='',
                   icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                   emboss=False)
-        left.prop(self, 'enabled', text='')
+        if pref.draw_property.element_show_enabled_button:
+            left.prop(self, 'enabled', text='')
 
         right = split.row(align=True)
 
@@ -32,10 +36,10 @@ class ElementDraw:
 
         if len(self.element):
             right_split.prop(self,
-                       'show_child',
-                       text='',
-                       icon=icon_two(self.show_child, 'TRI'),
-                       emboss=False)
+                             'show_child',
+                             text='',
+                             icon=icon_two(self.show_child, 'TRI'),
+                             emboss=False)
             if self.show_child:
                 child = column.box().column(align=True)
                 child.enabled = self.enabled

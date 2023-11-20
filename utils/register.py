@@ -11,10 +11,9 @@ module_list = (
 
 
 def register():
-    public_cache.PublicCacheData.cache_clear()
-
     for module in module_list:
         module.register()
+    public_cache.PublicCacheData.cache_clear()
     gesture_keymap.GestureKeymap.key_init()
 
 
