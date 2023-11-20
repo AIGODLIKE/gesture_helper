@@ -32,7 +32,11 @@ class ElementDraw:
         if pref.draw_property.element_show_enabled_button:
             layout.prop(self, 'enabled', text='')
 
-        layout.label(text='', icon='CON_CHILDOF' if self.is_child_gesture else 'NONE')
+        if self.is_child_gesture:
+            layout.label(text='', icon='CON_CHILDOF')
+        if self.is_child_gesture or self.is_operator:
+            from ...icons import Icons
+            layout.label(text='', icon_value=Icons.get(self.gesture_direction).icon_id)
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
         layout.prop(self, 'name', text='')
@@ -66,7 +70,7 @@ class ElementDraw:
         layout.label(text='parent_element\t' + str(self.parent_element))
         layout.label(text='operator_properties\t' + str(self.operator_properties))
         layout.label(text='collection_iteration\t' + str(self.collection_iteration))
-        layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
+        # layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
         layout.separator()
         for i in self.bl_rna.properties.keys():
             if i not in ('rna_type', 'name', 'relationship'):

@@ -7,7 +7,8 @@ from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc
 
-ADDON_NAME = basename(dirname(dirname(realpath(__file__))))
+ADDON_FOLDER = dirname(dirname(realpath(__file__)))
+ADDON_NAME = basename(ADDON_FOLDER)
 
 
 @cache

@@ -1,4 +1,4 @@
-from . import preferences, public_cache, property
+from . import preferences, public_cache, property, icons
 from .gesture import gesture_keymap
 from .. import ops, ui
 
@@ -11,6 +11,7 @@ module_list = (
 
 
 def register():
+    icons.Icons.init()
     for module in module_list:
         module.register()
     public_cache.PublicCacheFunc.cache_clear()
