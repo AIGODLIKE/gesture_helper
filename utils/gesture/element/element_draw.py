@@ -6,50 +6,55 @@ from ... import icon_two
 from ...public import get_pref
 
 
-def split_layout(layout: 'bpy.types.UILayout', level: int):
-    prop = get_pref().draw_property
-    factor = prop.element_split_factor
-    return layout.split(factor=factor)
-
-
 class ElementDraw:
-    def draw_ui(self, layout: 'bpy.types.UILayout'):
-        pref = get_pref()
+    def draw_item(self, layout: 'bpy.types.UILayout'):
+        prop = get_pref().draw_property
 
         column = layout.column(align=True)
 
-        split = split_layout(column, self.level)
+        split = column.split(factor=prop.element_split_factor)
 
-        left = split.row(align=True)
-        left.prop(self,
-                  'radio',
-                  text='',
-                  icon=icon_two(self.radio, 'RESTRICT_SELECT'),
-                  emboss=False)
+        self.draw_item_left(split.row(align=True))
+
+        right = split.row(align=True).split(factor=0.4)
+        self.draw_item_right(right)
+        right.prop(self, 'radio', text='')
+
+        self.draw_item_child(column)
+
+    def draw_item_left(self, layout: 'bpy.types.UILayout'):
+        pref = get_pref()
+        layout.prop(self,
+                    'radio',
+                    text='',
+                    icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+                    emboss=False)
         if pref.draw_property.element_show_enabled_button:
-            left.prop(self, 'enabled', text='')
+            layout.prop(self, 'enabled', text='')
 
-        right = split.row(align=True)
+        layout.label(text='', icon='CON_CHILDOF' if self.is_child_gesture else 'NONE')
 
-        right_split = right.split(factor=0.4)
-        right_split.prop(self, 'name', text='')
+    def draw_item_right(self, layout: 'bpy.types.UILayout'):
+        layout.prop(self, 'name', text='')
 
         if len(self.element):
-            right_split.prop(self,
-                             'show_child',
-                             text='',
-                             icon=icon_two(self.show_child, 'TRI'),
-                             emboss=False)
-            if self.show_child:
-                child = column.box().column(align=True)
-                child.enabled = self.enabled
-                for element in self.element:
-                    element.draw_ui(child)
-                child.separator()
+            layout.prop(self,
+                        'show_child',
+                        text='',
+                        icon=icon_two(self.show_child, 'TRI'),
+                        emboss=False)
         else:
-            right_split.separator()
+            layout.separator()
 
-    def draw_ui_property(self, layout: 'bpy.types.UILayout') -> None:
+    def draw_item_child(self, layout):
+        if self.show_child and len(self.element):
+            child = layout.box().column(align=True)
+            child.enabled = self.enabled
+            for element in self.element:
+                element.draw_item(child)
+            child.separator()
+
+    def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'name')
         self.draw_debug(layout)
 
@@ -61,7 +66,7 @@ class ElementDraw:
         layout.label(text='parent_element\t' + str(self.parent_element))
         layout.label(text='operator_properties\t' + str(self.operator_properties))
         layout.label(text='collection_iteration\t' + str(self.collection_iteration))
-        # layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
+        layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
         layout.separator()
         for i in self.bl_rna.properties.keys():
             if i not in ('rna_type', 'name', 'relationship'):

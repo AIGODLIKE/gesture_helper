@@ -31,7 +31,7 @@ class ElementCURE:
 
         @property
         def add_name(self):
-            return self.element_type.title() if self.is_element else self.element_type.title() + " " + self.selected_type.title()
+            return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, context):
             add = self.collection.add()
@@ -45,7 +45,6 @@ class ElementCURE:
             add.name = self.add_name
             return {"FINISHED"}
 
-    # TODO child REMOVE
     class REMOVE(ElementPoll):
         bl_idname = 'gesture.element_remove'
         bl_label = '删除手势项'

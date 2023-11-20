@@ -30,6 +30,6 @@ class ElementOperator:
         for i in self.collection:
             if i.is_selected_structure:
                 direction.update(i.gesture_direction_items)
-            elif i.is_element:
+            elif i.is_child_gesture:
                 direction[i.gesture_direction] = i
         return direction

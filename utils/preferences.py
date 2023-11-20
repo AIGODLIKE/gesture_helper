@@ -20,24 +20,13 @@ class ElementDraw:
         pref = get_pref()
         act = pref.active_element
         if act:
-            act.draw_ui_property(layout)
+            act.draw_item_property(layout)
         else:
             layout.label(text='请 选择或添加 一个手势元素')
 
     @staticmethod
     def draw_element_add_remove(layout: 'bpy.types.UILayout', cls) -> None:
         column = layout.column(align=True)
-        add = get_pref().add_element_property
-
-        ops = column.operator(
-            cls.ADD.bl_idname,
-            icon='ADD',
-            text=''
-        )
-        ops.relationship = add.relationship
-        ops.element_type = add.element_type
-        ops.selected_type = add.selected_type
-
         column.operator(
             cls.REMOVE.bl_idname,
             icon='REMOVE',
@@ -46,14 +35,31 @@ class ElementDraw:
 
     @staticmethod
     def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
+        from .enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
+        from .gesture.element import ElementCURE
+
         row = layout.row()
 
         add = get_pref().add_element_property
-        row.label(text='添加属性')
-        row.prop(add, 'relationship', expand=True, text='关系')
-        row.prop(add, 'element_type', expand=True, text='类型')
-        if add.is_selected_structure:
-            row.prop(add, 'selected_type', expand=True, text='选择结构类型')
+        row.label(text='添加元素')
+        row.prop(add, 'relationship', expand=True)
+
+        relationship = add.relationship
+
+        element_row = row.row(align=True)
+        for i, n, d in ENUM_ELEMENT_TYPE:
+            if i != 'SELECTED_STRUCTURE':
+                ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
+                ops.element_type = i
+                ops.relationship = relationship
+
+        selected_row = row.row(align=True)
+        selected_row.label(text='选择结构:')
+        for i, n, d in ENUM_SELECTED_TYPE:
+            ops = selected_row.operator(ElementCURE.ADD.bl_idname, text=n)
+            ops.element_type = 'SELECTED_STRUCTURE'
+            ops.selected_type = i
+            ops.relationship = relationship
 
 
 class GestureDraw:

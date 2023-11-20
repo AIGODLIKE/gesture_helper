@@ -9,10 +9,9 @@ class ElementAddProperty:
         default='SAME',
         items=ENUM_RELATIONSHIP,
     )
-
     element_type: EnumProperty(
         name='类型',
-        default='ELEMENT',
+        default='CHILD_ELEMENT',
         items=ENUM_ELEMENT_TYPE,
     )
     selected_type: EnumProperty(
@@ -22,12 +21,16 @@ class ElementAddProperty:
     )
 
     @property
-    def is_element(self) -> bool:
-        return self.element_type == 'ELEMENT'
-
-    @property
     def is_selected_structure(self) -> bool:
         return self.element_type == 'SELECTED_STRUCTURE'
+
+    @property
+    def is_child_gesture(self) -> bool:
+        return self.element_type == 'CHILD_ELEMENT'
+
+    @property
+    def is_operator(self) -> bool:
+        return self.element_type == 'OPERATOR'
 
 
 # 显示的属性,不用Blender那些,使用自已的参数
@@ -44,8 +47,4 @@ class ElementProperty(ElementDirectionProperty):
     enabled: BoolProperty(name='启用', default=True)
 
     show_child: BoolProperty(name='显示子级', default=True)
-    as_child: BoolProperty(
-        name='作为子级',
-        default=False
-    )
     level: IntProperty(name="TODO Element Relationship Level", default=0)

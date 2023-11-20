@@ -9,7 +9,7 @@ class GestureUIList(UIList):
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw_ui(layout)
+        item.draw_item(layout)
 
 
 class ElementUIList(UIList,
@@ -18,7 +18,7 @@ class ElementUIList(UIList,
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw_ui(layout.column(align=True))
+        item.draw_item(layout.column(align=True))
 
     def draw_filter(self, context, layout):
         # Nothing much to say here, it's usual UI code...
