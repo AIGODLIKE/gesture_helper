@@ -1,3 +1,6 @@
+import traceback
+
+
 class PublicCache:
     """
     Gesture
@@ -71,8 +74,9 @@ class PublicCacheFunc(PublicCache):
 
     @staticmethod
     def cache_clear():
+        caller_name = traceback.extract_stack()[-2][2]
         from .public import get_pref
-        print('cache_clear')
+        print(f'cache_clear 被 {caller_name} 调用')
         PublicCacheFunc.init_cache()
         PublicCacheFunc.gesture_cache_clear()
         PublicCacheFunc.element_cache_clear()

@@ -14,7 +14,7 @@ OPERATOR_CONTEXT_ELEMENT = [
 
 
 def from_each_as_enum_upper(enum):
-    return [(i.upper(), i, i)
+    return [(i.upper(), i.title(), i.title())
             for i in enum]
 
 
@@ -40,14 +40,14 @@ ENUM_GESTURE_DIRECTION = [
     ('DOWN', '底', 'TRIA_DOWN'),
 ]
 ENUM_ELEMENT_TYPE = [
-    ('SELECTED_STRUCTURE', 'Selected Structure', ''),
+    ('SELECTED_STRUCTURE', '选择结构', ''),
     ('ELEMENT', 'Element', ''),
 ]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
-    ('ROOT', 'Root', ''),
-    ('SAME', 'Same', ''),
-    ('CHILD', 'Child', '')
+    ('ROOT', '根级', ''),
+    ('SAME', '同级', ''),
+    ('CHILD', '子级', '')
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)

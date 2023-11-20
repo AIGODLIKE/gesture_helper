@@ -10,7 +10,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 
 
 class DrawProperty(PropertyGroup):
-    element_split_factor: FloatProperty(name='拆分系数', default=0.06, max=1, min=0.001)
+    element_split_factor: FloatProperty(name='拆分系数', default=0.05, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=False)
 
 
@@ -26,14 +26,8 @@ class ElementDraw:
 
     @staticmethod
     def draw_element_add_remove(layout: 'bpy.types.UILayout', cls) -> None:
-        column = layout.column()
-        column.scale_x = 0.5
+        column = layout.column(align=True)
         add = get_pref().add_element_property
-
-        column.row().prop(add, 'relationship', expand=True, )
-        column.row().prop(add, 'element_type', expand=True, )
-        if not add.is_element:
-            column.row().prop(add, 'selected_type', expand=True, )
 
         ops = column.operator(
             cls.ADD.bl_idname,
@@ -49,6 +43,17 @@ class ElementDraw:
             icon='REMOVE',
             text=''
         )
+
+    @staticmethod
+    def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
+        row = layout.row()
+
+        add = get_pref().add_element_property
+        row.label(text='添加属性')
+        row.prop(add, 'relationship', expand=True, text='关系')
+        row.prop(add, 'element_type', expand=True, text='类型')
+        if add.is_selected_structure:
+            row.prop(add, 'selected_type', expand=True, text='选择结构类型')
 
 
 class GestureDraw:
@@ -90,21 +95,25 @@ class GestureDraw:
     def draw_element(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import ElementUIList
         pref = get_pref()
-        ges = pref.active_gesture
-        if ges:
-            row = layout.row(align=True)
-            GestureDraw.draw_element_cure(row)
+        active_gesture = pref.active_gesture
+        if active_gesture:
+            column = layout.column()
 
-            column = row.column()
-            column.template_list(
+            ElementDraw.draw_element_add_property(column)
+            row = column.row(align=True)
+
+            sub_column = row.column()
+            sub_column.template_list(
                 ElementUIList.bl_idname,
                 ElementUIList.bl_idname,
-                ges,
+                active_gesture,
                 'element',
-                ges,
+                active_gesture,
                 'index_element',
             )
-            ElementDraw.draw_property(column)
+            ElementDraw.draw_property(sub_column)
+
+            GestureDraw.draw_element_cure(row)
         else:
             layout.label(text='请添加或选择一个手势')
 
@@ -119,7 +128,8 @@ class GestureDraw:
         pref = get_pref()
         column = layout.column(align=True)
         if is_element:
-            ElementDraw.draw_element_add_remove(layout, cls)
+            ElementDraw.draw_element_add_remove(column, cls)
+            column.separator()
         else:
             column.operator(
                 cls.ADD.bl_idname,

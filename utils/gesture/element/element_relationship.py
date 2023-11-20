@@ -1,9 +1,8 @@
 from functools import cache
 
-from bpy.props import BoolProperty, StringProperty
+from bpy.props import BoolProperty
 
-from ...public import (get_pref,
-                       PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
+from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
 
 
 @cache
@@ -59,27 +58,23 @@ class RadioSelect:
     def _update_radio(self, context):
 
         for i in self.radio_iteration:
-            print(i == self, i, self)
             i['radio'] = i == self
         f = getattr(self, 'selected_update')
         if f:
             f(context)
-        print('self.radio_iteration', self.radio_iteration)
 
     radio: BoolProperty(name='单选',
-                        update=_update_radio
-                        )
+                        update=_update_radio)
 
     @property
     def radio_iteration(self):
         return self.parent_gesture.element_iteration
 
 
-class ElementRelationship(
-    PublicUniqueNamePropertyGroup,
-    RadioSelect,
-    PublicSortAndRemovePropertyGroup,
-    Relationship):
+class ElementRelationship(PublicUniqueNamePropertyGroup,
+                          RadioSelect,
+                          PublicSortAndRemovePropertyGroup,
+                          Relationship):
 
     def _get_index(self) -> int:
         return get_element_index(self)
@@ -113,7 +108,4 @@ class ElementRelationship(
     def names_iteration(self):
         return self.parent_gesture.element_iteration
 
-    def remove_before(self):
-        for e in self.element:
-            e.remove()
-        return
+    # TODO Remove move active index

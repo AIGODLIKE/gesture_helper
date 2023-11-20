@@ -31,7 +31,7 @@ class ElementCURE:
 
         @property
         def add_name(self):
-            return self.element_type if self.is_element else self.selected_type
+            return self.element_type.title() if self.is_element else self.element_type.title() + " " + self.selected_type.title()
 
         def execute(self, context):
             add = self.collection.add()
