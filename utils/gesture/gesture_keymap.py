@@ -8,7 +8,7 @@ import traceback
 import bpy
 from idprop.types import IDPropertyGroup
 
-from .. import PropertyGetUtils
+from .. import PropertyGetUtils, PropertySetUtils
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
@@ -66,6 +66,11 @@ class GestureKeymap:
         if self.key != data:
             self.key = data
 
+    def to_temp_kmi(self) -> None:
+        print('to_temp_kmi', self, self.key, self.temp_kmi_data)
+        PropertySetUtils.set_property_data(self.temp_kmi, self.key)
+        print(self.temp_kmi_data)
+
     def draw_key(self, layout) -> None:
         from ...ops import set_key
         layout.context_pointer_set('keymap', get_temp_keymap())
@@ -100,9 +105,9 @@ class GestureKeymap:
         # 在keymap被改时更新
         # 在key被改时更新
         caller_name = traceback.extract_stack()[-2][2]
-        print("key_update 被 {} 调用".format(caller_name), self)
         self.key_unload()
         self.key_load()
+        print("key_update 被 {} 调用".format(caller_name), self)
 
     @classmethod
     def key_init(cls) -> None:

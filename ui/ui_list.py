@@ -21,7 +21,9 @@ class ElementUIList(UIList,
         item.draw_item(layout.column(align=True))
 
     def draw_filter(self, context, layout):
-        # Nothing much to say here, it's usual UI code...
         row = layout.row()
-        row.prop(self.draw_property, 'element_split_factor')
-        row.prop(self.draw_property, 'element_show_enabled_button')
+        prop = self.draw_property
+        row.prop(prop, 'element_split_factor')
+        row.prop(prop, 'element_show_enabled_button')
+        row.prop(prop, 'element_debug_mode')
+        row.prop(prop, 'element_show_left_side')

@@ -32,6 +32,8 @@ class ElementDraw:
         if pref.draw_property.element_show_enabled_button:
             layout.prop(self, 'enabled', text='')
 
+        if self.is_operator:
+            layout.label(text='', icon='GEOMETRY_NODES')
         if self.is_child_gesture:
             layout.label(text='', icon='CON_CHILDOF')
         if self.is_child_gesture or self.is_operator:
@@ -60,7 +62,18 @@ class ElementDraw:
 
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
         layout.prop(self, 'name')
-        self.draw_debug(layout)
+        if self.is_selected_structure:
+            layout.prop(self, 'poll_string')
+            row = layout.row(align=True)
+            row.prop(self, 'selected_type', expand=True)
+        elif self.is_operator:
+            layout.prop(self, 'operator_bl_idname')
+            layout.prop(self, 'operator_context')
+            layout.prop(self, 'operator_property', expand=True)
+        elif self.is_child_relationship:
+            layout.prop(self, 'name')
+            layout.label(text='子手势')
+            layout.prop(self, 'gesture_direction')
 
     def draw_debug(self, layout):
         layout.separator()

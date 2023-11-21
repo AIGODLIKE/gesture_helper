@@ -24,6 +24,8 @@ class ElementOperator:
                                    default='INVOKE_DEFAULT',
                                    items=ENUM_OPERATOR_CONTEXT)
 
+    operator_property: StringProperty(name='操作符属性', default=r'{}')
+
     @property
     def gesture_direction_items(self):
         direction = {}

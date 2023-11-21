@@ -12,6 +12,8 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 class DrawProperty(PropertyGroup):
     element_split_factor: FloatProperty(name='拆分系数', default=0.05, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=False)
+    element_debug_mode: BoolProperty(name='Debug模式', default=False)
+    element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
 
 class ElementDraw:
@@ -19,13 +21,17 @@ class ElementDraw:
     def draw_property(layout: 'bpy.types.UILayout') -> None:
         pref = get_pref()
         act = pref.active_element
+        prop = pref.draw_property
         if act:
-            act.draw_item_property(layout)
+            if not prop.element_show_left_side:
+                act.draw_item_property(layout)
+            if prop.element_debug_mode:
+                act.draw_debug(layout)
         else:
             layout.label(text='请 选择或添加 一个手势元素')
 
     @staticmethod
-    def draw_element_add_remove(layout: 'bpy.types.UILayout', cls) -> None:
+    def draw_element_cure(layout: 'bpy.types.UILayout', cls) -> None:
         column = layout.column(align=True)
         column.operator(
             cls.REMOVE.bl_idname,
@@ -38,28 +44,36 @@ class ElementDraw:
         from .enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
         from .gesture.element import ElementCURE
 
+        pref = get_pref()
+        add = pref.add_element_property
+
+        relationship = add.relationship
+        add_child = add.is_have_add_child
+
         row = layout.row()
 
-        add = get_pref().add_element_property
         row.label(text='添加元素')
         row.prop(add, 'relationship', expand=True)
 
-        relationship = add.relationship
+        sub_row = row.row(align=True)
+        sub_row.enabled = add_child
 
-        element_row = row.row(align=True)
+        element_row = sub_row.row(align=True)
         for i, n, d in ENUM_ELEMENT_TYPE:
             if i != 'SELECTED_STRUCTURE':
                 ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
                 ops.element_type = i
                 ops.relationship = relationship
 
-        selected_row = row.row(align=True)
+        selected_row = sub_row.row(align=True)
         selected_row.label(text='选择结构:')
         for i, n, d in ENUM_SELECTED_TYPE:
             ops = selected_row.operator(ElementCURE.ADD.bl_idname, text=n)
             ops.element_type = 'SELECTED_STRUCTURE'
             ops.selected_type = i
             ops.relationship = relationship
+        if not add_child:
+            layout.label(text="无法为 '操作符' 添加子级")
 
 
 class GestureDraw:
@@ -132,9 +146,11 @@ class GestureDraw:
     def public_cure(layout, cls) -> None:
         is_element = cls.__name__ == 'ElementCURE'
         pref = get_pref()
+        draw_property = pref.draw_property
+
         column = layout.column(align=True)
         if is_element:
-            ElementDraw.draw_element_add_remove(column, cls)
+            ElementDraw.draw_element_cure(column, cls)
             column.separator()
         else:
             column.operator(
@@ -167,19 +183,35 @@ class GestureDraw:
             text=''
         ).is_next = True
 
+        if is_element:
+            column.separator()
+            icon = 'ALIGN_LEFT' if draw_property.element_show_left_side else 'ALIGN_RIGHT'
+            column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
+
 
 class BlenderPreferencesDraw(GestureDraw):
 
     # 绘制右边层
     def right_layout(self: bpy.types.Panel, context: bpy.context):
         pref = get_pref()
+        draw_property = pref.draw_property
+        act = pref.active_element
+
         layout = self.layout
         layout.label(text='right_layout')
 
         column = layout.column()
         column.prop(pref, 'enabled')
         split = column.split()
-        GestureDraw.draw_gesture(split)
+
+        if draw_property.element_show_left_side:  # 绘制属性在左侧
+            box = split.box()
+            if act:
+                act.draw_item_property(box)
+            else:
+                box.label(text='请 选择或添加 一个手势元素')
+        else:
+            GestureDraw.draw_gesture(split)
         GestureDraw.draw_element(split)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
