@@ -45,6 +45,9 @@ class ElementDraw:
 
         if self.is_child_gesture or self.is_operator:
             row.label(text='', icon_value=Icons.get(self.gesture_direction).icon_id)
+        else:
+            row.separator()
+            row.separator()
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
         layout.prop(self, 'name', text='')

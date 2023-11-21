@@ -50,8 +50,7 @@ class PublicProperty(PublicCacheFunc):
 class PublicOperator(Operator):
 
     def invoke(self, context, event) -> set:
-        PublicCacheFunc.gesture_cache_clear()
-        PublicCacheFunc.element_cache_clear()
+        PublicCacheFunc.cache_clear()
         return self.execute(context)
 
 
