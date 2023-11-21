@@ -26,7 +26,6 @@ class ElementCURE:
                     return pe.element
             elif r == 'CHILD' and ae:
                 return ae.element
-            # if r == 'ROOT':
             return self.active_gesture.element
 
         @property

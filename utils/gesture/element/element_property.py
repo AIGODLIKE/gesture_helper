@@ -12,7 +12,7 @@ class ElementAddProperty:
     )
     element_type: EnumProperty(
         name='类型',
-        default='CHILD_ELEMENT',
+        default='CHILD_GESTURE',
         items=ENUM_ELEMENT_TYPE,
     )
     selected_type: EnumProperty(
