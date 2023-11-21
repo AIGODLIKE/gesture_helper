@@ -3,6 +3,7 @@
 import bpy
 
 from ... import icon_two
+from ...icons import Icons
 from ...public import get_pref
 
 
@@ -23,6 +24,7 @@ class ElementDraw:
         self.draw_item_child(column)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout'):
+        from ...icons import Icons
         pref = get_pref()
         layout.prop(self,
                     'radio',
@@ -34,10 +36,12 @@ class ElementDraw:
 
         if self.is_operator:
             layout.label(text='', icon='GEOMETRY_NODES')
-        if self.is_child_gesture:
+        elif self.is_child_gesture:
             layout.label(text='', icon='CON_CHILDOF')
+        elif self.is_selected_structure:
+            layout.label(text='', icon_value=Icons.get(self.selected_type).icon_id)
+
         if self.is_child_gesture or self.is_operator:
-            from ...icons import Icons
             layout.label(text='', icon_value=Icons.get(self.gesture_direction).icon_id)
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
@@ -61,19 +65,23 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
-        layout.prop(self, 'name')
         if self.is_selected_structure:
+            layout.prop(self, 'name')
+            layout.label(text='选择结构', icon_value=Icons.get(self.selected_type).icon_id)
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
+            layout.prop(self, 'name')
             layout.prop(self, 'operator_bl_idname')
             layout.prop(self, 'operator_context')
             layout.prop(self, 'operator_property', expand=True)
-        elif self.is_child_relationship:
+        elif self.is_child_gesture:
             layout.prop(self, 'name')
-            layout.label(text='子手势')
-            layout.prop(self, 'gesture_direction')
+            layout.label(text='子手势', icon_value=Icons.get(self.gesture_direction).icon_id)
+            layout.column().prop(
+                self, 'gesture_direction',
+                expand=True)
 
     def draw_debug(self, layout):
         layout.separator()

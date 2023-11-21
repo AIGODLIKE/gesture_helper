@@ -19,7 +19,7 @@ class GestureCURE:
         bl_label = '添加手势'
 
         def execute(self, context):
-            add = self.pref.gesture.add_gesture('Gesture')
+            add = self.pref.gesture.add()
             self.cache_clear()
             add.name = 'Gesture'
             return {"FINISHED"}

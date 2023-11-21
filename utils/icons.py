@@ -15,8 +15,8 @@ class Icons:
             file_path = os.path.abspath(os.path.join(icon_folder, file))
             is_png = file.lower().endswith('.png')
             if is_png and os.path.isfile(file_path):
-                cls.__icons__.load(name, file_path, 'IMAGE', force_reload=True)
+                cls.__icons__.load(name.lower(), file_path, 'IMAGE', force_reload=True)
 
     @classmethod
     def get(cls, key):
-        return cls.__icons__[key]
+        return cls.__icons__[key.lower()]

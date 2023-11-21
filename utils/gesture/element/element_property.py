@@ -27,7 +27,7 @@ class ElementAddProperty:
 
     @property
     def is_child_gesture(self) -> bool:
-        return self.element_type == 'CHILD_ELEMENT'
+        return self.element_type == 'CHILD_GESTURE'
 
     @property
     def is_operator(self) -> bool:

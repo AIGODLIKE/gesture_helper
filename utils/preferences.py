@@ -10,7 +10,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 
 
 class DrawProperty(PropertyGroup):
-    element_split_factor: FloatProperty(name='拆分系数', default=0.05, max=0.95, min=0.01)
+    element_split_factor: FloatProperty(name='拆分系数', default=0.09, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=False)
     element_debug_mode: BoolProperty(name='Debug模式', default=False)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
@@ -50,30 +50,32 @@ class ElementDraw:
         relationship = add.relationship
         add_child = add.is_have_add_child
 
-        row = layout.row()
+        split = layout.split(factor=.4)
 
-        row.label(text='添加元素')
+        row = split.row(align=True)
+        row.label(text='添加元素关系')
         row.prop(add, 'relationship', expand=True)
 
-        sub_row = row.row(align=True)
+        sub_row = split.row(align=True)
         sub_row.enabled = add_child
 
-        element_row = sub_row.row(align=True)
-        for i, n, d in ENUM_ELEMENT_TYPE:
-            if i != 'SELECTED_STRUCTURE':
+        if add_child:
+            element_row = sub_row.row(align=True)
+            element_row.separator()
+            element_row.label(text='添加项:')
+            for i, n, d in ENUM_ELEMENT_TYPE:
+                if i != 'SELECTED_STRUCTURE':
+                    ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
+                    ops.element_type = i
+                    ops.relationship = relationship
+            element_row.separator()
+            for i, n, d in ENUM_SELECTED_TYPE:
                 ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
-                ops.element_type = i
+                ops.element_type = 'SELECTED_STRUCTURE'
+                ops.selected_type = i
                 ops.relationship = relationship
-
-        selected_row = sub_row.row(align=True)
-        selected_row.label(text='选择结构:')
-        for i, n, d in ENUM_SELECTED_TYPE:
-            ops = selected_row.operator(ElementCURE.ADD.bl_idname, text=n)
-            ops.element_type = 'SELECTED_STRUCTURE'
-            ops.selected_type = i
-            ops.relationship = relationship
-        if not add_child:
-            layout.label(text="无法为 '操作符' 添加子级")
+        else:
+            sub_row.row(align=True).label(text="无法为 '操作符' 添加子级")
 
 
 class GestureDraw:
