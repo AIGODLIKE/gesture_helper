@@ -3,13 +3,7 @@ from functools import cache
 from bpy.props import BoolProperty
 
 from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
-
-
-@cache
-def get_parent_element(element):
-    for e in element.parent_gesture.element_iteration:
-        if element in e.element.values():
-            return e
+from ...public_cache import PublicCache
 
 
 @cache
@@ -20,20 +14,42 @@ def get_element_index(element) -> int:
         ...
 
 
+@cache
+def get_available_selected_structure(element) -> bool:
+    def get_prev(e):
+        p = e.prev_element
+        if p and not p.enabled:
+            return get_prev(p)
+        else:
+            return p
+
+    prev = get_prev(element)  # 上一个,如果上一个是禁用的就拿上一个的上一个
+    prev_type = getattr(prev, 'selected_type', None)  # 上一个类型
+
+    if element.is_selected_if:
+        return element.enabled
+    elif element.is_selected_elif or element.is_selected_else:
+        if prev_type:
+            # 不是 else即正确 并且这个元素是启用的
+            return not prev.is_selected_else and prev.is_available_selected_structure and element.enabled
+        else:
+            return False
+    else:
+        print('例外', element)
+    return False
+
+
 class Relationship:
     @property
     def parent_element(self):
-        from ...public_cache import PublicCache
         return PublicCache.__element_parent_element_cache__[self]
 
     @property
     def parent_gesture(self):
-        from ...public_cache import PublicCache
         return PublicCache.__element_parent_gesture_cache__[self]
 
     @property
     def collection_iteration(self) -> list:
-        from ...public_cache import PublicCache
         items = []
         for element in self.parent_gesture.element:
             items.extend(PublicCache.__element_child_iteration__[element])
@@ -49,8 +65,11 @@ class Relationship:
 
     @property
     def element_iteration(self):
-        from ...public_cache import PublicCache
         return PublicCache.__gesture_element_iteration__[self.parent_gesture]
+
+    @property
+    def prev_element(self):
+        return PublicCache.__element_prev_cache__[self]
 
 
 class RadioSelect:
@@ -109,3 +128,18 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         return self.parent_gesture.element_iteration
 
     # TODO Remove move active index
+
+    @property
+    def is_available_selected_structure(self) -> bool:  # 是一个可用的选择结构
+        return get_available_selected_structure(self)
+
+    @property
+    def is_show_alert(self) -> bool:
+        if self.is_selected_structure:  # 选择结构
+            if self.enabled:  # 启用了的
+                return not self.is_available_selected_structure
+            # 没启用的话就不过这个逻辑
+        elif self.is_operator:
+            ...
+
+        return False

@@ -47,6 +47,18 @@ class ElementAddProperty:
         is_operator = act and act.is_operator
         return not (is_operator and pref.add_element_property.is_child_relationship)
 
+    @property
+    def is_selected_if(self) -> bool:
+        return self.selected_type == 'IF'
+
+    @property
+    def is_selected_elif(self) -> bool:
+        return self.selected_type == 'ELIF'
+
+    @property
+    def is_selected_else(self) -> bool:
+        return self.selected_type == 'ELSE'
+
 
 # 显示的属性,不用Blender那些,使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):
@@ -59,7 +71,7 @@ class ElementDirectionProperty(ElementAddProperty):
 
 class ElementProperty(ElementDirectionProperty):
     collection: CollectionProperty
-    enabled: BoolProperty(name='启用', default=True)
+    enabled: BoolProperty(name='启用', default=True, update=lambda self, context: self.cache_clear())
 
     show_child: BoolProperty(name='显示子级', default=True)
     level: IntProperty(name="Element Relationship Level", default=0)

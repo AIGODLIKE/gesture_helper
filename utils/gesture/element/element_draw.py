@@ -26,23 +26,25 @@ class ElementDraw:
     def draw_item_left(self, layout: 'bpy.types.UILayout'):
         from ...icons import Icons
         pref = get_pref()
-        layout.prop(self,
-                    'radio',
-                    text='',
-                    icon=icon_two(self.radio, 'RESTRICT_SELECT'),
-                    emboss=False)
+        row = layout.row()
+        row.alert = self.is_show_alert
+        row.prop(self,
+                 'radio',
+                 text='',
+                 icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+                 emboss=False)
         if pref.draw_property.element_show_enabled_button:
-            layout.prop(self, 'enabled', text='')
+            row.prop(self, 'enabled', text='')
 
         if self.is_operator:
-            layout.label(text='', icon='GEOMETRY_NODES')
+            row.label(text='', icon='GEOMETRY_NODES')
         elif self.is_child_gesture:
-            layout.label(text='', icon='CON_CHILDOF')
+            row.label(text='', icon='CON_CHILDOF')
         elif self.is_selected_structure:
-            layout.label(text='', icon_value=Icons.get(self.selected_type).icon_id)
+            row.label(text='', icon_value=Icons.get(self.selected_type).icon_id)
 
         if self.is_child_gesture or self.is_operator:
-            layout.label(text='', icon_value=Icons.get(self.gesture_direction).icon_id)
+            row.label(text='', icon_value=Icons.get(self.gesture_direction).icon_id)
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
         layout.prop(self, 'name', text='')

@@ -67,10 +67,8 @@ class GestureKeymap:
             self.key = data
 
     def to_temp_kmi(self) -> None:
-        print('to_temp_kmi', self, self.key, self.temp_kmi_data)
         PropertySetUtils.set_property_data(self.temp_kmi, self.key)
-        print(self.temp_kmi_data)
-
+        
     def draw_key(self, layout) -> None:
         from ...ops import set_key
         layout.context_pointer_set('keymap', get_temp_keymap())
