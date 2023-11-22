@@ -91,6 +91,7 @@ class ElementDraw:
             layout.label(text=str(self.properties))
             layout.label(text=str(self.operator_tmp_kmi))
             layout.template_keymap_item_properties(self.operator_tmp_kmi)
+            self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:
             layout.prop(self, 'name')
             layout.label(text='子手势', icon_value=Icons.get(self.gesture_direction).icon_id)

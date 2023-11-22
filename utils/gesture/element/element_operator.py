@@ -14,21 +14,27 @@ class OperatorProperty:
         掐头去尾
         TODO 将()里面的属性读取进 properties
         """
-        value = self.operator_bl_idname
-        key = 'operator_bl_idname'
-        if value.startswith('bpy.ops.'):
-            self[key] = value = value[8:]
-        if ('(' in value) and (')' in value):
-            if value.endswith('()'):
-                self[key] = value[:-2]
-            else:  # 将后面的切掉
-                index = value.index('(')
-                self[key] = value[:index]
-        self.to_operator_tmp_kmi()
+        if self.__is_updatable__:
+            self.__is_updatable__ = False
+            value = self.operator_bl_idname
+            key = 'operator_bl_idname'
+            if value.startswith('bpy.ops.'):
+                self[key] = value = value[8:]
+            if ('(' in value) and (')' in value):
+                if value.endswith('()'):
+                    self[key] = value[:-2]
+                else:  # 将后面的切掉
+                    index = value.index('(')
+                    self[key] = value[:index]
+            self.to_operator_tmp_kmi()
+            self.__is_updatable__ = True
 
     def update_operator_properties(self, context) -> None:
-        print('update_operator_properties', self, context)
-        self.to_operator_tmp_kmi()
+        if self.__is_updatable__:
+            self.__is_updatable__ = False
+            print('update_operator_properties', self, context)
+            self.to_operator_tmp_kmi()
+            self.__is_updatable__ = True
 
     operator_bl_idname: StringProperty(name='操作符 bl_idname',
                                        description='默认为添加猴头',
@@ -49,17 +55,54 @@ class ElementOperator(OperatorProperty):
     def properties(self):
         try:
             return ast.literal_eval(self.operator_properties)
-        finally:
+        except Exception as e:
+            print('properties Error', e.args)
             return {}
 
     @property
     def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
-        from ...public_key import get_temp_kmi
-        return get_temp_kmi(self.operator_bl_idname, self.properties)
+        from ...public_key import get_temp_kmi_by_id_name
+        return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
     def to_operator_tmp_kmi(self) -> None:
-        print('to_operator_tmp_kmi', self)  # TODO 同步操作符属性
-        PropertySetUtils.set_property_data(self.operator_tmp_kmi.properties, self.properties)
+        self.operator_tmp_kmi_properties_clear()
+        PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
 
-    def run_operator(self):
-        ...
+    def from_tmp_kmi_operator_update_properties(self):
+        from ...public_key import get_kmi_operator_properties
+        properties = get_kmi_operator_properties(self.operator_tmp_kmi)
+        if self.properties != properties:
+            self['operator_properties'] = str(properties)
+
+    @property
+    def operator_func(self) -> 'bpy.types.Operator':
+        """获取操作符的方法
+
+        Returns:
+            bpy.types.Operator: _description_
+        """
+        sp = self.operator.split('.')
+        if len(sp) == 2:
+            prefix, suffix = sp
+            func = getattr(getattr(bpy.ops, prefix), suffix)
+            return func
+
+    def running_operator(self) -> None:
+        """运行此self的操作符
+        """
+        try:
+            prop = ast.literal_eval(self.operator_properties)
+            func = self.operator_func
+            if func:
+                func(self.operator_context, True, **prop)
+                print(
+                    f'running_operator bpy.ops.{self.operator_bl_idname}'
+                    f'( "{self.operator_context}", {self.operator_properties[1:-1]})',
+                )
+        except Exception as e:
+            print('running_operator ERROR', e)
+
+    def operator_tmp_kmi_properties_clear(self):
+        properties = self.operator_tmp_kmi.properties
+        for key in properties.keys():
+            properties.pop(key)

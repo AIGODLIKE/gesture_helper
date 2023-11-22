@@ -2,6 +2,14 @@ import bpy
 from mathutils import Vector, Euler, Matrix
 
 
+def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
+    keymap_items = get_temp_keymap().keymap_items
+    for temp_kmi in keymap_items:
+        if temp_kmi.idname == id_name:
+            return temp_kmi
+    return keymap_items.new(id_name, "NONE", "PRESS")
+
+
 def simple_set_property(prop, to):
     for k, v in prop.items():  # TIPS简单的赋值,这个属性在这里只有字符串,所以可以这样弄
         setattr(to, k, v)

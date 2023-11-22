@@ -140,7 +140,7 @@ class PropertySetUtils:
     @staticmethod
     def set_prop(prop, path, value):
         pr = getattr(prop, path, None)
-        if pr is not None:
+        if pr is not None or path in prop.bl_rna.properties:
             pro = prop.bl_rna.properties[path]
             typ = pro.type
             try:
@@ -166,8 +166,36 @@ class PropertySetUtils:
         """
         for k, item in data.items():
             pr = getattr(prop, k, None)
-            if pr is not None:
+            if pr is not None or k in prop.bl_rna.properties:
                 PropertySetUtils.set_prop(prop, k, item)
+
+    @staticmethod
+    def _for_set_prop(prop, pro, pr):
+        for index, j in enumerate(pr):
+            try:
+                getattr(prop, pro)[index] = j
+            except Exception as e:
+                print(e.args)
+
+    @staticmethod
+    def set_operator_property_to(properties: 'bpy.types.KeyMapItem.properties', property) -> None:
+        """注入operator property
+        在绘制项时需要使用此方法
+        set operator property
+        self.operator_property:
+        """
+        props = property
+        for pro in props:
+            pr = props[pro]
+            if hasattr(properties, pro):
+                if type(pr) == tuple:
+                    # 阵列参数
+                    PropertySetUtils._for_set_prop(properties, pro, pr)
+                else:
+                    try:
+                        setattr(properties, pro, props[pro])
+                    except Exception as e:
+                        print(e.args)
 
 
 class PropertyGetUtils:
