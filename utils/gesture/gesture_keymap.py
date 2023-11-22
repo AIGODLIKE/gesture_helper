@@ -9,6 +9,7 @@ import bpy
 from idprop.types import IDPropertyGroup
 
 from .. import PropertyGetUtils, PropertySetUtils
+from ..public import get_pref
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
@@ -59,7 +60,7 @@ class GestureKeymap:
     @property
     def add_kmi_data(self) -> dict:
         from ...ops import gesture
-        return {'idname': gesture.GestureOperator.bl_idname, **self.temp_kmi_data}
+        return {'idname': gesture.GestureOperator.bl_idname, **self.key}
 
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
@@ -68,7 +69,7 @@ class GestureKeymap:
 
     def to_temp_kmi(self) -> None:
         PropertySetUtils.set_property_data(self.temp_kmi, self.key)
-        
+
     def draw_key(self, layout) -> None:
         from ...ops import set_key
         layout.context_pointer_set('keymap', get_temp_keymap())
@@ -77,11 +78,12 @@ class GestureKeymap:
         layout.operator(set_key.OperatorTempModifierKey.bl_idname)
 
         draw_kmi(layout, self.temp_kmi, self.keymaps)
-        layout.label(text=str(self.key))
-        layout.label(text=str(self.keymaps))
-        layout.label(text=str(self.temp_kmi.id))
-        layout.label(text=str(self.temp_kmi))
-        layout.label(text=str(self.temp_kmi_data))
+        if get_pref().draw_property.element_debug_mode:
+            layout.label(text=str(self.key))
+            layout.label(text=str(self.keymaps))
+            layout.label(text=str(self.temp_kmi.id))
+            layout.label(text=str(self.temp_kmi))
+            layout.label(text=str(self.temp_kmi_data))
         self.from_temp_key_update_data()
 
     def key_load(self) -> None:
@@ -90,6 +92,7 @@ class GestureKeymap:
                 self.key_unload()
 
             data = GestureKeymap.__key_data__[self] = []
+            print('self.add_kmi_data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
                 data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 

@@ -26,7 +26,9 @@ def get_available_selected_structure(element) -> bool:
     prev = get_prev(element)  # 上一个,如果上一个是禁用的就拿上一个的上一个
     prev_type = getattr(prev, 'selected_type', None)  # 上一个类型
 
-    if element.is_selected_if:
+    if not element.is_selected_structure:
+        return False
+    elif element.is_selected_if:
         return element.enabled
     elif element.is_selected_elif or element.is_selected_else:
         if prev_type:
@@ -71,13 +73,26 @@ class Relationship:
     def prev_element(self):
         return PublicCache.__element_prev_cache__[self]
 
+    @property
+    def gesture_direction_items(self):
+        direction = {}
+        for item in self.collection:
+            if item.is_selected_structure:
+                direction.update(item.gesture_direction_items)
+            elif item.is_child_gesture:
+                direction[item.gesture_direction] = item
+        return direction
+
 
 class RadioSelect:
 
     def _update_radio(self, context):
 
-        for i in self.radio_iteration:
-            i['radio'] = i == self
+        for item in self.radio_iteration:
+            is_select = item == self
+            item['radio'] = is_select
+            if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
+                self.to_operator_tmp_kmi()
         f = getattr(self, 'selected_update')
         if f:
             f(context)
@@ -143,3 +158,15 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
             ...
 
         return False
+
+    @property
+    def is_available_poll(self) -> bool:  # 是一个可用的poll
+        try:
+            self.poll_bool
+            return True
+        except Exception as e:
+            return False
+
+    @property
+    def is_available_operator(self) -> bool:  # 是一个可用的操作符
+        ...

@@ -59,7 +59,7 @@ class ElementDraw:
                         icon=icon_two(self.show_child, 'TRI'),
                         emboss=False)
         else:
-            layout.separator()
+            layout.prop(self, 'radio', text='', icon='NONE', emboss=False)
 
     def draw_item_child(self, layout):
         if self.show_child and len(self.element):
@@ -71,8 +71,14 @@ class ElementDraw:
 
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
         if self.is_selected_structure:
+            from ....ops.set_poll import SetPollExpression
+
+            icon = Icons.get(self.selected_type).icon_id
+
             layout.prop(self, 'name')
-            layout.label(text='选择结构', icon_value=Icons.get(self.selected_type).icon_id)
+            row = layout.row()
+            row.label(text='选择结构', icon_value=icon)
+            row.operator(SetPollExpression.bl_idname)
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
@@ -80,7 +86,11 @@ class ElementDraw:
             layout.prop(self, 'name')
             layout.prop(self, 'operator_bl_idname')
             layout.prop(self, 'operator_context')
-            layout.prop(self, 'operator_property', expand=True)
+            layout.prop(self, 'operator_properties')
+            layout.label(text=str(self))
+            layout.label(text=str(self.properties))
+            layout.label(text=str(self.operator_tmp_kmi))
+            layout.template_keymap_item_properties(self.operator_tmp_kmi)
         elif self.is_child_gesture:
             layout.prop(self, 'name')
             layout.label(text='子手势', icon_value=Icons.get(self.gesture_direction).icon_id)

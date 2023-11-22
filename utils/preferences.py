@@ -248,7 +248,7 @@ class GesturePreferences(PublicProperty,
 
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
-    index_gesture: IntProperty(name='手势索引')
+    index_gesture: IntProperty(name='手势索引',update=lambda self,context: self.active_gesture.to_temp_kmi())
     is_preview: BoolProperty(name='是在预览模式')  # TODO
 
     add_element_property: PointerProperty(type=AddElementProperty)
