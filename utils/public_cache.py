@@ -36,16 +36,19 @@ class PublicCache:
         cls = PublicCache
         cls.cache_clear_data()
 
-        for gesture in pref.gesture:
+        def from_collection(g, item):
             element_iteration = []
             prev_element = None
-            for element in gesture.element:
+            for element in item.element:
                 element_iteration.append(element)
                 cls.__element_prev_cache__[element] = prev_element
                 prev_element = element
 
-                element_iteration.extend(cls.from_element_get_data(gesture, element, None, 0))
-            cls.__gesture_element_iteration__[gesture] = element_iteration
+                element_iteration.extend(cls.from_element_get_data(g, element, None, 0))
+            return element_iteration
+
+        for gesture in pref.gesture:
+            cls.__gesture_element_iteration__[gesture] = from_collection(gesture, gesture)
 
     @staticmethod
     def from_element_get_data(gesture, element, parent_element, level):
@@ -59,7 +62,7 @@ class PublicCache:
         prev_element = None
         for child in element.element:
             child_iteration.append(child)
-            cls.__element_prev_cache__[element] = prev_element
+            cls.__element_prev_cache__[child] = prev_element
             prev_element = child
 
             child_iteration.extend(PublicCache.from_element_get_data(gesture, child, element, level + 1))
