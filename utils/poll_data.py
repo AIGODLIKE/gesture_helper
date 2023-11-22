@@ -64,10 +64,9 @@ class PollData:
         'suffix': '',
         'name': '网格选择模式',
         'items': [
-
-            {'prefix': '', 'suffix': '',
-             'item': 'is_select_vert', 'name': '选中了顶点', },
-            None,
+            # {'prefix': '', 'suffix': '',
+            #  'item': 'is_select_vert', 'name': '选中了顶点', },
+            # None,
 
             {'prefix': 'tool.mesh_select_mode[0] == ',
              'item': True, 'name': '顶点', },

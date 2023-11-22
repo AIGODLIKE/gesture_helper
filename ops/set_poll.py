@@ -46,14 +46,15 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
             text = '''参数:'''
             lay.label(text=text)
 
-            texts = {'bpy: bpy,': '',
-                     'C: bpy.context,': 'blender 上下文',
-                     'D: bpy.data,': 'blender数据',
-                     'O: bpy.context.object,': '活动物体',
-                     'mode: C.mode,': '模式',
-                     'tool: C.tool_settings,': '工具设置',
-                     'mesh: bpy.context.object.data,': '网格,如果物体不为mesh则为None',
-                     'is_select_vert: bool,': '是否选择了顶点的布尔值', }
+            texts = {'bpy: bpy': '',
+                     'C: bpy.context': 'blender 上下文',
+                     'D: bpy.data': 'blender数据',
+                     'O: bpy.context.object': '活动物体',
+                     'mode: C.mode': '模式',
+                     'tool: C.tool_settings': '工具设置',
+                     'mesh: bpy.context.object.data': '网格,如果物体不为mesh则为None',
+                     # 'is_select_vert: bool': '是否选择了顶点的布尔值',
+                     }
             for k, v in texts.items():
                 sp = lay.split(factor=0.2)
                 sp.label(text='    ' + k)

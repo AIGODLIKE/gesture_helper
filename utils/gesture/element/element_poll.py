@@ -57,7 +57,8 @@ class ElementPoll:
 
     @property
     def _is_select_vert(self) -> bool:
-        """反回活动网格是否选中了顶点的布尔值"""
+        """TODO 反回活动网格是否选中了顶点的布尔值
+        每次更新网格时会有卡顿"""
         bm = self._object_bmesh()
         if bm:
             for i in bm.verts:

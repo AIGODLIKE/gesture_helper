@@ -110,7 +110,7 @@ class ElementDraw:
         layout.label(text='parent_element\t' + str(self.parent_element))
         layout.label(text='operator_properties\t' + str(self.operator_properties))
         layout.label(text='collection_iteration\t' + str(self.collection_iteration))
-        # layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
+        layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
         layout.separator()
         for i in self.bl_rna.properties.keys():
             if i not in ('rna_type', 'name', 'relationship'):
