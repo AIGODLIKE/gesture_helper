@@ -155,7 +155,9 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
                 return not self.is_available_selected_structure
             # 没启用的话就不过这个逻辑
         elif self.is_operator:
-            ...
+            return not self.is_available_operator
+        # elif self.is_child_gesture:
+        #     return self.
 
         return False
 
@@ -169,4 +171,9 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
 
     @property
     def is_available_operator(self) -> bool:  # 是一个可用的操作符
-        ...
+        try:
+            self.properties
+            self.operator_func
+            return True
+        except Exception as e:
+            return False

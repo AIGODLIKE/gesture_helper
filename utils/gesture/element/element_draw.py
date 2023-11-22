@@ -72,10 +72,10 @@ class ElementDraw:
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
         if self.is_selected_structure:
             from ....ops.set_poll import SetPollExpression
-
             icon = Icons.get(self.selected_type).icon_id
 
             layout.prop(self, 'name')
+
             row = layout.row()
             row.label(text='选择结构', icon_value=icon)
             row.operator(SetPollExpression.bl_idname)
@@ -85,13 +85,16 @@ class ElementDraw:
         elif self.is_operator:
             layout.prop(self, 'name')
             layout.prop(self, 'operator_bl_idname')
-            layout.prop(self, 'operator_context')
             layout.prop(self, 'operator_properties')
-            layout.label(text=str(self))
-            layout.label(text=str(self.properties))
-            layout.label(text=str(self.operator_tmp_kmi))
+
+            row = layout.row(align=True)
+            row.prop(self, 'operator_context')
+            row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
+            row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
+            row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
             layout.template_keymap_item_properties(self.operator_tmp_kmi)
-            self.from_tmp_kmi_operator_update_properties()
+            if self.other_property.auto_update_element_operator_properties:
+                self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:
             layout.prop(self, 'name')
             layout.label(text='子手势', icon_value=Icons.get(self.gesture_direction).icon_id)

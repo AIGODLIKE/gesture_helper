@@ -1,7 +1,7 @@
 import ast
 
 import bpy
-from bpy.props import StringProperty, EnumProperty, CollectionProperty
+from bpy.props import StringProperty, EnumProperty, CollectionProperty, BoolProperty
 
 from ... import PropertySetUtils
 from ...enum import ENUM_OPERATOR_CONTEXT
@@ -48,8 +48,24 @@ class OperatorProperty:
 
     operator_properties: StringProperty(name='操作符属性', default=r'{}', update=update_operator_properties)
 
+    def update_operator_properties_sync_from_temp_properties(self, context):
+        self.from_tmp_kmi_operator_update_properties()
+        self['operator_properties_sync_from_temp_properties'] = False
 
-# 直接将operator的self传给element,让那个来进行操作
+    def update_operator_properties_sync_to_properties(self, context):
+        self.to_operator_tmp_kmi()
+        self['operator_properties_sync_to_properties'] = False
+
+    operator_properties_sync_from_temp_properties: BoolProperty(
+        name='从属性更新',
+        update=update_operator_properties_sync_from_temp_properties)
+    operator_properties_sync_to_properties: BoolProperty(
+        name='更新到属性',
+        update=update_operator_properties_sync_to_properties)
+
+    # 直接将operator的self传给element,让那个来进行操作
+
+
 class ElementOperator(OperatorProperty):
     @property
     def properties(self):
@@ -81,7 +97,7 @@ class ElementOperator(OperatorProperty):
         Returns:
             bpy.types.Operator: _description_
         """
-        sp = self.operator.split('.')
+        sp = self.operator_bl_idname.split('.')
         if len(sp) == 2:
             prefix, suffix = sp
             func = getattr(getattr(bpy.ops, prefix), suffix)
@@ -104,5 +120,5 @@ class ElementOperator(OperatorProperty):
 
     def operator_tmp_kmi_properties_clear(self):
         properties = self.operator_tmp_kmi.properties
-        for key in properties.keys():
+        for key in list(properties.keys()):
             properties.pop(key)

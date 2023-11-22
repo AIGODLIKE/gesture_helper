@@ -31,6 +31,10 @@ class PublicProperty(PublicCacheFunc):
         return self.pref.draw_property
 
     @property
+    def other_property(self):
+        return self.pref.other_property
+
+    @property
     def active_gesture(self):
         index = self.pref.index_gesture
         try:

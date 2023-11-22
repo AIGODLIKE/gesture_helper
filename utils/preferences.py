@@ -16,6 +16,10 @@ class DrawProperty(PropertyGroup):
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
 
+class OtherProperty(PropertyGroup):
+    auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
+
+
 class ElementDraw:
     @staticmethod
     def draw_property(layout: 'bpy.types.UILayout') -> None:
@@ -248,11 +252,12 @@ class GesturePreferences(PublicProperty,
 
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
-    index_gesture: IntProperty(name='手势索引',update=lambda self,context: self.active_gesture.to_temp_kmi())
+    index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
     is_preview: BoolProperty(name='是在预览模式')  # TODO
 
     add_element_property: PointerProperty(type=AddElementProperty)
     draw_property: PointerProperty(type=DrawProperty)
+    other_property: PointerProperty(type=OtherProperty)
 
     enabled: BoolProperty(
         name='启用手势',
@@ -274,7 +279,9 @@ class GesturePreferences(PublicProperty,
 
 classes_list = (
     DrawProperty,
+    OtherProperty,
     AddElementProperty,
+
     GesturePreferences,
 )
 
