@@ -50,6 +50,24 @@ class PublicProperty(PublicCacheFunc):
                 if element.radio:
                     return element
 
+    @classmethod
+    def get_gesture_direction_items(cls, iteration):
+        direction = {}
+        last_selected_structure = None  # 如果不是连续的选择结构
+        for item in iteration:
+            if item.is_selected_structure:  # 是选择结构
+                if item.is_available_selected_structure:  # 是可用的选择结构
+                    if item.poll_bool and not last_selected_structure:  # 是True
+                        child = cls.get_gesture_direction_items(item.element)
+                        direction.update(child)
+                        last_selected_structure = item
+                continue  # 不运行后面的
+            elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符
+                direction[item.gesture_direction] = item
+            if item.enabled:  # 如果不是选择结构并
+                last_selected_structure = None
+        return direction
+
 
 class PublicOperator(Operator):
 

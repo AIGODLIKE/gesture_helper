@@ -43,6 +43,10 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
         """
         return get_pref().enabled and self.enabled
 
+    @property
+    def gesture_direction_items(self):
+        return self.get_gesture_direction_items(self.element)
+
     def remove_before(self):
         if self.is_last and self.index != 0:  # 被删除项是最后一个
             self.index = self.index - 1  # 索引-1,保持始终有一个所选项

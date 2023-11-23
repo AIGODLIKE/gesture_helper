@@ -75,13 +75,7 @@ class Relationship:
 
     @property
     def gesture_direction_items(self):
-        direction = {}
-        for item in self.collection:
-            if item.is_selected_structure:
-                direction.update(item.gesture_direction_items)
-            elif item.is_child_gesture:
-                direction[item.gesture_direction] = item
-        return direction
+        return self.get_gesture_direction_items(self.element)
 
 
 class RadioSelect:

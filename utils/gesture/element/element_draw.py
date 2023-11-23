@@ -93,14 +93,13 @@ class ElementDraw:
             row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
             row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
             layout.template_keymap_item_properties(self.operator_tmp_kmi)
+            layout.column().prop(self, 'gesture_direction', expand=True)
             if self.other_property.auto_update_element_operator_properties:
                 self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:
             layout.prop(self, 'name')
             layout.label(text='子手势', icon_value=Icons.get(self.gesture_direction).icon_id)
-            layout.column().prop(
-                self, 'gesture_direction',
-                expand=True)
+            layout.column().prop(self, 'gesture_direction', expand=True)
 
     def draw_debug(self, layout):
         layout.separator()
@@ -110,7 +109,8 @@ class ElementDraw:
         layout.label(text='parent_element\t' + str(self.parent_element))
         layout.label(text='operator_properties\t' + str(self.operator_properties))
         layout.label(text='collection_iteration\t' + str(self.collection_iteration))
-        layout.label(text='gesture_direction_items\t' + str(self.gesture_direction_items))
+        layout.label(text='gesture gesture_direction_items\t' + str(self.active_gesture.gesture_direction_items))
+        layout.label(text='element gesture_direction_items\t' + str(self.gesture_direction_items))
         layout.separator()
         for i in self.bl_rna.properties.keys():
             if i not in ('rna_type', 'name', 'relationship'):
