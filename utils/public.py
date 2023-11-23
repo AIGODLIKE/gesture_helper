@@ -70,10 +70,11 @@ class PublicProperty(PublicCacheFunc):
 
 
 class PublicOperator(Operator):
+    def init_invoke(self, event):
+        ...
 
-    def invoke(self, context, event) -> set:
-        PublicCacheFunc.cache_clear()
-        return self.execute(context)
+    def init_module(self, event):
+        ...
 
 
 class PublicUniqueNamePropertyGroup:

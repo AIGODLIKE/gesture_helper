@@ -5,6 +5,7 @@ from bpy.types import AddonPreferences, PropertyGroup
 from . import gesture
 from .gesture.element.element_property import ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty
+from .public_ui import icon_two
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 
@@ -191,7 +192,7 @@ class GestureDraw:
 
         if is_element:
             column.separator()
-            icon = 'ALIGN_LEFT' if draw_property.element_show_left_side else 'ALIGN_RIGHT'
+            icon = icon_two(draw_property.element_show_left_side,style='ALIGN')
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
 

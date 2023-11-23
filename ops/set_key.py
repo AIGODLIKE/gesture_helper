@@ -3,7 +3,7 @@ from bpy.props import StringProperty
 from bpy.types import Operator
 
 from ..utils.public import PublicOperator, get_pref
-from ..utils import space_layout, icon_two
+from ..utils.public_ui import space_layout
 
 
 class OperatorSetKeyMaps(PublicOperator):

@@ -44,7 +44,7 @@ class ElementPoll:
 
     __globals = {"__builtins__": None,
                  'len': len,
-                 'is_enabled_addon': _is_enabled_addon,  # 测试是否启用此插件
+                 'is_enabled_addon': _is_enabled_addon,  # TODO 测试是否启用此插件
                  #  'max':max,
                  #  'min':min,
                  }

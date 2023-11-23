@@ -2,9 +2,9 @@
 # 预览绘制
 import bpy
 
-from ... import icon_two
 from ...icons import Icons
 from ...public import get_pref
+from ...public_ui import icon_two
 
 
 class ElementDraw:

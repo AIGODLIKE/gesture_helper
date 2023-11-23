@@ -26,7 +26,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         return self.active_element
 
     def draw_logical_operator(self, layout: 'bpy.types.UILayout'):
-        from ..utils import draw_extend_ui
+        from ..utils.public_ui import draw_extend_ui
         is_draw, lay = draw_extend_ui(layout,
                                       f'draw_logical_operator',
                                       label='语法解释',

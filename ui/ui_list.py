@@ -1,7 +1,8 @@
 import bpy
-from bpy_types import UIList
+from bpy.types import UIList
 
 from ..utils.public import PublicProperty
+from ..utils.public_ui import icon_two
 
 
 class GestureUIList(UIList):
@@ -21,9 +22,11 @@ class ElementUIList(UIList,
         item.draw_item(layout.column(align=True))
 
     def draw_filter(self, context, layout):
-        row = layout.row()
+        row = layout.row(align=True)
         prop = self.draw_property
         row.prop(prop, 'element_split_factor')
-        row.prop(prop, 'element_show_enabled_button')
-        row.prop(prop, 'element_debug_mode')
-        row.prop(prop, 'element_show_left_side')
+        icon = icon_two(prop.element_show_enabled_button, 'HIDE')
+        row.prop(prop, 'element_show_enabled_button', icon=icon)
+        row.prop(prop, 'element_debug_mode', icon='GHOST_ENABLED')
+        icon = icon_two(prop.element_show_left_side, 'ALIGN')
+        row.prop(prop, 'element_show_left_side', icon=icon)
