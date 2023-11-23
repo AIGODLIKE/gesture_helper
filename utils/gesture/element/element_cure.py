@@ -61,6 +61,8 @@ class ElementCURE:
 
         def execute(self, context):
             self.cache_clear()
+            other_property = self.pref.other_property
+            other_property.is_move_element = True
             return {"FINISHED"}
 
     class SORT(ElementPoll):

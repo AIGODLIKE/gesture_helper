@@ -1,3 +1,5 @@
+import math
+
 import bpy
 
 
@@ -121,3 +123,44 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
         out_lay = lay
 
     return extend_bool, out_lay
+
+
+class PublicGpuDraw:
+
+    @classmethod
+    def rounded_rectangle(cls, width, height, radius=0.2, segments=4):
+        rounded_segments = segments + 1
+        wh = width / 2 - radius
+        hh = height / 2 - radius
+
+        points = [0] * rounded_segments * 4 * 3
+        j = 0
+        jj = rounded_segments * 3
+        jjj = rounded_segments * 3 * 2
+        jjjj = rounded_segments * 3 * 3
+        for i in range(segments):
+            rad = (i / segments) * (math.pi / 2)
+            x = radius * math.cos(rad) + wh
+            y = radius * math.sin(rad) + hh
+            points[j] = x
+            points[j] = 0
+            points[j] = y
+
+            points[jj] = -y
+            points[jj] = 0
+            points[jj] = x
+
+            points[jjj] = -x
+            points[jjj] = 0
+            points[jjj] = -y
+
+            points[jjjj] = y
+            points[jjjj] = 0
+            points[jjjj] = -x
+
+            j += 1
+            jj += 1
+            jjj += 1
+            jjjj += 1
+
+        return points

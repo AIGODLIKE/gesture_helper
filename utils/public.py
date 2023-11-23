@@ -71,10 +71,23 @@ class PublicProperty(PublicCacheFunc):
 
 class PublicOperator(Operator):
     def init_invoke(self, event):
-        ...
+        self.event = event
 
     def init_module(self, event):
-        ...
+        self.event = event
+
+    @property
+    def is_right_mouse(self):
+        return self.event.type == 'RIGHTMOUSE'
+
+    @property
+    def is_release(self):
+        return self.event.value == 'RELEASE'
+
+    @staticmethod
+    def tag_redraw():
+        for area in bpy.context.window.screen.areas:
+            area.tag_redraw()
 
 
 class PublicUniqueNamePropertyGroup:

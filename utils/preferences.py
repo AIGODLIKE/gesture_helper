@@ -19,6 +19,10 @@ class DrawProperty(PropertyGroup):
 
 class OtherProperty(PropertyGroup):
     auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
+    is_move_element: BoolProperty(
+        default=False,
+        description="""TODO 移动元素 整个元素需要只有移动操作符可用"""  # TODO
+    )
 
 
 class ElementDraw:
@@ -181,7 +185,7 @@ class GestureDraw:
         if is_element:
             column.operator(
                 cls.MOVE.bl_idname,
-                icon='CANCEL' if pref.is_move_element else 'GRIP',  # TODO if is move
+                icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
                 text=''
             )
         column.operator(
@@ -192,7 +196,7 @@ class GestureDraw:
 
         if is_element:
             column.separator()
-            icon = icon_two(draw_property.element_show_left_side,style='ALIGN')
+            icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
 
@@ -264,11 +268,6 @@ class GesturePreferences(PublicProperty,
         name='启用手势',
         description="""启用禁用整个系统,主要是keymap""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
-
-    is_move_element: BoolProperty(
-        default=False,
-        description="""TODO 移动元素 整个元素需要只有移动操作符可用"""  # TODO
-    )
 
     def draw(self, context):
         from ..ops.switch_ui import SwitchGestureWindow
