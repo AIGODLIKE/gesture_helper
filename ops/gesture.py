@@ -95,6 +95,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator):
             self.gpu_draw_debug()
         event = self.event
         self.draw_text(self.mouse_x, self.mouse_y, text=event.value)
+        self.draw_rounded_rectangle((self.mouse_x, self.mouse_y), (1, 1, 1, 1), radius=120, segments=128)
 
 
 class GestureOperator(GestureGpuDraw):
