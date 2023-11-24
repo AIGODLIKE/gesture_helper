@@ -88,14 +88,16 @@ class GestureGpuDraw(PublicGpu, PublicOperator):
                 'mouse_y:' + str(self.event.mouse_y),
         )):
             j = index + 1
-            self.draw_text(0, 30 * j, text=i)
+            self.draw_text((0, 30 * j), text=i)
 
     def gpu_draw(self):
         if self.is_window_region_type:
             self.gpu_draw_debug()
         event = self.event
-        self.draw_text(self.mouse_x, self.mouse_y, text=event.value)
-        self.draw_rounded_rectangle((self.mouse_x, self.mouse_y), (1, 1, 1, 1), radius=120, segments=128)
+        xy = (self.mouse_x, self.mouse_y)
+        self.draw_text(xy, text=event.value)
+        self.draw_rounded_rectangle_frame(xy, (1, 1, 1, 1), radius=120, segments=128)
+        self.draw_rounded_rectangle_area(xy, radius=120)
 
 
 class GestureOperator(GestureGpuDraw):

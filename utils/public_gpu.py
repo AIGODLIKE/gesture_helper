@@ -9,14 +9,15 @@ class PublicGpu:
 
     @staticmethod
     def draw_text(
-            x: int = 0,
-            y: int = 0,
+            position,
             text="Hello Word",
             size=25,
             color=(1, 1, 1, 1),
             font_id: int = 0,
             column=0,
     ):
+        x = position[0]
+        y = position[1]
         blf.position(font_id, x, y - (size * (column + 1)), 1)
         blf.size(font_id, size)
         blf.color(font_id, *color)
@@ -93,7 +94,7 @@ class PublicGpu:
             batch.draw()
 
     @staticmethod
-    def draw_rounded_rectangle(position, color, *, radius=10, width=200, height=200, segments=10):
+    def draw_rounded_rectangle_frame(position, color, *, radius=10, width=200, height=200, segments=10):
         import gpu
         from gpu.types import (
             GPUBatch,
@@ -121,6 +122,18 @@ class PublicGpu:
             batch.draw()
 
     @staticmethod
+    def draw_rounded_rectangle_area(position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
+                                    segments=10):
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate(position)
+            vertex = PublicGpu.get_rounded_rectangle_vertex(radius, width, height, segments)
+            indices = PublicGpu.get_indices_from_vertex(vertex)
+            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+            batch = batch_for_shader(shader, 'TRIS', {"pos": vertex}, indices=indices)
+            shader.uniform_float("color", color)
+            batch.draw(shader)
+
+    @staticmethod
     def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
@@ -146,3 +159,10 @@ class PublicGpu:
             vertex.append((x, y))
         vertex.append(vertex[0])
         return vertex
+
+    @staticmethod
+    def get_indices_from_vertex(vertex):
+        indices = []
+        for i in range(len(vertex) - 2):
+            indices.append((0, i + 1, i + 2))
+        return indices
