@@ -1,38 +1,43 @@
 # 显示操作符,
 # 切换
 import math
+import time
 
 import bpy
 import gpu
-from bpy.props import StringProperty, IntProperty
+from bpy.props import StringProperty, IntProperty, BoolProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
 
-from ..utils.public import PublicOperator, PublicProperty, DIRECTION_STOP_DICT
+from ..utils.public import PublicOperator, PublicProperty
 from ..utils.public_gpu import PublicGpu
 
 
 class GesturePointKDTree:
 
     def __init__(self, size=114):
-        self.kd_true = KDTree(size)
+        self.kd_tree = KDTree(size)
         self.child_element = []
         self.points_list = []
+        self.time_list = []
 
     def __str__(self):
         return str(self.points_list) + str(self.child_element)
 
     def append(self, element, point: Vector):
         index = len(self.child_element)
-        self.kd_true.insert((*point, 0), index)
+        self.kd_tree.insert((*point, 0), index)
         self.points_list.append(point)
         self.child_element.append(element)
+        self.time_list.append(time.time())
 
     def remove(self, index):
         val = index + 1
         # TODO rebuild tree
         self.child_element = self.child_element[:val]
         self.points_list = self.points_list[:val]
+        self.time_list = self.time_list[:val]
+        return self.child_element[-1]
 
     def __len__(self):
         return self.child_element.__len__()
@@ -41,9 +46,25 @@ class GesturePointKDTree:
     def trajectory(self):
         return self.points_list
 
-    def get_last(self):
+    @property
+    def last_element(self):
+        if len(self.child_element):
+            return self.child_element[-1]
+
+    @property
+    def last_point(self):
         if len(self.points_list):
             return self.points_list[-1]
+
+    @property
+    def last_time(self):
+        if len(self.time_list):
+            return self.time_list[-1]
+
+    @property
+    def first_time(self):
+        if len(self.time_list):
+            return self.time_list[0]
 
 
 class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
@@ -83,8 +104,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
         cls.tag_redraw()
 
     def gpu_draw_trajectory_mouse_move(self):
-        if self.is_draw_trajectory_mouse_move and self.is_window_region_type:
-            self.draw_2d_line(self.trajectory_mouse_move, (0.9, 0, 0, 1))
+        self.draw_2d_line(self.trajectory_mouse_move, (0.9, 0, 0, 1))
 
     def gpu_draw_trajectory_gesture_line(self):
         self.draw_2d_line(self.trajectory_tree.points_list, color=(0, 1, 0, 1))
@@ -116,7 +136,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                 # 'mouse_x:' + str(self.event.mouse_x),
                 # 'mouse_y:' + str(self.event.mouse_y),
                 ]
-        if area.type == 'VIEW_3D':
+        if area.type in ('VIEW_3D',):  # 'PREFERENCES'
             data.insert(0, '--')
             data.insert(0, 'event_count:' + str(self.event_count))
             data.insert(0, 'trajectory_mouse_move:' + str(len(self.trajectory_mouse_move)))
@@ -124,10 +144,10 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             data.append('--')
             data.append('operator_gesture:' + str(self.operator_gesture))
             data.append('is_draw_gpu:' + str(self.is_draw_gpu))
+            data.append('is_draw_gesture:' + str(self.is_draw_gesture))
             data.append('is_window_region_type:' + str(self.is_window_region_type))
             data.append('is_beyond_threshold:' + str(self.is_beyond_threshold))
             data.append('is_beyond_threshold_confirm:' + str(self.is_beyond_threshold_confirm))
-            data.append('is_draw_trajectory_mouse_move:' + str(self.is_draw_trajectory_mouse_move))
             data.append('--')
             data.append('last_region_position:' + str(self.last_region_position))
             data.append('last_window_position:' + str(self.last_window_position))
@@ -139,27 +159,31 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             data.append('direction:' + str(self.direction))
             data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
             data.append('direction_element:' + str(self.direction_element))
+            data.append('find_closest_point:' + str(self.find_closest_point))
+            data.append('operator_time:' + str(self.operator_time))
         self.draw_rectangle(0, 0, 400, len(data) * 30)
         for index, i in enumerate(data):
             j = index + 1
             self.draw_text((5, 30 * j), text=i)
 
     def gpu_draw_gesture(self):
-        event = self.event
         gp = self.gesture_property
 
-        self.draw_text(self.event_region_position, text=event.value)  # 绘制当前区域
-        self.draw_circle(self.last_region_position, gp.radius)
-
-        area = bpy.context.area
+        region = bpy.context.region
         with gpu.matrix.push_pop():
-            gpu.matrix.translate([-area.x, -area.y])
-            self.gpu_draw_trajectory_mouse_move()
-            self.gpu_draw_trajectory_gesture_line()
+            gpu.matrix.translate([-region.x, -region.y])
             self.gpu_draw_trajectory_gesture_point()
-
-        for d in self.direction_items.values():
-            d.draw_gpu_item(self)
+            if self.is_draw_gesture:
+                self.gpu_draw_trajectory_gesture_line()
+            else:
+                if self.is_window_region_type:
+                    self.gpu_draw_trajectory_mouse_move()
+        if self.is_draw_gesture:
+            if self.is_window_region_type:
+                self.draw_circle(self.last_region_position, gp.threshold)
+                # self.draw_circle(self.last_region_position, gp.radius)
+            for d in self.direction_items.values():
+                d.draw_gpu_item(self)
 
     def gpu_draw(self):
         if self.is_window_region_type:
@@ -169,8 +193,6 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
 
 
 class GestureProperty(GestureGpuDraw):
-    now_element = None
-
     @property
     def region_enum_type(self):
         return bpy.types.Region.bl_rna.properties['type'].enum_items_static
@@ -186,7 +208,7 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def last_window_position(self):
-        return self.trajectory_tree.get_last()
+        return self.trajectory_tree.last_point
 
     @property
     def last_region_position(self):
@@ -227,7 +249,6 @@ class GestureProperty(GestureGpuDraw):
                 return 7 if ang < 0 else 5
 
         max_split = 180 - split
-
         if -split < angle < split:
             return 2
         elif (max_split < angle) | (angle < -max_split):
@@ -247,14 +268,15 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def direction_items(self):
-        if self.now_element:
-            return self.now_element.gesture_direction_items
+        element = self.trajectory_tree.last_element
+        if element:
+            return element.gesture_direction_items
         else:
             return self.operator_gesture.gesture_direction_items
 
     @property
     def is_draw_gpu(self) -> bool:
-        return self.trajectory_tree.get_last() is not None
+        return self.trajectory_tree.last_point is not None
 
     @property
     def is_window_region_type(self):
@@ -266,22 +288,70 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def is_beyond_threshold_confirm(self):
-        return self.distance > self.gesture_property.threshold_confirm
+        gesture_property = self.gesture_property
+        return self.distance > (gesture_property.threshold_confirm + gesture_property.threshold)
 
     @property
-    def is_draw_trajectory_mouse_move(self):  # TODO
-        return True
+    def is_access_child_gesture(self):  # 是可以进入子手势的
+        element = self.direction_element
+        return self.is_beyond_threshold_confirm and element and element.is_child_gesture
+
+    @property
+    def operator_time(self):
+        move_time = self.first_mouse_move_time
+        if move_time:
+            return time.time() - self.first_mouse_move_time
+
+    @property
+    def is_draw_gesture(self):
+        if self.draw_trajectory_mouse_move:
+            return self.draw_trajectory_mouse_move
+        operator_time = self.operator_time
+        if not operator_time:
+            return False
+        is_timeout = operator_time > (self.pref.gesture_property.timeout / 1000)
+        if is_timeout:
+            self.draw_trajectory_mouse_move = True
+        return is_timeout
+
+    @property
+    def find_closest_point(self):
+        tree = self.trajectory_tree.kd_tree
+        tree.balance()
+        return tree.find((*self.event_window_position, 0))
+
+    @property
+    def first_mouse_move_time(self) -> float:
+        move_time = self.trajectory_mouse_move_time
+        if len(move_time):
+            return move_time[-1]
 
 
 class GestureHandle(GestureProperty):
     trajectory_mouse_move: []  # 鼠标移动轨迹,在每次移动鼠标时就加上
+    trajectory_mouse_move_time: []  # 鼠标移动时间
     trajectory_tree: 'GesturePointKDTree'  # 轨迹树
     event_count: IntProperty()
+    draw_trajectory_mouse_move: BoolProperty(options={'SKIP_SAVE'})
+
+    def check_return_previous(self):
+        point, index, distance = self.find_closest_point
+        points_kd_tree = self.trajectory_tree
+        if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
+            points_kd_tree.remove(index)
+
+    def try_running_operator(self):
+        element = self.direction_element
+        if self.is_beyond_threshold_confirm and element and element.is_operator:
+            element.running_operator()
+            return True
 
     def init_invoke(self, event):
         self.event_count = 1
         self.trajectory_mouse_move = []
+        self.trajectory_mouse_move_time = []
         self.trajectory_tree = GesturePointKDTree()
+        self.draw_trajectory_mouse_move = False
         return super().init_invoke(event)
 
     def init_module(self, event):
@@ -290,15 +360,18 @@ class GestureHandle(GestureProperty):
         if self.event_count > 2:
             if not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp:
                 self.trajectory_mouse_move.append(emp)
+                self.trajectory_mouse_move_time.append(time.time())
             if not len(self.trajectory_tree):
                 self.trajectory_tree.append(None, emp)
+            if self.is_access_child_gesture:
+                self.trajectory_tree.append(self.direction_element, emp)
+            self.check_return_previous()
         return super().init_module(event)
 
     def update_modal(self, context, event):
         self.init_module(event)
         self.register_draw()
         self.tag_redraw()
-        print('modal', context, event, event.value, event.type)
 
 
 class GestureOperator(GestureHandle):
@@ -314,11 +387,12 @@ class GestureOperator(GestureHandle):
 
     def modal(self, context, event):
         self.update_modal(context, event)
-        if self.is_right_mouse and self.is_release:
+        if self.is_exit:
             return self.exit()
         return {'RUNNING_MODAL'}
 
     def exit(self):
         self.unregister_draw()
-        del self.trajectory_tree
+        ops = self.try_running_operator()
+        print('ops', ops)
         return {'FINISHED'}

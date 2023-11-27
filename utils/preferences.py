@@ -28,12 +28,16 @@ class OtherProperty(PropertyGroup):
 class GestureProperty(PropertyGroup):
     @staticmethod
     def gen_gesture_prop(default, subtype='PIXEL'):
-        return {'max': 514, 'default': default, 'subtype': subtype, 'min': 20}
+        return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 20}
+
+    def update_threshold_confirm(self, context):
+        if self.threshold > self.threshold_confirm:
+            self['threshold_confirm'] = self.threshold_confirm + 20
 
     timeout: IntProperty(name='Gesture TimeOut(ms)', **gen_gesture_prop(300, 'TIME'))
-    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(100))
-    threshold: IntProperty(name='Threshold', **gen_gesture_prop(12))
-    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(22))
+    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(150))
+    threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
+    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
 
     @staticmethod
     def draw(layout):

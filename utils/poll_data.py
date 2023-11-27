@@ -135,7 +135,8 @@ class PollData:
     POLL_OTHER = {
         'prefix': '',
         'suffix': '',
-        'name': '其它',
+        'name': ''
+                '其它',
         'items': [
             {'item': ' and ',
              'name': 'and',
@@ -149,7 +150,11 @@ class PollData:
              'name': 'not',
              'parentheses': False,
              'not_str': True},
-            # None,
+            None,
+            {'item': 'len(C.objects)',
+             'name': '选择了物体的',
+             'parentheses': False,
+             'not_str': True},
         ],
     }
 

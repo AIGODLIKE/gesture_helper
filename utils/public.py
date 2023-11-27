@@ -101,6 +101,10 @@ class PublicOperator(Operator):
     def is_release(self):
         return self.event.value == 'RELEASE'
 
+    @property
+    def is_exit(self):
+        return self.is_release or self.is_right_mouse
+
     @staticmethod
     def tag_redraw():
         for area in bpy.context.window.screen.areas:

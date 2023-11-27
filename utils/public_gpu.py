@@ -1,6 +1,5 @@
 import math
 
-import bgl
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
@@ -106,7 +105,7 @@ class PublicGpu:
             batch.draw()
 
     @staticmethod
-    def draw_rounded_rectangle_frame(position, color, *, radius=10, width=200, height=200, segments=10):
+    def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), radius=10, width=200, height=200, segments=32):
         import gpu
         from gpu.types import (
             GPUBatch,
@@ -150,8 +149,8 @@ class PublicGpu:
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         rounded_segments = segments * 4  # 圆角的边
-        w = width - radius
-        h = height - radius
+        w = (width - radius) / 2
+        h = (height - radius) / 2
         # 角度步长，通常以度为单位
         # 存储顶点坐标的列表
         vertex = []
