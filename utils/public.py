@@ -9,6 +9,17 @@ from .public_cache import PublicCacheFunc
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 ADDON_NAME = basename(ADDON_FOLDER)
+DIRECTION_STOP_DICT = {
+    "1": "5",
+    "2": "1",
+    "4": "3",
+    "3": "7",
+    "5": "4",
+    "6": "2",
+    "7": "6",
+    "8": "8",
+    # direction:angle
+}
 
 
 @cache
@@ -33,6 +44,10 @@ class PublicProperty(PublicCacheFunc):
     @property
     def other_property(self):
         return self.pref.other_property
+
+    @property
+    def gesture_property(self):
+        return self.pref.gesture_property
 
     @property
     def active_gesture(self):
@@ -63,13 +78,15 @@ class PublicProperty(PublicCacheFunc):
                         last_selected_structure = item
                 continue  # 不运行后面的
             elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符
-                direction[item.gesture_direction] = item
+                direction[item.direction] = item
             if item.enabled:  # 如果不是选择结构并
                 last_selected_structure = None
         return direction
 
 
 class PublicOperator(Operator):
+    event: 'bpy.types.Event'
+
     def init_invoke(self, event):
         self.event = event
 

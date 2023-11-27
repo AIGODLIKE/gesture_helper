@@ -1,5 +1,5 @@
 import bpy.utils
-from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty
+from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
@@ -23,6 +23,26 @@ class OtherProperty(PropertyGroup):
         default=False,
         description="""TODO 移动元素 整个元素需要只有移动操作符可用"""  # TODO
     )
+
+
+class GestureProperty(PropertyGroup):
+    @staticmethod
+    def gen_gesture_prop(default, subtype='PIXEL'):
+        return {'max': 514, 'default': default, 'subtype': subtype, 'min': 20}
+
+    timeout: IntProperty(name='Gesture TimeOut(ms)', **gen_gesture_prop(300, 'TIME'))
+    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(100))
+    threshold: IntProperty(name='Threshold', **gen_gesture_prop(12))
+    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(22))
+
+    @staticmethod
+    def draw(layout):
+        pref = get_pref().gesture_property
+        column = layout.column(align=True)
+        column.prop(pref, 'timeout')
+        column.prop(pref, 'radius')
+        column.prop(pref, 'threshold')
+        column.prop(pref, 'threshold_confirm')
 
 
 class ElementDraw:
@@ -106,7 +126,7 @@ class GestureDraw:
             layout.label(text='Not Select Gesture')
 
     @staticmethod
-    def draw_gesture(layout: bpy.types.UILayout) -> None:
+    def draw_gesture_item(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import GestureUIList
         pref = get_pref()
         row = layout.row(align=True)
@@ -199,17 +219,11 @@ class GestureDraw:
             icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
-
-class BlenderPreferencesDraw(GestureDraw):
-
-    # 绘制右边层
-    def right_layout(self: bpy.types.Panel, context: bpy.context):
+    @staticmethod
+    def draw_ui_gesture(layout):
         pref = get_pref()
         draw_property = pref.draw_property
         act = pref.active_element
-
-        layout = self.layout
-        layout.label(text='right_layout')
 
         column = layout.column()
         column.prop(pref, 'enabled')
@@ -222,8 +236,25 @@ class BlenderPreferencesDraw(GestureDraw):
             else:
                 box.label(text='请 选择或添加 一个手势元素')
         else:
-            GestureDraw.draw_gesture(split)
+            GestureDraw.draw_gesture_item(split)
         GestureDraw.draw_element(split)
+
+
+class PropertyDraw:
+
+    @staticmethod
+    def draw_ui_property(layout):
+        get_pref().gesture_property.draw(layout)
+
+
+class BlenderPreferencesDraw(GestureDraw, PropertyDraw):
+
+    # 绘制右边层
+    def right_layout(self: bpy.types.Panel, context: bpy.context):
+        column = self.layout.column(align=True)
+        column.label(text='right_layout')
+        column.row(align=True).prop(self, 'show_page', expand=True)
+        getattr(self, f'draw_ui_{self.show_page.lower()}')(column)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
@@ -258,16 +289,18 @@ class GesturePreferences(PublicProperty,
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
-    is_preview: BoolProperty(name='是在预览模式')  # TODO
+    is_preview_mode: BoolProperty(name='是在预览模式')  # TODO
 
-    add_element_property: PointerProperty(type=AddElementProperty)
     draw_property: PointerProperty(type=DrawProperty)
     other_property: PointerProperty(type=OtherProperty)
+    gesture_property: PointerProperty(type=GestureProperty)
+    add_element_property: PointerProperty(type=AddElementProperty)
 
     enabled: BoolProperty(
         name='启用手势',
         description="""启用禁用整个系统,主要是keymap""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
+    show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
 
     def draw(self, context):
         from ..ops.switch_ui import SwitchGestureWindow
@@ -280,6 +313,7 @@ class GesturePreferences(PublicProperty,
 classes_list = (
     DrawProperty,
     OtherProperty,
+    GestureProperty,
     AddElementProperty,
 
     GesturePreferences,

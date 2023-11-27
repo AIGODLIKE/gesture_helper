@@ -1,5 +1,6 @@
 import math
 
+import bgl
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
@@ -22,6 +23,16 @@ class PublicGpu:
         blf.size(font_id, size)
         blf.color(font_id, *color)
         blf.draw(font_id, str(text))
+
+    @staticmethod
+    def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):
+        shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+        gpu.state.line_width_set(line_width)
+        batch = batch_for_shader(shader, 'LINE_STRIP', {"pos": pos})
+        shader.bind()
+        shader.uniform_float("color", color)
+        batch.draw(shader)
+        gpu.state.line_width_set(1.0)
 
     @staticmethod
     def draw_rectangle(x, y, width, height, color=(0, 0, 0, 1.0)):
@@ -63,7 +74,7 @@ class PublicGpu:
         batch.draw(shader)
 
     @staticmethod
-    def draw_circle(position, color, radius, *, segments=32):
+    def draw_circle(position, radius, *, color=(1, 1, 1, 1.0), line_width=2, segments=128):
         from math import sin, cos, pi
         import gpu
         from gpu.types import (
@@ -77,7 +88,8 @@ class PublicGpu:
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            # gpu.matrix.scale_uniform(radius)
+            gpu.matrix.scale_uniform(radius)
+            gpu.state.line_width_set(line_width)
             mul = (1.0 / (segments - 1)) * (pi * 2)
             verts = [(sin(i * mul), cos(i * mul)) for i in range(segments)]
             fmt = GPUVertFormat()
@@ -150,13 +162,20 @@ class PublicGpu:
             4: (w, -h),
         }
         angle_step = 360 / rounded_segments  # 这里选择了8个顶点，可以根据需要调整
+
+        def qa(q, a):
+            x = q[0] + radius * math.cos(a)
+            y = q[1] + radius * math.sin(a)
+            vertex.append((x, y))
+
         # 计算顶点坐标
         for i in range(rounded_segments):
             angle = math.radians(i * angle_step)  # 将角度转换为弧度
-            q = quadrant[i // segments + 1]
-            x = q[0] + radius * math.cos(angle)
-            y = q[1] + radius * math.sin(angle)
-            vertex.append((x, y))
+            s = i // segments
+            q = quadrant[s + 1]
+            # if not segments % i:
+            #     qa(quadrant[(s + 1) % 4], angle)
+            qa(q, angle)
         vertex.append(vertex[0])
         return vertex
 
@@ -166,3 +185,12 @@ class PublicGpu:
         for i in range(len(vertex) - 2):
             indices.append((0, i + 1, i + 2))
         return indices
+
+    @staticmethod
+    def draw_2d_points(points, point_size=10, color=(1, 1, 1, 1)):
+        gpu.state.point_size_set(point_size)
+        shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+        batch = batch_for_shader(shader, 'POINTS', {"pos": points})
+        shader.bind()
+        shader.uniform_float("color", color)
+        batch.draw(shader)

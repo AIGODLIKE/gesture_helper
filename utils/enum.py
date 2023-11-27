@@ -36,8 +36,8 @@ ENUM_GESTURE_DIRECTION = [
     ('7', '左下', ''),
     ('8', '右下', ''),
 
-    ('UP', '顶', 'TRIA_UP_BAR'),
-    ('DOWN', '底', 'TRIA_DOWN'),
+    # ('UP', '顶', 'TRIA_UP_BAR'), TODO
+    # ('DOWN', '底', 'TRIA_DOWN'),
 ]
 ENUM_ELEMENT_TYPE = [
     ('SELECTED_STRUCTURE', '选择结构', ''),

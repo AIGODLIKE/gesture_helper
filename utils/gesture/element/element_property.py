@@ -62,8 +62,8 @@ class ElementAddProperty:
 
 # 显示的属性,不用Blender那些,使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):
-    gesture_direction: EnumProperty(
-        name='手势方向',
+    direction: EnumProperty(
+        name='方向',
         default='1',
         items=ENUM_GESTURE_DIRECTION,
     )
