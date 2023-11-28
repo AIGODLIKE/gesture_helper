@@ -188,8 +188,6 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                     self.draw_circle((0, 0), gp.radius, line_width=0.5, segments=128)
                     self.draw_circle((0, 0), gp.threshold, line_width=1, segments=128)
                     self.draw_arc((0, 0), gp.threshold, self.angle, 45)
-                # e = Euler((0, 0, 45))
-                # gpu.matrix.multiply_matrix(e.to_matrix().to_4x4())
                 for d in self.direction_items.values():
                     d.draw_gpu_item(self)
 

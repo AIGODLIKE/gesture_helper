@@ -4,6 +4,7 @@ from functools import cache
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
+from mathutils import Euler
 
 
 @cache
@@ -11,24 +12,91 @@ def from_segments_generator_circle_verts(segments):
     from math import sin, cos, pi
     mul = (1.0 / (segments - 1)) * (pi * 2)
     verts = [(sin(i * mul), cos(i * mul)) for i in range(segments)]
-    return verts
+    return tuple(verts)
 
 
-def draw_circle_2d(position, color, radius, *, segments=None):
-    """
-    Draw a circle.
+@cache
+def get_batch(verts):
+    from gpu.types import (
+        GPUBatch,
+        GPUVertBuf,
+        GPUVertFormat,
+    )
+    fmt = GPUVertFormat()
+    pos_id = fmt.attr_add(id="pos",
+                          comp_type='F32',
+                          len=2,
+                          fetch_mode='FLOAT')
+    vbo = GPUVertBuf(len=len(verts), format=fmt)
+    vbo.attr_fill(id=pos_id, data=verts)
+    batch = GPUBatch(type='LINE_STRIP', buf=vbo)
+    return batch
 
-    :arg position: Position where the circle will be drawn.
-    :type position: 2D Vector
-    :arg color: Color of the circle. To use transparency GL_BLEND has to be enabled.
-    :type color: tuple containing RGBA values
-    :arg radius: Radius of the circle.
-    :type radius: float
-    :arg segments: How many segments will be used to draw the circle.
-        Higher values give better results but the drawing will take longer.
-        If None or not specified, an automatic value will be calculated.
-    :type segments: int or None
-    """
+
+@cache
+def get_shader(name='UNIFORM_COLOR'):
+    return gpu.shader.from_builtin(name)
+
+
+def from_vert_get_draw_batch(verts, color):
+    batch = get_batch(verts)
+    shader = get_shader()
+    batch.program_set(shader)
+    shader.uniform_float("color", color)
+    return batch
+
+
+@cache
+def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
+    if segments <= 0:
+        raise ValueError("Amount of segments must be greater than 0.")
+    rounded_segments = segments * 4  # 圆角的边
+    w = (width - radius) / 2
+    h = (height - radius) / 2
+    # 角度步长，通常以度为单位
+    # 存储顶点坐标的列表
+    vertex = []
+    quadrant = {
+        1: (w, h),
+        2: (-w, h),
+        3: (-w, -h),
+        4: (w, -h),
+    }
+    angle_step = 360 / rounded_segments  # 这里选择了8个顶点，可以根据需要调整
+
+    def qa(q, a):
+        x = q[0] + radius * math.cos(a)
+        y = q[1] + radius * math.sin(a)
+        vertex.append((x, y))
+
+    # 计算顶点坐标
+    for i in range(rounded_segments):
+        angle = math.radians(i * angle_step)  # 将角度转换为弧度
+        s = i // segments
+        q = quadrant[s + 1]
+        qa(q, angle)
+    vertex.append(vertex[0])
+    return tuple(vertex)
+
+
+@cache
+def get_arc_vertex(arc, segments=40):
+    vertex = []
+    angle_step = arc / segments
+    for i in range(segments):
+        b = math.radians(1 + angle_step * i)
+        x = math.cos(1 + b)
+        y = math.sin(1 + b)
+        vertex.append((x, y))
+    return tuple(vertex)
+
+
+@cache
+def get_indices_from_vertex(vertex):
+    indices = []
+    for i in range(len(vertex) - 2):
+        indices.append((0, i + 1, i + 2))
+    return indices
 
 
 class PublicGpu:
@@ -42,8 +110,7 @@ class PublicGpu:
             font_id: int = 0,
             column=0,
     ):
-        x = position[0]
-        y = position[1]
+        x, y = position
         blf.position(font_id, x, y - (size * (column + 1)), 1)
         blf.size(font_id, size)
         blf.color(font_id, *color)
@@ -103,11 +170,6 @@ class PublicGpu:
 
         from math import pi, ceil, acos
         import gpu
-        from gpu.types import (
-            GPUBatch,
-            GPUVertBuf,
-            GPUVertFormat,
-        )
 
         if segments is None:
             max_pixel_error = 0.25  # TODO: multiply 0.5 by display dpi
@@ -123,68 +185,38 @@ class PublicGpu:
             gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
             verts = from_segments_generator_circle_verts(segments)
-            fmt = GPUVertFormat()
-            pos_id = fmt.attr_add(id="pos", comp_type='F32', len=2, fetch_mode='FLOAT')
-            vbo = GPUVertBuf(len=len(verts), format=fmt)
-            vbo.attr_fill(id=pos_id, data=verts)
-            batch = GPUBatch(type='LINE_STRIP', buf=vbo)
-            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-            batch.program_set(shader)
-            shader.uniform_float("color", color)
+
+            batch = from_vert_get_draw_batch(verts, color)
             batch.draw()
-            
+
     @staticmethod
     def draw_arc(position, radius, angle, arc, color=(0, 0, 0, 1), line_width=2, segments=30):
 
-        from gpu.types import (
-            GPUBatch,
-            GPUVertBuf,
-            GPUVertFormat,
-        )
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
+            gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
 
-            verts = PublicGpu.get_arc_vertex(angle, arc, radius, segments)
-            fmt = GPUVertFormat()
-            pos_id = fmt.attr_add(id="pos",
-                                  comp_type='F32',
-                                  len=2,
-                                  fetch_mode='FLOAT')
-            vbo = GPUVertBuf(len=len(verts), format=fmt)
-            vbo.attr_fill(id=pos_id, data=verts)
-            batch = GPUBatch(type='LINE_STRIP', buf=vbo)
-            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-            batch.program_set(shader)
-            shader.uniform_float("color", color)
+            normal_matrix = gpu.matrix.get_normal_matrix()
+            e = Euler((0, 0, angle - arc / 2)).to_matrix()
+            gpu.matrix.multiply_matrix((normal_matrix @ e).to_4x4())
+
+            verts = get_arc_vertex(arc, segments)
+            batch = from_vert_get_draw_batch(verts, color)
             batch.draw()
 
     @staticmethod
     def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), radius=10, width=200, height=200, segments=32):
         import gpu
-        from gpu.types import (
-            GPUBatch,
-            GPUVertBuf,
-            GPUVertFormat,
-        )
 
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            verts = PublicGpu.get_rounded_rectangle_vertex(radius, width, height, segments)
+            vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
 
-            fmt = GPUVertFormat()
-            pos_id = fmt.attr_add(id="pos",
-                                  comp_type='F32',
-                                  len=2,
-                                  fetch_mode='FLOAT')
-            vbo = GPUVertBuf(len=len(verts), format=fmt)
-            vbo.attr_fill(id=pos_id, data=verts)
-            batch = GPUBatch(type='LINE_STRIP', buf=vbo)
-            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-            batch.program_set(shader)
-            shader.uniform_float("color", color)
+            batch = from_vert_get_draw_batch(vertex, color)
+            batch.draw()
             batch.draw()
 
     @staticmethod
@@ -192,65 +224,12 @@ class PublicGpu:
                                     segments=10):
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            vertex = PublicGpu.get_rounded_rectangle_vertex(radius, width, height, segments)
-            indices = PublicGpu.get_indices_from_vertex(vertex)
+            vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
+            indices = get_indices_from_vertex(vertex)
             shader = gpu.shader.from_builtin('UNIFORM_COLOR')
             batch = batch_for_shader(shader, 'TRIS', {"pos": vertex}, indices=indices)
             shader.uniform_float("color", color)
             batch.draw(shader)
-
-    @staticmethod
-    def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
-        if segments <= 0:
-            raise ValueError("Amount of segments must be greater than 0.")
-        rounded_segments = segments * 4  # 圆角的边
-        w = (width - radius) / 2
-        h = (height - radius) / 2
-        # 角度步长，通常以度为单位
-        # 存储顶点坐标的列表
-        vertex = []
-        quadrant = {
-            1: (w, h),
-            2: (-w, h),
-            3: (-w, -h),
-            4: (w, -h),
-        }
-        angle_step = 360 / rounded_segments  # 这里选择了8个顶点，可以根据需要调整
-
-        def qa(q, a):
-            x = q[0] + radius * math.cos(a)
-            y = q[1] + radius * math.sin(a)
-            vertex.append((x, y))
-
-        # 计算顶点坐标
-        for i in range(rounded_segments):
-            angle = math.radians(i * angle_step)  # 将角度转换为弧度
-            s = i // segments
-            q = quadrant[s + 1]
-            qa(q, angle)
-        vertex.append(vertex[0])
-        return vertex
-
-    @staticmethod
-    @cache
-    def get_arc_vertex(angle, arc, radius=10, segments=40):
-        vertex = []
-        a = angle - arc / 2
-        angle_step = arc / segments
-        for i in range(segments):
-            b = math.radians(a + angle_step * i)
-            x = radius * math.cos(b)
-            y = radius * math.sin(b)
-            vertex.append((x, y))
-        return vertex
-
-    @staticmethod
-    @cache
-    def get_indices_from_vertex(vertex):
-        indices = []
-        for i in range(len(vertex) - 2):
-            indices.append((0, i + 1, i + 2))
-        return indices
 
     @staticmethod
     def draw_2d_points(points, point_size=10, color=(1, 1, 1, 1)):
