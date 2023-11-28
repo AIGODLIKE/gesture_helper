@@ -1,8 +1,34 @@
 import math
+from functools import cache
 
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
+
+
+@cache
+def from_segments_generator_circle_verts(segments):
+    from math import sin, cos, pi
+    mul = (1.0 / (segments - 1)) * (pi * 2)
+    verts = [(sin(i * mul), cos(i * mul)) for i in range(segments)]
+    return verts
+
+
+def draw_circle_2d(position, color, radius, *, segments=None):
+    """
+    Draw a circle.
+
+    :arg position: Position where the circle will be drawn.
+    :type position: 2D Vector
+    :arg color: Color of the circle. To use transparency GL_BLEND has to be enabled.
+    :type color: tuple containing RGBA values
+    :arg radius: Radius of the circle.
+    :type radius: float
+    :arg segments: How many segments will be used to draw the circle.
+        Higher values give better results but the drawing will take longer.
+        If None or not specified, an automatic value will be calculated.
+    :type segments: int or None
+    """
 
 
 class PublicGpu:
@@ -74,13 +100,20 @@ class PublicGpu:
 
     @staticmethod
     def draw_circle(position, radius, *, color=(1, 1, 1, 1.0), line_width=2, segments=128):
-        from math import sin, cos, pi
+
+        from math import pi, ceil, acos
         import gpu
         from gpu.types import (
             GPUBatch,
             GPUVertBuf,
             GPUVertFormat,
         )
+
+        if segments is None:
+            max_pixel_error = 0.25  # TODO: multiply 0.5 by display dpi
+            segments = int(ceil(pi / acos(1.0 - max_pixel_error / radius)))
+            segments = max(segments, 8)
+            segments = min(segments, 1000)
 
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
@@ -89,8 +122,30 @@ class PublicGpu:
             gpu.matrix.translate(position)
             gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
-            mul = (1.0 / (segments - 1)) * (pi * 2)
-            verts = [(sin(i * mul), cos(i * mul)) for i in range(segments)]
+            verts = from_segments_generator_circle_verts(segments)
+            fmt = GPUVertFormat()
+            pos_id = fmt.attr_add(id="pos", comp_type='F32', len=2, fetch_mode='FLOAT')
+            vbo = GPUVertBuf(len=len(verts), format=fmt)
+            vbo.attr_fill(id=pos_id, data=verts)
+            batch = GPUBatch(type='LINE_STRIP', buf=vbo)
+            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+            batch.program_set(shader)
+            shader.uniform_float("color", color)
+            batch.draw()
+            
+    @staticmethod
+    def draw_arc(position, radius, angle, arc, color=(0, 0, 0, 1), line_width=2, segments=30):
+
+        from gpu.types import (
+            GPUBatch,
+            GPUVertBuf,
+            GPUVertFormat,
+        )
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate(position)
+            gpu.state.line_width_set(line_width)
+
+            verts = PublicGpu.get_arc_vertex(angle, arc, radius, segments)
             fmt = GPUVertFormat()
             pos_id = fmt.attr_add(id="pos",
                                   comp_type='F32',
@@ -172,13 +227,25 @@ class PublicGpu:
             angle = math.radians(i * angle_step)  # 将角度转换为弧度
             s = i // segments
             q = quadrant[s + 1]
-            # if not segments % i:
-            #     qa(quadrant[(s + 1) % 4], angle)
             qa(q, angle)
         vertex.append(vertex[0])
         return vertex
 
     @staticmethod
+    @cache
+    def get_arc_vertex(angle, arc, radius=10, segments=40):
+        vertex = []
+        a = angle - arc / 2
+        angle_step = arc / segments
+        for i in range(segments):
+            b = math.radians(a + angle_step * i)
+            x = radius * math.cos(b)
+            y = radius * math.sin(b)
+            vertex.append((x, y))
+        return vertex
+
+    @staticmethod
+    @cache
     def get_indices_from_vertex(vertex):
         indices = []
         for i in range(len(vertex) - 2):

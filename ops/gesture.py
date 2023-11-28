@@ -78,15 +78,18 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
     @classmethod
     def space_subclasses(cls):
         cls.refresh_space()
-        return bpy.types.Space.__subclasses__()
+        sub = bpy.types.Space.__subclasses__()
+        if bpy.types.SpaceConsole in sub:
+            sub.remove(bpy.types.SpaceConsole)
+        return sub
 
     def register_draw(self):
         if not GestureGpuDraw.__temp_draw_class__:
             print('register_draw')
             for cls in self.space_subclasses():
                 sub_class = {}
-                for j in self.region_enum_type:
-                    identifier = j.identifier
+                # bpy.types.Region.bl_rna.properties['type'].enum_items_static
+                for identifier in {'WINDOW', 'HEADER', }:  # 'UI', 'TOOLS'
                     try:
                         sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
                     except Exception as e:
@@ -179,23 +182,30 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                 if self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
         if self.is_draw_gesture:
-            if self.is_window_region_type:
-                self.draw_circle(self.last_region_position, gp.threshold)
-                # self.draw_circle(self.last_region_position, gp.radius)
-            for d in self.direction_items.values():
-                d.draw_gpu_item(self)
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.last_region_position)
+                if self.is_window_region_type:
+                    self.draw_circle((0, 0), gp.radius, line_width=0.5, segments=128)
+                    self.draw_circle((0, 0), gp.threshold, line_width=1, segments=128)
+                    self.draw_arc((0, 0), gp.threshold, self.angle, 45)
+                # e = Euler((0, 0, 45))
+                # gpu.matrix.multiply_matrix(e.to_matrix().to_4x4())
+                for d in self.direction_items.values():
+                    d.draw_gpu_item(self)
 
     def gpu_draw(self):
-        if self.is_window_region_type:
+        if len(bpy.context.screen.areas) > 1:
+            if bpy.context.area == self.area:
+                ...
+            else:
+                return
+        if self.is_window_region_type and self.pref.draw_property.element_debug_draw_gpu_mode:
             self.gpu_draw_debug()
         if self.is_draw_gpu:
             self.gpu_draw_gesture()
 
 
 class GestureProperty(GestureGpuDraw):
-    @property
-    def region_enum_type(self):
-        return bpy.types.Region.bl_rna.properties['type'].enum_items_static
 
     @property
     def event_window_position(self):
@@ -304,6 +314,7 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def is_draw_gesture(self):
+        return True
         if self.draw_trajectory_mouse_move:
             return self.draw_trajectory_mouse_move
         operator_time = self.operator_time
@@ -369,6 +380,7 @@ class GestureHandle(GestureProperty):
         return super().init_module(event)
 
     def update_modal(self, context, event):
+        self.area = context.area
         self.init_module(event)
         self.register_draw()
         self.tag_redraw()

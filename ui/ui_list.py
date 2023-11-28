@@ -22,11 +22,16 @@ class ElementUIList(UIList,
         item.draw_item(layout.column(align=True))
 
     def draw_filter(self, context, layout):
-        row = layout.row(align=True)
+        column = layout.column(align=True)
+
+        row = column.row(align=True)
         prop = self.draw_property
         row.prop(prop, 'element_split_factor')
         icon = icon_two(prop.element_show_enabled_button, 'HIDE')
         row.prop(prop, 'element_show_enabled_button', icon=icon)
-        row.prop(prop, 'element_debug_mode', icon='GHOST_ENABLED')
         icon = icon_two(prop.element_show_left_side, 'ALIGN')
         row.prop(prop, 'element_show_left_side', icon=icon)
+
+        row = column.row(align=True)
+        row.prop(prop, 'element_debug_mode', icon='GHOST_ENABLED')
+        row.prop(prop, 'element_debug_draw_gpu_mode', icon='INFO')

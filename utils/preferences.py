@@ -14,6 +14,7 @@ class DrawProperty(PropertyGroup):
     element_split_factor: FloatProperty(name='拆分系数', default=0.09, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
     element_debug_mode: BoolProperty(name='Debug模式', default=False)
+    element_debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
 
