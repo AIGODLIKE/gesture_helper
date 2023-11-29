@@ -11,39 +11,32 @@ from mathutils import Euler
 def from_segments_generator_circle_verts(segments):
     from math import sin, cos, pi
     mul = (1.0 / (segments - 1)) * (pi * 2)
-    verts = [(sin(i * mul), cos(i * mul)) for i in range(segments)]
+    verts = [(sin(i * mul), cos(i * mul), 0) for i in range(segments)]
     return tuple(verts)
 
 
-@cache
-def get_batch(verts):
-    from gpu.types import (
-        GPUBatch,
-        GPUVertBuf,
-        GPUVertFormat,
-    )
-    fmt = GPUVertFormat()
-    pos_id = fmt.attr_add(id="pos",
-                          comp_type='F32',
-                          len=2,
-                          fetch_mode='FLOAT')
-    vbo = GPUVertBuf(len=len(verts), format=fmt)
-    vbo.attr_fill(id=pos_id, data=verts)
-    batch = GPUBatch(type='LINE_STRIP', buf=vbo)
-    return batch
+def draw_line(verts, color, line_width, is_cycle=True):
+    gpu.state.blend_set('ALPHA')
+    shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
+    shader.uniform_float("lineWidth", line_width)
+    shader.uniform_float("viewportSize", gpu.state.scissor_get()[2:])
+    pos = []
+    colors = []
+    vl = len(verts)
+    for index, v in enumerate(verts):
+        pos.append(v)
+        colors.append(color)
+        if vl - 1 == index:
+            if is_cycle:
+                pos.append(verts[0])
+                colors.append(color)
+        else:
+            colors.append(color)
+            pos.append(verts[index + 1])
+    shader.bind()
 
-
-@cache
-def get_shader(name='UNIFORM_COLOR'):
-    return gpu.shader.from_builtin(name)
-
-
-def from_vert_get_draw_batch(verts, color):
-    batch = get_batch(verts)
-    shader = get_shader()
-    batch.program_set(shader)
-    shader.uniform_float("color", color)
-    return batch
+    batch = batch_for_shader(shader, 'LINES', {"pos": pos, "color": colors})
+    batch.draw(shader)
 
 
 @cache
@@ -84,9 +77,9 @@ def get_arc_vertex(arc, segments=40):
     vertex = []
     angle_step = arc / segments
     for i in range(segments):
-        b = math.radians(1 + angle_step * i)
-        x = math.cos(1 + b)
-        y = math.sin(1 + b)
+        b = math.radians(angle_step * (1 + i))
+        x = math.cos(b)
+        y = math.sin(b)
         vertex.append((x, y))
     return tuple(vertex)
 
@@ -118,13 +111,7 @@ class PublicGpu:
 
     @staticmethod
     def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):
-        shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-        gpu.state.line_width_set(line_width)
-        batch = batch_for_shader(shader, 'LINE_STRIP', {"pos": pos})
-        shader.bind()
-        shader.uniform_float("color", color)
-        batch.draw(shader)
-        gpu.state.line_width_set(1.0)
+        draw_line(pos, color, line_width, is_cycle=False)
 
     @staticmethod
     def draw_rectangle(x, y, width, height, color=(0, 0, 0, 1.0)):
@@ -185,28 +172,24 @@ class PublicGpu:
             gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
             verts = from_segments_generator_circle_verts(segments)
-
-            batch = from_vert_get_draw_batch(verts, color)
-            batch.draw()
+            draw_line(verts, color, line_width)
 
     @staticmethod
-    def draw_arc(position, radius, angle, arc, color=(0, 0, 0, 1), line_width=2, segments=30):
-
+    def draw_arc(position, radius, angle, arc, color=(0.4, 0.3, 0.8, 1), line_width=2, segments=128):
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
-
-            normal_matrix = gpu.matrix.get_normal_matrix()
-            e = Euler((0, 0, angle - arc / 2)).to_matrix()
-            gpu.matrix.multiply_matrix((normal_matrix @ e).to_4x4())
+            a = Euler((0, 0, -arc * 2 / 360), 'XYZ').to_matrix()
+            e = Euler((0, 0, angle * 3 / 180), 'XYZ').to_matrix()
+            gpu.matrix.multiply_matrix(e.to_4x4() @ a.to_4x4())
 
             verts = get_arc_vertex(arc, segments)
-            batch = from_vert_get_draw_batch(verts, color)
-            batch.draw()
+            draw_line(verts, color, line_width, is_cycle=False)
 
     @staticmethod
-    def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), radius=10, width=200, height=200, segments=32):
+    def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), line_width=2, radius=10, width=200, height=200,
+                                     segments=128):
         import gpu
 
         if segments <= 0:
@@ -214,10 +197,7 @@ class PublicGpu:
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
-
-            batch = from_vert_get_draw_batch(vertex, color)
-            batch.draw()
-            batch.draw()
+            draw_line(vertex, color, line_width=line_width)
 
     @staticmethod
     def draw_rounded_rectangle_area(position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,

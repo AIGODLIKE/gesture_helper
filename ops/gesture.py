@@ -185,9 +185,9 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.last_region_position)
                 if self.is_window_region_type:
-                    self.draw_circle((0, 0), gp.radius, line_width=0.5, segments=128)
-                    self.draw_circle((0, 0), gp.threshold, line_width=1, segments=128)
-                    self.draw_arc((0, 0), gp.threshold, self.angle, 45)
+                    self.draw_circle((0, 0), gp.radius, line_width=2, segments=256)
+                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=256)
+                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=5, segments=256)
                 for d in self.direction_items.values():
                     d.draw_gpu_item(self)
 
@@ -239,6 +239,16 @@ class GestureProperty(GestureGpuDraw):
             angle = (180 * vector.angle_signed(Vector((-1, 0)), Vector((0, 0)))) / math.pi
             return angle
         return False
+
+    @property
+    def angle_unsigned(self):
+        angle = self.angle
+        if angle is not None:
+            aa = abs(angle)
+            if aa == angle:
+                return angle
+            else:
+                return 360 + angle
 
     @property
     def direction(self) -> int:  # 方向
