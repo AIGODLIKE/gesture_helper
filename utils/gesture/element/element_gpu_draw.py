@@ -11,7 +11,8 @@ from ...public_gpu import PublicGpu
 
 @cache
 def from_text_get_dimensions(text):
-    return blf.dimensions(0, text)
+    dimensions = blf.dimensions(1, text)
+    return dimensions
 
 
 @cache
@@ -58,59 +59,57 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            self.draw_text((0, 0), self.text, color=self.draw_color)
 
-            # w, h = self.text_dimensions
-            # hh = h / 2
-            # hw = w / 2
-            # margin = 5  # px
-            # direction = self.direction
-            # offset = (0, 0)
-            # text_offset = (0, 0)
-            # rounded_rectangle_offset = (0, 0)
-            # if direction == '1':
-            #     offset = (x - w, y + h)
-            #     text_offset = 0, 0
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '2':
-            #     offset = (x, y + h)
-            #     text_offset = margin, 0
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '3':
-            #     offset = (x - hw, y - h)
-            #     text_offset = 0, -margin
-            #     rounded_rectangle_offset = -hw, -hh
-            # elif direction == '4':
-            #     offset = (x - hw, y + h + h)
-            #     text_offset = 0, margin
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '5':
-            #     offset = (x - w, y + h)
-            #     text_offset = -margin, margin
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '6':
-            #     offset = (x, y + h)
-            #     text_offset = margin, margin
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '7':
-            #     offset = (x - w, y - (hh / 2))
-            #     text_offset = -margin, -margin
-            #     rounded_rectangle_offset = hw, -hh
-            # elif direction == '8':
-            #     offset = (x, y - (hh / 2))
-            #     text_offset = margin, -margin
-            #     rounded_rectangle_offset = hw, -hh
-            # gpu.matrix.translate(offset)
-            # rounded_rectangle = {
-            #     "radius": 5,
-            #     "position": (0, 0),
-            #     "width": w + margin,
-            #     "height": h + margin,
-            #     "color": (0.5, 0.5, 0.5, 1)
-            # }
-            # # with gpu.matrix.push_pop():
-            # #     gpu.matrix.translate(rounded_rectangle_offset)
-            # #     self.draw_rounded_rectangle_frame(**rounded_rectangle)
-            # #     self.draw_rounded_rectangle_area(**rounded_rectangle)
+            w, h = self.text_dimensions
+            hh = h / 2
+            hw = w / 2
+            margin = 5  # px
+            direction = self.direction
+            offset = (0, 0)
+            rounded_rectangle_offset = (0, 0)
+            if direction == '1':
+                offset = (-w + 0.2, h)
+                # offset = (0, 0)
+                text_offset = 0, 0
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '2':
+                offset = (0, h)
+                text_offset = margin, 0
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '3':
+                offset = (-hw, -h)
+                text_offset = 0, -margin
+                rounded_rectangle_offset = -hw, -hh
+            elif direction == '4':
+                offset = (-hw, h * 2)
+                text_offset = 0, margin
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '5':
+                offset = (-w, h)
+                text_offset = -margin, margin
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '6':
+                offset = (0, h)
+                text_offset = margin, margin
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '7':
+                offset = (-w, -hh / 2)
+                text_offset = -margin, -margin
+                rounded_rectangle_offset = hw, -hh
+            elif direction == '8':
+                offset = (0, -hh / 2)
+                text_offset = margin, -margin
+                rounded_rectangle_offset = hw, -hh
+            rounded_rectangle = {
+                "radius": 5,
+                "position": (0, 0),
+                "width": w + margin,
+                "height": h + margin,
+                "color": (0.5, 0.5, 0.5, 1)
+            }
             # with gpu.matrix.push_pop():
-            #     gpu.matrix.translate(text_offset)
+            #     gpu.matrix.translate(rounded_rectangle_offset)
+            #     self.draw_rounded_rectangle_frame(**rounded_rectangle)
+            #     self.draw_rounded_rectangle_area(**rounded_rectangle)
+            gpu.matrix.translate(offset)
+            self.draw_text((0, 0), self.text, color=self.draw_color)

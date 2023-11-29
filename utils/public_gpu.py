@@ -100,7 +100,7 @@ class PublicGpu:
             text="Hello Word",
             size=25,
             color=(1, 1, 1, 1),
-            font_id: int = 0,
+            font_id=0,
             column=0,
     ):
         x, y = position
