@@ -1,11 +1,13 @@
 import bpy.utils
-from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty
+from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty, \
+    FloatVectorProperty
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
 from .gesture.element.element_property import ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty
 from .public_ui import icon_two
+from ..ops import export_import
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 
@@ -39,11 +41,13 @@ class GestureProperty(PropertyGroup):
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(150))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
+    color: FloatVectorProperty(name='绘制颜色', size=4, subtype='COLOR', min=0, max=1, default=[0.07, 0.2, 1.0, 1.0])
 
     @staticmethod
     def draw(layout):
         pref = get_pref().gesture_property
         column = layout.column(align=True)
+        column.row().prop(pref, 'color')
         column.prop(pref, 'timeout')
         column.prop(pref, 'radius')
         column.prop(pref, 'threshold')
@@ -223,6 +227,10 @@ class GestureDraw:
             column.separator()
             icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
+        else:
+            column.separator()
+            column.operator(export_import.Import.bl_idname, icon='IMPORT', text='')
+            column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
 
     @staticmethod
     def draw_ui_gesture(layout):
@@ -252,7 +260,7 @@ class PropertyDraw:
         get_pref().gesture_property.draw(layout)
 
 
-class BlenderPreferencesDraw(GestureDraw, PropertyDraw):
+class PreferencesDraw(GestureDraw, PropertyDraw):
 
     # 绘制右边层
     def right_layout(self: bpy.types.Panel, context: bpy.context):
@@ -268,12 +276,12 @@ class BlenderPreferencesDraw(GestureDraw, PropertyDraw):
     def bottom_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
         layout.label(text='bottom_layout')
-        BlenderPreferencesDraw.exit(layout)
+        PreferencesDraw.exit(layout)
 
     def left_bottom_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
         layout.label(text='left_bottom_layout')
-        BlenderPreferencesDraw.exit(layout)
+        PreferencesDraw.exit(layout)
 
     @staticmethod
     def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':
@@ -288,7 +296,7 @@ class BlenderPreferencesDraw(GestureDraw, PropertyDraw):
 
 class GesturePreferences(PublicProperty,
                          AddonPreferences,
-                         BlenderPreferencesDraw):
+                         PreferencesDraw):
     bl_idname = ADDON_NAME
 
     # 项配置

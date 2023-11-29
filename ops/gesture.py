@@ -185,17 +185,18 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.last_region_position)
                 if self.is_window_region_type:
-                    self.draw_circle((0, 0), gp.radius, line_width=2, segments=256)
-                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=256)
-                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=5, segments=256)
+                    self.draw_circle((0, 0), gp.radius, line_width=2, segments=512)
+                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=512)
+                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=256)
                 for d in self.direction_items.values():
                     d.draw_gpu_item(self)
 
     def gpu_draw(self):
-        if len(bpy.context.screen.areas) > 1:
-            if bpy.context.area == self.area:
-                ...
-            else:
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
+        gpu.state.depth_mask_set(True)
+        if len(bpy.context.screen.areas) > 8:
+            if bpy.context.area != self.area:
                 return
         if self.is_window_region_type and self.pref.draw_property.element_debug_draw_gpu_mode:
             self.gpu_draw_debug()
@@ -322,7 +323,6 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def is_draw_gesture(self):
-        return True
         if self.draw_trajectory_mouse_move:
             return self.draw_trajectory_mouse_move
         operator_time = self.operator_time

@@ -16,7 +16,6 @@ def from_segments_generator_circle_verts(segments):
 
 
 def draw_line(verts, color, line_width, is_cycle=True):
-    gpu.state.blend_set('ALPHA')
     shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
     shader.uniform_float("lineWidth", line_width)
     shader.uniform_float("viewportSize", gpu.state.scissor_get()[2:])
