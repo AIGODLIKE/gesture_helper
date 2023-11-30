@@ -264,10 +264,13 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
 
     # 绘制右边层
     def right_layout(self: bpy.types.Panel, context: bpy.context):
+        pref = get_pref()
+
         column = self.layout.column(align=True)
+        
         column.label(text='right_layout')
-        column.row(align=True).prop(self, 'show_page', expand=True)
-        getattr(self, f'draw_ui_{self.show_page.lower()}')(column)
+        column.row(align=True).prop(pref, 'show_page', expand=True)
+        getattr(PreferencesDraw, f'draw_ui_{self.show_page.lower()}')(column)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout

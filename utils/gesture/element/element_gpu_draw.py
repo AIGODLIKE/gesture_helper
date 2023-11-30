@@ -1,4 +1,5 @@
 import math
+import re
 from functools import cache
 
 import blf
@@ -7,6 +8,13 @@ from mathutils import Vector
 
 from ...public import get_pref
 from ...public_gpu import PublicGpu
+
+pattern = re.compile(r'[\u4e00-\u9fa5]')
+
+
+@cache
+def check_china(text):
+    return bool(pattern.findall(text))
 
 
 @cache
@@ -63,34 +71,26 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             w, h = self.text_dimensions
             hh = h / 2
             hw = w / 2
-            margin = 5  # px
+            margin = 3  # px
             direction = self.direction
-            rro = offset = [0, 0]
+            offset = [0, 0]
 
             if direction == '1':
                 offset = (-w + 0.2, h)
-                rro = (hw + margin / 2, -margin - hh)
             elif direction == '2':
                 offset = (0, h)
-                rro = (hw, -margin - hh)
             elif direction == '3':
                 offset = (-hw, -h)
-                rro = (hw, -margin - hh)
             elif direction == '4':
                 offset = (-hw, h * 2)
-                rro = (hw, -h - margin)
             elif direction == '5':
                 offset = (-w, h)
-                rro = (hw, -h)
             elif direction == '6':
                 offset = (0, h)
-                rro = (hw, -h)
             elif direction == '7':
                 offset = (-w, -hh / 2)
-                rro = (hw, -h)
             elif direction == '8':
                 offset = (0, -hh / 2)
-                rro = (hw, -h)
 
             rounded_rectangle = {
                 "radius": 5,
@@ -101,8 +101,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             }
             gpu.matrix.translate(offset)
             with gpu.matrix.push_pop():
-                x, y = rro
-                gpu.matrix.translate([x, y * 0.7])
+                x, y = hw, -h
+                if direction in ('5', '6', '7', '8'):
+                    y *= 0.7
+
+                if self.text.islower():
+                    ...
+                elif check_china(self.text):
+                    y *= 0.9
+
+                gpu.matrix.translate([x, y])
                 self.draw_rounded_rectangle_frame(**rounded_rectangle)
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
             self.draw_text((0, 0), self.text, color=self.draw_color)
