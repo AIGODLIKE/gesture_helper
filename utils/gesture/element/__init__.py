@@ -26,3 +26,6 @@ class Element(ElementCURE,
 
               PropertyGroup):
     element: CollectionProperty(name='子级元素', type=Element)
+
+    def init(self):
+        getattr(self, f'init_{self.element_type.lower()}')()

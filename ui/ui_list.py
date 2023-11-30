@@ -35,3 +35,20 @@ class ElementUIList(UIList,
         row = column.row(align=True)
         row.prop(prop, 'element_debug_mode', icon='GHOST_ENABLED')
         row.prop(prop, 'element_debug_draw_gpu_mode', icon='INFO')
+
+
+class ImportPresetUIList(UIList,
+                         PublicProperty):
+    bl_idname = 'DRAW_UL_preset'
+
+    def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
+                  flt_flag):
+        layout.emboss = 'NONE'
+
+        left = layout.row()
+        left.alignment = 'LEFT'
+        left.prop(item, 'selected', text=item.name, translate=False, icon='NONE')
+
+        right = layout.row()
+        right.alignment = 'RIGHT'
+        right.prop(item, 'selected', icon=icon_two(item.selected, 'RESTRICT_SELECT'), text='')

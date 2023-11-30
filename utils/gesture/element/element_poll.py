@@ -26,7 +26,6 @@ class ElementPoll:
         a = self.poll_bool
 
     poll_string: StringProperty(name='条件',
-                                default='True',
                                 description="""poll表达式
     {'bpy': bpy,
     'C': bpy.context,
@@ -134,3 +133,6 @@ class ElementPoll:
         else:
             e = eval(poll_string, self.__globals, self.poll_args)
             return bool(e)
+
+    def init_selected_structure(self):
+        self.poll_string = 'True'

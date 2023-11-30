@@ -43,6 +43,14 @@ def get_available_selected_structure(element) -> bool:
 
 class Relationship:
     @property
+    def parent(self):
+        pe = self.parent_element
+        if pe:
+            return pe
+        else:
+            return self.parent_gesture
+
+    @property
     def parent_element(self):
         return PublicCache.__element_parent_element_cache__[self]
 
@@ -76,6 +84,10 @@ class Relationship:
     @property
     def gesture_direction_items(self):
         return self.get_gesture_direction_items(self.element)
+
+    @property
+    def parent_gesture_direction_items(self):
+        return self.parent.gesture_direction_items
 
 
 class RadioSelect:

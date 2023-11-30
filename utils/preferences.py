@@ -229,8 +229,12 @@ class GestureDraw:
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
         else:
             column.separator()
-            column.operator(export_import.Import.bl_idname, icon='IMPORT', text='')
+            column.separator()
+
+            import_id_name = export_import.Import.bl_idname
             column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
+            column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
+            column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
 
     @staticmethod
     def draw_ui_gesture(layout):
@@ -267,7 +271,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
         pref = get_pref()
 
         column = self.layout.column(align=True)
-        
+
         column.label(text='right_layout')
         column.row(align=True).prop(pref, 'show_page', expand=True)
         getattr(PreferencesDraw, f'draw_ui_{self.show_page.lower()}')(column)

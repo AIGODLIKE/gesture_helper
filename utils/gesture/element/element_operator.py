@@ -38,15 +38,13 @@ class OperatorProperty:
 
     operator_bl_idname: StringProperty(name='操作符 bl_idname',
                                        description='默认为添加猴头',
-                                       default='mesh.primitive_monkey_add',
                                        update=update_operator)
     collection: CollectionProperty
 
     operator_context: EnumProperty(name='操作符上下文',
-                                   default='INVOKE_DEFAULT',
                                    items=ENUM_OPERATOR_CONTEXT)
 
-    operator_properties: StringProperty(name='操作符属性', default=r'{}', update=update_operator_properties)
+    operator_properties: StringProperty(name='操作符属性', update=update_operator_properties)
 
     def update_operator_properties_sync_from_temp_properties(self, context):
         self.from_tmp_kmi_operator_update_properties()
@@ -122,3 +120,8 @@ class ElementOperator(OperatorProperty):
         properties = self.operator_tmp_kmi.properties
         for key in list(properties.keys()):
             properties.pop(key)
+
+    def init_operator(self):
+        self.operator_context = 'INVOKE_DEFAULT'
+        self.operator_bl_idname = 'mesh.primitive_monkey_add'
+        self.operator_properties = r'{}'

@@ -11,6 +11,8 @@ bl_info = {
     # "category": "3D View",
 }
 
+ADDON_VERSION = bl_info['version']
+
 
 def register():
     reg.register()

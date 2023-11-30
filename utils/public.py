@@ -1,5 +1,5 @@
 from functools import cache
-from os.path import dirname, basename, realpath
+from os.path import dirname, basename, realpath, join, abspath
 
 import bpy
 from bpy.props import StringProperty, CollectionProperty
@@ -7,8 +7,12 @@ from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc
 
+
+
+
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 ADDON_NAME = basename(ADDON_FOLDER)
+PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src/preset'))
 DIRECTION_STOP_DICT = {
     "1": "5",
     "2": "1",

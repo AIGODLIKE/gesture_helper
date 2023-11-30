@@ -2,11 +2,11 @@ import bpy
 from bpy.props import StringProperty
 from bpy.types import Operator
 
-from ..utils.public import PublicOperator, get_pref
-from ..utils.public_ui import space_layout
+from ..utils.public import PublicOperator, get_pref, PublicProperty
+from ..utils.public_ui import space_layout, icon_two
 
 
-class OperatorSetKeyMaps(PublicOperator):
+class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'gesture.set_key_maps'
     bl_label = 'Set Key Maps'
 
