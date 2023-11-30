@@ -7,8 +7,9 @@ from datetime import datetime
 import bpy
 from bpy.props import BoolProperty, StringProperty
 
+from ..utils.public_cache import cache_update_lock
 from ..ui.ui_list import ImportPresetUIList
-from ..utils import PropertyGetUtils
+from ..utils import PropertyGetUtils, PropertySetUtils
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 
 
@@ -64,9 +65,7 @@ class Import(PublicFileOperator):
         return items
 
     def execute(self, context):
-        print(self.bl_idname)
-        print(self.filepath)
-        print('execute')
+        self.restore()
         return {'FINISHED'}
 
     def draw(self, context):
@@ -79,13 +78,26 @@ class Import(PublicFileOperator):
             ops.filepath = v
             ops.preset_show = False
 
+    @cache_update_lock
+    def restore(self):
+        try:
+            data = self.read_json()
+            restore = {'gesture': data['gesture']}
+            PropertySetUtils.set_prop(self.pref, 'gesture', data['gesture'])
+        except Exception as e:
+            self.report({'ERROR'}, f"导入错误: {e.args}")
+
+    def read_json(self):
+        with open(self.filepath, 'r') as file:
+            return json.load(file)
+
 
 class Export(PublicFileOperator):
     bl_label = '导出手势'
     bl_idname = 'gesture.export'
 
-    author: StringProperty(name='作者')
-    description: StringProperty(name='描述')
+    author: StringProperty(name='作者', default='小萌新')
+    description: StringProperty(name='描述', default='这是一个描述')
 
     @property
     def ymdhm(self):
@@ -102,13 +114,33 @@ class Export(PublicFileOperator):
 
     @property
     def gesture_data(self):
+
+        item_key = {
+            'SELECTED_STRUCTURE': ['name', 'element_type', 'selected_type', 'poll_string'],
+            'CHILD_GESTURE': ['name', 'element_type', 'direction'],
+            'OPERATOR': ['name', 'element_type', 'operator_properties', 'operator_context', 'operator_bl_idname'],
+        }
+
+        def filter_data(d):
+            res = {}
+            if 'element_type' in d:
+                t = d['element_type']
+                for k in item_key[t]:
+                    res[k] = d[k]
+            else:
+                res.update(d)
+            if 'element' in d:
+                res['element'] = {k: filter_data(v) for k, v in d['element'].items()}
+            return res
+
         data = []
         for g in self.pref.gesture:
             if g.selected:
                 exclude = ('selected', 'relationship', 'show_child', 'level',
+                           'enabled',
                            'operator_properties_sync_to_properties',
                            'operator_properties_sync_from_temp_properties')
-                data.append(PropertyGetUtils.props_data(g, exclude=exclude))
+                data.append(filter_data(PropertyGetUtils.props_data(g, exclude=exclude)))
         return data
 
     @property
@@ -128,8 +160,12 @@ class Export(PublicFileOperator):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
 
+        layout.prop(self, 'author', emboss=True)
+        layout.prop(self, 'description', emboss=True)
+        layout.separator()
+
+        row = layout.row()
         row.label(text='导出')
         row.prop(self, 'selected_all', emboss=True)
 
@@ -144,9 +180,6 @@ class Export(PublicFileOperator):
         )
 
     def execute(self, context):
-        print(self.export_data)
-        print(self.bl_idname)
-        print(self.file_name)
         if not len(self.export_data['gesture']):
             self.report({'WARNING'}, "未选择导出项")
         else:

@@ -5,46 +5,44 @@ from bpy.props import StringProperty, EnumProperty, CollectionProperty, BoolProp
 
 from ... import PropertySetUtils
 from ...enum import ENUM_OPERATOR_CONTEXT
+from ...public_cache import cache_update_lock
 
 
 class OperatorProperty:
 
+    @cache_update_lock
     def update_operator(self, context) -> None:
         """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
         掐头去尾
         TODO 将()里面的属性读取进 properties
         """
-        if self.__is_updatable__:
-            self.__is_updatable__ = False
-            value = self.operator_bl_idname
-            key = 'operator_bl_idname'
-            if value.startswith('bpy.ops.'):
-                self[key] = value = value[8:]
-            if ('(' in value) and (')' in value):
-                if value.endswith('()'):
-                    self[key] = value[:-2]
-                else:  # 将后面的切掉
-                    index = value.index('(')
-                    self[key] = value[:index]
-            self.to_operator_tmp_kmi()
-            self.__is_updatable__ = True
+        value = self.operator_bl_idname
+        key = 'operator_bl_idname'
+        if value.startswith('bpy.ops.'):
+            self[key] = value = value[8:]
+        if ('(' in value) and (')' in value):
+            if value.endswith('()'):
+                self[key] = value[:-2]
+            else:  # 将后面的切掉
+                index = value.index('(')
+                self[key] = value[:index]
+        self.to_operator_tmp_kmi()
 
+    @cache_update_lock
     def update_operator_properties(self, context) -> None:
-        if self.__is_updatable__:
-            self.__is_updatable__ = False
-            print('update_operator_properties', self, context)
-            self.to_operator_tmp_kmi()
-            self.__is_updatable__ = True
+        print('update_operator_properties', self, context)
+        self.to_operator_tmp_kmi()
 
     operator_bl_idname: StringProperty(name='操作符 bl_idname',
                                        description='默认为添加猴头',
-                                       update=update_operator)
+                                       update=lambda self, context: self.update_operator(context))
     collection: CollectionProperty
 
     operator_context: EnumProperty(name='操作符上下文',
                                    items=ENUM_OPERATOR_CONTEXT)
 
-    operator_properties: StringProperty(name='操作符属性', update=update_operator_properties)
+    operator_properties: StringProperty(name='操作符属性',
+                                        update=lambda self, context: self.update_operator_properties(context))
 
     def update_operator_properties_sync_from_temp_properties(self, context):
         self.from_tmp_kmi_operator_update_properties()

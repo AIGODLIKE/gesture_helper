@@ -17,7 +17,6 @@ class ElementAddProperty:
     )
     selected_type: EnumProperty(
         name='选择结构类型',
-        default='IF',
         items=ENUM_SELECTED_TYPE,
     )
 
@@ -68,16 +67,14 @@ class ElementDirectionProperty(ElementAddProperty):
     )
 
     def init_child_gesture(self):
-        print('init_child_gesture')
         ds = set(self.parent_gesture_direction_items.keys())
-        print(ds)
+        direction = '1'
         for k in range(1, 9):
             s = str(k)
             if s not in ds:
-                self.direction = s
-                print(k)
-                return
-        self.direction = '1'
+                direction = s
+        self.direction = direction
+        self.selected_type = 'IF'
 
 
 class ElementProperty(ElementDirectionProperty):

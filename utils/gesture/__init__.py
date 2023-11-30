@@ -23,8 +23,8 @@ class Gesture(GestureCURE,
               PropertyGroup):
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
-    selected: BoolProperty()
-    
+    selected: BoolProperty(default=True)
+
 
 classes_list = (
     Element,

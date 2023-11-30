@@ -211,12 +211,12 @@ class GestureDraw:
             icon='SORT_DESC',
             text=''
         ).is_next = False
-        if is_element:
-            column.operator(
-                cls.MOVE.bl_idname,
-                icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
-                text=''
-            )
+        # if is_element:
+            # column.operator(
+            #     cls.MOVE.bl_idname,
+            #     icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
+            #     text=''
+            # )
         column.operator(
             cls.SORT.bl_idname,
             icon='SORT_ASC',
