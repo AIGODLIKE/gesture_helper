@@ -5,10 +5,7 @@ import bpy
 from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
-from .public_cache import PublicCacheFunc
-
-
-
+from .public_cache import PublicCacheFunc, cache_update_lock
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 ADDON_NAME = basename(ADDON_FOLDER)
@@ -135,7 +132,8 @@ class PublicUniqueNamePropertyGroup:
     def __get_names(self):
         return list(map(lambda s: s.name, self.names_iteration))
 
-    def __check_duplicate_name__(self, context):
+    @cache_update_lock
+    def __check_duplicate_name__(self):
         names = list(self.__get_names)
         if len(names) != len(set(names)):
             for i in self.names_iteration:
@@ -146,7 +144,7 @@ class PublicUniqueNamePropertyGroup:
     name: StringProperty(
         name='名称',
         description='不允许名称重复,如果名称重复则编号 e.g .001 .002 .999 支持重命名到999',
-        update=__check_duplicate_name__
+        update=lambda self, context: self.__check_duplicate_name__()
     )
 
 

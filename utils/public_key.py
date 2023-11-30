@@ -1,3 +1,5 @@
+from functools import cache
+
 import bpy
 from mathutils import Vector, Euler, Matrix
 
@@ -54,12 +56,15 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
     return dictionary
 
 
+@cache
 def get_addon_keymap(keymap) -> 'bpy.types.KeyMap':
-    kk = bpy.context.window_manager.keyconfigs.addon.keymaps
+    print('get', keymap)
+    kf = bpy.context.window_manager.keyconfigs
+    kk = kf.addon.keymaps
     f = kk.get(keymap)
     if f:
         return f
-    dk = bpy.context.window_manager.keyconfigs.default.keymaps.get(keymap)
+    dk = kf.default.keymaps.get(keymap)
     return kk.new(dk.name, space_type=dk.space_type, region_type=dk.region_type)
 
 

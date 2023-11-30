@@ -34,7 +34,9 @@ class PropertySetUtils:
                 else:
                     setattr(prop, path, value)
             except Exception as e:
-                print(typ, pro, value, e)
+                print('ERROR', typ, pro, value, e)
+                import traceback
+                traceback.print_exc()
 
     @staticmethod
     def set_property_data(prop, data: dict):

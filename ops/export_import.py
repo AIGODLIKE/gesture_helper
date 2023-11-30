@@ -7,10 +7,11 @@ from datetime import datetime
 import bpy
 from bpy.props import BoolProperty, StringProperty
 
-from ..utils.public_cache import cache_update_lock
 from ..ui.ui_list import ImportPresetUIList
 from ..utils import PropertyGetUtils, PropertySetUtils
+from ..utils.gesture import GestureKeymap
 from ..utils.public import PublicOperator, PublicProperty, get_pref
+from ..utils.public_cache import cache_update_lock
 
 
 class PublicFileOperator(PublicOperator, PublicProperty):
@@ -66,6 +67,8 @@ class Import(PublicFileOperator):
 
     def execute(self, context):
         self.restore()
+        self.cache_clear()
+        GestureKeymap.key_restart()
         return {'FINISHED'}
 
     def draw(self, context):
@@ -82,8 +85,12 @@ class Import(PublicFileOperator):
     def restore(self):
         try:
             data = self.read_json()
-            restore = {'gesture': data['gesture']}
-            PropertySetUtils.set_prop(self.pref, 'gesture', data['gesture'])
+            restore = data['gesture']
+            PropertySetUtils.set_prop(self.pref, 'gesture', restore)
+            auth = data['author']
+            des = data['description']
+            ver = data['addon_version']
+            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{ver}")
         except Exception as e:
             self.report({'ERROR'}, f"导入错误: {e.args}")
 
@@ -104,13 +111,17 @@ class Export(PublicFileOperator):
         return datetime.fromtimestamp(time.time())
 
     @property
-    def json_name(self):
-        return f'Gesture {self.ymdhm}.json'.replace(':', ' ')
-
-    @property
     def file_name(self):
-        path = os.path.dirname(self.filepath) if os.path.isfile(self.filepath) else self.filepath
-        return os.path.abspath(os.path.join(path, self.json_name))
+        folder = self.filepath
+        name = 'Gesture'
+        print('file_name')
+        print(folder)
+        if not os.path.exists(folder) or os.path.isfile(folder):
+            name = os.path.basename(folder)
+            folder = os.path.dirname(folder)
+        print(folder)
+        print(name)
+        return os.path.abspath(os.path.join(folder, f'{name} {self.ymdhm}.json'.replace(':', ' ')))
 
     @property
     def gesture_data(self):
@@ -133,14 +144,13 @@ class Export(PublicFileOperator):
                 res['element'] = {k: filter_data(v) for k, v in d['element'].items()}
             return res
 
-        data = []
-        for g in self.pref.gesture:
+        data = {}
+        for index, g in enumerate(self.pref.gesture):
             if g.selected:
-                exclude = ('selected', 'relationship', 'show_child', 'level',
-                           'enabled',
+                exclude = ('selected', 'relationship', 'show_child', 'level', 'enabled', 'index_element',
                            'operator_properties_sync_to_properties',
                            'operator_properties_sync_from_temp_properties')
-                data.append(filter_data(PropertyGetUtils.props_data(g, exclude=exclude)))
+                data[str(index)] = filter_data(PropertyGetUtils.props_data(g, exclude=exclude))
         return data
 
     @property

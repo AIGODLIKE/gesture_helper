@@ -10,6 +10,7 @@ from idprop.types import IDPropertyGroup
 
 from .. import PropertyGetUtils, PropertySetUtils
 from ..public import get_pref
+from ..public_cache import cache_update_lock
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
@@ -90,7 +91,6 @@ class GestureKeymap:
         if self.is_enable:
             if self in GestureKeymap.__key_data__:  # 还没注销
                 self.key_unload()
-
             data = GestureKeymap.__key_data__[self] = []
             print('self.add_kmi_data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
@@ -102,6 +102,7 @@ class GestureKeymap:
                 keymap.keymap_items.remove(kmi)
             GestureKeymap.__key_data__.pop(self)
 
+    @cache_update_lock
     def key_update(self) -> None:
         # 在keymap被改时更新
         # 在key被改时更新
