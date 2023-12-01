@@ -1,7 +1,7 @@
 import traceback
 
 
-def cache_update_lock(func):
+def cache_update_lock(func, cache_clear=False):
     """缓存更新锁"""
     cls = PublicCache
 
@@ -10,6 +10,8 @@ def cache_update_lock(func):
             cls.__is_updatable__ = False
             func_return = func(*args, **kwargs)
             cls.__is_updatable__ = True
+            if cache_clear:
+                PublicCacheFunc.cache_clear()
             return func_return
 
     return wap

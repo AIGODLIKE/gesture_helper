@@ -119,7 +119,7 @@ class PublicUniqueNamePropertyGroup:
 
     @staticmethod
     def __generate_new_name__(names, new_name):
-        # 检查新名称是否已存在,
+        # 检查新名称是否已存在,TIPS 最大999
         if new_name in names:
             base_name = new_name
             count = 1
@@ -129,17 +129,19 @@ class PublicUniqueNamePropertyGroup:
         return new_name
 
     @property
-    def __get_names(self):
+    def __names__(self):
         return list(map(lambda s: s.name, self.names_iteration))
 
     @cache_update_lock
     def __check_duplicate_name__(self):
-        names = list(self.__get_names)
+        names = self.__names__
+        if self.__names__.count(self.name) > 1:
+            self.name = self.__generate_new_name__(self.__names__, self.name)
         if len(names) != len(set(names)):
             for i in self.names_iteration:
-                if self.__get_names.count(i.name) > 1:
+                if self.__names__.count(i.name) > 1:
                     self.cache_clear()
-                    i.name = self.__generate_new_name__(self.__get_names, i.name)
+                    i.name = self.__generate_new_name__(self.__names__, i.name)
 
     name: StringProperty(
         name='名称',

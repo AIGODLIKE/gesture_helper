@@ -58,7 +58,7 @@ class GestureKeymap(KeymapProperty):
                 self.temp_kmi,
                 exclude=(
                     'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
-                    'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui'
+                    'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined'
                 )
             )
         )
