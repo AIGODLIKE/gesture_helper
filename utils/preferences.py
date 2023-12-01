@@ -156,7 +156,6 @@ class GestureDraw:
         from ..ui.ui_list import ElementUIList
         pref = get_pref()
         ag = pref.active_gesture
-        ae = pref.active_element
         if ag:
             column = layout.column()
 
@@ -169,7 +168,7 @@ class GestureDraw:
                 ElementUIList.bl_idname,
                 ag,
                 'element',
-                ae.parent,
+                ag,
                 'index_element',
             )
             ElementDraw.draw_property(sub_column)

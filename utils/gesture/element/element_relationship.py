@@ -3,7 +3,15 @@ from functools import cache
 from bpy.props import BoolProperty
 
 from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
-from ...public_cache import PublicCache
+from ...public_cache import PublicCache, cache_update_lock
+
+
+@cache
+def get_element_index(element) -> int:
+    try:
+        return element.collection.values().index(element)
+    except ValueError:
+        ...
 
 
 @cache
@@ -41,6 +49,13 @@ class Relationship:
             return pe
         else:
             return self.parent_gesture
+
+    @property
+    def root_parent(self):
+        if self.is_root:
+            return self
+        else:
+            return self.parent_element.root_parent
 
     @property
     def parent_element(self):
@@ -84,16 +99,25 @@ class Relationship:
 
 class RadioSelect:
 
-    def update_radio(self, context):
+    @cache_update_lock
+    def update_radio(self):
+        for (index, element) in enumerate(self.parent_gesture.element):
+            if self.root_parent == element:
+                self.parent_gesture.index_element = index
+
+        if not self.is_root:  # 设置子级手势的索引
+            for index, e in enumerate(self.collection):
+                if e == self:
+                    self.parent.index_element = index
+
         for item in self.radio_iteration:
             is_select = item == self
             item['radio'] = is_select
             if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
                 self.to_operator_tmp_kmi()
 
-
     radio: BoolProperty(name='单选',
-                        update=update_radio)
+                        update=lambda self, context: self.update_radio())
 
     @property
     def radio_iteration(self):
@@ -117,18 +141,12 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         doc='通过当前项的index,来设置索引的index值,以及移动项')
 
     @property
+    def self_index(self):
+        return get_element_index(self)
+
+    @property
     def is_root(self):
         return self in self.parent_gesture.element.values()
-
-    def selected_update(self, context):
-        """
-        在选择其它子项的时候自动将活动索引切换
-        @rtype: object
-        """
-        if self.is_root:
-            for (index, element) in enumerate(self.parent_gesture.element):
-                if self in element.collection_iteration:
-                    self.parent_gesture['index_element'] = self.index
 
     @property
     def names_iteration(self):
@@ -178,3 +196,15 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
             if s not in ds:
                 self.direction = s
                 return
+
+    def remove_after(self):
+        print('remove_after', self)
+        parent = self.parent
+        index = parent.index_element
+        col = self.collection
+        cl = len(col)
+        if cl:
+            if cl >= index+1:
+                col[index].radio = True
+            else:
+                col[-1].radio = True

@@ -95,6 +95,7 @@ class PublicCacheFunc(PublicCache):
     @staticmethod
     def element_cache_clear():
         from .gesture.element import element_relationship
+        element_relationship.get_element_index.cache_clear()
         element_relationship.get_available_selected_structure.cache_clear()
 
     @staticmethod

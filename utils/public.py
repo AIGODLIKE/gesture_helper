@@ -19,7 +19,6 @@ def get_pref():
 
 def update(func):
     def w(*args, **kwargs):
-        print('update', func)
         self = args[0]
         name = func.__name__
         before = getattr(self, f'{name}_before', None)
@@ -32,6 +31,7 @@ def update(func):
             after()
 
         return res
+
     return w
 
 

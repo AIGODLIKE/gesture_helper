@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bpy.props import CollectionProperty, StringProperty
+from bpy.props import CollectionProperty, StringProperty, IntProperty
 from bpy.types import PropertyGroup
 
 from .element_cure import ElementCURE
@@ -26,6 +26,7 @@ class Element(ElementCURE,
 
               PropertyGroup):
     element: CollectionProperty(name='子级元素', type=Element)
+    index_element: IntProperty(name='索引')
 
     def init(self):
         getattr(self, f'init_{self.element_type.lower()}')()
