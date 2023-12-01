@@ -13,6 +13,17 @@ from ..utils.gesture import GestureKeymap
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
 
+EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'index_element',
+                           'operator_properties_sync_to_properties',
+                           'operator_properties_sync_from_temp_properties')
+
+EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled']
+EXPORT_PROPERTY_ITEM = {
+    'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
+    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
+    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'operator_properties', 'operator_context', 'operator_bl_idname'],
+}
+
 
 class PublicFileOperator(PublicOperator, PublicProperty):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN'}, )
@@ -126,31 +137,25 @@ class Export(PublicFileOperator):
     @property
     def gesture_data(self):
 
-        item_key = {
-            'SELECTED_STRUCTURE': ['name', 'element_type', 'selected_type', 'poll_string'],
-            'CHILD_GESTURE': ['name', 'element_type', 'direction'],
-            'OPERATOR': ['name', 'element_type', 'operator_properties', 'operator_context', 'operator_bl_idname'],
-        }
-
-        def filter_data(d):
+        def filter_data(dd):
             res = {}
-            if 'element_type' in d:
-                t = d['element_type']
-                for k in item_key[t]:
-                    res[k] = d[k]
+            if 'element_type' in dd:
+                t = dd['element_type']
+                for i in EXPORT_PROPERTY_ITEM[t]:
+                    if i in dd:
+                        res[i] = dd[i]
             else:
-                res.update(d)
-            if 'element' in d:
-                res['element'] = {k: filter_data(v) for k, v in d['element'].items()}
+                res.update(dd)
+            if 'element' in dd:
+                res['element'] = {k: filter_data(v) for k, v in dd['element'].items()}
             return res
 
         data = {}
         for index, g in enumerate(self.pref.gesture):
             if g.selected:
-                exclude = ('selected', 'relationship', 'show_child', 'level', 'enabled', 'index_element',
-                           'operator_properties_sync_to_properties',
-                           'operator_properties_sync_from_temp_properties')
-                data[str(index)] = filter_data(PropertyGetUtils.props_data(g, exclude=exclude))
+                origin = PropertyGetUtils.props_data(g, EXPORT_PROPERTY_EXCLUDE)
+                item = filter_data(origin)
+                data[str(index)] = item
         return data
 
     @property

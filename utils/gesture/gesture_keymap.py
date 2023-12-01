@@ -6,6 +6,7 @@
 import traceback
 
 import bpy
+from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
 from .. import PropertyGetUtils, PropertySetUtils
@@ -14,33 +15,42 @@ from ..public_cache import cache_update_lock
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 
-class GestureKeymap:
+class KeymapProperty:
     __key_data__ = {}  # {self:(keymap:kmi)}
 
-    def _set_key(self, value) -> None:
-        self['key'] = value
+    key_string: StringProperty()
+    keymaps_string: StringProperty()
+    __key__ = 'key_string'
+    __keymaps__ = 'keymaps_string'
+
+    def set_key(self, value) -> None:
+        self[self.__key__] = value
         self.key_update()
 
-    def _get_key(self) -> dict:
+    def get_key(self) -> dict:
         default = {'type': 'NONE', 'value': 'PRESS'}
-        if 'key' in self and dict(self['key']):
+        key = self.__key__
+        if key in self and dict(self[key]):
             default.update(
                 {k: dict(value) if type(value) == IDPropertyGroup else value
                  for (k, value) in
-                 dict(self['key']).items()}
+                 dict(self[key]).items()}
             )
         return default
 
-    def _get_keymap(self) -> list:
-        return self['keymap'] if 'keymap' in self else ['Window', ]
+    def get_keymap(self) -> list:
+        key = self.__keymaps__
+        return self[key] if key in self else ['Window', ]
 
-    def _set_keymap(self, value) -> None:
-        self['keymap'] = value
+    def set_keymap(self, value) -> None:
+        self[self.__keymaps__] = value
         self.key_update()
 
-    key = property(fget=_get_key, fset=_set_key, doc='用来存快捷键的键位数据')
-    keymaps = property(fget=_get_keymap, fset=_set_keymap, doc='用来存快捷键可用的区域')
+    key = property(fget=get_key, fset=set_key, doc='用来存快捷键的键位数据')
+    keymaps = property(fget=get_keymap, fset=set_keymap, doc='用来存快捷键可用的区域')
 
+
+class GestureKeymap(KeymapProperty):
     @property
     def temp_kmi_data(self) -> dict:
         return dict(

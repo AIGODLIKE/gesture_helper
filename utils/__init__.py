@@ -113,6 +113,8 @@ class PropertyGetUtils:
             dict: 反回字典式数据,
         """
         data = {}
+        # print()
+        # print('props_data,', prop, exclude)
 
         for i in prop.bl_rna.properties:
             try:
@@ -121,12 +123,12 @@ class PropertyGetUtils:
                         id_name not in exclude)
 
                 is_exclude = id_name not in exclude_items
-
+                # print(i, is_ok, is_exclude)
                 if is_exclude and is_ok:
                     typ = i.type
 
                     pro = getattr(prop, id_name, None)
-                    if not pro:
+                    if pro is None:
                         continue
 
                     if typ == 'POINTER':
