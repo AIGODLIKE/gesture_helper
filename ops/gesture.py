@@ -33,7 +33,6 @@ class GesturePointKDTree:
 
     def remove(self, index):
         val = index + 1
-        # TODO rebuild tree
         self.child_element = self.child_element[:val]
         self.points_list = self.points_list[:val]
         self.time_list = self.time_list[:val]

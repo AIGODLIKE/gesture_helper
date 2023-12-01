@@ -20,7 +20,6 @@ def cache_update_lock(func, cache_clear=False):
 class PublicCache:
     """
     Gesture
-    TODO RENAME
 
     Element
     TODO MOVE

@@ -152,8 +152,6 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
     def names_iteration(self):
         return self.parent_gesture.element_iteration
 
-    # TODO Remove move active index
-
     @property
     def is_available_selected_structure(self) -> bool:  # 是一个可用的选择结构
         return get_available_selected_structure(self)

@@ -9,14 +9,13 @@ from ...public_cache import cache_update_lock
 
 
 class OperatorProperty:
-
     @cache_update_lock
     def update_operator(self) -> None:
         """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
         掐头去尾
-        TODO 将()里面的属性读取进 properties
+        bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
         """
-        value = self.operator_bl_idname
+        value = self.operator_bl_idname.replace(' ', '')
         key = 'operator_bl_idname'
         if value.startswith('bpy.ops.'):
             self[key] = value = value[8:]
