@@ -158,6 +158,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             data.append('event_window_position:' + str(self.event_window_position))
             data.append('--')
             data.append('angle:' + str(self.angle))
+            data.append('angle_unsigned:' + str(self.angle_unsigned))
             data.append('distance:' + str(self.distance))
             data.append('direction:' + str(self.direction))
             data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
@@ -253,27 +254,12 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def direction(self) -> int:  # 方向
-        split = 22.5
-        angle = self.angle
+        angle = self.angle_unsigned
         if type(angle) == bool:
             return False
-
-        def gesture_index(ang: float) -> int:
-            an = abs(ang)
-            if split < an < (split + 45):
-                return 8 if ang < 0 else 6
-            elif (90 - split) < an < (90 + split):
-                return 3 if ang < 0 else 4
-            elif (90 + split) < an < (90 + split + 45):
-                return 7 if ang < 0 else 5
-
-        max_split = 180 - split
-        if -split < angle < split:
-            return 2
-        elif (max_split < angle) | (angle < -max_split):
+        if angle > 337.5:
             return 1
-        else:
-            return gesture_index(angle)
+        return int((angle + 22.5) // 45 + 1)
 
     @property
     def distance(self) -> float:

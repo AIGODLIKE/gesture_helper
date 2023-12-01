@@ -24,18 +24,8 @@ def from_text_get_dimensions(text):
 
 
 @cache
-def get_direction(direction):
-    # 方向的步数
-    from ...public import DIRECTION_STOP_DICT
-    for k, v in DIRECTION_STOP_DICT.items():
-        if k == direction:
-            return int(v)
-
-
-@cache
 def get_position(direction, radius):
-    direction_stop = get_direction(direction)
-    angle = math.radians((direction_stop - 1) * 45)  # 将角度转换为弧度
+    angle = math.radians((int(direction) - 1) * 45)  # 将角度转换为弧度
     return Vector((radius * math.cos(angle), radius * math.sin(angle)))
 
 
@@ -71,27 +61,27 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             w, h = self.text_dimensions
             hh = h / 2
             hw = w / 2
-            margin = 3  # px
             direction = self.direction
             offset = [0, 0]
 
             if direction == '1':
-                offset = (-w + 0.2, h)
+                offset = (0, hh)
             elif direction == '2':
                 offset = (0, h)
             elif direction == '3':
-                offset = (-hw, -h)
-            elif direction == '4':
                 offset = (-hw, h * 2)
-            elif direction == '5':
+            elif direction == '4':
                 offset = (-w, h)
+            elif direction == '5':
+                offset = (-w + 0.2, hh)
             elif direction == '6':
-                offset = (0, h)
-            elif direction == '7':
                 offset = (-w, -hh / 2)
+            elif direction == '7':
+                offset = (-hw, -h)
             elif direction == '8':
                 offset = (0, -hh / 2)
 
+            margin = 3  # px
             rounded_rectangle = {
                 "radius": 5,
                 "position": (0, 0),
@@ -105,12 +95,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 if direction in ('5', '6', '7', '8'):
                     y *= 0.7
 
-                if self.text.islower():
-                    ...
-                elif check_china(self.text):
-                    y *= 0.9
-
+                # if self.text.islower():
                 gpu.matrix.translate([x, y])
-                self.draw_rounded_rectangle_frame(**rounded_rectangle)
-                self.draw_rounded_rectangle_area(**rounded_rectangle)
+                # self.draw_rounded_rectangle_frame(**rounded_rectangle)
+                # self.draw_rounded_rectangle_area(**rounded_rectangle)
             self.draw_text((0, 0), self.text, color=self.draw_color)

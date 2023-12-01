@@ -4,6 +4,7 @@ import bpy
 from mathutils import Vector, Euler, Matrix
 
 
+
 def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
     keymap_items = get_temp_keymap().keymap_items
     for temp_kmi in keymap_items:
@@ -114,7 +115,8 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     else:
         row.label()
 
-    row.operator("preferences.keyitem_restore", text="", icon='BACK').item_id = kmi.id
+    from ..ops.restore_key import RestoreKey
+    row.operator(RestoreKey.bl_idname, text="", icon='BACK').item_id = kmi.id
     # Expanded, additional event settings
     if kmi.show_expanded:
         box = col.box()

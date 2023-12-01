@@ -10,17 +10,6 @@ from .public_cache import PublicCacheFunc, cache_update_lock
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 ADDON_NAME = basename(ADDON_FOLDER)
 PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src/preset'))
-DIRECTION_STOP_DICT = {
-    "1": "5",
-    "2": "1",
-    "4": "3",
-    "3": "7",
-    "5": "4",
-    "6": "2",
-    "7": "6",
-    "8": "8",
-    # direction:angle
-}
 
 
 @cache

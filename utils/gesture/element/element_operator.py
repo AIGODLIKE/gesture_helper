@@ -67,7 +67,7 @@ class ElementOperator(OperatorProperty):
         try:
             return ast.literal_eval(self.operator_properties)
         except Exception as e:
-            print('properties Error', e.args)
+            print('Properties Error', e.args)
             return {}
 
     @property
