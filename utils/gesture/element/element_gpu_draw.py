@@ -98,8 +98,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 x, y = hw, -h
                 y *= 0.7
 
-                # if direction in ('1', '6', '7', '8'):
-                # if self.text.islower():
                 gpu.matrix.translate([x, y])
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
                 self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1)})

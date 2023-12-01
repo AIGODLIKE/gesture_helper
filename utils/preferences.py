@@ -155,8 +155,9 @@ class GestureDraw:
     def draw_element(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import ElementUIList
         pref = get_pref()
-        active_gesture = pref.active_gesture
-        if active_gesture:
+        ag = pref.active_gesture
+        ae = pref.active_element
+        if ag:
             column = layout.column()
 
             ElementDraw.draw_element_add_property(column)
@@ -166,9 +167,9 @@ class GestureDraw:
             sub_column.template_list(
                 ElementUIList.bl_idname,
                 ElementUIList.bl_idname,
-                active_gesture,
+                ag,
                 'element',
-                active_gesture,
+                ae.parent,
                 'index_element',
             )
             ElementDraw.draw_property(sub_column)
@@ -212,11 +213,11 @@ class GestureDraw:
             text=''
         ).is_next = False
         # if is_element:
-            # column.operator(
-            #     cls.MOVE.bl_idname,
-            #     icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
-            #     text=''
-            # )
+        # column.operator(
+        #     cls.MOVE.bl_idname,
+        #     icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
+        #     text=''
+        # )
         column.operator(
             cls.SORT.bl_idname,
             icon='SORT_ASC',
@@ -309,7 +310,6 @@ class GesturePreferences(PublicProperty,
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
-    is_preview_mode: BoolProperty(name='是在预览模式')  # TODO
 
     draw_property: PointerProperty(type=DrawProperty)
     other_property: PointerProperty(type=OtherProperty)

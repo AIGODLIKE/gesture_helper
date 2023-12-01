@@ -7,14 +7,6 @@ from ...public_cache import PublicCache
 
 
 @cache
-def get_element_index(element) -> int:
-    try:
-        return element.collection.values().index(element)
-    except ValueError:
-        ...
-
-
-@cache
 def get_available_selected_structure(element) -> bool:
     def get_prev(e):
         p = e.prev_element
@@ -92,19 +84,16 @@ class Relationship:
 
 class RadioSelect:
 
-    def _update_radio(self, context):
-
+    def update_radio(self, context):
         for item in self.radio_iteration:
             is_select = item == self
             item['radio'] = is_select
             if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
                 self.to_operator_tmp_kmi()
-        f = getattr(self, 'selected_update')
-        if f:
-            f(context)
+
 
     radio: BoolProperty(name='单选',
-                        update=_update_radio)
+                        update=update_radio)
 
     @property
     def radio_iteration(self):
@@ -117,13 +106,10 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
                           Relationship):
 
     def _get_index(self) -> int:
-        return get_element_index(self)
+        return self.parent.index_element
 
     def _set_index(self, value):
-        if self.is_root:
-            self.parent_gesture['index_element'] = self.index
-        else:
-            self.parent_element['index_element'] = self.index
+        self.parent.index_element = value
 
     index = property(
         fget=_get_index,
@@ -186,10 +172,9 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
 
     def init_direction_by_sort(self):
         """初始化方向按排序"""
-        ds = set(self.parent_gesture_direction_items.keys())
-        direction = '1'
+        ds = list(self.parent_gesture_direction_items.keys())
         for k in range(1, 9):
             s = str(k)
             if s not in ds:
-                direction = s
-        self.direction = direction
+                self.direction = s
+                return

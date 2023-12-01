@@ -4,12 +4,13 @@ from bpy.props import IntProperty, BoolProperty
 class GestureProperty:
 
     def update_index(self, context):
-        try:
-            el = self.element.values()[self.index_element]
-            if el:
-                el.radio = True
-        except IndexError:
-            ...
+        print('update index element', self['index_element'])
+        # try:
+        #     el = self.element.values()[self.index_element]
+        #     if el:
+        #         el.radio = True
+        # except IndexError:
+        #     ...
 
     index_element: IntProperty(name='索引', update=update_index)
 

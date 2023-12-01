@@ -21,7 +21,7 @@ EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
-    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'operator_properties', 'operator_context', 'operator_bl_idname'],
+    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'direction', 'operator_properties', 'operator_context', 'operator_bl_idname'],
 }
 
 

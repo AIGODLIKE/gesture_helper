@@ -17,6 +17,24 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
+def update(func):
+    def w(*args, **kwargs):
+        print('update', func)
+        self = args[0]
+        name = func.__name__
+        before = getattr(self, f'{name}_before', None)
+        after = getattr(self, f'{name}_after', None)
+
+        if before:
+            before()
+        res = func(*args, **kwargs)
+        if after:
+            after()
+
+        return res
+    return w
+
+
 class PublicProperty(PublicCacheFunc):
 
     @staticmethod
@@ -169,6 +187,7 @@ class PublicSortAndRemovePropertyGroup:
         """
         return self == self.collection[0]
 
+    @update
     def sort(self, is_next):
         col = self.collection
         gl = len(col)
@@ -187,7 +206,6 @@ class PublicSortAndRemovePropertyGroup:
                 col.move(self.index - 1, self.index)
                 self.index = self.index - 1
 
+    @update
     def remove(self):
-        getattr(self, 'remove_before', lambda: ...)()  # TODO 切片方法 装饰器
         self.collection.remove(self.index)
-        getattr(self, 'remove_after', lambda: ...)()

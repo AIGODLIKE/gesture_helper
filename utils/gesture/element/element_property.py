@@ -64,6 +64,7 @@ class ElementDirectionProperty(ElementAddProperty):
     direction: EnumProperty(
         name='方向',
         items=ENUM_GESTURE_DIRECTION,
+        default='8'
     )
 
     def init_child_gesture(self):
