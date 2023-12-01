@@ -3,6 +3,7 @@
 # 只需要记录快捷键用到的数据和空间
 # 每次开启插件的时候从数据里面当场新建一些快捷键并填入缓存数据
 # 使用临时快捷键来修改每一个快捷键的位置
+import json
 import traceback
 
 import bpy
@@ -18,10 +19,8 @@ from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 class KeymapProperty:
     __key_data__ = {}  # {self:(keymap:kmi)}
 
-    key_string: StringProperty()
-    keymaps_string: StringProperty()
-    __key__ = 'key_string'
-    __keymaps__ = 'keymaps_string'
+    __key__ = 'key'
+    __keymaps__ = 'keymaps'
 
     def set_key(self, value) -> None:
         self[self.__key__] = value
@@ -48,6 +47,11 @@ class KeymapProperty:
 
     key = property(fget=get_key, fset=set_key, doc='用来存快捷键的键位数据')
     keymaps = property(fget=get_keymap, fset=set_keymap, doc='用来存快捷键可用的区域')
+
+    key_string: StringProperty(get=lambda self: json.dumps(self.get_key()),
+                               set=lambda self, value: self.set_key(json.loads(value)))
+    keymaps_string: StringProperty(get=lambda self: json.dumps(self.get_keymap()),
+                                   set=lambda self, value: self.set_keymap(json.loads(value)))
 
 
 class GestureKeymap(KeymapProperty):
@@ -86,7 +90,7 @@ class GestureKeymap(KeymapProperty):
         layout.context_pointer_set('keymap', get_temp_keymap())
 
         layout.operator(set_key.OperatorSetKeyMaps.bl_idname)
-        layout.operator(set_key.OperatorTempModifierKey.bl_idname)
+        # layout.operator(set_key.OperatorTempModifierKey.bl_idname)
 
         draw_kmi(layout, self.temp_kmi, self.keymaps)
         if get_pref().draw_property.element_debug_mode:
