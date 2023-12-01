@@ -48,6 +48,10 @@ class ElementGpuProperty:
     def draw_color(self):
         return (0, 0, 0, 1) if self.is_active_direction else (1, 1, 1, 1)
 
+    @property
+    def rounded_rectangle_color(self):
+        return (0.8, 0.8, 0.8, 1) if self.is_active_direction else (0.3, 0.3, 0.3, 1)
+
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     def draw_gpu_item(self, ops):
@@ -83,20 +87,20 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
             margin = 3  # px
             rounded_rectangle = {
-                "radius": 5,
+                "radius": 8,
                 "position": (0, 0),
                 "width": w + margin * 2,
                 "height": h + margin * 2,
-                "color": (0.5, 0.5, 0.5, 1)
+                "color": self.rounded_rectangle_color
             }
             gpu.matrix.translate(offset)
             with gpu.matrix.push_pop():
                 x, y = hw, -h
-                if direction in ('5', '6', '7', '8'):
-                    y *= 0.7
+                y *= 0.7
 
+                # if direction in ('1', '6', '7', '8'):
                 # if self.text.islower():
                 gpu.matrix.translate([x, y])
-                # self.draw_rounded_rectangle_frame(**rounded_rectangle)
-                # self.draw_rounded_rectangle_area(**rounded_rectangle)
+                self.draw_rounded_rectangle_area(**rounded_rectangle)
+                self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1)})
             self.draw_text((0, 0), self.text, color=self.draw_color)

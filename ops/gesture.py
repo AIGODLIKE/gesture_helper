@@ -186,9 +186,9 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.last_region_position)
                 if self.is_window_region_type:
-                    self.draw_circle((0, 0), gp.radius, line_width=2, segments=512)
-                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=512)
-                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=256)
+                    # self.draw_circle((0, 0), gp.radius, line_width=2, segments=512)
+                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=64)
+                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=64)
                 for d in self.direction_items.values():
                     d.draw_gpu_item(self)
 
