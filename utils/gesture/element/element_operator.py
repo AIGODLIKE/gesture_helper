@@ -119,6 +119,7 @@ class ElementOperator(OperatorProperty):
             properties.pop(key)
 
     def init_operator(self):
+        self.init_direction_by_sort()
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
         self.operator_properties = r'{}'

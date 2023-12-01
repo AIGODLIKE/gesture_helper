@@ -102,7 +102,7 @@ class GestureKeymap(KeymapProperty):
             if self in GestureKeymap.__key_data__:  # 还没注销
                 self.key_unload()
             data = GestureKeymap.__key_data__[self] = []
-            print('self.add_kmi_data', self.name, self.add_kmi_data)
+            print('Add Kmi Data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
                 data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 
@@ -119,7 +119,7 @@ class GestureKeymap(KeymapProperty):
         caller_name = traceback.extract_stack()[-2][2]
         self.key_unload()
         self.key_load()
-        print("key_update 被 {} 调用".format(caller_name), self)
+        print("Key Update 被 {} 调用".format(caller_name), self)
 
     @classmethod
     def key_init(cls) -> None:

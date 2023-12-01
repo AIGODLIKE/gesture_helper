@@ -67,13 +67,7 @@ class ElementDirectionProperty(ElementAddProperty):
     )
 
     def init_child_gesture(self):
-        ds = set(self.parent_gesture_direction_items.keys())
-        direction = '1'
-        for k in range(1, 9):
-            s = str(k)
-            if s not in ds:
-                direction = s
-        self.direction = direction
+        self.init_direction_by_sort()
         self.selected_type = 'IF'
 
 

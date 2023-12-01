@@ -183,3 +183,13 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
             return True
         except Exception as e:
             return False
+
+    def init_direction_by_sort(self):
+        """初始化方向按排序"""
+        ds = set(self.parent_gesture_direction_items.keys())
+        direction = '1'
+        for k in range(1, 9):
+            s = str(k)
+            if s not in ds:
+                direction = s
+        self.direction = direction
