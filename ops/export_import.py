@@ -74,7 +74,7 @@ class Import(PublicFileOperator):
             for f in os.listdir(PROPERTY_FOLDER):
                 path = os.path.join(PROPERTY_FOLDER, f)
                 if os.path.isfile(path) and f.lower().endswith('.json'):
-                    items[f] = path
+                    items[f[:-5]] = path
         except Exception as e:
             print(e.args)
         Import.preset = items
