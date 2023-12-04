@@ -105,13 +105,17 @@ class Import(PublicFileOperator):
         try:
             data = self.read_json()
             restore = data['gesture']
+            print('restore', restore)
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)
             auth = data['author']
             des = data['description']
-            ver = data['addon_version']
-            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{'.'.join(ver)}")
+            ver = '.'.join((str(i) for i in data['addon_version']))
+            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{ver}")
         except Exception as e:
             self.report({'ERROR'}, f"导入错误: {e.args}")
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
 
     def read_json(self):
         with open(self.filepath, 'r') as file:
