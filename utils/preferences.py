@@ -72,6 +72,11 @@ class ElementDraw:
     def draw_element_cure(layout: 'bpy.types.UILayout', cls) -> None:
         column = layout.column(align=True)
         column.operator(
+            cls.COPY.bl_idname,
+            icon='OVERLAY',
+            text=''
+        )
+        column.operator(
             cls.REMOVE.bl_idname,
             icon='REMOVE',
             text=''
@@ -196,6 +201,11 @@ class GestureDraw:
             column.operator(
                 cls.ADD.bl_idname,
                 icon='ADD',
+                text=''
+            )
+            column.operator(
+                cls.COPY.bl_idname,
+                icon='OVERLAY',
                 text=''
             )
             column.operator(

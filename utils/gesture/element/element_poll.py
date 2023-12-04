@@ -5,6 +5,16 @@ import ast
 import bpy
 from bpy.props import StringProperty
 
+poll = """poll表达式
+{'bpy': bpy,
+'C': bpy.context,
+'D': bpy.data,
+'O': bpy.context.object,
+'mode': bpy.context.mode,
+'tool': bpy.context.tool_settings,
+}
+"""
+
 
 class ElementPoll:
     @property
@@ -19,23 +29,11 @@ class ElementPoll:
             poll = self._from_poll_string_get_bool(self.poll_string)
             return poll
         except Exception as e:
-            print(f'ERROR:\tpoll_bool  {self.poll_string}\t', e.args, self.poll_args)
+            print(f'ERROR:  poll_bool  {self.poll_string}\t', e.args, self.poll_args)
             return False
 
-    def _update_string(self, context):
-        a = self.poll_bool
-
     poll_string: StringProperty(name='条件',
-                                description="""poll表达式
-    {'bpy': bpy,
-    'C': bpy.context,
-    'D': bpy.data,
-    'O': bpy.context.object,
-    'mode': bpy.context.mode,
-    'tool': bpy.context.tool_settings,
-    }
-    """,
-                                update=_update_string, )
+                                description=poll)
 
     @staticmethod
     def _is_enabled_addon(addon_name):

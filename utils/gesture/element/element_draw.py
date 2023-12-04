@@ -94,7 +94,7 @@ class ElementDraw:
             row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
             row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
             row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
-            layout.template_keymap_item_properties(self.operator_tmp_kmi)
+            layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
             if self.other_property.auto_update_element_operator_properties:
                 self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:

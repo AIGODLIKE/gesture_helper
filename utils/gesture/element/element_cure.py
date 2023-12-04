@@ -2,9 +2,19 @@ from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
 from ...public import PublicProperty, PublicOperator
+from ...public_cache import cache_update_lock
 
 
 class ElementCURE:
+
+    @cache_update_lock
+    def copy(self):
+        from ... import PropertyGetUtils, PropertySetUtils
+        copy_data = PropertyGetUtils.props_data(self.active_element)
+
+        parent = self.parent
+        PropertySetUtils.set_prop(parent, 'element', {'0': copy_data})
+
     class ElementPoll(PublicProperty, PublicOperator):
 
         @classmethod
@@ -74,5 +84,18 @@ class ElementCURE:
 
         def execute(self, _):
             self.active_element.sort(self.is_next)
+            self.cache_clear()
+            return {"FINISHED"}
+
+    class COPY(ElementPoll):
+        bl_idname = 'gesture.element_copy'
+        bl_label = '复制手势项'
+
+        def execute(self, _):
+            ag = self.active_element.copy()
+            self.cache_clear()
+            print('active_element.collection', self.active_element.collection)
+            self.active_element.radio = True
+            self.active_element.collection[-1].__check_duplicate_name__()
             self.cache_clear()
             return {"FINISHED"}

@@ -15,17 +15,18 @@ class OperatorProperty:
         掐头去尾
         bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
         """
-        value = self.operator_bl_idname.replace(' ', '')
-        key = 'operator_bl_idname'
-        if value.startswith('bpy.ops.'):
-            self[key] = value = value[8:]
-        if ('(' in value) and (')' in value):
-            if value.endswith('()'):
-                self[key] = value[:-2]
-            else:  # 将后面的切掉
-                index = value.index('(')
-                self[key] = value[:index]
-        self.to_operator_tmp_kmi()
+        if self.is_operator:
+            value = self.operator_bl_idname.replace(' ', '')
+            key = 'operator_bl_idname'
+            if value.startswith('bpy.ops.'):
+                self[key] = value = value[8:]
+            if ('(' in value) and (')' in value):
+                if value.endswith('()'):
+                    self[key] = value[:-2]
+                else:  # 将后面的切掉
+                    index = value.index('(')
+                    self[key] = value[:index]
+            self.to_operator_tmp_kmi()
 
     @cache_update_lock
     def update_operator_properties(self) -> None:
@@ -43,12 +44,14 @@ class OperatorProperty:
                                         update=lambda self, context: self.update_operator_properties())
 
     def update_operator_properties_sync_from_temp_properties(self, context):
-        self.from_tmp_kmi_operator_update_properties()
-        self['operator_properties_sync_from_temp_properties'] = False
+        if self.is_operator:
+            self.from_tmp_kmi_operator_update_properties()
+            self['operator_properties_sync_from_temp_properties'] = False
 
     def update_operator_properties_sync_to_properties(self, context):
-        self.to_operator_tmp_kmi()
-        self['operator_properties_sync_to_properties'] = False
+        if self.is_operator:
+            self.to_operator_tmp_kmi()
+            self['operator_properties_sync_to_properties'] = False
 
     operator_properties_sync_from_temp_properties: BoolProperty(
         name='从属性更新',
@@ -67,6 +70,8 @@ class ElementOperator(OperatorProperty):
             return ast.literal_eval(self.operator_properties)
         except Exception as e:
             print('Properties Error', e.args)
+            import traceback
+            traceback.print_stack()
             return {}
 
     @property
@@ -76,14 +81,14 @@ class ElementOperator(OperatorProperty):
 
     @property
     def operator_tmp_kmi_properties(self):
-
         from ...public_key import get_kmi_operator_properties
         properties = get_kmi_operator_properties(self.operator_tmp_kmi)
         return properties
 
     def to_operator_tmp_kmi(self) -> None:
-        self.operator_tmp_kmi_properties_clear()
-        PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
+        if self.is_operator:
+            self.operator_tmp_kmi_properties_clear()
+            PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self):
         properties = self.operator_tmp_kmi_properties

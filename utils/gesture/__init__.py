@@ -33,12 +33,14 @@ classes_list = (
     ElementCURE.REMOVE,
     ElementCURE.MOVE,
     ElementCURE.SORT,
+    ElementCURE.COPY,
 
     Gesture,
 
     GestureCURE.ADD,
     GestureCURE.REMOVE,
     GestureCURE.SORT,
+    GestureCURE.COPY,
 )
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(classes_list)
