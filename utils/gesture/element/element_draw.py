@@ -19,7 +19,9 @@ class ElementDraw:
 
         right = split.row(align=True).split(factor=0.4)
         self.draw_item_right(right)
-        right.prop(self, 'radio', text='')
+        right.prop(self, 'radio', text='',
+                   icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+                   emboss=False)
 
         self.draw_item_child(column)
 
@@ -28,11 +30,6 @@ class ElementDraw:
         pref = get_pref()
         row = layout.row()
         row.alert = self.is_show_alert
-        row.prop(self,
-                 'radio',
-                 text='',
-                 icon=icon_two(self.radio, 'RESTRICT_SELECT'),
-                 emboss=False)
         if pref.draw_property.element_show_enabled_button:
             row.prop(self, 'enabled', text='')
 
@@ -85,9 +82,12 @@ class ElementDraw:
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
-            layout.prop(self, 'name')
-            layout.prop(self, 'operator_bl_idname')
-            layout.prop(self, 'operator_properties')
+            row = layout.row(align=True)
+            a = row.column()
+            a.prop(self, 'name')
+            a.prop(self, 'operator_bl_idname')
+            a.prop(self, 'operator_properties')
+            SetDirection.draw_direction(row.column())
 
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
@@ -95,16 +95,14 @@ class ElementDraw:
             row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
             row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
             layout.template_keymap_item_properties(self.operator_tmp_kmi)
-            SetDirection.draw_direction(layout.column())
-            # layout.column().prop(self, 'direction', expand=True)
-
             if self.other_property.auto_update_element_operator_properties:
                 self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:
-            layout.prop(self, 'name')
-            layout.label(text='子手势', icon_value=Icons.get(self.direction).icon_id)
-            SetDirection.draw_direction(layout.column())
-            # layout.column().prop(self, 'direction', expand=True)
+            row = layout.row(align=True)
+            column = row.column()
+            column.prop(self, 'name')
+            column.label(text='子手势', icon_value=Icons.get(self.direction).icon_id)
+            SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
         layout.separator()

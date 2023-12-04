@@ -23,6 +23,7 @@ class SetDirection(Operator):
     @classmethod
     def draw_direction(cls, layout):
         column = layout.column(align=True)
+        column.emboss = 'NONE'
         row = column.row(align=True)
         for index, v in enumerate(('4', '3', '2', '5', None, '1', '6', '7', '8')):
             direction = str(v)
