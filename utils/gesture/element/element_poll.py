@@ -36,52 +36,15 @@ class ElementPoll:
                                 description=poll)
 
     @staticmethod
-    def _is_enabled_addon(addon_name):
+    def __is_enabled_addon__(addon_name):
         return addon_name in bpy.context.preferences.addons
 
     __globals = {"__builtins__": None,
                  'len': len,
-                 'is_enabled_addon': _is_enabled_addon,  # TODO 测试是否启用此插件
+                 'is_enabled_addon': __is_enabled_addon__,  # TODO 测试是否启用此插件
                  #  'max':max,
                  #  'min':min,
                  }
-
-    # @cache
-    @staticmethod
-    def _object_bmesh():
-        return ...
-        # ElementPropPoll.get_bmesh(bpy.context.object)
-
-    @property
-    def _is_select_vert(self) -> bool:
-        """TODO 反回活动网格是否选中了顶点的布尔值
-        每次更新网格时会有卡顿"""
-        bm = self._object_bmesh()
-        if bm:
-            for i in bm.verts:
-                if i.select:
-                    return True
-        return False
-
-    @property
-    def _is_select_edges(self) -> bool:
-        """反回活动网格是否选中了顶点的布尔值"""
-        bm = self._object_bmesh()
-        if bm:
-            for i in bm.edges:
-                if i.select:
-                    return True
-        return False
-
-    @property
-    def _is_select_faces(self) -> bool:
-        """反回活动网格是否选中了顶点的布尔值"""
-        bm = self._object_bmesh()
-        if bm:
-            for i in bm.faces:
-                if i.select:
-                    return True
-        return False
 
     @property
     def poll_args(self):
@@ -105,9 +68,6 @@ class ElementPoll:
                 'mode': C.mode,
                 'tool': C.tool_settings,
                 'mesh': mesh,
-                # 'is_select_vert': self._is_select_vert,
-                # 'is_select_edges': self._is_select_edges,
-                # 'is_select_faces': self._is_select_faces,
                 }
 
     def _from_poll_string_get_bool(self, poll_string: str) -> bool:

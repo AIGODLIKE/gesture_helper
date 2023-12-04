@@ -1,0 +1,195 @@
+{
+  "time": 1701680765.0165207,
+  "blender_version": [
+    4,
+    1,
+    0
+  ],
+  "addon_version": [
+    1,
+    0
+  ],
+  "author": "\u5c0f\u840c\u65b0",
+  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "gesture": {
+    "0": {
+      "name": "Gesture",
+      "enabled": true,
+      "key_string": "{\"type\": \"E\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 1, \"alt\": 1, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Window\"]",
+      "element": {
+        "0": {
+          "name": "Operator",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "2",
+          "operator_properties": "{}",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_bl_idname": "mesh.primitive_monkey_add",
+          "element": {}
+        },
+        "1": {
+          "name": "Selected_Structure If",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "2": {
+          "name": "Selected_Structure Elif",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELIF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "3": {
+          "name": "Selected_Structure Else",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELSE",
+          "poll_string": "True",
+          "element": {
+            "0": {
+              "name": "Operator.001",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "2",
+              "operator_properties": "{}",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_bl_idname": "mesh.primitive_monkey_add",
+              "element": {}
+            },
+            "1": {
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "1",
+              "element": {}
+            },
+            "2": {
+              "name": "Child_Gesture.002",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "3",
+              "element": {}
+            },
+            "3": {
+              "name": "Selected_Structure Elif.001",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "True",
+              "element": {}
+            },
+            "4": {
+              "name": "Child_Gesture.001",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "1",
+              "element": {}
+            },
+            "5": {
+              "name": "Selected_Structure If.001",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "True",
+              "element": {}
+            }
+          }
+        }
+      }
+    },
+    "1": {
+      "name": "Gesture.001",
+      "enabled": true,
+      "key_string": "{\"type\": \"E\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 1, \"alt\": 1, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Window\"]",
+      "element": {
+        "0": {
+          "name": "Operator",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "2",
+          "operator_properties": "{}",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_bl_idname": "mesh.primitive_monkey_add",
+          "element": {}
+        },
+        "1": {
+          "name": "Selected_Structure If",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "2": {
+          "name": "Selected_Structure Elif",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELIF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "3": {
+          "name": "Selected_Structure Else",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELSE",
+          "poll_string": "True",
+          "element": {}
+        },
+        "4": {
+          "name": "Child_Gesture.001",
+          "element_type": "CHILD_GESTURE",
+          "enabled": true,
+          "direction": "1",
+          "element": {}
+        },
+        "5": {
+          "name": "Child_Gesture.002",
+          "element_type": "CHILD_GESTURE",
+          "enabled": true,
+          "direction": "3",
+          "element": {}
+        },
+        "6": {
+          "name": "Child_Gesture",
+          "element_type": "CHILD_GESTURE",
+          "enabled": true,
+          "direction": "1",
+          "element": {}
+        },
+        "7": {
+          "name": "Selected_Structure If.001",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "8": {
+          "name": "Selected_Structure Elif.001",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELIF",
+          "poll_string": "True",
+          "element": {}
+        },
+        "9": {
+          "name": "Operator.001",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "2",
+          "operator_properties": "{}",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_bl_idname": "mesh.primitive_monkey_add",
+          "element": {}
+        }
+      }
+    }
+  }
+}

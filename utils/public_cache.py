@@ -22,7 +22,7 @@ class PublicCache:
     Gesture
 
     Element
-    TODO MOVE
+    MOVE
     """
 
     __element_prev_cache__ = {}  # 上一个element

@@ -1,4 +1,4 @@
-# TODO 导入需要显示一些预设
+# 导入需要显示一些预设
 import json
 import os
 import time
@@ -26,7 +26,7 @@ EXPORT_PROPERTY_ITEM = {
 
 
 class PublicFileOperator(PublicOperator, PublicProperty):
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN'}, )
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN', 'SKIP_SAVE'}, )
     preset_show: BoolProperty(options={'HIDDEN'}, )
     filename_ext = ".json"
     filter_glob: StringProperty(
@@ -34,6 +34,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
+    run_execute: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'}, )
 
     def get_all(self):
         pref = get_pref()
@@ -47,7 +48,9 @@ class PublicFileOperator(PublicOperator, PublicProperty):
     selected_all: BoolProperty(name='选择所有', get=get_all, set=set_all)
 
     def invoke(self, context, event):
-        if self.preset_show:
+        if self.run_execute:
+            return self.execute(context)
+        elif self.preset_show:
             wm = context.window_manager
             return wm.invoke_props_dialog(**{'operator': self, 'width': 300})
         else:
@@ -69,8 +72,9 @@ class Import(PublicFileOperator):
         items = {}
         try:
             for f in os.listdir(PROPERTY_FOLDER):
-                if os.path.isfile(f) and f.lower().endswith('.json'):
-                    items[f] = os.path.join(PROPERTY_FOLDER, f)
+                path = os.path.join(PROPERTY_FOLDER, f)
+                if os.path.isfile(path) and f.lower().endswith('.json'):
+                    items[f] = path
         except Exception as e:
             print(e.args)
         Import.preset = items
@@ -79,6 +83,8 @@ class Import(PublicFileOperator):
     def execute(self, context):
         self.restore()
         self.cache_clear()
+        if self.active_gesture:
+            self.active_gesture.__check_duplicate_name__()
         GestureKeymap.key_restart()
         return {'FINISHED'}
 
@@ -87,10 +93,12 @@ class Import(PublicFileOperator):
         row = layout.row()
 
         row.label(text='导入预设')
-        for k, v in self.preset_items:
-            ops = row.operator(self.bl_idname, text=k)
+        column = layout.column(align=True)
+
+        for k, v in self.preset_items.items():
+            ops = column.operator(self.bl_idname, text=k)
             ops.filepath = v
-            ops.preset_show = False
+            ops.run_execute = True
 
     @cache_update_lock
     def restore(self):
@@ -101,7 +109,7 @@ class Import(PublicFileOperator):
             auth = data['author']
             des = data['description']
             ver = data['addon_version']
-            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{ver}")
+            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{'.'.join(ver)}")
         except Exception as e:
             self.report({'ERROR'}, f"导入错误: {e.args}")
 

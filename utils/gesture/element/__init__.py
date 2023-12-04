@@ -13,7 +13,7 @@ from .element_relationship import ElementRelationship
 from ...public import PublicProperty
 
 
-# TODO 子元素的删除需要单独处理,是子级的子级,不能直接拿到
+# 子元素的删除需要单独处理,是子级的子级,不能直接拿到
 class Element(ElementCURE,
               ElementDraw,
               ElementGpuDraw,
