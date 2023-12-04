@@ -24,8 +24,8 @@ class OtherProperty(PropertyGroup):
     auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
     is_move_element: BoolProperty(
         default=False,
-        description="""TODO 移动元素 整个元素需要只有移动操作符可用"""  # TODO
-    )
+        description="""TODO 移动元素 整个元素需要只有移动操作符可用""",
+        options={"SKIP_SAVE"})
 
 
 class GestureProperty(PropertyGroup):
@@ -192,6 +192,7 @@ class GestureDraw:
         is_element = cls.__name__ == 'ElementCURE'
         pref = get_pref()
         draw_property = pref.draw_property
+        other = pref.other_property
 
         column = layout.column(align=True)
         if is_element:
@@ -221,12 +222,27 @@ class GestureDraw:
             icon='SORT_DESC',
             text=''
         ).is_next = False
-        # if is_element:
-        # column.operator(
-        #     cls.MOVE.bl_idname,
-        #     icon='CANCEL' if pref.other_property.is_move_element else 'GRIP',  # TODO if is move
-        #     text=''
-        # )
+
+        if is_element:
+            moving = other.is_move_element
+            icon = 'DOT' if moving else 'GRIP'
+
+            row = column.row()
+            if moving:
+                move_item = cls.MOVE.move_item
+                row.enabled = bool(move_item and not move_item.is_root)
+            row.operator(
+                cls.MOVE.bl_idname,
+                icon=icon,
+                text=''
+            )
+            if moving:
+                column.operator(
+                    cls.MOVE.bl_idname,
+                    icon='CANCEL',
+                    text=''
+                ).cancel = True
+
         column.operator(
             cls.SORT.bl_idname,
             icon='SORT_ASC',
@@ -354,6 +370,7 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 def register():
     gesture.register()
     register_classes()
+    get_pref().other_property.is_move_element = False
 
 
 def unregister():

@@ -1,3 +1,4 @@
+import bpy
 from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
@@ -14,6 +15,19 @@ class ElementCURE:
 
         parent = self.parent
         PropertySetUtils.set_prop(parent, 'element', {'0': copy_data})
+
+    @property
+    def is_movable(self) -> bool:
+        pe = self.parent_element
+        if pe:
+            if not pe.is_movable:
+                return False
+        move_from = ElementCURE.MOVE.move_item
+
+        is_ok = move_from and (self not in list(move_from.element))
+        move_element = is_ok and move_from != self and self != self.parent_element
+        movable = (self.is_child_gesture or self.is_selected_structure) and move_element
+        return bool(movable)
 
     class ElementPoll(PublicProperty, PublicOperator):
 
@@ -65,15 +79,59 @@ class ElementCURE:
             self.cache_clear()
             return {"FINISHED"}
 
-    # TODO MOVE COPY
     class MOVE(ElementPoll):
         bl_idname = 'gesture.element_move'
         bl_label = '移动手势项'
+        move_item = None
+
+        cancel: BoolProperty(default=False, options={'SKIP_SAVE'})
+
+        @cache_update_lock
+        def move(self):
+            from ... import PropertyGetUtils, PropertySetUtils
+            move_to = getattr(bpy.context, 'move_element', None)
+            move_from = ElementCURE.MOVE.move_item
+
+            if move_from:
+                move_data = PropertyGetUtils.props_data(move_from)
+                if move_to:
+                    PropertySetUtils.set_prop(move_to, 'element', {'0': move_data})
+                else:
+                    PropertySetUtils.set_prop(move_from.parent_gesture, 'element', {'0': move_data})
+                self.other.is_move_element = False
+                move_from.remove()
+            self.cache_clear()
+
+        @property
+        def other(self):
+            return self.pref.other_property
 
         def execute(self, context):
+            other = self.other
+            move_from = ElementCURE.MOVE.move_item
+
+            if self.cancel:
+
+                self.cache_clear()
+                other.is_move_element = False
+                ElementCURE.MOVE.move_item = None
+                return {"FINISHED"}
+            elif move_from:
+                self.move()
+                ae = self.active_element
+                self.cache_clear()
+                if ae:
+                    ae.radio = True
+                    ae.__check_duplicate_name__()
+
+                self.cache_clear()
+                other.is_move_element = False
+                ElementCURE.MOVE.move_item = None
+                return {"FINISHED"}
+
+            ElementCURE.MOVE.move_item = self.active_element
+            other.is_move_element = True
             self.cache_clear()
-            other_property = self.pref.other_property
-            other_property.is_move_element = True
             return {"FINISHED"}
 
     class SORT(ElementPoll):

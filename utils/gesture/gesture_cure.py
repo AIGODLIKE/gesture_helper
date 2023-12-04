@@ -5,10 +5,6 @@ from ..public_cache import cache_update_lock
 
 
 class GestureCURE:
-    # TODO COPY Gesture
-    # def copy(self, from_element):
-    #     ...
-
     @cache_update_lock
     def copy(self):
         from .. import PropertyGetUtils, PropertySetUtils

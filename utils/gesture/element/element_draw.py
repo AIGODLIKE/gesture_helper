@@ -9,11 +9,14 @@ from ...public_ui import icon_two
 
 class ElementDraw:
     def draw_item(self, layout: 'bpy.types.UILayout'):
-        prop = get_pref().draw_property
+        pref = get_pref()
+        draw = pref.draw_property
+        other = pref.other_property
 
+        layout.context_pointer_set('move_element', self)
         column = layout.column(align=True)
 
-        split = column.split(factor=prop.element_split_factor)
+        split = column.split(factor=draw.element_split_factor)
 
         self.draw_item_left(split.row(align=True))
 
@@ -22,6 +25,11 @@ class ElementDraw:
         right.prop(self, 'radio', text='',
                    icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                    emboss=False)
+        if other.is_move_element:
+            from .. import ElementCURE
+            r = right.row()
+            r.enabled = self.is_movable
+            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="CHECKMARK")
 
         self.draw_item_child(column)
 
