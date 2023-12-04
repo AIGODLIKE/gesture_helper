@@ -274,7 +274,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
 
         column.label(text='right_layout')
         column.row(align=True).prop(pref, 'show_page', expand=True)
-        getattr(PreferencesDraw, f'draw_ui_{self.show_page.lower()}')(column)
+        getattr(PreferencesDraw, f'draw_ui_{pref.show_page.lower()}')(column)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout

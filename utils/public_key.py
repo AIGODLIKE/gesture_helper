@@ -4,7 +4,6 @@ import bpy
 from mathutils import Vector, Euler, Matrix
 
 
-
 def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
     keymap_items = get_temp_keymap().keymap_items
     for temp_kmi in keymap_items:
@@ -47,13 +46,20 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
     for item in dictionary:
         prop = getattr(properties, item, None)
         typ = type(prop)
-        if prop and typ == Vector:
-            # 属性阵列-浮点数组
-            dictionary[item] = dictionary[item].to_tuple()
-        elif prop and typ == Euler:
-            dictionary[item] = dictionary[item][:]
-        elif prop and typ == Matrix:
-            dictionary[item] = tuple(i[:] for i in dictionary[item])
+        if prop:
+            if prop and typ == Vector:
+                # 属性阵列-浮点数组
+                dictionary[item] = dictionary[item].to_tuple()
+            elif prop and typ == Euler:
+                dictionary[item] = dictionary[item][:]
+            elif prop and typ == Matrix:
+                dictionary[item] = tuple(i[:] for i in dictionary[item])
+            elif typ == bpy.types.bpy_prop_array:
+                dictionary[item] = dictionary[item][:]
+            elif typ in (str, bool, float, int, set, list, tuple):
+                ...
+            else:
+                print('emm 未知属性,', typ, dictionary[item])
     return dictionary
 
 

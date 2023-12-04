@@ -74,13 +74,19 @@ class ElementOperator(OperatorProperty):
         from ...public_key import get_temp_kmi_by_id_name
         return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
+    @property
+    def operator_tmp_kmi_properties(self):
+
+        from ...public_key import get_kmi_operator_properties
+        properties = get_kmi_operator_properties(self.operator_tmp_kmi)
+        return properties
+
     def to_operator_tmp_kmi(self) -> None:
         self.operator_tmp_kmi_properties_clear()
         PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self):
-        from ...public_key import get_kmi_operator_properties
-        properties = get_kmi_operator_properties(self.operator_tmp_kmi)
+        properties = self.operator_tmp_kmi_properties
         if self.properties != properties:
             self['operator_properties'] = str(properties)
 
