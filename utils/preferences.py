@@ -73,7 +73,7 @@ class ElementDraw:
         column = layout.column(align=True)
         column.operator(
             cls.COPY.bl_idname,
-            icon='OVERLAY',
+            icon='COPYDOWN',
             text=''
         )
         column.operator(
@@ -206,7 +206,7 @@ class GestureDraw:
             )
             column.operator(
                 cls.COPY.bl_idname,
-                icon='OVERLAY',
+                icon='COPYDOWN',
                 text=''
             )
             column.operator(

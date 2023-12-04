@@ -29,7 +29,7 @@ class ElementDraw:
             from .. import ElementCURE
             r = right.row()
             r.enabled = self.is_movable
-            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="CHECKMARK")
+            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="HANDLETYPE_AUTO_CLAMP_VEC")
 
         self.draw_item_child(column)
 
