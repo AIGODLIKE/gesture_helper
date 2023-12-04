@@ -36,12 +36,12 @@ class ElementPoll:
                                 description=poll)
 
     @staticmethod
-    def __is_enabled_addon__(addon_name):
+    def __is_enabled_addon__(addon_name):  # 测试是否启用此插件
         return addon_name in bpy.context.preferences.addons
 
     __globals = {"__builtins__": None,
                  'len': len,
-                 'is_enabled_addon': __is_enabled_addon__,  # TODO 测试是否启用此插件
+                 'is_enabled_addon': __is_enabled_addon__,
                  #  'max':max,
                  #  'min':min,
                  }
