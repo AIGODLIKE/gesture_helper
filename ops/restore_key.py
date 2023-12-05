@@ -17,9 +17,6 @@ class RestoreKey(Operator):
         return keymap
 
     def execute(self, context):
-        km = context.keymap
-        kmi = km.keymap_items.from_id(self.item_id)
-
-        print(self.bl_idname, kmi)
-        km.restore_item_to_default(kmi)
+        from ..utils.public import get_pref
+        get_pref().active_gesture.restore_key()
         return {'FINISHED'}

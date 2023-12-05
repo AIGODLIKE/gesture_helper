@@ -15,6 +15,8 @@ from ..public import get_pref
 from ..public_cache import cache_update_lock
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
+default_key = {'type': 'NONE', 'value': 'PRESS'}
+
 
 class KeymapProperty:
     __key_data__ = {}  # {self:(keymap:kmi)}
@@ -27,7 +29,7 @@ class KeymapProperty:
         self.key_update()
 
     def get_key(self) -> dict:
-        default = {'type': 'NONE', 'value': 'PRESS'}
+        default = default_key.copy()
         key = self.__key__
         if key in self and dict(self[key]):
             default.update(
@@ -86,11 +88,7 @@ class GestureKeymap(KeymapProperty):
         PropertySetUtils.set_property_data(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
-        from ...ops import set_key
         layout.context_pointer_set('keymap', get_temp_keymap())
-
-        layout.operator(set_key.OperatorSetKeyMaps.bl_idname)
-        # layout.operator(set_key.OperatorTempModifierKey.bl_idname)
 
         draw_kmi(layout, self.temp_kmi, self.keymaps)
         if get_pref().draw_property.element_debug_mode:
@@ -141,3 +139,12 @@ class GestureKeymap(KeymapProperty):
     def key_restart(cls) -> None:
         cls.key_remove()
         cls.key_init()
+
+    def restore_key(self):
+        self.key = default_key
+        kmi = self.temp_kmi
+        kmi.map_type = 'KEYBOARD'
+        kmi.shift = False
+        kmi.ctrl = False
+        kmi.alt = False
+        self.to_temp_kmi()

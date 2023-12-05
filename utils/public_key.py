@@ -101,8 +101,9 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     # header bar
     row = split.row(align=True)
     row.prop(kmi, "show_expanded", text="", emboss=False)
+
     # row.prop(kmi, "active", text="", emboss=False)
-    row.operator(set_key.OperatorSetKeyMaps.bl_idname)
+    row.row().operator(set_key.OperatorSetKeyMaps.bl_idname)
 
     row = split.row()
     row.prop(kmi, "map_type", text="")
