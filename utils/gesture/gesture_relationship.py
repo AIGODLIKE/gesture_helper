@@ -50,3 +50,6 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
     def remove_before(self):
         if self.is_last and self.index != 0:  # 被删除项是最后一个
             self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+
+    def rename_before(self):
+        self.to_temp_kmi()

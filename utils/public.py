@@ -150,10 +150,14 @@ class PublicUniqueNamePropertyGroup:
                     self.cache_clear()
                     i.name = self.__generate_new_name__(self.__names__, i.name)
 
+    @update
+    def rename(self):
+        self.__check_duplicate_name__()
+
     name: StringProperty(
         name='名称',
         description='不允许名称重复,如果名称重复则编号 e.g .001 .002 .999 支持重命名到999',
-        update=lambda self, context: self.__check_duplicate_name__()
+        update=lambda self, context: self.rename()
     )
 
 
