@@ -273,10 +273,13 @@ class GestureProperty(GestureGpuDraw):
     @property
     def direction_items(self):
         element = self.trajectory_tree.last_element
+        og = self.operator_gesture
         if element:
             return element.gesture_direction_items
+        elif og:
+            return og.gesture_direction_items
         else:
-            return self.operator_gesture.gesture_direction_items
+            return {}
 
     @property
     def is_draw_gpu(self) -> bool:
@@ -385,9 +388,14 @@ class GestureOperator(GestureHandle):
 
     gesture: StringProperty()
 
+    timer = None
+
     def invoke(self, context, event):
         self.init_invoke(event)
-        context.window_manager.modal_handler_add(self)
+        self.cache_clear()
+        wm = context.window_manager
+        self.timer = wm.event_timer_add(1 / 60, window=context.window)
+        wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
@@ -399,5 +407,12 @@ class GestureOperator(GestureHandle):
     def exit(self):
         self.unregister_draw()
         ops = self.try_running_operator()
+        wm = bpy.context.window_manager
+        wm.event_timer_remove(self.timer)
         print('ops', ops)
+        if not ops:
+            if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
+                return {'FINISHED', 'PASS_THROUGH'}
+        else:
+            ...
         return {'FINISHED'}

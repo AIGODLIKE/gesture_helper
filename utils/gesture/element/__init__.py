@@ -11,6 +11,7 @@ from .element_poll import ElementPoll
 from .element_property import ElementProperty
 from .element_relationship import ElementRelationship
 from ...public import PublicProperty
+from ...public_cache import cache_update_lock
 
 
 # 子元素的删除需要单独处理,是子级的子级,不能直接拿到
@@ -28,5 +29,6 @@ class Element(ElementCURE,
     element: CollectionProperty(name='子级元素', type=Element)
     index_element: IntProperty(name='索引')
 
+    @cache_update_lock
     def init(self):
         getattr(self, f'init_{self.element_type.lower()}')()

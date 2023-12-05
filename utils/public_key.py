@@ -43,6 +43,7 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
     properties = kmi.properties
     prop_keys = dict(properties.items()).keys()
     dictionary = {i: getattr(properties, i, None) for i in prop_keys}
+    del_key = []
     for item in dictionary:
         prop = getattr(properties, item, None)
         typ = type(prop)
@@ -58,8 +59,13 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
                 dictionary[item] = dictionary[item][:]
             elif typ in (str, bool, float, int, set, list, tuple):
                 ...
+            elif typ.__name__ in ['TRANSFORM_OT_shrink_fatten', 'MESH_OT_extrude_faces_indiv']:
+                ...
             else:
                 print('emm 未知属性,', typ, dictionary[item])
+                del_key.append(item)
+    for i in del_key:
+        dictionary.pop(i)
     return dictionary
 
 

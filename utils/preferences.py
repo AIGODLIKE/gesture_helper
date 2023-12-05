@@ -370,7 +370,6 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 def register():
     gesture.register()
     register_classes()
-    get_pref().other_property.is_move_element = False
 
 
 def unregister():

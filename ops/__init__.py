@@ -7,6 +7,7 @@ from . import switch_ui
 from . import export_import
 from . import restore_key
 from . import set_direction
+from .sub import switch_mode
 
 operator_list = (
     switch_ui.SwitchGestureWindow,
@@ -24,6 +25,8 @@ operator_list = (
     restore_key.RestoreKey,
 
     set_direction.SetDirection,
+
+    switch_mode.SwitchMode,
 )
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)

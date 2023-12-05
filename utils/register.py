@@ -18,9 +18,15 @@ def register():
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_init()
 
-    act = get_pref().active_gesture
-    if act:
-        act.to_temp_kmi()
+    pref = get_pref()
+    pref.other_property.is_move_element = False
+
+    ag = pref.active_gesture
+    ae = pref.active_element
+    if ag:
+        ag.to_temp_kmi()
+    if ae:
+        ae.to_operator_tmp_kmi()
 
 
 def unregister():
