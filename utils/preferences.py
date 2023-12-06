@@ -298,7 +298,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
 
         column = self.layout.column(align=True)
 
-        column.label(text='right_layout')
+        # column.label(text='right_layout')
         column.row(align=True).prop(pref, 'show_page', expand=True)
         getattr(PreferencesDraw, f'draw_ui_{pref.show_page.lower()}')(column)
 
@@ -348,10 +348,7 @@ class GesturePreferences(PublicProperty,
     show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
 
     def draw(self, context):
-        from ..ops.switch_ui import SwitchGestureWindow
-
         layout = self.layout
-        layout.operator(SwitchGestureWindow.bl_idname)
         self.right_layout(layout)
 
 
