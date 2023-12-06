@@ -20,13 +20,7 @@ def register():
 
     pref = get_pref()
     pref.other_property.is_move_element = False
-
-    ag = pref.active_gesture
-    ae = pref.active_element
-    if ag:
-        ag.to_temp_kmi()
-    if ae:
-        ae.to_operator_tmp_kmi()
+    pref.update_state()
 
 
 def unregister():

@@ -83,8 +83,7 @@ class Import(PublicFileOperator):
     def execute(self, context):
         self.restore()
         self.cache_clear()
-        if self.active_gesture:
-            self.active_gesture.__check_duplicate_name__()
+        self.update_state()
         GestureKeymap.key_restart()
         return {'FINISHED'}
 

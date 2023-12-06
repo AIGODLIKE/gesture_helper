@@ -132,6 +132,10 @@ class GestureKeymap(KeymapProperty):
     @classmethod
     def key_remove(cls) -> None:
         from ..public import get_pref
+
+        for i in list(GestureKeymap.__key_data__.keys()):
+            i.key_unload()
+
         for g in get_pref().gesture:
             g.key_unload()
 

@@ -91,6 +91,18 @@ class PublicProperty(PublicCacheFunc):
                 last_selected_structure = None
         return direction
 
+    @classmethod
+    def update_state(cls):
+        pref = get_pref()
+        ag = pref.active_gesture
+        ae = pref.active_element
+        if ag:
+            ag.to_temp_kmi()
+            ag.__check_duplicate_name__()
+        if ae:
+            ae.to_operator_tmp_kmi()
+            ae.__check_duplicate_name__()
+
 
 class PublicOperator(Operator):
     event: 'bpy.types.Event'

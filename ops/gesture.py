@@ -384,7 +384,7 @@ class GestureHandle(GestureProperty):
 
 class GestureOperator(GestureHandle):
     bl_idname = 'gesture.operator'
-    bl_label = 'Gesture Opeator'
+    bl_label = 'Gesture Operator'
 
     gesture: StringProperty()
 
@@ -409,10 +409,14 @@ class GestureOperator(GestureHandle):
         ops = self.try_running_operator()
         wm = bpy.context.window_manager
         wm.event_timer_remove(self.timer)
-        print('ops', ops)
+        print('ops', ops, )
+        print(self.is_draw_gesture, self.is_beyond_threshold_confirm, self.is_draw_gpu, self.is_beyond_threshold)
+        print()
+
         if not ops:
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
-                return {'FINISHED', 'PASS_THROUGH'}
+                print('PASS_THROUGH')
+                return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
             ...
         return {'FINISHED'}
