@@ -1,18 +1,40 @@
-from . import system_ops, systems_crud, ui_element_crud
-from ..utils.public import register_module_factory
+import bpy
 
-modules_tuple = (
-    system_ops,
-    systems_crud,
-    ui_element_crud,
+from . import gesture
+from . import set_key
+from . import set_poll
+from . import switch_ui
+from . import export_import
+from . import restore_key
+from . import set_direction
+from .sub import switch_mode
+
+operator_list = (
+    switch_ui.SwitchGestureWindow,
+
+    set_poll.SetPollExpression,
+
+    set_key.OperatorSetKeyMaps,
+    set_key.OperatorTempModifierKey,
+
+    gesture.GestureOperator,
+
+    export_import.Export,
+    export_import.Import,
+
+    restore_key.RestoreKey,
+
+    set_direction.SetDirection,
+
+    switch_mode.SwitchMode,
 )
 
-register_mod, unregister_mod = register_module_factory(modules_tuple)
+register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
 
 
 def register():
-    register_mod()
+    register_classes()
 
 
 def unregister():
-    unregister_mod()
+    unregister_classes()

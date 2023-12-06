@@ -1,17 +1,19 @@
-from ..utils.public import register_module_factory
-from . import template_list
+import bpy.utils
 
-modules_tuple = (
-    template_list,
+from . import ui_list
 
+operator_list = (
+    ui_list.GestureUIList,
+    ui_list.ElementUIList,
+    ui_list.ImportPresetUIList,
 )
 
-register_mod, unregister_mod = register_module_factory(modules_tuple)
+register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
 
 
 def register():
-    register_mod()
+    register_classes()
 
 
 def unregister():
-    unregister_mod()
+    unregister_classes()
