@@ -98,11 +98,6 @@ class PublicCacheFunc(PublicCache):
         element_relationship.get_available_selected_structure.cache_clear()
 
     @staticmethod
-    def poll_cache_clear():
-        # TODO
-        ...
-
-    @staticmethod
     def cache_clear():
         cls = PublicCacheFunc
         if cls.__is_updatable__:
@@ -113,4 +108,3 @@ class PublicCacheFunc(PublicCache):
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()
-            cls.poll_cache_clear()
