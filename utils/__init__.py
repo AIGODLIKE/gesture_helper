@@ -36,6 +36,7 @@ class PropertySetUtils:
             except Exception as e:
                 print('ERROR', typ, pro, value, e)
                 import traceback
+                traceback.print_stack()
                 traceback.print_exc()
 
     @staticmethod

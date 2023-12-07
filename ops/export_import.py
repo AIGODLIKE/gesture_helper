@@ -86,6 +86,7 @@ class Import(PublicFileOperator):
         self.restore()
         self.cache_clear()
         self.update_state()
+        self.cache_clear()
         GestureKeymap.key_restart()
         return {'FINISHED'}
 

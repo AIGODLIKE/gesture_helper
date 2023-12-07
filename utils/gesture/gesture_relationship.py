@@ -1,6 +1,7 @@
 from functools import cache
 
 from ..public import get_pref, PublicUniqueNamePropertyGroup, PublicSortAndRemovePropertyGroup
+from ..public_cache import cache_update_lock
 
 
 @cache
@@ -51,5 +52,6 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
         if self.is_last and self.index != 0:  # 被删除项是最后一个
             self.index = self.index - 1  # 索引-1,保持始终有一个所选项
 
+    @cache_update_lock
     def rename_before(self):
         self.to_temp_kmi()

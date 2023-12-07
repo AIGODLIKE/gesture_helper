@@ -94,6 +94,7 @@ class ElementOperator(OperatorProperty):
         properties = self.operator_tmp_kmi_properties
         if self.properties != properties:
             self['operator_properties'] = str(properties)
+            print('from_tmp_kmi_operator_update_properties', self.name, properties)
 
     @property
     def operator_func(self) -> 'bpy.types.Operator':

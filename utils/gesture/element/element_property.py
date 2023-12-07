@@ -20,7 +20,7 @@ class ElementAddProperty:
     @staticmethod
     @cache_update_lock
     def update_selected_type():
-        PublicCacheFunc.element_cache_clear()
+        PublicCacheFunc.cache_clear()
 
     selected_type: EnumProperty(
         name='选择结构类型',
