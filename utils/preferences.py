@@ -20,9 +20,9 @@ class DrawProperty(PropertyGroup):
     element_debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
-    text_gpu_draw_size: IntProperty(name='Gpu绘制文字大小', default=10, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Gpu绘制文字大小', default=20, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Gpu绘制圆角大小', default=10)
-    text_gpu_draw_margin: IntProperty(name='Gpu绘制Margin', default=10)
+    text_gpu_draw_margin: IntProperty(name='Gpu绘制Margin', default=7)
     line_width: IntProperty(name='线宽', default=5, min=2, max=114)
     background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
     background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))

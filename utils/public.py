@@ -80,7 +80,7 @@ class PublicProperty(PublicCacheFunc):
         for item in iteration:
             if item.is_selected_structure:  # 是选择结构
                 if item.is_available_selected_structure:  # 是可用的选择结构
-                    if item.poll_bool and not last_selected_structure:  # 是True
+                    if item.poll_bool and (not last_selected_structure or item.is_selected_if):  # 是True
                         child = cls.get_gesture_direction_items(item.element)
                         direction.update(child)
                         last_selected_structure = item

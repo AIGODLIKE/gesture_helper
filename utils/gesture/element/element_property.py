@@ -2,6 +2,7 @@ from bpy.props import EnumProperty, BoolProperty, CollectionProperty, IntPropert
 
 from ...enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE, ENUM_RELATIONSHIP, ENUM_GESTURE_DIRECTION
 from ...public import get_pref
+from ...public_cache import PublicCacheFunc, cache_update_lock
 
 
 class ElementAddProperty:
@@ -15,9 +16,16 @@ class ElementAddProperty:
         default='CHILD_GESTURE',
         items=ENUM_ELEMENT_TYPE,
     )
+
+    @staticmethod
+    @cache_update_lock
+    def update_selected_type():
+        PublicCacheFunc.element_cache_clear()
+
     selected_type: EnumProperty(
         name='选择结构类型',
         items=ENUM_SELECTED_TYPE,
+        update=lambda self, context: ElementAddProperty.update_selected_type()
     )
 
     @property

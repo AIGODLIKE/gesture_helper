@@ -31,7 +31,9 @@ def get_temp_kmi(id_name: str, properties: dict) -> 'bpy.types.KeyMapItem':
     """
     keymap_items = get_temp_keymap().keymap_items
     for temp_kmi in keymap_items:
-        if get_kmi_operator_properties(temp_kmi) == properties:
+        if temp_kmi.properties == None:
+            keymap_items.remove(temp_kmi)
+        elif get_kmi_operator_properties(temp_kmi) == properties:
             return temp_kmi
 
     kmi = keymap_items.new(id_name, "NONE", "PRESS")

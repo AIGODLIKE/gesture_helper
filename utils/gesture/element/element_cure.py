@@ -3,7 +3,7 @@ from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
 from ...public import PublicProperty, PublicOperator
-from ...public_cache import cache_update_lock
+from ...public_cache import cache_update_lock, PublicCacheFunc
 
 
 class ElementCURE:
@@ -29,13 +29,13 @@ class ElementCURE:
         movable = (self.is_child_gesture or self.is_selected_structure) and move_element
         return bool(movable)
 
-    class ElementPoll(PublicProperty, PublicOperator):
+    class ElementPoll(PublicProperty, PublicOperator, PublicCacheFunc):
 
         @classmethod
         def poll(cls, context):
             return cls._pref().active_element is not None
 
-    class ADD(PublicOperator, ElementDirectionProperty, PublicProperty):
+    class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
         bl_idname = 'gesture.element_add'
         bl_label = '添加手势项'
 

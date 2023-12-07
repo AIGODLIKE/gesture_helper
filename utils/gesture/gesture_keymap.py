@@ -131,6 +131,7 @@ class GestureKeymap(KeymapProperty):
         for g in get_pref().gesture:
             g.key_unload()
 
+
     @classmethod
     def key_restart(cls) -> None:
         cls.key_remove()
