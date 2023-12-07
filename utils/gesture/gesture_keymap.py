@@ -59,15 +59,7 @@ class KeymapProperty:
 class GestureKeymap(KeymapProperty):
     @property
     def temp_kmi_data(self) -> dict:
-        return dict(
-            PropertyGetUtils.props_data(
-                self.temp_kmi,
-                exclude=(
-                    'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
-                    'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined'
-                )
-            )
-        )
+        return PropertyGetUtils.kmi_props(self.temp_kmi)
 
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':

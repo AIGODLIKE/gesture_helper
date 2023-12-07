@@ -43,15 +43,20 @@ class GestureProperty(PropertyGroup):
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
     color: FloatVectorProperty(name='绘制颜色', size=4, subtype='COLOR', min=0, max=1, default=[0.07, 0.2, 1.0, 1.0])
 
-    automatically_handle_conflicting_keymaps: BoolProperty(name='设置快捷键映射时自动处理冲突快捷键')
+    automatically_handle_conflicting_keymaps: BoolProperty(name='设置快捷键映射时自动处理冲突快捷键', default=True)
+    show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
 
     @staticmethod
     def draw(layout):
         pref = get_pref().gesture_property
         column = layout.column(align=True)
         column.prop(pref, 'automatically_handle_conflicting_keymaps')
+        column.prop(pref, 'show_gesture_keymaps')
+        column.separator()
+        column.label(text='手势')
         column.row().prop(pref, 'color')
         column.prop(pref, 'timeout')
+        column.separator()
         column.prop(pref, 'radius')
         column.prop(pref, 'threshold')
         column.prop(pref, 'threshold_confirm')

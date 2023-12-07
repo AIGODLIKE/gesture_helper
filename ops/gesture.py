@@ -384,7 +384,7 @@ class GestureHandle(GestureProperty):
 
 class GestureOperator(GestureHandle):
     bl_idname = 'gesture.operator'
-    bl_label = '手势操作符'
+    bl_label = 'Gesture Operator'
 
     gesture: StringProperty()
 

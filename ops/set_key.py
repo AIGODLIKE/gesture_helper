@@ -3,12 +3,15 @@ from bpy.props import StringProperty
 from bpy.types import Operator
 
 from ..utils.public import PublicOperator, get_pref, PublicProperty
-from ..utils.public_ui import space_layout, icon_two
+from ..utils.public_ui import icon_two
 
 
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'gesture.set_key_maps'
     bl_label = '设置键位映射'
+
+    __temp_selected_keymaps__ = []  # static
+    add_keymap: StringProperty(options={'SKIP_SAVE'})
 
     keymap_hierarchy: list
 
@@ -16,54 +19,21 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     def active_gesture_keymaps(self):
         return get_pref().active_gesture.keymaps
 
-    @property
-    def selected_keymaps_draw_list(self):  # 绘制
-        from ..utils.property import TempDrawProperty
-        res = []
-
-        def selected(items):
-            for name, space_type, window_type, child in items:
-                select = name + '_selected'
-                sel = TempDrawProperty.temp_prop(select)
-                s = TempDrawProperty.from_name_get_id(select)
-                is_sel = getattr(sel, s, False)
-                if is_sel:
-                    res.append((sel, s, name))
-                selected(child)
-
-        selected(self.keymap_hierarchy)
-        return res
-
-    @property
-    def selected_keymaps(self):  # 仅名称
-        return [name for _, _, name in self.selected_keymaps_draw_list]
-
     def invoke(self, context, event):
+        if self.add_keymap:  # 添加项
+            if self.add_keymap in OperatorSetKeyMaps.__temp_selected_keymaps__:
+                OperatorSetKeyMaps.__temp_selected_keymaps__.remove(self.add_keymap)
+            else:
+                OperatorSetKeyMaps.__temp_selected_keymaps__.append(self.add_keymap)
+            return {'FINISHED'}
+
         from bl_keymap_utils import keymap_hierarchy
         self.keymap_hierarchy = keymap_hierarchy.generate()
-        self.create_temp_prop()
+        OperatorSetKeyMaps.__temp_selected_keymaps__ = self.active_gesture.keymaps
         return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
 
-    def create_temp_prop(self):
-        key_maps = self.active_gesture_keymaps
-        from ..utils.property import TempDrawProperty
-
-        def set_temp_prop(it):
-            for name, space_type, window_type, child in it:
-                select = name + '_selected'
-                expand = name + '_expand'
-
-                sel = TempDrawProperty.temp_prop(select)
-                s = TempDrawProperty.from_name_get_id(select)
-
-                TempDrawProperty.temp_prop(expand)
-                setattr(sel, s, name in key_maps)
-                set_temp_prop(child)
-
-        set_temp_prop(self.keymap_hierarchy)
-
     def execute(self, context):
-        self.active_gesture.keymaps = self.selected_keymaps
+        self.active_gesture.keymaps = self.__class__.__temp_selected_keymaps__
         return {'FINISHED'}
 
     def draw(self, context):
@@ -71,33 +41,32 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         layout.emboss = 'NONE'
         layout.label(text=self.pref.active_gesture.name)
         row = layout.row()
-        self.draw_keymaps(row.column(), self.keymap_hierarchy, 0)
-        self.draw_selected(row.column())
+        self.draw_keymaps(row.column(align=True), self.keymap_hierarchy)
+        self.draw_selected_keymap(row.column(align=True))
 
-    def draw_selected(self, layout):
-        for sel, s, name in self.selected_keymaps_draw_list:
-            row = layout.row()
-            row.prop(sel, s, text='', icon=icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
-            row.label(text=name)
+    def draw_selected_keymap(self, layout):
+        for name in self.__class__.__temp_selected_keymaps__:
+            text = bpy.app.translations.pgettext(name)
+            layout.operator(self.bl_idname, icon='RESTRICT_SELECT_OFF', text=text).add_keymap = name
 
-    def draw_keymaps(self, layout, items, level):
-        from ..utils.property import TempDrawProperty
+    def draw_keymaps(self, layout, items):
+        keymaps = bpy.context.window_manager.keyconfigs.active.keymaps
         for name, space_type, window_type, child in items:
-            row = space_layout(layout, 10, level).row(align=True)
-            select = name + '_selected'
-            expand = name + '_expand'
+            keymap = keymaps.get(name, None)
+            if keymap:
+                layout.emboss = 'NORMAL'
+                column = layout.column()
+                row = column.row(align=True)
+                row.emboss = "NORMAL"
+                row.label(text=keymap.name)
+                show_child = getattr(keymap, 'show_expanded_items', False)
 
-            sel = TempDrawProperty.temp_prop(select)
-            exp = TempDrawProperty.temp_prop(expand)
-            s = TempDrawProperty.from_name_get_id(select)
-            e = TempDrawProperty.from_name_get_id(expand)
-            if child:
-                row.prop(exp, e, text='', icon=icon_two(getattr(exp, e, False), 'TRIA'))
-            row.prop(sel, s, text='', icon=icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
-            row.label(text=name)
-
-            if getattr(exp, e, False):
-                self.draw_keymaps(layout, child, level + 1)
+                if len(child):
+                    row.prop(keymap, 'show_expanded_items', text='')
+                select_icon = icon_two(name in self.__class__.__temp_selected_keymaps__, 'RESTRICT_SELECT')
+                row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = keymap.name
+                if show_child:
+                    self.draw_keymaps(column.box().column(align=True), child)
 
 
 class OperatorTempModifierKey(Operator):

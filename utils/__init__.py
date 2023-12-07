@@ -144,3 +144,15 @@ class PropertyGetUtils:
                 import traceback
                 traceback.print_exc()
         return data
+
+    @staticmethod
+    def kmi_props(kmi):
+        return dict(
+            PropertyGetUtils.props_data(
+                kmi,
+                exclude=(
+                    'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
+                    'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined'
+                )
+            )
+        )

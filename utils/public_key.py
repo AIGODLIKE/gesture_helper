@@ -83,20 +83,44 @@ def get_addon_keymap(keymap) -> 'bpy.types.KeyMap':
         return kk.new(keymap, space_type='EMPTY', region_type='WINDOW')
 
 
-def add_addon_kmi(keymap, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.types.KeyMapItem']:
-    keymap = get_addon_keymap(keymap)
+def add_addon_kmi(keymap_name, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.types.KeyMapItem']:
+    keymap = get_addon_keymap(keymap_name)
+    handle_conflicting_keymaps(keymap_name, kmi_data)
     kmi = keymap.keymap_items.new(**kmi_data)
     simple_set_property(properties, kmi.properties)
     return keymap, kmi
 
 
+def handle_conflicting_keymaps(keymap_name, kmi_data):
+    kc = bpy.context.window_manager.keyconfigs
+    keymap = kc.active.keymaps.get(keymap_name, None)
+
+    return
+    if keymap:
+        print('handle_conflicting_keymaps')
+        print('keymap', keymap)
+        print('kmi_data', kmi_data)
+        for i in keymap.keymap_items:
+            ii = PropertyGetUtils.kmi_props(i)
+            equal = ii == kmi_data
+            ip = get_kmi_operator_properties(i)
+            print(equal, i.idname, ip, ii)
+        print()
+
+
 def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     from ..ops import set_key
-    map_type = kmi.map_type
+    from .public import get_pref
+    from .public_ui import icon_two
 
+    gesture_property = get_pref().gesture_property
+    show_expanded = gesture_property.show_gesture_keymaps
+    show_icon = icon_two(show_expanded, 'TRIA')
+
+    map_type = kmi.map_type
     col = layout.column()
 
-    if kmi.show_expanded:
+    if show_expanded:
         col = col.column(align=True)
         box = col.box()
     else:
@@ -106,7 +130,7 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
 
     # header bar
     row = split.row(align=True)
-    row.prop(kmi, "show_expanded", text="", emboss=False)
+    row.prop(gesture_property, "show_gesture_keymaps", text="", emboss=False, icon=show_icon)
 
     # row.prop(kmi, "active", text="", emboss=False)
     row.row().operator(set_key.OperatorSetKeyMaps.bl_idname)
@@ -131,7 +155,7 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
     from ..ops.restore_key import RestoreKey
     row.operator(RestoreKey.bl_idname, text="", icon='BACK').item_id = kmi.id
     # Expanded, additional event settings
-    if kmi.show_expanded:
+    if show_expanded:
         box = col.box()
         if map_type not in {'TEXTINPUT', 'TIMER'}:
             sub = box.column()
