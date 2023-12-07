@@ -24,7 +24,7 @@ class Gesture(GestureCURE,
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
-    description: StringProperty(default="手势注释")
+    description: StringProperty(default="这是一个手势...")
 
 
 classes_list = (

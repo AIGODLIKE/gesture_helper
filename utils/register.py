@@ -24,10 +24,11 @@ def register():
 
 
 def unregister():
+    from ..ops.export_import import Export
+    Export.backups()
+
     gesture_keymap.GestureKeymap.key_remove()
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
-#
-# TODO 添加快捷键时修改一样的快捷键
-# 修改自定义样式
+# TODO 修改自定义样式

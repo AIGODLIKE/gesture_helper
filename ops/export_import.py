@@ -81,6 +81,8 @@ class Import(PublicFileOperator):
         return items
 
     def execute(self, context):
+        if self.preset_show:
+            return {'FINISHED'}
         self.restore()
         self.cache_clear()
         self.update_state()
@@ -216,3 +218,12 @@ class Export(PublicFileOperator):
     def write_json_file(self):
         with open(self.file_name, 'w+') as file:
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
+
+    @staticmethod
+    def backups():
+        from ..utils.public import ADDON_FOLDER
+        file_path = os.path.join(ADDON_FOLDER, 'auto_backups')
+        try:
+            bpy.ops.gesture.export('EXEC_DEFAULT', author='Emm', description='auto_backups', filepath=file_path)
+        except Exception as e:
+            print(e.args)
