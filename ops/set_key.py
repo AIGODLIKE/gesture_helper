@@ -13,17 +13,35 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     layout: 'bpy.types.UILayout'
 
     keymap_hierarchy: list
-    selected_list: list
+
+    @property
+    def key_maps(self):
+        return get_pref().active_gesture.keymaps
+
+    @property
+    def selected_list(self):
+        from ..utils.property import TempDrawProperty
+        res = []
+
+        def selected(items):
+            for name, space_type, window_type, child in items:
+                select = name + '_selected'
+                sel = TempDrawProperty.temp_prop(select)
+                s = TempDrawProperty.from_name_get_id(select)
+                is_sel = getattr(sel, s, False)
+                if is_sel:
+                    res.append((sel, s, name))
+                selected(child)
+
+        selected(self.keymap_hierarchy)
+
+        return res
 
     def invoke(self, context, event):
         from bl_keymap_utils import keymap_hierarchy
         self.keymap_hierarchy = keymap_hierarchy.generate()
         self.init_invoke()
-        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 300})
-
-    @property
-    def key_maps(self):
-        return get_pref().active_gesture.keymaps
+        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
 
     def init_invoke(self):
         key_maps = self.key_maps
@@ -66,7 +84,6 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         layout.emboss = 'NONE'
         layout.label(text=self.pref.active_gesture.name)
         row = layout.row()
-        self.selected_list = []
         self.draw_keymaps(row.column(), self.keymap_hierarchy, 0)
         self.draw_selected(row.column())
 
@@ -91,10 +108,6 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
                 row.prop(exp, e, text='', icon=icon_two(getattr(exp, e, False), 'TRIA'))
             row.prop(sel, s, text='', icon=icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
             row.label(text=name)
-            is_sel = getattr(sel, s, False)
-
-            if is_sel:
-                self.selected_list.append((sel, s, name))
 
             if getattr(exp, e, False):
                 self.draw_keymaps(layout, child, level + 1)
