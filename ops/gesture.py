@@ -106,12 +106,15 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
         cls.tag_redraw()
 
     def gpu_draw_trajectory_mouse_move(self):
-        color = self.draw_property.mouse_trajectory_color
-        self.draw_2d_line(self.trajectory_mouse_move, color)
+        draw = self.draw_property
+        color = draw.mouse_trajectory_color
+        self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
-        color = self.draw_property.gesture_trajectory_color
-        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=2)
+        draw = self.draw_property
+        color = draw.gesture_trajectory_color
+
+        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_point(self):
         self.draw_2d_points(self.trajectory_tree.points_list)

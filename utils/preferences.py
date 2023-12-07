@@ -23,12 +23,13 @@ class DrawProperty(PropertyGroup):
     text_gpu_draw_size: IntProperty(name='Gpu绘制文字大小', default=10, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Gpu绘制圆角大小', default=10)
     text_gpu_draw_margin: IntProperty(name='Gpu绘制Margin', default=10)
+    line_width: IntProperty(name='线宽', default=5, min=2, max=114)
     background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
     background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))
     text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
     text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
     mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(0.9, 0, 0.7, 1))
-    gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(.9, .9, .9, 1))
+    gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(0, .7, .9, 1))
 
 
 class OtherProperty(PropertyGroup):
@@ -82,6 +83,7 @@ class GestureProperty(PropertyGroup):
         col.prop(draw, 'text_gpu_draw_size')
         col.prop(draw, 'text_gpu_draw_radius')
         col.prop(draw, 'text_gpu_draw_margin')
+        col.prop(draw, 'line_width')
         col.prop(g, 'timeout')
         col.separator()
         col.prop(g, 'radius')
