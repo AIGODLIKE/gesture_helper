@@ -180,18 +180,19 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
         region = bpy.context.region
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
-            self.gpu_draw_trajectory_gesture_point()
             if self.is_draw_gesture:
                 self.gpu_draw_trajectory_gesture_line()
             else:
                 if self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
+            self.gpu_draw_trajectory_gesture_point()
         if self.is_draw_gesture:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.last_region_position)
                 if self.is_window_region_type:
                     self.draw_circle((0, 0), gp.threshold, line_width=2, segments=64)
-                    self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=64)
+                    if self.is_beyond_threshold:
+                        self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=64)
                 draw_items = self.direction_items.values()
                 for d in draw_items:
                     d.draw_gpu_item(self)
@@ -372,7 +373,8 @@ class GestureHandle(GestureProperty):
         self.event_count += 1
         emp = self.event_window_position
         if self.event_count > 2:
-            if not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp:
+            not_draw = not self.is_draw_gesture
+            if (not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp) and not_draw:
                 self.trajectory_mouse_move.append(emp)
                 self.trajectory_mouse_move_time.append(time.time())
             if not len(self.trajectory_tree):

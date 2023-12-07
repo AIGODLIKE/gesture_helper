@@ -31,4 +31,3 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
-# TODO 修改自定义样式
