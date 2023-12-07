@@ -8,18 +8,16 @@ from ..utils.public_ui import space_layout, icon_two
 
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'gesture.set_key_maps'
-    bl_label = 'Set Key Maps'
-
-    layout: 'bpy.types.UILayout'
+    bl_label = '设置键位映射'
 
     keymap_hierarchy: list
 
     @property
-    def key_maps(self):
+    def active_gesture_keymaps(self):
         return get_pref().active_gesture.keymaps
 
     @property
-    def selected_list(self):
+    def selected_keymaps_draw_list(self):  # 绘制
         from ..utils.property import TempDrawProperty
         res = []
 
@@ -34,20 +32,23 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
                 selected(child)
 
         selected(self.keymap_hierarchy)
-
         return res
+
+    @property
+    def selected_keymaps(self):  # 仅名称
+        return [name for _, _, name in self.selected_keymaps_draw_list]
 
     def invoke(self, context, event):
         from bl_keymap_utils import keymap_hierarchy
         self.keymap_hierarchy = keymap_hierarchy.generate()
-        self.init_invoke()
+        self.create_temp_prop()
         return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
 
-    def init_invoke(self):
-        key_maps = self.key_maps
+    def create_temp_prop(self):
+        key_maps = self.active_gesture_keymaps
         from ..utils.property import TempDrawProperty
 
-        def _d(it):
+        def set_temp_prop(it):
             for name, space_type, window_type, child in it:
                 select = name + '_selected'
                 expand = name + '_expand'
@@ -57,26 +58,12 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
                 TempDrawProperty.temp_prop(expand)
                 setattr(sel, s, name in key_maps)
-                _d(child)
+                set_temp_prop(child)
 
-        _d(self.keymap_hierarchy)
+        set_temp_prop(self.keymap_hierarchy)
 
     def execute(self, context):
-        rsc = []
-        from ..utils.property import TempDrawProperty
-
-        def _d(it):
-            for name, space_type, window_type, child in it:
-                select = name + '_selected'
-
-                sel = TempDrawProperty.temp_prop(select)
-                s = TempDrawProperty.from_name_get_id(select)
-                if getattr(sel, s, False):
-                    rsc.append(name)
-                _d(child)
-
-        _d(self.keymap_hierarchy)
-        self.active_gesture.keymaps = rsc
+        self.active_gesture.keymaps = self.selected_keymaps
         return {'FINISHED'}
 
     def draw(self, context):
@@ -88,7 +75,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         self.draw_selected(row.column())
 
     def draw_selected(self, layout):
-        for sel, s, name in self.selected_list:
+        for sel, s, name in self.selected_keymaps_draw_list:
             row = layout.row()
             row.prop(sel, s, text='', icon=icon_two(getattr(sel, s, False), 'RESTRICT_SELECT'))
             row.label(text=name)

@@ -17,7 +17,7 @@ EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'i
                            'operator_properties_sync_to_properties',
                            'operator_properties_sync_from_temp_properties')
 
-EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled']
+EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],

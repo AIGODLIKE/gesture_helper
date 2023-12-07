@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import CollectionProperty, BoolProperty
+from bpy.props import CollectionProperty, BoolProperty, StringProperty
 from bpy.types import PropertyGroup
 
 from .element import Element
@@ -24,6 +24,7 @@ class Gesture(GestureCURE,
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
+    description: StringProperty(default="手势注释")
 
 
 classes_list = (

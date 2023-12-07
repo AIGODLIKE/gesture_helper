@@ -27,3 +27,6 @@ def unregister():
     gesture_keymap.GestureKeymap.key_remove()
     for module in module_list:
         module.unregister()
+#
+# TODO 添加快捷键时修改一样的快捷键
+# 修改自定义样式

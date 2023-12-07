@@ -3,3 +3,4 @@ class GestureDraw:
         layout.prop(self, 'enabled', text='')
         layout.separator()
         layout.prop(self, 'name', text='')
+        layout.label(text=self.description)
