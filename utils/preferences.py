@@ -48,18 +48,28 @@ class GestureProperty(PropertyGroup):
 
     @staticmethod
     def draw(layout):
-        pref = get_pref().gesture_property
-        column = layout.column(align=True)
-        column.prop(pref, 'automatically_handle_conflicting_keymaps')
-        column.prop(pref, 'show_gesture_keymaps')
+        pref = get_pref()
+        g = pref.gesture_property
+        draw = pref.draw_property
+
+        row = layout.row()
+        column = row.column(align=True)
+        column.prop(g, 'automatically_handle_conflicting_keymaps')
+        column.prop(g, 'show_gesture_keymaps')
         column.separator()
-        column.label(text='手势')
-        column.row().prop(pref, 'color')
-        column.prop(pref, 'timeout')
-        column.separator()
-        column.prop(pref, 'radius')
-        column.prop(pref, 'threshold')
-        column.prop(pref, 'threshold_confirm')
+        column.label(text='Debug')
+        column.prop(draw, 'element_debug_mode')
+        column.prop(draw, 'element_debug_draw_gpu_mode')
+
+        col = row.column(align=True)
+        col.label(text='手势:')
+        row = col.row(align=True)
+        row.prop(g, 'color')
+        col.prop(g, 'timeout')
+        col.separator()
+        col.prop(g, 'radius')
+        col.prop(g, 'threshold')
+        col.prop(g, 'threshold_confirm')
 
 
 class ElementDraw:

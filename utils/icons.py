@@ -2,12 +2,15 @@ import os
 
 import bpy.utils.previews
 
+icons = None
+
 
 class Icons:
-    __icons__ = bpy.utils.previews.new()
 
     @classmethod
-    def init(cls):
+    def register(cls):
+        global icons
+        icons = bpy.utils.previews.new()
         from .public import ADDON_FOLDER
         icon_folder = os.path.join(ADDON_FOLDER, r'src\icon')
         for file in os.listdir(icon_folder):
@@ -15,8 +18,14 @@ class Icons:
             file_path = os.path.abspath(os.path.join(icon_folder, file))
             is_png = file.lower().endswith('.png')
             if is_png and os.path.isfile(file_path):
-                cls.__icons__.load(name.lower(), file_path, 'IMAGE', force_reload=True)
+                icons.load(name.lower(), file_path, 'IMAGE', force_reload=True)
 
     @classmethod
     def get(cls, key):
-        return cls.__icons__[key.lower()]
+        global icons
+        return icons[key.lower()]
+
+    @classmethod
+    def unregister(cls):
+        global icons
+        bpy.utils.previews.remove(icons)

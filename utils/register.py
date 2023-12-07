@@ -12,7 +12,7 @@ module_list = (
 
 
 def register():
-    icons.Icons.init()
+    icons.Icons.register()
     for module in module_list:
         module.register()
     public_cache.PublicCacheFunc.cache_clear()
@@ -27,6 +27,7 @@ def unregister():
     gesture_keymap.GestureKeymap.key_remove()
     for module in module_list:
         module.unregister()
+    icons.Icons.unregister()
 #
 # TODO 添加快捷键时修改一样的快捷键
 # 修改自定义样式

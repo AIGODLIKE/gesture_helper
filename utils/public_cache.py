@@ -109,8 +109,8 @@ class PublicCacheFunc(PublicCache):
             caller_name = traceback.extract_stack()[-2][2]
             from .public import get_pref
             print(f'cache_clear 被 {caller_name} 调用')
+            get_pref.cache_clear()
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()
             cls.poll_cache_clear()
-            get_pref.cache_clear()
