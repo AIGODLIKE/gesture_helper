@@ -18,8 +18,10 @@ def check_china(text):
 
 
 @cache
-def from_text_get_dimensions(text):
-    dimensions = blf.dimensions(0, text)
+def from_text_get_dimensions(text, size):
+    font_id = 0
+    blf.size(font_id, size)
+    dimensions = blf.dimensions(font_id, text)
     return dimensions
 
 
@@ -32,8 +34,20 @@ def get_position(direction, radius):
 class ElementGpuProperty:
 
     @property
+    def text_size(self):
+        return self.draw_property.text_gpu_draw_size
+
+    @property
+    def text_margin(self):
+        return self.draw_property.text_gpu_draw_margin
+
+    @property
+    def text_radius(self):
+        return self.draw_property.text_gpu_draw_radius
+
+    @property
     def text_dimensions(self) -> tuple:
-        return from_text_get_dimensions(self.text)
+        return from_text_get_dimensions(self.text, self.text_size)
 
     @property
     def text(self) -> str:
@@ -46,11 +60,13 @@ class ElementGpuProperty:
 
     @property
     def draw_color(self):
-        return (0, 0, 0, 1) if self.is_active_direction else (1, 1, 1, 1)
+        draw = self.draw_property
+        return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
     @property
     def rounded_rectangle_color(self):
-        return (0.8, 0.8, 0.8, 1) if self.is_active_direction else (0.3, 0.3, 0.3, 1)
+        draw = self.draw_property
+        return draw.background_active_color if self.is_active_direction else draw.background_default_color
 
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
@@ -85,9 +101,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             elif direction == '8':
                 offset = (0, -hh / 2)
 
-            margin = 3  # px
+            margin = self.text_margin  # px
             rounded_rectangle = {
-                "radius": 8,
+                "radius": self.text_radius,
                 "position": (0, 0),
                 "width": w + margin * 2,
                 "height": h + margin * 2,
@@ -101,4 +117,4 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 gpu.matrix.translate([x, y])
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
                 self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1)})
-            self.draw_text((0, 0), self.text, color=self.draw_color)
+            self.draw_text((0, 0), self.text, color=self.draw_color, size=self.text_size)

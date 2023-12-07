@@ -10,6 +10,7 @@ from .public_ui import icon_two
 from ..ops import export_import
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
+public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 
 
 class DrawProperty(PropertyGroup):
@@ -19,6 +20,16 @@ class DrawProperty(PropertyGroup):
     element_debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
+    text_gpu_draw_size: IntProperty(name='Gpu绘制文字大小', default=10, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Gpu绘制圆角大小', default=10)
+    text_gpu_draw_margin: IntProperty(name='Gpu绘制Margin', default=10)
+    background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
+    background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))
+    text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
+    text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
+    mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(0.9, 0, 0.7, 1))
+    gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(.9, .9, .9, 1))
+
 
 class OtherProperty(PropertyGroup):
     auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
@@ -26,6 +37,11 @@ class OtherProperty(PropertyGroup):
         default=False,
         description="""移动元素 整个元素需要只有移动操作符可用""",
         options={"SKIP_SAVE"})
+    auto_backups: BoolProperty(
+        name='自动备份',
+        description="在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 'auto_backups' 文件夹",
+        default=True,
+    )
 
 
 class GestureProperty(PropertyGroup):
@@ -41,7 +57,6 @@ class GestureProperty(PropertyGroup):
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(150))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
-    color: FloatVectorProperty(name='绘制颜色', size=4, subtype='COLOR', min=0, max=1, default=[0.07, 0.2, 1.0, 1.0])
 
     automatically_handle_conflicting_keymaps: BoolProperty(name='设置快捷键映射时自动处理冲突快捷键', default=True)
     show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
@@ -51,11 +66,12 @@ class GestureProperty(PropertyGroup):
         pref = get_pref()
         g = pref.gesture_property
         draw = pref.draw_property
+        other = pref.other_property
 
         row = layout.row()
         column = row.column(align=True)
         column.prop(g, 'automatically_handle_conflicting_keymaps')
-        column.prop(g, 'show_gesture_keymaps')
+        column.prop(other, 'auto_backups')
         column.separator()
         column.label(text='Debug')
         column.prop(draw, 'element_debug_mode')
@@ -63,13 +79,22 @@ class GestureProperty(PropertyGroup):
 
         col = row.column(align=True)
         col.label(text='手势:')
-        row = col.row(align=True)
-        row.prop(g, 'color')
+        col.prop(draw, 'text_gpu_draw_size')
+        col.prop(draw, 'text_gpu_draw_radius')
+        col.prop(draw, 'text_gpu_draw_margin')
         col.prop(g, 'timeout')
         col.separator()
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')
+        col.label(text='Color:')
+        row = col.row(align=True)
+        col.prop(draw, 'background_default_color')
+        col.prop(draw, 'background_active_color')
+        col.prop(draw, 'text_default_color')
+        col.prop(draw, 'text_active_color')
+        col.prop(draw, 'mouse_trajectory_color')
+        col.prop(draw, 'gesture_trajectory_color')
 
 
 class ElementDraw:

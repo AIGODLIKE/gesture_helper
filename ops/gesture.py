@@ -106,10 +106,12 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
         cls.tag_redraw()
 
     def gpu_draw_trajectory_mouse_move(self):
-        self.draw_2d_line(self.trajectory_mouse_move, (0.9, 0, 0, 1))
+        color = self.draw_property.mouse_trajectory_color
+        self.draw_2d_line(self.trajectory_mouse_move, color)
 
     def gpu_draw_trajectory_gesture_line(self):
-        self.draw_2d_line(self.trajectory_tree.points_list, color=(0, 1, 0.5, 1), line_width=2)
+        color = self.draw_property.gesture_trajectory_color
+        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=2)
 
     def gpu_draw_trajectory_gesture_point(self):
         self.draw_2d_points(self.trajectory_tree.points_list)
@@ -128,15 +130,15 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                 'region.height:' + str(region.height),
                 'region.width:' + str(region.width),
                 'region.type:' + str(region.type),
-                # '--',
-                # 'mouse_prev_press_x:' + str(self.event.mouse_prev_press_x),
-                # 'mouse_prev_press_y:' + str(self.event.mouse_prev_press_y),
-                # 'mouse_region_x:' + str(self.event.mouse_region_x),
-                # 'mouse_region_y:' + str(self.event.mouse_region_y),
-                # 'mouse_prev_x:' + str(self.event.mouse_prev_x),
-                # 'mouse_prev_y:' + str(self.event.mouse_prev_y),
-                # 'mouse_x:' + str(self.event.mouse_x),
-                # 'mouse_y:' + str(self.event.mouse_y),
+                '--',
+                'mouse_prev_press_x:' + str(self.event.mouse_prev_press_x),
+                'mouse_prev_press_y:' + str(self.event.mouse_prev_press_y),
+                'mouse_region_x:' + str(self.event.mouse_region_x),
+                'mouse_region_y:' + str(self.event.mouse_region_y),
+                'mouse_prev_x:' + str(self.event.mouse_prev_x),
+                'mouse_prev_y:' + str(self.event.mouse_prev_y),
+                'mouse_x:' + str(self.event.mouse_x),
+                'mouse_y:' + str(self.event.mouse_y),
                 ]
         if area.type in ('VIEW_3D',):  # 'PREFERENCES'
             data.insert(0, '--')
@@ -185,11 +187,13 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.last_region_position)
                 if self.is_window_region_type:
-                    # self.draw_circle((0, 0), gp.radius, line_width=2, segments=512)
                     self.draw_circle((0, 0), gp.threshold, line_width=2, segments=64)
                     self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=64)
-                for d in self.direction_items.values():
+                draw_items = self.direction_items.values()
+                for d in draw_items:
                     d.draw_gpu_item(self)
+                if not len(draw_items):
+                    self.draw_text((0, 0), '暂无手势,请添加')
 
     def gpu_draw(self):
         gpu.state.blend_set('ALPHA')

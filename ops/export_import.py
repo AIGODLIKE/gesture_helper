@@ -224,6 +224,7 @@ class Export(PublicFileOperator):
         from ..utils.public import ADDON_FOLDER
         file_path = os.path.join(ADDON_FOLDER, 'auto_backups')
         try:
-            bpy.ops.gesture.export('EXEC_DEFAULT', author='Emm', description='auto_backups', filepath=file_path)
+            if get_pref().other_property.auto_backups:
+                bpy.ops.gesture.export('EXEC_DEFAULT', author='Emm', description='auto_backups', filepath=file_path)
         except Exception as e:
             print(e.args)
