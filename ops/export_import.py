@@ -88,6 +88,7 @@ class Import(PublicFileOperator):
         self.update_state()
         self.cache_clear()
         GestureKeymap.key_restart()
+        Import.preset = {}
         return {'FINISHED'}
 
     def draw(self, context):
@@ -139,14 +140,12 @@ class Export(PublicFileOperator):
     def file_name(self):
         folder = self.filepath
         name = 'Gesture'
-        print('file_name')
-        print(folder)
         if not os.path.exists(folder) or os.path.isfile(folder):
             name = os.path.basename(folder)
             folder = os.path.dirname(folder)
-        print(folder)
-        print(name)
-        return os.path.abspath(os.path.join(folder, f'{name} {self.ymdhm}.json'.replace(':', ' ')))
+        new_name = name if name.endswith('.json') else f'{name} {self.ymdhm}.json'.replace(':', ' ')
+
+        return os.path.abspath(os.path.join(folder, new_name))
 
     @property
     def gesture_data(self):

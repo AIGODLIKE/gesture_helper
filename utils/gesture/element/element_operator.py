@@ -135,4 +135,3 @@ class ElementOperator(OperatorProperty):
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
         self.operator_properties = r'{}'
-(C.object.type == "MESH") or (C.object.type == "CURVE") or (C.object.type == "FONT") or (C.object.type == "GPENCIL") or (C.object.type == "ARMATURE") or (C.object.type == "LATTICE") or (C.object.type == "CURVES") or (C.object.type == "META") or (C.object.type == "SURFACE")

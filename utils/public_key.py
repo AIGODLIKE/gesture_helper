@@ -118,13 +118,14 @@ def handle_conflicting_keymaps(keymap_name, kmi_data):
         for kmi in keymap.keymap_items:
             kmi_props = PropertyGetUtils.kmi_props(kmi)
             is_equal_kmi = kmi_props == kmi_data  # 触发键一样
-            is_menu = kmi.idname in ('wm.call_menu', 'wm.call_panel', 'wm.call_menu_pie')  # 是弹出菜单
+            is_menu = kmi.idname in ('wm.call_menu', 'wm.call_panel', 'wm.call_menu_pie', 'object.delete')  # 是弹出菜单
             is_press = 'value' in kmi_props and kmi_props['value'] == 'PRESS'  # 是按下触发
             not_is_left_mouse = 'type' in kmi_props and kmi_props['type'] != 'LEFTMOUSE'  # 如果是左键不能替换
+            is_x = 'type' in kmi_props and kmi_props['type'] == 'X'  # 如果是删除的按键
 
-            if is_equal_kmi and is_menu and is_press and not_is_left_mouse:
+            if is_equal_kmi and is_menu and is_press and (not_is_left_mouse or is_x):
                 kmi.value = 'RELEASE'
-                
+
                 # print('handle_conflicting_keymaps')
                 # print('keymap', keymap)
                 # print('kmi_data', kmi_data)
