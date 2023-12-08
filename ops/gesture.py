@@ -363,7 +363,6 @@ class GestureHandle(GestureProperty):
         if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
-            print('check_return_previous 清理一下缓存')
 
     def try_running_operator(self):
         element = self.direction_element
@@ -391,7 +390,6 @@ class GestureHandle(GestureProperty):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
                 self.trajectory_tree.append(self.direction_element, emp)
-                print('is_access_child_gesture 清理一下缓存')
                 self.gesture_direction_cache_clear()
             self.check_return_previous()
         return super().init_module(event)
