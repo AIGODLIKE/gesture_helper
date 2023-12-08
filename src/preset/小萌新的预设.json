@@ -1,9 +1,9 @@
 {
-  "time": 1702023051.006729,
+  "time": 1702030930.8238223,
   "blender_version": [
     4,
-    1,
-    0
+    0,
+    2
   ],
   "addon_version": [
     1,
@@ -16,7 +16,7 @@
       "name": "\u5220\u9664 - X",
       "enabled": true,
       "key_string": "{\"type\": \"X\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"Mesh\", \"Curve\", \"Armature\", \"Object Mode\"]",
+      "keymaps_string": "[\"Mesh\", \"Curve\", \"Armature\", \"Object Mode\", \"Curves\", \"Metaball\", \"Lattice\", \"Font\", \"3D View\"]",
       "element": {
         "0": {
           "name": "\u662f3D\u89c6\u56fe",
