@@ -299,7 +299,10 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def is_draw_gpu(self) -> bool:
-        return self.trajectory_tree.last_point is not None
+        context_screen = self.screen
+        screen_ok = bpy.context.screen == context_screen
+        is_ok = self.trajectory_tree.last_point is not None
+        return is_ok and screen_ok
 
     @property
     def is_window_region_type(self):
@@ -397,6 +400,7 @@ class GestureHandle(GestureProperty):
     def update_modal(self, context, event):
         self.register_draw()
         self.area = context.area
+        self.screen = bpy.context.screen
         self.init_module(event)
         self.tag_redraw()
 
