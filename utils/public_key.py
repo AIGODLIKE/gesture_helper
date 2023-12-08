@@ -111,7 +111,7 @@ def add_addon_kmi(keymap_name, kmi_data, properties) -> ['bpy.types.KeyMap', 'bp
 
 def handle_conflicting_keymaps(keymap_name, kmi_data):
     kc = bpy.context.window_manager.keyconfigs
-    keymap = kc.active.keymaps.get(keymap_name, None)
+    keymap = kc.user.keymaps.get(keymap_name, None)
     kmi_data.pop('idname')
 
     if keymap:
