@@ -98,6 +98,11 @@ class PublicCacheFunc(PublicCache):
         element_relationship.get_available_selected_structure.cache_clear()
 
     @staticmethod
+    def gesture_direction_cache_clear():
+        from .public import get_gesture_direction_items
+        get_gesture_direction_items.cache_clear()
+
+    @staticmethod
     def cache_clear():
         cls = PublicCacheFunc
         if cls.__is_updatable__:
@@ -108,3 +113,4 @@ class PublicCacheFunc(PublicCache):
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()
+            cls.gesture_direction_cache_clear()

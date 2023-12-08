@@ -94,7 +94,6 @@ class ElementOperator(OperatorProperty):
         properties = self.operator_tmp_kmi_properties
         if self.properties != properties:
             self['operator_properties'] = str(properties)
-            print('from_tmp_kmi_operator_update_properties', self.name, properties)
 
     @property
     def operator_func(self) -> 'bpy.types.Operator':
@@ -117,9 +116,11 @@ class ElementOperator(OperatorProperty):
             func = self.operator_func
             if func:
                 func(self.operator_context, True, **prop)
+                ops_property = ",".join(
+                    (f"{key}={f'{value}' if type(value) == str else value}" for key, value in prop.items()))
                 print(
                     f'running_operator bpy.ops.{self.operator_bl_idname}'
-                    f'( "{self.operator_context}", {self.operator_properties[1:-1]})',
+                    f'( "{self.operator_context}", {ops_property})',
                 )
         except Exception as e:
             print('running_operator ERROR', e)
@@ -134,3 +135,4 @@ class ElementOperator(OperatorProperty):
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
         self.operator_properties = r'{}'
+(C.object.type == "MESH") or (C.object.type == "CURVE") or (C.object.type == "FONT") or (C.object.type == "GPENCIL") or (C.object.type == "ARMATURE") or (C.object.type == "LATTICE") or (C.object.type == "CURVES") or (C.object.type == "META") or (C.object.type == "SURFACE")

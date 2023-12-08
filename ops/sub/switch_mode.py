@@ -7,8 +7,8 @@ class SwitchMode(Operator):
     bl_idname = 'gesture.switch_mode'
     bl_label = '切换模式'
     type: EnumProperty(items=[
-        ('SWITCH_OBJECT_MODE', 'Switch_Object_Mode', ''),
-        ('SWITCH_OBJECT_EDIT_MODE', 'SWITCH_OBJECT_EDIT_MODE', ''),
+        ('SWITCH_OBJECT_MODE', '切换物体模式', ''),
+        ('SWITCH_OBJECT_EDIT_MODE', '切换物体编辑模式', ''),
     ])
     select_mode: EnumProperty(items=[
         ('VERT', 'VERT', ''),

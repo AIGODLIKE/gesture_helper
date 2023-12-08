@@ -150,10 +150,13 @@ class ElementCURE:
         bl_label = '复制手势项'
 
         def execute(self, _):
-            ag = self.active_element.copy()
+            self.active_element.copy()
             self.cache_clear()
-            print('active_element.collection', self.active_element.collection)
-            self.active_element.radio = True
-            self.active_element.collection[-1].__check_duplicate_name__()
+
+            ae = self.active_element
+            if ae:
+                ae.radio = True
+                ae.collection[-1].__check_duplicate_name__()
+
             self.cache_clear()
             return {"FINISHED"}

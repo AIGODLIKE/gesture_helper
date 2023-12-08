@@ -127,11 +127,9 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
     def execute(self, context):
         if not self.is_popup_menu:
-            print(self, 'execute', self.poll_string)
             act = self.element
             if act.poll_string == 'True':
                 act.poll_string = self.poll_string
             else:
                 act.poll_string += self.poll_string
-
         return {'FINISHED'}

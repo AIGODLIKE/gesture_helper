@@ -2,7 +2,7 @@ from functools import cache
 
 from bpy.props import BoolProperty
 
-from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup)
+from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup, get_gesture_direction_items)
 from ...public_cache import PublicCache, cache_update_lock
 
 
@@ -90,7 +90,7 @@ class Relationship:
 
     @property
     def gesture_direction_items(self):
-        return self.get_gesture_direction_items(self.element)
+        return get_gesture_direction_items(self.element)
 
     @property
     def parent_gesture_direction_items(self):

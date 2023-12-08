@@ -118,17 +118,18 @@ def handle_conflicting_keymaps(keymap_name, kmi_data):
         for kmi in keymap.keymap_items:
             kmi_props = PropertyGetUtils.kmi_props(kmi)
             is_equal_kmi = kmi_props == kmi_data  # 触发键一样
-            is_menu = kmi.idname in ('wm.call_menu',)  # 是弹出菜单
+            is_menu = kmi.idname in ('wm.call_menu', 'wm.call_panel', 'wm.call_menu_pie')  # 是弹出菜单
             is_press = 'value' in kmi_props and kmi_props['value'] == 'PRESS'  # 是按下触发
             not_is_left_mouse = 'type' in kmi_props and kmi_props['type'] != 'LEFTMOUSE'  # 如果是左键不能替换
 
             if is_equal_kmi and is_menu and is_press and not_is_left_mouse:
                 kmi.value = 'RELEASE'
-                print('handle_conflicting_keymaps')
-                print('keymap', keymap)
-                print('kmi_data', kmi_data)
-                print(is_equal_kmi, is_menu, is_press, kmi.idname, kmi_props)
-                print()
+                
+                # print('handle_conflicting_keymaps')
+                # print('keymap', keymap)
+                # print('kmi_data', kmi_data)
+                # print(is_equal_kmi, is_menu, is_press, kmi.idname, kmi_props)
+                # print()
 
 
 def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):

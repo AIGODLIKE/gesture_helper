@@ -317,7 +317,6 @@ class GestureDraw:
         act = pref.active_element
 
         column = layout.column()
-        column.prop(pref, 'enabled')
         split = column.split()
 
         if draw_property.element_show_left_side:  # 绘制属性在左侧
@@ -346,8 +345,13 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
 
         column = self.layout.column(align=True)
 
-        column.row(align=True).prop(pref, 'show_page', expand=True)
-        getattr(PreferencesDraw, f'draw_ui_{pref.show_page.lower()}')(column)
+        row = column.row(align=True)
+        row.prop(pref, 'enabled', text='')
+        row.prop(pref, 'show_page', expand=True)
+        sub_column = column.column(align=True)
+        if pref.is_show_gesture:
+            sub_column.enabled = pref.enabled
+        getattr(PreferencesDraw, f'draw_ui_{pref.show_page.lower()}')(sub_column)
 
     def left_layout(self: bpy.types.Panel, context: bpy.context):
         layout = self.layout
@@ -393,6 +397,14 @@ class GesturePreferences(PublicProperty,
         description="""启用禁用整个系统,主要是keymap""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
     show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
+
+    @property
+    def is_show_gesture(self):
+        return self.show_page == 'GESTURE'
+
+    @property
+    def is_show_property(self):
+        return self.show_page == 'PROPERTY'
 
     def draw(self, context):
         layout = self.layout

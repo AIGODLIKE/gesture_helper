@@ -1,6 +1,11 @@
 from functools import cache
 
-from ..public import get_pref, PublicUniqueNamePropertyGroup, PublicSortAndRemovePropertyGroup
+from ..public import (
+    get_pref,
+    get_gesture_direction_items,
+    PublicUniqueNamePropertyGroup,
+    PublicSortAndRemovePropertyGroup,
+)
 from ..public_cache import cache_update_lock
 
 
@@ -46,7 +51,7 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
 
     @property
     def gesture_direction_items(self):
-        return self.get_gesture_direction_items(self.element)
+        return get_gesture_direction_items(self.element)
 
     def remove_before(self):
         if self.is_last and self.index != 0:  # 被删除项是最后一个
