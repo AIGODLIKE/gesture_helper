@@ -280,14 +280,22 @@ class GestureProperty(GestureGpuDraw):
 
     @property
     def direction_items(self):
-        element = self.trajectory_tree.last_element
-        og = self.operator_gesture
-        if element:
-            return element.gesture_direction_items
-        elif og:
-            return og.gesture_direction_items
+        def get_direction(item):
+            element = item.trajectory_tree.last_element
+            og = item.operator_gesture
+            if element:
+                return element.gesture_direction_items
+            elif og:
+                return og.gesture_direction_items
+            else:
+                return {}
+
+        items = get_direction(self)
+        if not len(items):
+            self.gesture_direction_cache_clear()
+            return get_direction(self)
         else:
-            return {}
+            return items
 
     @property
     def is_draw_gpu(self) -> bool:
@@ -354,7 +362,8 @@ class GestureHandle(GestureProperty):
         points_kd_tree = self.trajectory_tree
         if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
-            self.cache_clear()
+            self.gesture_direction_cache_clear()
+            print('check_return_previous 清理一下缓存')
 
     def try_running_operator(self):
         element = self.direction_element
@@ -382,14 +391,15 @@ class GestureHandle(GestureProperty):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
                 self.trajectory_tree.append(self.direction_element, emp)
-                self.cache_clear()
+                print('is_access_child_gesture 清理一下缓存')
+                self.gesture_direction_cache_clear()
             self.check_return_previous()
         return super().init_module(event)
 
     def update_modal(self, context, event):
+        self.register_draw()
         self.area = context.area
         self.init_module(event)
-        self.register_draw()
         self.tag_redraw()
 
 
