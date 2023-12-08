@@ -354,7 +354,7 @@ class GestureHandle(GestureProperty):
         points_kd_tree = self.trajectory_tree
         if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
-            self.gesture_direction_cache_clear()
+            self.cache_clear()
 
     def try_running_operator(self):
         element = self.direction_element
@@ -382,7 +382,7 @@ class GestureHandle(GestureProperty):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
                 self.trajectory_tree.append(self.direction_element, emp)
-                self.gesture_direction_cache_clear()
+                self.cache_clear()
             self.check_return_previous()
         return super().init_module(event)
 
