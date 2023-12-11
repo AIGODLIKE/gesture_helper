@@ -13,8 +13,6 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     __temp_selected_keymaps__ = []  # static
     add_keymap: StringProperty(options={'SKIP_SAVE'})
 
-    keymap_hierarchy: list
-
     @property
     def active_gesture_keymaps(self):
         return get_pref().active_gesture.keymaps
@@ -50,7 +48,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             layout.operator(self.bl_idname, icon='RESTRICT_SELECT_OFF', text=text).add_keymap = name
 
     def draw_keymaps(self, layout, items):
-        keymaps = bpy.context.window_manager.keyconfigs.active.keymaps
+        keymaps = bpy.context.window_manager.keyconfigs.default.keymaps
         for name, space_type, window_type, child in items:
             keymap = keymaps.get(name, None)
             if keymap:

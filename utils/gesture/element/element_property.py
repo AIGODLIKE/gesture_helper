@@ -84,5 +84,5 @@ class ElementProperty(ElementDirectionProperty):
     collection: CollectionProperty
     enabled: BoolProperty(name='启用', default=True, update=lambda self, context: self.cache_clear())
 
-    show_child: BoolProperty(name='显示子级', default=True)
+    show_child: BoolProperty(name='显示子级', default=False)
     level: IntProperty(name="Element Relationship Level", default=0)
