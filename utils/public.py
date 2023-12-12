@@ -17,6 +17,13 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
+def get_debug(key=None):
+    prop = get_pref().debug_property
+    if key == 'key':
+        return prop.debug_key
+    return prop.debug_mode
+
+
 @cache
 def get_gesture_direction_items(iteration):
     direction = {}
@@ -69,6 +76,10 @@ class PublicProperty(PublicCacheFunc):
         return self.pref.draw_property
 
     @property
+    def debug_property(self):
+        return self.pref.debug_property
+
+    @property
     def other_property(self):
         return self.pref.other_property
 
@@ -103,6 +114,10 @@ class PublicProperty(PublicCacheFunc):
         if ae:
             ae.to_operator_tmp_kmi()
             ae.__check_duplicate_name__()
+
+    @property
+    def is_debug(self):
+        return get_debug()
 
 
 class PublicOperator(Operator):

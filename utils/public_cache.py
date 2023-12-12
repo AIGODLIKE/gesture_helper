@@ -107,9 +107,10 @@ class PublicCacheFunc(PublicCache):
         cls = PublicCacheFunc
         if cls.__is_updatable__:
             caller_name = traceback.extract_stack()[-2][2]
-            from .public import get_pref
-            print(f'gesture cache_clear 被 {caller_name} 调用')
+            from .public import get_pref, get_debug
             get_pref.cache_clear()
+            if get_debug():
+                print(f'gesture cache_clear 被 {caller_name} 调用')
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()

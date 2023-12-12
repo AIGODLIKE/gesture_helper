@@ -116,11 +116,15 @@ class ElementOperator(OperatorProperty):
             func = self.operator_func
             if func:
                 func(self.operator_context, True, **prop)
-                ops_property = ",".join(
-                    (f"{key}={f'{value}' if type(value) == str else value}" for key, value in prop.items()))
+
+                def g(v):
+                    return f'"{v}"' if type(v) is str else v
+
+                ops_property = ", ".join(
+                    (f"{key}={g(value)}" for key, value in prop.items()))
                 print(
                     f'running_operator bpy.ops.{self.operator_bl_idname}'
-                    f'( "{self.operator_context}", {ops_property})',
+                    f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
                 )
         except Exception as e:
             print('running_operator ERROR', e)

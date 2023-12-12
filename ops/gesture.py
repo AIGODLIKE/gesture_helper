@@ -9,7 +9,7 @@ from bpy.props import StringProperty, IntProperty, BoolProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
 
-from ..utils.public import PublicOperator, PublicProperty
+from ..utils.public import PublicOperator, PublicProperty, get_debug
 from ..utils.public_gpu import PublicGpu
 
 
@@ -84,7 +84,8 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
 
     def register_draw(self):
         if not GestureGpuDraw.__temp_draw_class__:
-            print('register_draw')
+            if self.is_debug:
+                print('register_draw')
             for cls in self.space_subclasses():
                 sub_class = {}
                 # bpy.types.Region.bl_rna.properties['type'].enum_items_static
@@ -92,13 +93,15 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                     try:
                         sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
                     except Exception as e:
-                        ...
+                        if self.is_debug:
+                            print(e.args)
                 GestureGpuDraw.__temp_draw_class__[cls] = sub_class
             self.tag_redraw()
 
     @classmethod
     def unregister_draw(cls):
-        print('unregister_draw')
+        if get_debug():
+            print('unregister_draw')
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 c.draw_handler_remove(value, key)
@@ -206,7 +209,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
         if len(bpy.context.screen.areas) > 8:
             if bpy.context.area != self.area:
                 return
-        if self.is_window_region_type and self.pref.draw_property.element_debug_draw_gpu_mode:
+        if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
             self.gpu_draw_debug()
         if self.is_draw_gpu:
             self.gpu_draw_gesture()
@@ -432,13 +435,16 @@ class GestureOperator(GestureHandle):
         ops = self.try_running_operator()
         wm = bpy.context.window_manager
         wm.event_timer_remove(self.timer)
-        print('ops', ops, )
-        print(self.is_draw_gesture, self.is_beyond_threshold_confirm, self.is_draw_gpu, self.is_beyond_threshold)
-        print()
+
+        if self.is_debug:
+            print('ops', ops, )
+            print(self.is_draw_gesture, self.is_beyond_threshold_confirm, self.is_draw_gpu, self.is_beyond_threshold)
+            print()
 
         if not ops:
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
-                print('PASS_THROUGH')
+                if self.is_debug:
+                    print('PASS_THROUGH')
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
             ...

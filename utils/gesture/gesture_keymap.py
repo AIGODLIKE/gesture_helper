@@ -11,7 +11,7 @@ from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
 from .. import PropertyGetUtils, PropertySetUtils
-from ..public import get_pref
+from ..public import get_debug
 from ..public_cache import cache_update_lock
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
@@ -83,7 +83,7 @@ class GestureKeymap(KeymapProperty):
         layout.context_pointer_set('keymap', get_temp_keymap())
 
         draw_kmi(layout, self.temp_kmi, self.keymaps)
-        if get_pref().draw_property.element_debug_mode:
+        if get_debug():
             layout.label(text=str(self.key))
             layout.label(text=str(self.keymaps))
             layout.label(text=str(self.temp_kmi.id))
@@ -96,7 +96,8 @@ class GestureKeymap(KeymapProperty):
             if self in GestureKeymap.__key_data__:  # 还没注销
                 self.key_unload()
             data = GestureKeymap.__key_data__[self] = []
-            print('Add Kmi Data', self.name, self.add_kmi_data)
+            if get_debug('key'):
+                print('Add Kmi Data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
                 data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 
@@ -113,7 +114,8 @@ class GestureKeymap(KeymapProperty):
         caller_name = traceback.extract_stack()[-2][2]
         self.key_unload()
         self.key_load()
-        print("Key Update 被 {} 调用".format(caller_name), self)
+        if get_debug('key'):
+            print("Key Update 被 {} 调用".format(caller_name), self)
 
     @classmethod
     def key_init(cls) -> None:
@@ -130,7 +132,6 @@ class GestureKeymap(KeymapProperty):
 
         for g in get_pref().gesture:
             g.key_unload()
-
 
     @classmethod
     def key_restart(cls) -> None:

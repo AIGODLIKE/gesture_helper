@@ -5,7 +5,7 @@ from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
 from .gesture.element.element_property import ElementAddProperty
-from .public import ADDON_NAME, get_pref, PublicProperty
+from .public import ADDON_NAME, get_pref, PublicProperty, get_debug
 from .public_ui import icon_two
 from ..ops import export_import
 
@@ -16,20 +16,25 @@ public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 class DrawProperty(PropertyGroup):
     element_split_factor: FloatProperty(name='拆分系数', default=0.09, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
-    element_debug_mode: BoolProperty(name='Debug模式', default=False)
-    element_debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
-    text_gpu_draw_size: IntProperty(name='Gpu绘制文字大小', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Gpu绘制圆角大小', default=10)
-    text_gpu_draw_margin: IntProperty(name='Gpu绘制Margin', default=7)
-    line_width: IntProperty(name='线宽', default=5, min=2, max=114)
+    text_gpu_draw_size: IntProperty(name='文字大小', description='Gpu绘制的文字大小', default=20, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=10)
+    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7)
+    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=5, min=2, max=114)
+
     background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
     background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))
     text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
     text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
     mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(0.9, 0, 0.7, 1))
     gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(0, .7, .9, 1))
+
+
+class DebugProperty(PropertyGroup):
+    debug_mode: BoolProperty(name='Debug模式', default=False)
+    debug_key: BoolProperty(name='Debug快捷键', default=False)
+    debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
 
 
 class OtherProperty(PropertyGroup):
@@ -68,15 +73,18 @@ class GestureProperty(PropertyGroup):
         g = pref.gesture_property
         draw = pref.draw_property
         other = pref.other_property
+        debug = pref.debug_property
 
         row = layout.row()
         column = row.column(align=True)
         column.prop(g, 'automatically_handle_conflicting_keymaps')
         column.prop(other, 'auto_backups')
         column.separator()
+
         column.label(text='Debug')
-        column.prop(draw, 'element_debug_mode')
-        column.prop(draw, 'element_debug_draw_gpu_mode')
+        column.prop(debug, 'debug_mode')
+        column.prop(debug, 'debug_key')
+        column.prop(debug, 'debug_draw_gpu_mode')
 
         col = row.column(align=True)
         col.label(text='手势:')
@@ -108,7 +116,7 @@ class ElementDraw:
         if act:
             if not prop.element_show_left_side:
                 act.draw_item_property(layout)
-            if prop.element_debug_mode:
+            if get_debug():
                 act.draw_debug(layout)
         else:
             layout.label(text='请 选择或添加 一个手势元素')
@@ -388,6 +396,7 @@ class GesturePreferences(PublicProperty,
     index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
 
     draw_property: PointerProperty(type=DrawProperty)
+    debug_property: PointerProperty(type=DebugProperty)
     other_property: PointerProperty(type=OtherProperty)
     gesture_property: PointerProperty(type=GestureProperty)
     add_element_property: PointerProperty(type=AddElementProperty)
@@ -413,6 +422,7 @@ class GesturePreferences(PublicProperty,
 
 classes_list = (
     DrawProperty,
+    DebugProperty,
     OtherProperty,
     GestureProperty,
     AddElementProperty,

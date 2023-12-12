@@ -32,9 +32,11 @@ class ElementUIList(UIList,
         icon = icon_two(prop.element_show_left_side, 'ALIGN')
         row.prop(prop, 'element_show_left_side', icon=icon)
 
+        debug = self.debug_property
         row = column.row(align=True)
-        row.prop(prop, 'element_debug_mode', icon='GHOST_ENABLED')
-        row.prop(prop, 'element_debug_draw_gpu_mode', icon='INFO')
+        row.prop(debug, 'debug_mode', icon='GHOST_ENABLED')
+        row.prop(debug, 'debug_key', icon='GHOST_ENABLED')
+        row.prop(debug, 'debug_draw_gpu_mode', icon='INFO')
 
 
 class ImportPresetUIList(UIList,
