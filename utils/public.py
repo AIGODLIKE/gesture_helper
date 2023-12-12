@@ -108,12 +108,15 @@ class PublicProperty(PublicCacheFunc):
         pref = get_pref()
         ag = pref.active_gesture
         ae = pref.active_element
-        if ag:
-            ag.to_temp_kmi()
-            ag.__check_duplicate_name__()
-        if ae:
-            ae.to_operator_tmp_kmi()
-            ae.__check_duplicate_name__()
+        try:
+            if ag:
+                ag.to_temp_kmi()
+                ag.__check_duplicate_name__()
+            if ae:
+                ae.to_operator_tmp_kmi()
+                ae.__check_duplicate_name__()
+        except Exception as e:
+            ...
 
     @property
     def is_debug(self):
