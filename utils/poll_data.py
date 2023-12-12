@@ -1,6 +1,6 @@
 class PollData:
     POLL_ACTIVE_OBJECT_TYPE = {
-        'prefix': 'C.object.type == ',
+        'prefix': 'C.object and C.object.type == ',
         'suffix': '',
         'name': '活动项物体类型',
         'items': [

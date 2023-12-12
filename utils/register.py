@@ -18,6 +18,7 @@ def register():
     for module in module_list:
         module.register()
     public_cache.PublicCacheFunc.cache_clear()
+    gesture_keymap.GestureKeymap.key_remove()
     gesture_keymap.GestureKeymap.key_init()
 
     pref = get_pref()

@@ -356,7 +356,7 @@
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
-                  "poll_string": "(C.object.type == \"MESH\")",
+                  "poll_string": "(C.object and C.object.type == \"MESH\")",
                   "element": {
                     "0": {
                       "name": "\u6e05\u9664\u9876\u70b9\u7ec4\u6743\u91cd",
