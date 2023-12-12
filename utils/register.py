@@ -1,3 +1,5 @@
+import bpy
+
 from . import preferences, public_cache, property, icons
 from .gesture import gesture_keymap
 from .public import get_pref
@@ -20,7 +22,8 @@ def register():
 
     pref = get_pref()
     pref.other_property.is_move_element = False
-    pref.update_state()
+
+    bpy.app.timers.register(lambda: pref.update_state(), first_interval=0.1)
 
 
 def unregister():
