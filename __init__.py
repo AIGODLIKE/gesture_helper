@@ -8,7 +8,7 @@ bl_info = {
     "blender": (3, 0, 0),
     "location": "Tool Panel",
     "support": "COMMUNITY",
-    # "category": "幻之境",
+    "category": "幻之境",
 }
 
 ADDON_VERSION = bl_info['version']
