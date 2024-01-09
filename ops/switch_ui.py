@@ -1,15 +1,15 @@
 import bpy
 from bpy.props import BoolProperty
-
+from bpy.app.translations import pgettext as _
 from ..utils.public import PublicOperator
 
 
 class SwitchGestureWindow(PublicOperator):
-    bl_label = '弹出手势窗口'
+    bl_label = 'Pop up gesture window'
     bl_idname = 'wm.popup_gesture_window'
-    bl_description = '弹出手势窗口'
+    bl_description = 'Pop up gesture window'
 
-    popup_window: BoolProperty(default=False, name='弹出窗口',
+    popup_window: BoolProperty(default=False, name=_('Pop up gesture window'),
                                options={'SKIP_SAVE'})
     window_fullscreen_toggle: BoolProperty()
 

@@ -1,23 +1,23 @@
 import bpy
 from bpy.props import StringProperty, BoolProperty, IntProperty
-
+from bpy.app.translations import pgettext as _
 from ..utils.poll_data import PollData
 from ..utils.public import PublicOperator, PublicProperty
 
 
 class SetPollExpression(PublicProperty, PublicOperator, PollData):
-    bl_label = '设置条件表达式'
+    bl_label = 'set poll expression'
     bl_idname = 'gesture.set_poll_expression'
 
     is_popup_menu: BoolProperty(default=True, **{'options': {'HIDDEN', 'SKIP_SAVE', }})
     width: IntProperty(default=1000)
 
-    is_not: BoolProperty(name='取反', description='可以理解成取反')
-    is_set_item_poll: BoolProperty(name='是设置一个项的poll',
+    is_not: BoolProperty(name=_('negation'), description=_('negation'))
+    is_set_item_poll: BoolProperty(name=_('Is to set the poll for an item'),
                                    )
 
     poll_string: StringProperty(
-        name='条件',
+        name=_('condition'),
         default='True',
     )
 
@@ -29,30 +29,30 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         from ..utils.public_ui import draw_extend_ui
         is_draw, lay = draw_extend_ui(layout,
                                       f'draw_logical_operator',
-                                      label='语法解释',
+                                      label='Grammatical explanations',
                                       default_extend=False,
                                       )
         if is_draw:
-            text = '可使用Python逻辑运算符或表达式'
+            text = _('Can use Python logical operators or expressions')
             lay.label(text=text)
-            text = '  and     x and y 布尔"与" - 如果 x 为 False，x and y 返回 x 的值，否则返回 y 的计算值 . '
+            text = _("  and     x and y boolean 'and' - If x is False, x and y return the value of x, otherwise, return the computed value of y. ")
             lay.label(text=text)
-            text = '  or       x or y 布尔"或" - 如果 x 是 True，它返回 x 的值，否则它返回 y 的计算值 .'
+            text = _("  or       x or y boolean 'or' - If x is True, it returns the value of x; otherwise, it returns the computed value of y")
             lay.label(text=text)
-            text = '  not      not x 布尔"非" - 如果 x 为 True，返回 False  .如果 x 为 False，它返回 True .'
+            text = _(" not      not x boolean 'not' - If x is True, returns False. If x is False, it returns True")
             lay.label(text=text)
 
             lay.separator()
-            text = '''参数:'''
+            text = _('''parameter:''')
             lay.label(text=text)
 
             texts = {'bpy: bpy': '',
-                     'C: bpy.context': 'blender 上下文',
-                     'D: bpy.data': 'blender数据',
-                     'O: bpy.context.object': '活动物体',
-                     'mode: C.mode': '模式',
-                     'tool: C.tool_settings': '工具设置',
-                     'mesh: bpy.context.object.data': '网格,如果物体不为mesh则为None',
+                     'C: bpy.context': 'blender context',
+                     'D: bpy.data': 'blender data',
+                     'O: bpy.context.object': 'active object',
+                     'mode: C.mode': 'mode',
+                     'tool: C.tool_settings': 'tool settings',
+                     'mesh: bpy.context.object.data': 'Grid, None if the object is not a mesh',
                      # 'is_select_vert: bool': '是否选择了顶点的布尔值',
                      }
             for k, v in texts.items():
@@ -72,7 +72,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         layout = self.layout
         col = layout.column()
         sp = col.split(factor=0.05, align=True)
-        sp.label(text='条件:')
+        sp.label(text='condition:')
         sp.prop(self.element, 'poll_string', text='')
         self.draw_logical_operator(col)
 

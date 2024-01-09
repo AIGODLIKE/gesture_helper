@@ -110,7 +110,7 @@ class PublicCacheFunc(PublicCache):
             from .public import get_pref, get_debug
             get_pref.cache_clear()
             if get_debug():
-                print(f'gesture cache_clear 被 {caller_name} 调用')
+                print(f'gesture cache_clear called by {caller_name}')
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()

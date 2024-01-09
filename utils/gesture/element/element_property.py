@@ -1,5 +1,5 @@
 from bpy.props import EnumProperty, BoolProperty, CollectionProperty, IntProperty
-
+from bpy.app.translations import pgettext as _
 from ...enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE, ENUM_RELATIONSHIP, ENUM_GESTURE_DIRECTION
 from ...public import get_pref
 from ...public_cache import PublicCacheFunc, cache_update_lock
@@ -7,12 +7,12 @@ from ...public_cache import PublicCacheFunc, cache_update_lock
 
 class ElementAddProperty:
     relationship: EnumProperty(
-        name='关系',
+        name='relationship',
         default='SAME',
         items=ENUM_RELATIONSHIP,
     )
     element_type: EnumProperty(
-        name='类型',
+        name='type',
         default='CHILD_GESTURE',
         items=ENUM_ELEMENT_TYPE,
     )
@@ -23,7 +23,7 @@ class ElementAddProperty:
         PublicCacheFunc.cache_clear()
 
     selected_type: EnumProperty(
-        name='选择结构类型',
+        name='selection structure type',
         items=ENUM_SELECTED_TYPE,
         update=lambda self, context: ElementAddProperty.update_selected_type()
     )
@@ -70,7 +70,7 @@ class ElementAddProperty:
 # 显示的属性,不用Blender那些,使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):
     direction: EnumProperty(
-        name='方向',
+        name='direction',
         items=ENUM_GESTURE_DIRECTION,
         default='8'
     )
@@ -82,7 +82,7 @@ class ElementDirectionProperty(ElementAddProperty):
 
 class ElementProperty(ElementDirectionProperty):
     collection: CollectionProperty
-    enabled: BoolProperty(name='启用', default=True, update=lambda self, context: self.cache_clear())
+    enabled: BoolProperty(name=_('enable'), default=True, update=lambda self, context: self.cache_clear())
 
-    show_child: BoolProperty(name='显示子级', default=False)
-    level: IntProperty(name="Element Relationship Level", default=0)
+    show_child: BoolProperty(name=_('displays the children'), default=False)
+    level: IntProperty(name=_("Element Relationship Level"), default=0)

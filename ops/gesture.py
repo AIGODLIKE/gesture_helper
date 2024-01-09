@@ -11,7 +11,7 @@ from mathutils.kdtree import KDTree
 
 from ..utils.public import PublicOperator, PublicProperty, get_debug
 from ..utils.public_gpu import PublicGpu
-
+from bpy.app.translations import pgettext as _
 
 class GesturePointKDTree:
 
@@ -200,7 +200,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
                 for d in draw_items:
                     d.draw_gpu_item(self)
                 if not len(draw_items):
-                    self.draw_text((0, 0), '暂无手势,请添加')
+                    self.draw_text((0, 0), _('No gestures available, please add one'))
 
     def gpu_draw(self):
         gpu.state.blend_set('ALPHA')

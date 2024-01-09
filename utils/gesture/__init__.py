@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import CollectionProperty, BoolProperty, StringProperty
 from bpy.types import PropertyGroup
-
+from bpy.app.translations import pgettext as _
 from .element import Element
 from .element.element_cure import ElementCURE
 from .gesture_cure import GestureCURE
@@ -24,7 +24,7 @@ class Gesture(GestureCURE,
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
-    description: StringProperty(default="这是一个手势...")
+    description: StringProperty(default=_("This is a gesture"))
 
 
 classes_list = (

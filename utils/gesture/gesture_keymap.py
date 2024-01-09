@@ -14,7 +14,7 @@ from .. import PropertyGetUtils, PropertySetUtils
 from ..public import get_debug
 from ..public_cache import cache_update_lock
 from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
-
+from bpy.app.translations import pgettext as _
 default_key = {'type': 'NONE', 'value': 'PRESS'}
 
 
@@ -47,8 +47,8 @@ class KeymapProperty:
         self[self.__keymaps__] = value
         self.key_update()
 
-    key = property(fget=get_key, fset=set_key, doc='用来存快捷键的键位数据')
-    keymaps = property(fget=get_keymap, fset=set_keymap, doc='用来存快捷键可用的区域')
+    key = property(fget=get_key, fset=set_key, doc=_('Keybinding data used for storing shortcuts'))
+    keymaps = property(fget=get_keymap, fset=set_keymap, doc=_('"Region used to store available shortcuts'))
 
     key_string: StringProperty(get=lambda self: json.dumps(self.get_key()),
                                set=lambda self, value: self.set_key(json.loads(value)))
@@ -115,7 +115,7 @@ class GestureKeymap(KeymapProperty):
         self.key_unload()
         self.key_load()
         if get_debug('key'):
-            print("Key Update 被 {} 调用".format(caller_name), self)
+            print("Key Update is called by {}".format(caller_name), self)
 
     @classmethod
     def key_init(cls) -> None:

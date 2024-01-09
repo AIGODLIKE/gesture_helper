@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bpy.props import CollectionProperty, StringProperty, IntProperty
 from bpy.types import PropertyGroup
-
+from bpy.app.translations import pgettext as _
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
 from .element_gpu_draw import ElementGpuDraw
@@ -26,8 +26,8 @@ class Element(ElementCURE,
               PublicProperty,
 
               PropertyGroup):
-    element: CollectionProperty(name='子级元素', type=Element)
-    index_element: IntProperty(name='索引')
+    element: CollectionProperty(name=_('Child elements'), type=Element)
+    index_element: IntProperty(name=_('index'))
 
     @cache_update_lock
     def init(self):

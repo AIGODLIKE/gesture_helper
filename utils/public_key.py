@@ -80,7 +80,7 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
             ]:
                 ...
             else:
-                print('emm 未知属性,', typ, dictionary[item])
+                print('Hmm, Unknown Attribute,', typ, dictionary[item])
                 del_key.append(item)
     for i in del_key:
         dictionary.pop(i)

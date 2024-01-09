@@ -84,7 +84,7 @@ class ElementDraw:
             layout.prop(self, 'name')
 
             row = layout.row()
-            row.label(text='选择结构', icon_value=icon)
+            row.label(text='Select the structure', icon_value=icon)
             row.operator(SetPollExpression.bl_idname)
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
@@ -109,7 +109,7 @@ class ElementDraw:
             row = layout.row(align=True)
             column = row.column()
             column.prop(self, 'name')
-            column.label(text='子手势', icon_value=Icons.get(self.direction).icon_id)
+            column.label(text='subgesture', icon_value=Icons.get(self.direction).icon_id)
             SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):

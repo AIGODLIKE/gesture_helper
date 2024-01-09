@@ -37,7 +37,7 @@ class ElementCURE:
 
     class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
         bl_idname = 'gesture.element_add'
-        bl_label = '添加手势项'
+        bl_label = 'Add a gesture item'
 
         @property
         def collection(self):
@@ -72,7 +72,7 @@ class ElementCURE:
 
     class REMOVE(ElementPoll):
         bl_idname = 'gesture.element_remove'
-        bl_label = '删除手势项'
+        bl_label = 'Delete the gesture item'
 
         def execute(self, context):
             self.pref.active_element.remove()
@@ -81,7 +81,7 @@ class ElementCURE:
 
     class MOVE(ElementPoll):
         bl_idname = 'gesture.element_move'
-        bl_label = '移动手势项'
+        bl_label = 'Move the gesture item'
         move_item = None
 
         cancel: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -136,7 +136,7 @@ class ElementCURE:
 
     class SORT(ElementPoll):
         bl_idname = 'gesture.element_sort'
-        bl_label = '排序手势项'
+        bl_label = 'Sort gesture items'
 
         is_next: BoolProperty()
 
@@ -147,7 +147,7 @@ class ElementCURE:
 
     class COPY(ElementPoll):
         bl_idname = 'gesture.element_copy'
-        bl_label = '复制手势项'
+        bl_label = 'Duplicate gesture items'
 
         def execute(self, _):
             self.active_element.copy()

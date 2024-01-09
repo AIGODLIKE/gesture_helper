@@ -12,7 +12,7 @@ from ..utils import PropertyGetUtils, PropertySetUtils
 from ..utils.gesture import GestureKeymap
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
-
+from bpy.app.translations import pgettext as _
 EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'index_element',
                            'operator_properties_sync_to_properties',
                            'operator_properties_sync_from_temp_properties')
@@ -45,7 +45,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
         for i in pref.gesture:
             i.selected = value
 
-    selected_all: BoolProperty(name='选择所有', get=get_all, set=set_all)
+    selected_all: BoolProperty(name='Select All', get=get_all, set=set_all)
 
     def invoke(self, context, event):
         if self.run_execute:
@@ -59,7 +59,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 
 
 class Import(PublicFileOperator):
-    bl_label = '导入手势'
+    bl_label = 'Import gestures'
     bl_idname = 'gesture.import'
     preset = {}
 
@@ -95,7 +95,7 @@ class Import(PublicFileOperator):
         layout = self.layout
         row = layout.row()
 
-        row.label(text='导入预设')
+        row.label(text='Import presets')
         column = layout.column(align=True)
 
         for k, v in self.preset_items.items():
@@ -113,9 +113,9 @@ class Import(PublicFileOperator):
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
-            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{ver}")
+            self.report({'INFO'}, f"Import successful! Imported {len(restore)} records Author: {auth} Comments: {des} Version: {ver}")
         except Exception as e:
-            self.report({'ERROR'}, f"导入错误: {e.args}")
+            self.report({'ERROR'}, f"Import error: {e.args}")
             import traceback
             traceback.print_stack()
             traceback.print_exc()
@@ -126,11 +126,11 @@ class Import(PublicFileOperator):
 
 
 class Export(PublicFileOperator):
-    bl_label = '导出手势'
+    bl_label = 'Export gestures'
     bl_idname = 'gesture.export'
 
-    author: StringProperty(name='作者', default='小萌新')
-    description: StringProperty(name='描述', default='这是一个描述')
+    author: StringProperty(name=_('author'), default='小萌新')
+    description: StringProperty(name='description', default='description')
 
     @property
     def ymdhm(self):
@@ -209,10 +209,10 @@ class Export(PublicFileOperator):
 
     def execute(self, context):
         if not len(self.export_data['gesture']):
-            self.report({'WARNING'}, "未选择导出项")
+            self.report({'WARNING'}, "No export items selected")
         else:
             self.write_json_file()
-            self.report({'INFO'}, "导出完成!")
+            self.report({'INFO'}, "Export completed!")
         return {'FINISHED'}
 
     def write_json_file(self):

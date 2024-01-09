@@ -8,44 +8,44 @@ from .gesture.element.element_property import ElementAddProperty
 from .public import ADDON_NAME, get_pref, PublicProperty, get_debug
 from .public_ui import icon_two
 from ..ops import export_import
-
+from bpy.app.translations import pgettext as _
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 
 
 class DrawProperty(PropertyGroup):
-    element_split_factor: FloatProperty(name='拆分系数', default=0.09, max=0.95, min=0.01)
-    element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
-    element_show_left_side: BoolProperty(name='显示在左侧', default=False)
+    element_split_factor: FloatProperty(name=_('Split Coefficient'), default=0.09, max=0.95, min=0.01)
+    element_show_enabled_button: BoolProperty(name=_('Display Enable/Disable Button'), default=True)
+    element_show_left_side: BoolProperty(name=_('Display on the Left'), default=False)
 
-    text_gpu_draw_size: IntProperty(name='文字大小', description='Gpu绘制的文字大小', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=10)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7)
-    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=5, min=2, max=114)
+    text_gpu_draw_size: IntProperty(name=_('Font Size'), description=_('Text Size for GPU Rendering'), default=20, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name=_('Corner Radius Size'), description=_('Corner Radius Size for GPU Rendering'), default=10)
+    text_gpu_draw_margin: IntProperty(name=_('Margin'), description=_('Margin Size for GPU Rendering'), default=7)
+    line_width: IntProperty(name=_('Line Width'), description=_('Line Width Size for GPU Rendering'), default=5, min=2, max=114)
 
-    background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
-    background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))
-    text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
-    text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
-    mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(.1, .9, 1, 1))
-    gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(0, .7, .9, 1))
+    background_default_color: FloatVectorProperty(name=_('Default Background Color'), **public_color, default=(.05, .05, .05, 1))
+    background_active_color: FloatVectorProperty(name=_('Active Background Color'), **public_color, default=(.2, .2, .2, 1))
+    text_default_color: FloatVectorProperty(name=_('Default Text Color'), **public_color, default=(.8, .8, .8, 1))
+    text_active_color: FloatVectorProperty(name=_('Active Text Color'), **public_color, default=(1, 1, 1, 1))
+    mouse_trajectory_color: FloatVectorProperty(name=_('Mouse Trail Color'), **public_color, default=(.1, .9, 1, 1))
+    gesture_trajectory_color: FloatVectorProperty(name=_('Gesture Trail Color'), **public_color, default=(0, .7, .9, 1))
 
 
 class DebugProperty(PropertyGroup):
-    debug_mode: BoolProperty(name='Debug模式', default=False)
-    debug_key: BoolProperty(name='Debug快捷键', default=False)
-    debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
+    debug_mode: BoolProperty(name=_('Debug Mode'), default=False)
+    debug_key: BoolProperty(name=_('Debug Shortcut'), default=False)
+    debug_draw_gpu_mode: BoolProperty(name=_('Debug Drawing in GPU Mode'), default=False)
 
 
 class OtherProperty(PropertyGroup):
-    auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
+    auto_update_element_operator_properties: BoolProperty(name=_('Auto-Update Action Properties'))
     is_move_element: BoolProperty(
         default=False,
-        description="""移动元素 整个元素需要只有移动操作符可用""",
+        description="""Move Element: the entire element requires only the move operator to be available""",
         options={"SKIP_SAVE"})
     auto_backups: BoolProperty(
-        name='自动备份',
-        description="在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 'auto_backups' 文件夹",
+        name='Automatic Backup',
+        description="Automatically save data every time the plugin is deactivated, to avoid data loss due to accidental operations. The automatic save path is in the 'auto_backups' folder of the plugin's path",
         default=True,
     )
 
@@ -59,13 +59,13 @@ class GestureProperty(PropertyGroup):
         if self.threshold > self.threshold_confirm:
             self['threshold_confirm'] = self.threshold_confirm + 20
 
-    timeout: IntProperty(name='Gesture TimeOut(ms)', **gen_gesture_prop(300, 'TIME'))
-    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(150))
-    threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
-    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
+    timeout: IntProperty(name=_('Gesture TimeOut(ms)'), **gen_gesture_prop(300, 'TIME'))
+    radius: IntProperty(name=_('Gesture Radius'), **gen_gesture_prop(150))
+    threshold: IntProperty(name=_('Threshold'), **gen_gesture_prop(30))
+    threshold_confirm: IntProperty(name=_('Confirm Threshold') ,**gen_gesture_prop(50))
 
-    automatically_handle_conflicting_keymaps: BoolProperty(name='设置快捷键映射时自动处理冲突快捷键', default=True)
-    show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
+    automatically_handle_conflicting_keymaps: BoolProperty(name=_('Automatically handle conflicting shortcuts when setting key mappings'), default=True)
+    show_gesture_keymaps: BoolProperty(name=_('Display Gesture Item Shortcuts'))
 
     @staticmethod
     def draw(layout):
@@ -87,7 +87,7 @@ class GestureProperty(PropertyGroup):
         column.prop(debug, 'debug_draw_gpu_mode')
 
         col = row.column(align=True)
-        col.label(text='手势:')
+        col.label(text='Gesture:')
         col.prop(draw, 'text_gpu_draw_size')
         col.prop(draw, 'text_gpu_draw_radius')
         col.prop(draw, 'text_gpu_draw_margin')
@@ -119,7 +119,7 @@ class ElementDraw:
             if get_debug():
                 act.draw_debug(layout)
         else:
-            layout.label(text='请 选择或添加 一个手势元素')
+            layout.label(text='Please select or add a gesture element')
 
     @staticmethod
     def draw_element_cure(layout: 'bpy.types.UILayout', cls) -> None:
@@ -149,7 +149,7 @@ class ElementDraw:
         split = layout.split(factor=.4)
 
         row = split.row(align=True)
-        row.label(text='添加元素关系')
+        row.label(text='Add Element Relationship')
         row.prop(add, 'relationship', expand=True)
 
         sub_row = split.row(align=True)
@@ -158,7 +158,7 @@ class ElementDraw:
         if add_child:
             element_row = sub_row.row(align=True)
             element_row.separator()
-            element_row.label(text='添加项:')
+            element_row.label(text='Add Item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i != 'SELECTED_STRUCTURE':
                     ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
@@ -171,7 +171,7 @@ class ElementDraw:
                 ops.selected_type = i
                 ops.relationship = relationship
         else:
-            sub_row.row(align=True).label(text="无法为 '操作符' 添加子级")
+            sub_row.row(align=True).label(text="Cannot add a child to 'Operator'")
 
 
 class GestureDraw:
@@ -236,7 +236,7 @@ class GestureDraw:
 
             GestureDraw.draw_element_cure(row)
         else:
-            layout.label(text='请添加或选择一个手势')
+            layout.label(text='Please add or select a gesture')
 
     @staticmethod
     def draw_element_cure(layout: bpy.types.UILayout) -> None:
@@ -332,7 +332,7 @@ class GestureDraw:
             if act:
                 act.draw_item_property(box)
             else:
-                box.label(text='请 选择或添加 一个手势元素')
+                box.label(text='Please select or add a gesture element')
         else:
             GestureDraw.draw_gesture_item(split)
         GestureDraw.draw_element(split)
@@ -381,7 +381,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
         from ..ops.switch_ui import SwitchGestureWindow
         layout.alert = True
         return layout.operator(SwitchGestureWindow.bl_idname,
-                               text='退出',
+                               text='Exit',
                                icon='PANEL_CLOSE'
                                )
 
@@ -393,7 +393,7 @@ class GesturePreferences(PublicProperty,
 
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
-    index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
+    index_gesture: IntProperty(name=_('Gesture Index'), update=lambda self, context: self.active_gesture.to_temp_kmi())
 
     draw_property: PointerProperty(type=DrawProperty)
     debug_property: PointerProperty(type=DebugProperty)
@@ -402,10 +402,10 @@ class GesturePreferences(PublicProperty,
     add_element_property: PointerProperty(type=AddElementProperty)
 
     enabled: BoolProperty(
-        name='启用手势',
-        description="""启用禁用整个系统,主要是keymap""",
+        name='Enable Gesture',
+        description="""Enable or disable the entire system, mainly the keymap""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
-    show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
+    show_page: EnumProperty(name=_('Display Panel'), items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
 
     @property
     def is_show_gesture(self):
