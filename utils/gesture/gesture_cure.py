@@ -19,7 +19,7 @@ class GestureCURE:
 
     class ADD(PublicOperator, PublicProperty):
         bl_idname = 'gesture.gesture_add'
-        bl_label = '添加手势'
+        bl_label = 'Add gesture'
 
         def execute(self, context):
             add = self.pref.gesture.add()
@@ -29,7 +29,7 @@ class GestureCURE:
 
     class REMOVE(GesturePoll):
         bl_idname = 'gesture.gesture_remove'
-        bl_label = '删除手势'
+        bl_label = 'Delete gestures'
 
         def execute(self, context):
             act = self.pref.active_gesture
@@ -40,7 +40,7 @@ class GestureCURE:
 
     class SORT(GesturePoll):
         bl_idname = 'gesture.gesture_sort'
-        bl_label = '排序手势'
+        bl_label = 'Sort gestures'
 
         is_next: BoolProperty()
 
@@ -51,7 +51,7 @@ class GestureCURE:
 
     class COPY(GesturePoll):
         bl_idname = 'gesture.gesture_copy'
-        bl_label = '复制手势'
+        bl_label = 'Copy gestures'
 
         def execute(self, context):
             self.active_gesture.copy()

@@ -1,6 +1,6 @@
 from functools import cache
 from os.path import dirname, basename, realpath, join, abspath
-
+from bpy.app.translations import pgettext as _
 import bpy
 from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
@@ -186,8 +186,8 @@ class PublicUniqueNamePropertyGroup:
         self.__check_duplicate_name__()
 
     name: StringProperty(
-        name='名称',
-        description='不允许名称重复,如果名称重复则编号 e.g .001 .002 .999 支持重命名到999',
+        name=_('Name'),
+        description=_('Duplicate names are not allowed; if a name is duplicated, it is numbered e.g., .001, .002, .999 with support for renaming up to 999.'),
         update=lambda self, context: self.rename()
     )
 
@@ -202,7 +202,7 @@ class PublicSortAndRemovePropertyGroup:
     def _set_index(self, value):
         ...
 
-    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index, fset=_set_index, doc=_('Set the index value of the index and move the item through the index of the current item.'))
 
     @property
     def is_last(self) -> bool:

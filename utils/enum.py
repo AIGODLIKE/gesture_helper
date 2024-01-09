@@ -27,28 +27,28 @@ def from_each_as_title(enum):
 
 
 ENUM_GESTURE_DIRECTION = [
-    ('5', '左', ''),
-    ('1', '右', ''),
-    ('3', '上', ''),
-    ('7', '下', ''),
-    ('4', '左上', ''),
-    ('2', '右上', ''),
-    ('6', '左下', ''),
-    ('8', '右下', ''),
+    ('5', 'left', ''),
+    ('1', 'right', ''),
+    ('3', 'above', ''),
+    ('7', 'under', ''),
+    ('4', 'topLeft', ''),
+    ('2', 'topRight', ''),
+    ('6', 'lowerLeft', ''),
+    ('8', 'bottomRight', ''),
 
     # ('UP', '顶', 'TRIA_UP_BAR'), TODO
     # ('DOWN', '底', 'TRIA_DOWN'),
 ]
 ENUM_ELEMENT_TYPE = [
-    ('SELECTED_STRUCTURE', '选择结构', ''),
-    ('CHILD_GESTURE', '子手势', ''),
-    ('OPERATOR', '操作符', ''),
+    ('SELECTED_STRUCTURE', 'select the structure', ''),
+    ('CHILD_GESTURE', 'subgesture', ''),
+    ('OPERATOR', 'operator', ''),
 ]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
-    ('ROOT', '根级', ''),
-    ('SAME', '同级', ''),
-    ('CHILD', '子级', '')
+    ('ROOT', 'root', ''),
+    ('SAME', 'same', ''),
+    ('CHILD', 'child', '')
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)

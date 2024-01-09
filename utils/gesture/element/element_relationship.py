@@ -1,5 +1,5 @@
 from functools import cache
-
+from bpy.app.translations import pgettext as _
 from bpy.props import BoolProperty
 
 from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup, get_gesture_direction_items)
@@ -37,7 +37,7 @@ def get_available_selected_structure(element) -> bool:
         else:
             return False
     else:
-        print('例外', element)
+        print('exception', element)
     return False
 
 
@@ -138,7 +138,7 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
     index = property(
         fget=_get_index,
         fset=_set_index,
-        doc='通过当前项的index,来设置索引的index值,以及移动项')
+        doc=_("Set the index value of the index based on the current item's index and move the item"))
 
     @property
     def self_index(self):

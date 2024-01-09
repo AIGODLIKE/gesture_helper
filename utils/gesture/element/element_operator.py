@@ -2,7 +2,7 @@ import ast
 
 import bpy
 from bpy.props import StringProperty, EnumProperty, CollectionProperty, BoolProperty
-
+from bpy.app.translations import pgettext as _
 from ... import PropertySetUtils
 from ...enum import ENUM_OPERATOR_CONTEXT
 from ...public_cache import cache_update_lock
@@ -32,15 +32,15 @@ class OperatorProperty:
     def update_operator_properties(self) -> None:
         self.to_operator_tmp_kmi()
 
-    operator_bl_idname: StringProperty(name='操作符 bl_idname',
-                                       description='默认为添加猴头',
+    operator_bl_idname: StringProperty(name=_('Operator bl_idname'),
+                                       description=_('Default to add a monkey head'),
                                        update=lambda self, context: self.update_operator())
     collection: CollectionProperty
 
-    operator_context: EnumProperty(name='操作符上下文',
+    operator_context: EnumProperty(name=_('operator context'),
                                    items=ENUM_OPERATOR_CONTEXT)
 
-    operator_properties: StringProperty(name='操作符属性',
+    operator_properties: StringProperty(name=_('operator properties'),
                                         update=lambda self, context: self.update_operator_properties())
 
     def update_operator_properties_sync_from_temp_properties(self, context):
@@ -54,10 +54,10 @@ class OperatorProperty:
             self['operator_properties_sync_to_properties'] = False
 
     operator_properties_sync_from_temp_properties: BoolProperty(
-        name='从属性更新',
+        name=_('Updates from attributes'),
         update=update_operator_properties_sync_from_temp_properties)
     operator_properties_sync_to_properties: BoolProperty(
-        name='更新到属性',
+        name=_('Update to Properties'),
         update=update_operator_properties_sync_to_properties)
 
     # 直接将operator的self传给element,让那个来进行操作

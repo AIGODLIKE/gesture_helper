@@ -1,5 +1,5 @@
 from functools import cache
-
+from bpy.app.translations import pgettext as _
 from ..public import (
     get_pref,
     get_gesture_direction_items,
@@ -36,7 +36,7 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
     def _set_index_(self, value: int) -> None:
         get_pref().index_gesture = value
 
-    index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index_, fset=_set_index_, doc=_("Set the index value of the index based on the current item's index and move the item"))
 
     @property
     def collection(self):

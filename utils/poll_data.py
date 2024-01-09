@@ -2,7 +2,7 @@ class PollData:
     POLL_ACTIVE_OBJECT_TYPE = {
         'prefix': 'C.object and C.object.type == ',
         'suffix': '',
-        'name': '活动项物体类型',
+        'name': 'Active Item Object Type',
         'items': [
             {'name': 'Mesh', 'item': 'MESH', },
             {'name': 'Curve', 'item': 'CURVE', },
@@ -25,7 +25,7 @@ class PollData:
     POLL_MODE_TYPE = {
         'prefix': 'C.mode == ',
         'suffix': '',
-        'name': '物体模式',
+        'name': 'object mode',
         'items': [
             {'name': 'Mesh Edit', 'item': 'EDIT_MESH'},
             {'name': 'Curve Edit', 'item': 'EDIT_CURVE'},
@@ -63,7 +63,7 @@ class PollData:
     POLL_MESH_SELECT_MODE = {
         'prefix': 'tool.mesh_select_mode[:] == ',
         'suffix': '',
-        'name': '网格选择模式',
+        'name': 'grid selection mode',
         'items': [
             # {'prefix': '', 'suffix': '',
             #  'item': 'is_select_vert', 'name': '选中了顶点', },
@@ -76,20 +76,20 @@ class PollData:
             {'prefix': 'tool.mesh_select_mode[2] == ',
              'item': True, 'name': '面', },
             None,
-            {'item': [True, False, False], 'name': '仅顶点', },
-            {'item': [False, True, False], 'name': '仅边', },
-            {'item': [False, False, True], 'name': '仅面', },
+            {'item': [True, False, False], 'name': 'vertices only', },
+            {'item': [False, True, False], 'name': 'edges only', },
+            {'item': [False, False, True], 'name': 'faces only', },
             None,
-            {'item': [True, False, True], 'name': '仅 顶点&面', },
-            {'item': [False, True, True], 'name': '仅 边&面', },
-            {'item': [True, True, False], 'name': '仅 顶点&边', },
-            {'item': [True, True, True], 'name': '顶点&边&面', },
+            {'item': [True, False, True], 'name': 'vertices & faces only', },
+            {'item': [False, True, True], 'name': 'edges & faces only', },
+            {'item': [True, True, False], 'name': 'vertices & edges only', },
+            {'item': [True, True, True], 'name': 'vertices & edges & faces', },
         ],
     }
     POLL_REGIONS_TYPE = {
         'prefix': 'C.region.type == ',
         'suffix': '',
-        'name': '区域类型',
+        'name': 'region type',
         'items': [
             {'item': 'WINDOW', 'name': 'Window', },
             {'item': 'HEADER', 'name': 'Header', },
@@ -110,7 +110,7 @@ class PollData:
     POLL_SPACE_TYPE = {
         'prefix': 'C.space_data.type == ',
         'suffix': '',
-        'name': '空间类型',
+        'name': 'the type of space',
         'items': [
             {'name': 'Empty', 'item': 'EMPTY', },
             {'name': '3D Viewport', 'item': 'VIEW_3D', },
@@ -137,7 +137,7 @@ class PollData:
         'prefix': '',
         'suffix': '',
         'name': ''
-                '其它',
+                'other',
         'items': [
             {'item': ' and ',
              'name': 'and',
@@ -153,7 +153,7 @@ class PollData:
              'not_str': True},
             None,
             {'item': 'len(C.objects)',
-             'name': '选择了物体的',
+             'name': 'the object s is selected',
              'parentheses': False,
              'not_str': True},
         ],

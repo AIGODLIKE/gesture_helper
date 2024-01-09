@@ -8,7 +8,7 @@ from ..utils.public_ui import icon_two
 
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'gesture.set_key_maps'
-    bl_label = '设置键位映射'
+    bl_label = 'Set keybinding mapping'
 
     __temp_selected_keymaps__ = []  # static
     add_keymap: StringProperty(options={'SKIP_SAVE'})

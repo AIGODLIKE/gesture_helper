@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import PointerProperty, BoolProperty, StringProperty
 from bpy_types import PropertyGroup
-
+from bpy.app.translations import pgettext as _
 
 class TempDrawProperty(PropertyGroup):
     """
@@ -47,20 +47,18 @@ class TempDrawProperty(PropertyGroup):
             TempDrawProperty,
             name,
             BoolProperty(
-                name=f'{name} 展开布尔属性',
-                description=f'自动生成的布尔属性',
+                name=_(f'{name} Expand Boolean Property'),
+                description=_(f'Auto-generated Boolean Property'),
                 default=self.default_bool_value,
             )
         )
 
     add_ui_extend_bool_property: StringProperty(
-        name='添加展开属性',
-        description='''更改此属性时会查询此属性类里面有没有此属性
-    如果没有,将会添加,因为在UI里面不能添加属性,所以使用此方法来添加
-    在更新此属性时添加属性''',
+        name=_('Add Expand Property'),
+        description=_('''When modifying this property, it will check if this property exists in the property class. If not, it will be added, because properties cannot be added in the UI, this method is used to add them. Add the property when updating this property'''),
         update=update_add_ui_extend_bool_property,
     )
-    default_bool_value: BoolProperty(name='添加布尔属性的默认值')
+    default_bool_value: BoolProperty(name='Add Default Value for Boolean Property')
 
 
 def register():

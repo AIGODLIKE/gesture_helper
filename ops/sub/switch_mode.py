@@ -5,10 +5,10 @@ from bpy.types import Operator
 
 class SwitchMode(Operator):
     bl_idname = 'gesture.switch_mode'
-    bl_label = '切换模式'
+    bl_label = 'switch mode'
     type: EnumProperty(items=[
-        ('SWITCH_OBJECT_MODE', '切换物体模式', ''),
-        ('SWITCH_OBJECT_EDIT_MODE', '切换物体编辑模式', ''),
+        ('SWITCH_OBJECT_MODE', 'Toggle object mode', ''),
+        ('SWITCH_OBJECT_EDIT_MODE', 'Toggle object edit mode', ''),
     ])
     select_mode: EnumProperty(items=[
         ('VERT', 'VERT', ''),

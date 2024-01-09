@@ -5,7 +5,7 @@ import ast
 import bpy
 from bpy.props import StringProperty
 
-poll = """poll表达式
+poll = """poll expression
 {'bpy': bpy,
 'C': bpy.context,
 'D': bpy.data,

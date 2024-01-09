@@ -1,0 +1,766 @@
+{
+  "time": 1702020220.4601157,
+  "blender_version": [
+    4,
+    1,
+    0
+  ],
+  "addon_version": [
+    1,
+    0
+  ],
+  "author": "\u5c0f\u840c\u65b0",
+  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "gesture": {
+    "0": {
+      "name": "\u6a21\u5f0f - Maya - Right",
+      "enabled": true,
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Window\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\"]",
+      "element": {
+        "0": {
+          "name": "3D\u89c6\u56fe\u65f6",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "(C.space_data.type == \"VIEW_3D\")",
+          "element": {
+            "0": {
+              "name": "\u662f\u7f51\u683c",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "(C.object and C.object.type == \"MESH\")",
+              "element": {
+                "0": {
+                  "name": "\u9876\u70b9",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'select_mode': {'VERT'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "gesture.switch_mode",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u8fb9",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "3",
+                  "operator_properties": "{'select_mode': {'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "gesture.switch_mode",
+                  "element": {}
+                },
+                "2": {
+                  "name": "\u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "7",
+                  "operator_properties": "{'select_mode': {'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "gesture.switch_mode",
+                  "element": {}
+                },
+                "3": {
+                  "name": "\u9876\u70b9 \u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "6",
+                  "operator_properties": "{'select_mode': {'VERT', 'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "gesture.switch_mode",
+                  "element": {}
+                },
+                "4": {
+                  "name": "\u591a\u91cd",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "8",
+                  "operator_properties": "{'select_mode': {'VERT', 'FACE', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "gesture.switch_mode",
+                  "element": {}
+                },
+                "5": {
+                  "name": "\u5176\u5b83\u6a21\u5f0f",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "\u9876\u70b9\u7ed8\u5236",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "2",
+                      "operator_properties": "{'mode': 'VERTEX_PAINT'}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "object.mode_set",
+                      "element": {}
+                    },
+                    "1": {
+                      "name": "\u6743\u91cd\u7ed8\u5236",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_properties": "{'mode': 'WEIGHT_PAINT', 'toggle': True}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "object.mode_set",
+                      "element": {}
+                    },
+                    "2": {
+                      "name": "\u7eb9\u7406\u7ed8\u5236",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_properties": "{'mode': 'TEXTURE_PAINT', 'toggle': True}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "object.mode_set",
+                      "element": {}
+                    },
+                    "3": {
+                      "name": "\u6709\u7c92\u5b50",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "enabled": true,
+                      "selected_type": "IF",
+                      "poll_string": "bpy.context.object.particle_systems.active",
+                      "element": {
+                        "0": {
+                          "name": "\u7c92\u5b50\u7f16\u8f91",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "7",
+                          "operator_properties": "{'mode': 'PARTICLE_EDIT', 'toggle': True}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "object.mode_set",
+                          "element": {}
+                        }
+                      }
+                    }
+                  }
+                },
+                "6": {
+                  "name": "\u96d5\u523b\u6a21\u5f0f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "4",
+                  "operator_properties": "{'mode': 'SCULPT'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                }
+              }
+            },
+            "1": {
+              "name": "\u662f\u66f2\u7ebf",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"CURVE\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91\u6a21\u5f0f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u7f16\u8f91\u66f2\u7ebf\u6a21\u5f0f",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "(C.mode == \"EDIT_CURVE\")",
+                  "element": {
+                    "0": {
+                      "name": "\u7ec6\u5206",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_properties": "{}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "curve.subdivide",
+                      "element": {}
+                    },
+                    "1": {
+                      "name": "\u5207\u6362\u65b9\u5411",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_properties": "{}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "curve.switch_direction",
+                      "element": {}
+                    },
+                    "2": {
+                      "name": "\u8bbe\u7f6e\u6837\u6761\u7c7b\u578b",
+                      "element_type": "CHILD_GESTURE",
+                      "enabled": true,
+                      "direction": "7",
+                      "element": {
+                        "0": {
+                          "name": "\u591a\u6bb5\u7ebf",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "6",
+                          "operator_properties": "{'type': 'POLY'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.spline_type_set",
+                          "element": {}
+                        },
+                        "1": {
+                          "name": "\u8d1d\u585e\u5c14",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "7",
+                          "operator_properties": "{'type': 'BEZIER'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.spline_type_set",
+                          "element": {}
+                        },
+                        "2": {
+                          "name": "NURBS",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "8",
+                          "operator_properties": "{'type': 'NURBS'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.spline_type_set",
+                          "element": {}
+                        }
+                      }
+                    },
+                    "3": {
+                      "name": "\u7cbe\u7b80\u66f2\u7ebf",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_properties": "{}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "curve.decimate",
+                      "element": {}
+                    },
+                    "4": {
+                      "name": "\u5e73\u6ed1\u63a7\u5236\u70b9",
+                      "element_type": "CHILD_GESTURE",
+                      "enabled": true,
+                      "direction": "4",
+                      "element": {
+                        "0": {
+                          "name": "\u5e73\u6ed1",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "4",
+                          "operator_properties": "{}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.smooth",
+                          "element": {}
+                        },
+                        "1": {
+                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u503e\u659c",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "5",
+                          "operator_properties": "{}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.smooth_tilt",
+                          "element": {}
+                        },
+                        "2": {
+                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u534a\u5f84",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "3",
+                          "operator_properties": "{}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.smooth_radius",
+                          "element": {}
+                        },
+                        "3": {
+                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u6743\u91cd",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "6",
+                          "operator_properties": "{}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.smooth_weight",
+                          "element": {}
+                        }
+                      }
+                    },
+                    "5": {
+                      "name": "\u8bbe\u7f6e\u63a7\u5236\u67c4\u7c7b\u578b",
+                      "element_type": "CHILD_GESTURE",
+                      "enabled": true,
+                      "direction": "6",
+                      "element": {
+                        "0": {
+                          "name": "\u81ea\u52a8",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "6",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.handle_type_set",
+                          "element": {}
+                        },
+                        "1": {
+                          "name": "\u77e2\u91cf",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "5",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.handle_type_set",
+                          "element": {}
+                        },
+                        "2": {
+                          "name": "\u5bf9\u9f50",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "7",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.handle_type_set",
+                          "element": {}
+                        },
+                        "3": {
+                          "name": "\u81ea\u7531",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "4",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.handle_type_set",
+                          "element": {}
+                        },
+                        "4": {
+                          "name": "\u5207\u6362 \u81ea\u7531/\u5bf9\u9f50",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "8",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_bl_idname": "curve.handle_type_set",
+                          "element": {}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "2": {
+              "name": "\u8868(\u66f2)\u9762",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"SURFACE\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91 \u8868(\u66f2)\u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                }
+              }
+            },
+            "3": {
+              "name": "\u662f\u6bdb\u53d1\u66f2\u7ebf",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"CURVES\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u66f2\u7ebf\u96d5\u523b",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_properties": "{'mode': 'SCULPT_CURVES'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "2": {
+                  "name": "\u6d3b\u52a8\u662f\u66f2\u7ebf\u6bdb\u53d1 or \u66f2\u7ebf\u96d5\u523b",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "(C.mode == \"EDIT_CURVES\") or (C.mode == \"SCULPT_CURVES\")",
+                  "element": {
+                    "0": {
+                      "name": "\u63a7\u5236\u70b9\u6a21\u5f0f",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "6",
+                      "operator_properties": "{'domain': 'POINT'}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "curves.set_selection_domain",
+                      "element": {}
+                    },
+                    "1": {
+                      "name": "\u66f2\u7ebf\u6a21\u5f0f",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_properties": "{'domain': 'CURVE'}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "curves.set_selection_domain",
+                      "element": {}
+                    }
+                  }
+                }
+              }
+            },
+            "4": {
+              "name": "\u662f\u878d\u7403",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"META\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91\u878d\u7403",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u662f\u7f16\u8f91\u878d\u7403",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "(C.mode == \"EDIT_METABALL\")",
+                  "element": {
+                    "0": {
+                      "name": "\u590d\u5236\u878d\u7403\u5143\u7d20",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_properties": "{}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "mball.duplicate_metaelems",
+                      "element": {}
+                    }
+                  }
+                }
+              }
+            },
+            "5": {
+              "name": "\u662f\u6587\u672c",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"FONT\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91\u6587\u672c",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u7f16\u8f91\u6587\u672c\u6a21\u5f0f",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "(C.mode == \"EDIT_TEXT\")",
+                  "element": {
+                    "0": {
+                      "name": "\u5927\u5199",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "6",
+                      "operator_properties": "{'case': 'UPPER'}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "font.case_set",
+                      "element": {}
+                    },
+                    "1": {
+                      "name": "\u5c0f\u5199",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_properties": "{'case': 'LOWER'}",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_bl_idname": "font.case_set",
+                      "element": {}
+                    }
+                  }
+                }
+              }
+            },
+            "6": {
+              "name": "\u662fGP",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"GPENCIL\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91GP",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT_GPENCIL'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u96d5\u523bGP",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "7",
+                  "operator_properties": "{'mode': 'SCULPT_GPENCIL'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "2": {
+                  "name": "\u7ed8\u5236GP",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_properties": "{'mode': 'PAINT_GPENCIL'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "3": {
+                  "name": "\u6743\u91cd\u7ed8\u5236GP",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "8",
+                  "operator_properties": "{'mode': 'WEIGHT_GPENCIL'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "4": {
+                  "name": "\u9876\u70b9\u7ed8\u5236GP",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "4",
+                  "operator_properties": "{'mode': 'VERTEX_GPENCIL'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                }
+              }
+            },
+            "7": {
+              "name": "\u662f\u9aa8\u67b6",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"ARMATURE\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91\u9aa8\u67b6",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u59ff\u6001\u6a21\u5f0f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_properties": "{}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                }
+              }
+            },
+            "8": {
+              "name": "\u662f\u6676\u683c",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"LATTICE\")",
+              "element": {
+                "0": {
+                  "name": "\u7f16\u8f91\u6676\u683c",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                },
+                "1": {
+                  "name": "\u5747\u5300\u5206\u5e03",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_properties": "{}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "lattice.make_regular",
+                  "element": {}
+                }
+              }
+            },
+            "9": {
+              "name": "\u662f\u7a7a\u7269\u4f53",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"EMPTY\")",
+              "element": {}
+            },
+            "10": {
+              "name": "\u5176\u5b83\u7269\u4f53",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELSE",
+              "poll_string": "True",
+              "element": {}
+            },
+            "11": {
+              "name": "\u5982\u679c\u53ef\u4ee5\u8fdb\u5165\u7f16\u8f91\u6a21\u5f0f",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "(C.object and C.object.type == \"MESH\") or (C.object and C.object.type == \"CURVE\") or (C.object and C.object.type == \"FONT\") or (C.object and C.object.type == \"GPENCIL\") or (C.object and C.object.type == \"ARMATURE\") or (C.object and C.object.type == \"LATTICE\") or (C.object and C.object.type == \"CURVES\") or (C.object and C.object.type == \"META\") or (C.object and C.object.type == \"SURFACE\")",
+              "element": {
+                "0": {
+                  "name": "\u7269\u4f53\u6a21\u5f0f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "2",
+                  "operator_properties": "{'mode': 'OBJECT', 'toggle': True}",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_bl_idname": "object.mode_set",
+                  "element": {}
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "name": "\u504f\u597d\u8bbe\u7f6e\u89c6\u56fe\u65f6",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELIF",
+          "poll_string": "(C.space_data.type == \"PREFERENCES\")",
+          "element": {
+            "0": {
+              "name": "\u4fdd\u5b58\u504f\u597d\u8bbe\u7f6e",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "1",
+              "operator_properties": "{}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.save_userpref",
+              "element": {}
+            },
+            "1": {
+              "name": "\u63d2\u4ef6",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "7",
+              "operator_properties": "{'value': 'ADDONS', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "2": {
+              "name": "\u952e\u4f4d\u6620\u5c04",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "8",
+              "operator_properties": "{'value': 'KEYMAP', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "3": {
+              "name": "\u754c\u9762",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "2",
+              "operator_properties": "{'value': 'INTERFACE', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "4": {
+              "name": "\u89c6\u56fe",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "3",
+              "operator_properties": "{'value': 'VIEWPORT', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "5": {
+              "name": "\u52a8\u753b",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "6",
+              "operator_properties": "{'value': 'ANIMATION', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "6": {
+              "name": "\u89c6\u56fe\u5207\u6362",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "5",
+              "operator_properties": "{'value': 'NAVIGATION', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            },
+            "7": {
+              "name": "\u8f93\u5165",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "4",
+              "operator_properties": "{'value': 'INPUT', 'data_path': 'preferences.active_section'}",
+              "operator_context": "EXEC_DEFAULT",
+              "operator_bl_idname": "wm.context_set_enum",
+              "element": {}
+            }
+          }
+        }
+      },
+      "description": "\u4f7f\u7528\u53f3\u952e,\u5207\u6362\u6a21\u5f0f,\u5728\u5927\u90e8\u5206\u6a21\u5f0f\u4e0b\u5747\u53ef\u7528"
+    }
+  }
+}
