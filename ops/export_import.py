@@ -144,7 +144,6 @@ class Export(PublicFileOperator):
             name = os.path.basename(folder)
             folder = os.path.dirname(folder)
         new_name = name if name.endswith('.json') else f'{name} {self.ymdhm}.json'.replace(':', ' ')
-
         return os.path.abspath(os.path.join(folder, new_name))
 
     @property
@@ -221,10 +220,25 @@ class Export(PublicFileOperator):
 
     @staticmethod
     def backups():
+        """
+        备份
+        """
         from ..utils.public import ADDON_FOLDER
-        file_path = os.path.join(ADDON_FOLDER, 'auto_backups')
         try:
-            if get_pref().other_property.auto_backups:
-                bpy.ops.gesture.export('EXEC_DEFAULT', author='Emm', description='auto_backups', filepath=file_path)
+            prop = get_pref().other_property
+            if prop.auto_backups:
+                if prop.enabled_backups_to_specified_path:
+                    if os.path.isdir(prop.backups_path):
+                        bpy.ops.gesture.export(
+                            'EXEC_DEFAULT',
+                            author='Emm',
+                            description='auto_backups',
+                            filepath=prop.backups_path)
+                else:
+                    bpy.ops.gesture.export(
+                        'EXEC_DEFAULT',
+                        author='Emm',
+                        description='auto_backups',
+                        filepath=os.path.join(ADDON_FOLDER, 'auto_backups'))
         except Exception as e:
             print(e.args)

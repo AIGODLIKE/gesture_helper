@@ -1,6 +1,15 @@
+import os
+
 import bpy.utils
-from bpy.props import CollectionProperty, IntProperty, BoolProperty, PointerProperty, FloatProperty, EnumProperty, \
-    FloatVectorProperty
+from bpy.props import (
+    CollectionProperty,
+    IntProperty,
+    BoolProperty,
+    PointerProperty,
+    FloatProperty,
+    EnumProperty,
+    FloatVectorProperty,
+    StringProperty)
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
@@ -38,6 +47,7 @@ class DebugProperty(PropertyGroup):
 
 
 class OtherProperty(PropertyGroup):
+    from ..utils.public import ADDON_FOLDER
     auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
     is_move_element: BoolProperty(
         default=False,
@@ -46,7 +56,18 @@ class OtherProperty(PropertyGroup):
     auto_backups: BoolProperty(
         name='自动备份',
         description="在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 'auto_backups' 文件夹",
-        default=True,
+        default=False,
+    )
+    enabled_backups_to_specified_path: BoolProperty(
+        name='指定备份路径',
+        description='备份到指定路径',
+        default=False,
+    )
+    backups_path: StringProperty(
+        name='备份路径',
+        description='备份配置到指定路径',
+        subtype='DIR_PATH',
+        default=os.path.join(ADDON_FOLDER, 'auto_backups')
     )
 
 
@@ -78,7 +99,14 @@ class GestureProperty(PropertyGroup):
         row = layout.row()
         column = row.column(align=True)
         column.prop(g, 'automatically_handle_conflicting_keymaps')
-        column.prop(other, 'auto_backups')
+        if other['auto_backups']:
+            box = column.box()
+            box.prop(other, 'auto_backups')
+            box.prop(other, 'enabled_backups_to_specified_path')
+            if other['enabled_backups_to_specified_path']:
+                box.prop(other, 'backups_path')
+        else:
+            column.prop(other, 'auto_backups')
         column.separator()
 
         column.label(text='Debug')
