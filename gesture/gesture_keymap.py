@@ -33,7 +33,7 @@ class KeymapProperty:
         key = self.__key__
         if key in self and dict(self[key]):
             default.update(
-                {k: dict(value) if type(value) == IDPropertyGroup else value
+                {k: dict(value) if value is IDPropertyGroup else value
                  for (k, value) in
                  dict(self[key]).items()}
             )
@@ -102,7 +102,7 @@ class GestureKeymap(KeymapProperty):
                 data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 
     def key_unload(self) -> None:
-        if self in GestureKeymap.__key_data__:  # 如果被禁用了会出现没有快捷键的情况
+        if self in GestureKeymap.__key_data__:  # 如果禁用了会出现没有快捷键的情况
             for keymap, kmi in GestureKeymap.__key_data__[self]:
                 keymap.keymap_items.remove(kmi)
             GestureKeymap.__key_data__.pop(self)

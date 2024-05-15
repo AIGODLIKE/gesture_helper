@@ -26,8 +26,7 @@ class ElementPoll:
         """
 
         try:
-            poll = self._from_poll_string_get_bool(self.poll_string)
-            return poll
+            return self._from_poll_string_get_bool(self.poll_string)
         except Exception as e:
             print(f'ERROR:  poll_bool  {self.poll_string}\t', e.args, self.poll_args)
             return False
@@ -58,13 +57,13 @@ class ElementPoll:
         ob = bpy.context.object
         sel_objs = bpy.context.selected_objects
         use_sel_obj = ((not ob) and sel_objs)  # 使用选择的obj最后一个
-        O = sel_objs[-1] if use_sel_obj else ob
-        mesh = O.data if O else None
+        Object = sel_objs[-1] if use_sel_obj else ob
+        mesh = Object.data if Object else None
 
         return {'bpy': bpy,
                 'C': C,
                 'D': D,
-                'O': O,
+                'O': Object,
                 'mode': C.mode,
                 'tool': C.tool_settings,
                 'mesh': mesh,

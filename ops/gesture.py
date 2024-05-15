@@ -265,7 +265,7 @@ class GestureProperty(GestureGpuDraw):
     @property
     def direction(self) -> int:  # 方向
         angle = self.angle_unsigned
-        if type(angle) == bool:
+        if angle is bool:
             return False
         if angle > 337.5:
             return 1

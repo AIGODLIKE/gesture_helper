@@ -56,9 +56,9 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
     }
     angle_step = 360 / rounded_segments  # 这里选择了8个顶点，可以根据需要调整
 
-    def qa(q, a):
-        x = q[0] + radius * math.cos(a)
-        y = q[1] + radius * math.sin(a)
+    def qa(qq, a):
+        x = qq[0] + radius * math.cos(a)
+        y = qq[1] + radius * math.sin(a)
         vertex.append((x, y))
 
     # 计算顶点坐标

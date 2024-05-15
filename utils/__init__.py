@@ -61,17 +61,16 @@ class PropertySetUtils:
                 print(e.args)
 
     @staticmethod
-    def set_operator_property_to(properties: 'bpy.types.KeyMapItem.properties', property) -> None:
+    def set_operator_property_to(properties: 'bpy.types.KeyMapItem.properties', props) -> None:
         """注入operator property
         在绘制项时需要使用此方法
         set operator property
         self.operator_property:
         """
-        props = property
         for pro in props:
             pr = props[pro]
             if hasattr(properties, pro):
-                if type(pr) == tuple:
+                if pr is tuple:
                     # 阵列参数
                     PropertySetUtils._for_set_prop(properties, pro, pr)
                 else:

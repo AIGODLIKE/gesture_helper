@@ -2,7 +2,11 @@ from functools import cache
 
 from bpy.props import BoolProperty
 
-from ..utils.public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup, get_gesture_direction_items)
+from ..utils.public import (
+    PublicSortAndRemovePropertyGroup,
+    PublicUniqueNamePropertyGroup,
+    get_gesture_direction_items
+)
 from ..utils.public_cache import PublicCache, cache_update_lock
 
 
@@ -202,7 +206,7 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         col = self.collection
         cl = len(col)
         if cl:
-            if cl >= index+1:
+            if cl >= index + 1:
                 col[index].radio = True
             else:
                 col[-1].radio = True
