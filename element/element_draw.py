@@ -2,9 +2,10 @@
 # 预览绘制
 import bpy
 
-from ...icons import Icons
-from ...public import get_pref
-from ...public_ui import icon_two
+from ..utils.icons import Icons
+from ..utils.public import get_pref
+from ..utils.public_ui import icon_two
+from ..ops.set_direction import SetDirection
 
 
 class ElementDraw:
@@ -34,7 +35,6 @@ class ElementDraw:
         self.draw_item_child(column)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout'):
-        from ...icons import Icons
         pref = get_pref()
         row = layout.row()
         row.alert = self.is_show_alert
@@ -75,10 +75,9 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
-        from ....ops.set_direction import SetDirection
 
         if self.is_selected_structure:
-            from ....ops.set_poll import SetPollExpression
+            from ..ops.set_poll import SetPollExpression
             icon = Icons.get(self.selected_type).icon_id
 
             layout.prop(self, 'name')
@@ -90,21 +89,25 @@ class ElementDraw:
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
+            is_operator = self.operator_type == 'OPERATOR'
             row = layout.row(align=True)
             a = row.column()
             a.prop(self, 'name')
-            a.prop(self, 'operator_bl_idname')
-            a.prop(self, 'operator_properties')
+            a.prop(self, 'operator_type')
+            if is_operator:
+                a.prop(self, 'operator_bl_idname')
+                a.prop(self, 'operator_properties')
             SetDirection.draw_direction(row.column())
 
-            row = layout.row(align=True)
-            row.prop(self, 'operator_context')
-            row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
-            row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
-            row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
-            layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
-            if self.other_property.auto_update_element_operator_properties:
-                self.from_tmp_kmi_operator_update_properties()
+            if is_operator:
+                row = layout.row(align=True)
+                row.prop(self, 'operator_context')
+                row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
+                row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
+                row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
+                layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
+                if self.other_property.auto_update_element_operator_properties:
+                    self.from_tmp_kmi_operator_update_properties()
         elif self.is_child_gesture:
             row = layout.row(align=True)
             column = row.column()

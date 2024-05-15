@@ -1,8 +1,8 @@
 from bpy.props import EnumProperty, BoolProperty, CollectionProperty, IntProperty
 
-from ...enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE, ENUM_RELATIONSHIP, ENUM_GESTURE_DIRECTION
-from ...public import get_pref
-from ...public_cache import PublicCacheFunc, cache_update_lock
+from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE, ENUM_RELATIONSHIP, ENUM_GESTURE_DIRECTION
+from ..utils.public import get_pref
+from ..utils.public_cache import PublicCacheFunc, cache_update_lock
 
 
 class ElementAddProperty:

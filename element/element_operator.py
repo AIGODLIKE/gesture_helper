@@ -1,11 +1,11 @@
 import ast
 
 import bpy
-from bpy.props import StringProperty, EnumProperty, CollectionProperty, BoolProperty
+from bpy.props import StringProperty, EnumProperty, BoolProperty
 
-from ... import PropertySetUtils
-from ...enum import ENUM_OPERATOR_CONTEXT
-from ...public_cache import cache_update_lock
+from ..utils import PropertySetUtils
+from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
+from ..utils.public_cache import cache_update_lock
 
 
 class OperatorProperty:
@@ -35,13 +35,17 @@ class OperatorProperty:
     operator_bl_idname: StringProperty(name='操作符 bl_idname',
                                        description='默认为添加猴头',
                                        update=lambda self, context: self.update_operator())
-    collection: CollectionProperty
 
     operator_context: EnumProperty(name='操作符上下文',
                                    items=ENUM_OPERATOR_CONTEXT)
 
     operator_properties: StringProperty(name='操作符属性',
                                         update=lambda self, context: self.update_operator_properties())
+    operator_type: EnumProperty(name='操作类型',
+                                description='操作的类型',
+                                items=ENUM_OPERATOR_TYPE,
+                                default='OPERATOR'
+                                )
 
     def update_operator_properties_sync_from_temp_properties(self, context):
         if self.is_operator:
@@ -76,12 +80,12 @@ class ElementOperator(OperatorProperty):
 
     @property
     def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
-        from ...public_key import get_temp_kmi_by_id_name
+        from ..utils.public_key import get_temp_kmi_by_id_name
         return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
     @property
     def operator_tmp_kmi_properties(self):
-        from ...public_key import get_kmi_operator_properties
+        from ..utils.public_key import get_kmi_operator_properties
         properties = get_kmi_operator_properties(self.operator_tmp_kmi)
         return properties
 

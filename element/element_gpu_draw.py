@@ -6,8 +6,8 @@ import blf
 import gpu
 from mathutils import Vector
 
-from ...public import get_pref
-from ...public_gpu import PublicGpu
+from ..utils.public import get_pref
+from ..utils.public_gpu import PublicGpu
 
 pattern = re.compile(r'[\u4e00-\u9fa5]')
 

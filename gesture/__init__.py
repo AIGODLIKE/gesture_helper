@@ -2,14 +2,14 @@ import bpy
 from bpy.props import CollectionProperty, BoolProperty, StringProperty
 from bpy.types import PropertyGroup
 
-from .element import Element
-from .element.element_cure import ElementCURE
 from .gesture_cure import GestureCURE
 from .gesture_draw import GestureDraw
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
-from ..public import PublicProperty
+from ..element import Element
+from ..element import ElementCURE
+from ..utils.public import PublicProperty
 
 
 class Gesture(GestureCURE,

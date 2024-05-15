@@ -9,7 +9,7 @@ from bpy.props import BoolProperty, StringProperty
 
 from ..ui.ui_list import ImportPresetUIList
 from ..utils import PropertyGetUtils, PropertySetUtils
-from ..utils.gesture import GestureKeymap
+from ..gesture import GestureKeymap
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
 

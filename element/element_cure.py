@@ -2,15 +2,15 @@ import bpy
 from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
-from ...public import PublicProperty, PublicOperator
-from ...public_cache import cache_update_lock, PublicCacheFunc
+from ..utils.public import PublicProperty, PublicOperator
+from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 
 
 class ElementCURE:
 
     @cache_update_lock
     def copy(self):
-        from ... import PropertyGetUtils, PropertySetUtils
+        from ..utils import PropertyGetUtils, PropertySetUtils
         copy_data = PropertyGetUtils.props_data(self.active_element)
 
         parent = self.parent
@@ -88,7 +88,7 @@ class ElementCURE:
 
         @cache_update_lock
         def move(self):
-            from ... import PropertyGetUtils, PropertySetUtils
+            from ..utils import PropertyGetUtils, PropertySetUtils
             move_to = getattr(bpy.context, 'move_element', None)
             move_from = ElementCURE.MOVE.move_item
 

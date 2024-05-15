@@ -1,9 +1,10 @@
 import bpy
 
-from . import preferences, public_cache, property, icons
-from .gesture import gesture_keymap
+from . import public_cache, property, icons
 from .public import get_pref
 from .. import ops, ui
+from .. import preferences
+from ..gesture import gesture_keymap
 
 module_list = (
     ui,

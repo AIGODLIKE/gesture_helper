@@ -42,7 +42,7 @@ class SwitchGestureUi:
     @classmethod
     def set_layout_func(cls):
         """设置活动Layout的绘制方法"""
-        from ..utils.preferences import PreferencesDraw
+        from ..preferences import PreferencesDraw
         bpy.types.USERPREF_PT_addons.draw = PreferencesDraw.right_layout
         bpy.types.USERPREF_PT_navigation_bar.draw = PreferencesDraw.left_layout
         bpy.types.USERPREF_HT_header.draw = PreferencesDraw.bottom_layout

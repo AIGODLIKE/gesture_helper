@@ -2,8 +2,8 @@ from functools import cache
 
 from bpy.props import BoolProperty
 
-from ...public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup, get_gesture_direction_items)
-from ...public_cache import PublicCache, cache_update_lock
+from ..utils.public import (PublicSortAndRemovePropertyGroup, PublicUniqueNamePropertyGroup, get_gesture_direction_items)
+from ..utils.public_cache import PublicCache, cache_update_lock
 
 
 @cache

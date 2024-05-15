@@ -1,13 +1,13 @@
 from bpy.props import BoolProperty
 
-from ..public import PublicOperator, PublicProperty
-from ..public_cache import cache_update_lock
+from ..utils.public import PublicOperator, PublicProperty
+from ..utils.public_cache import cache_update_lock
 
 
 class GestureCURE:
     @cache_update_lock
     def copy(self):
-        from .. import PropertyGetUtils, PropertySetUtils
+        from ..utils import PropertyGetUtils, PropertySetUtils
         copy_data = PropertyGetUtils.props_data(self)
         PropertySetUtils.set_prop(self.pref, 'gesture', {'0': copy_data})
 

@@ -13,10 +13,10 @@ from bpy.props import (
 from bpy.types import AddonPreferences, PropertyGroup
 
 from . import gesture
-from .gesture.element.element_property import ElementAddProperty
-from .public import ADDON_NAME, get_pref, PublicProperty, get_debug
-from .public_ui import icon_two
-from ..ops import export_import
+from .element.element_property import ElementAddProperty
+from .ops import export_import
+from .utils.public import ADDON_NAME, get_pref, PublicProperty, get_debug
+from .utils.public_ui import icon_two
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
@@ -47,15 +47,15 @@ class DebugProperty(PropertyGroup):
 
 
 class OtherProperty(PropertyGroup):
-    from ..utils.public import ADDON_FOLDER
+    from .utils.public import ADDON_FOLDER
     auto_update_element_operator_properties: BoolProperty(name='自动更新操作属性')
     is_move_element: BoolProperty(
         default=False,
-        description="""移动元素 整个元素需要只有移动操作符可用""",
+        description='移动元素 整个元素需要只有移动操作符可用',
         options={"SKIP_SAVE"})
     auto_backups: BoolProperty(
         name='自动备份',
-        description="在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 'auto_backups' 文件夹",
+        description='在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 "auto_backups" 文件夹',
         default=False,
     )
     enabled_backups_to_specified_path: BoolProperty(
@@ -165,8 +165,8 @@ class ElementDraw:
 
     @staticmethod
     def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
-        from .enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
-        from .gesture.element import ElementCURE
+        from .utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
+        from .element import ElementCURE
 
         pref = get_pref()
         add = pref.add_element_property
@@ -222,7 +222,7 @@ class GestureDraw:
 
     @staticmethod
     def draw_gesture_item(layout: bpy.types.UILayout) -> None:
-        from ..ui.ui_list import GestureUIList
+        from .ui.ui_list import GestureUIList
         pref = get_pref()
         row = layout.row(align=True)
         GestureDraw.draw_gesture_cure(row)
@@ -242,7 +242,7 @@ class GestureDraw:
 
     @staticmethod
     def draw_element(layout: bpy.types.UILayout) -> None:
-        from ..ui.ui_list import ElementUIList
+        from .ui.ui_list import ElementUIList
         pref = get_pref()
         ag = pref.active_gesture
         if ag:
@@ -406,7 +406,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
     @staticmethod
     def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':
         """退出按钮"""
-        from ..ops.switch_ui import SwitchGestureWindow
+        from .ops.switch_ui import SwitchGestureWindow
         layout.alert = True
         return layout.operator(SwitchGestureWindow.bl_idname,
                                text='退出',

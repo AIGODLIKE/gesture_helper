@@ -52,3 +52,8 @@ ENUM_RELATIONSHIP = [
     ('CHILD', '子级', '')
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)
+
+ENUM_OPERATOR_TYPE = [
+    ('OPERATOR', '操作符', '输入Blender自带的操作符bl_idname'),
+    ('SCRIPT', '脚本', ''),
+]

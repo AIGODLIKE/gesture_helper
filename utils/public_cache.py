@@ -88,12 +88,12 @@ class PublicCache:
 class PublicCacheFunc(PublicCache):
     @staticmethod
     def gesture_cache_clear():
-        from .gesture import gesture_relationship
+        from ..gesture import gesture_relationship
         gesture_relationship.get_gesture_index.cache_clear()
 
     @staticmethod
     def element_cache_clear():
-        from .gesture.element import element_relationship
+        from ..element import element_relationship
         element_relationship.get_element_index.cache_clear()
         element_relationship.get_available_selected_structure.cache_clear()
 

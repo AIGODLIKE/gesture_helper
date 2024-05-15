@@ -1,12 +1,12 @@
 from functools import cache
 
-from ..public import (
+from ..utils.public import (
     get_pref,
     get_gesture_direction_items,
     PublicUniqueNamePropertyGroup,
     PublicSortAndRemovePropertyGroup,
 )
-from ..public_cache import cache_update_lock
+from ..utils.public_cache import cache_update_lock
 
 
 @cache
@@ -19,7 +19,7 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
 
     @property
     def element_iteration(self):
-        from ..public_cache import PublicCache
+        from ..utils.public_cache import PublicCache
         return PublicCache.__gesture_element_iteration__[self]
 
     @property

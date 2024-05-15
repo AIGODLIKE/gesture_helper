@@ -10,10 +10,10 @@ import bpy
 from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
-from .. import PropertyGetUtils, PropertySetUtils
-from ..public import get_debug
-from ..public_cache import cache_update_lock
-from ..public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
+from ..utils import PropertyGetUtils, PropertySetUtils
+from ..utils.public import get_debug
+from ..utils.public_cache import cache_update_lock
+from ..utils.public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 default_key = {'type': 'NONE', 'value': 'PRESS'}
 
@@ -63,12 +63,12 @@ class GestureKeymap(KeymapProperty):
 
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':
-        from ...ops import set_key
+        from ..ops import set_key
         return get_temp_kmi(set_key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
 
     @property
     def add_kmi_data(self) -> dict:
-        from ...ops import gesture
+        from ..ops import gesture
         return {'idname': gesture.GestureOperator.bl_idname, **self.key}
 
     def from_temp_key_update_data(self) -> None:
@@ -119,13 +119,13 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_init(cls) -> None:
-        from ..public import get_pref
+        from ..utils.public import get_pref
         for g in get_pref().gesture:
             g.key_load()
 
     @classmethod
     def key_remove(cls) -> None:
-        from ..public import get_pref
+        from ..utils.public import get_pref
 
         for i in list(GestureKeymap.__key_data__.keys()):
             i.key_unload()
