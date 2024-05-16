@@ -3,7 +3,7 @@ from bpy.props import IntProperty, BoolProperty
 
 class GestureProperty:
 
-    def update_index(self, context):
+    def update_index(self, _):
         try:
             el = self.element.values()[self.index_element]
             if el:

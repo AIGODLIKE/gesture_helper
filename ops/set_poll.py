@@ -68,7 +68,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
             self.draw_list_items(layout)
 
-    def draw(self, context):
+    def draw(self, _):
         layout = self.layout
         col = layout.column()
         sp = col.split(factor=0.05, align=True)
@@ -116,7 +116,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         op.poll_string = poll_string
         op.is_set_item_poll = self.is_set_item_poll
 
-    def invoke(self, context, event):
+    def invoke(self, context, _):
         if self.is_popup_menu:
             data = {'operator': self}
             if self.width != -1:
@@ -125,7 +125,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         else:
             return self.execute(context)
 
-    def execute(self, context):
+    def execute(self, _):
         if not self.is_popup_menu:
             act = self.element
             if act.poll_string == 'True':

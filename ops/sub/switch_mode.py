@@ -16,7 +16,7 @@ class SwitchMode(Operator):
         ('FACE', 'FACE', ''),
     ], options={"ENUM_FLAG"})
 
-    def execute(self, context):
+    def execute(self, _):
         if self.type == 'SWITCH_OBJECT_EDIT_MODE':
             bpy.ops.object.mode_set(mode='EDIT')
             for index, i in enumerate(self.select_mode):
@@ -26,4 +26,4 @@ class SwitchMode(Operator):
                 else:
                     bpy.ops.mesh.select_mode(type=i, use_extend=True, action='ENABLE', use_expand=False)
 
-        return {"FINISHED"}
+        return {'FINISHED'}

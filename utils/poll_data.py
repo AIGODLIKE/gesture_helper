@@ -60,9 +60,8 @@ class PollData:
         ],
     }
 
-    # {'prefix': '', 'suffix': '',
-    #  'item': 'is_select_vert', 'name': '选中了顶点'},
-    # None,
+    # 'prefix': '', 'suffix': '',
+    # 'item': 'is_select_vert', 'name': '选中了顶点',
     POLL_MESH_SELECT_MODE = {
         'prefix': 'tool.mesh_select_mode[:] == ',
         'suffix': '',

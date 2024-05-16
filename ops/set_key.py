@@ -17,7 +17,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     def active_gesture_keymaps(self):
         return get_pref().active_gesture.keymaps
 
-    def invoke(self, context, event):
+    def invoke(self, context, _):
         if self.add_keymap:  # 添加项
             if self.add_keymap in OperatorSetKeyMaps.__temp_selected_keymaps__:
                 OperatorSetKeyMaps.__temp_selected_keymaps__.remove(self.add_keymap)
@@ -30,11 +30,11 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         OperatorSetKeyMaps.__temp_selected_keymaps__ = self.active_gesture.keymaps
         return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
 
-    def execute(self, context):
+    def execute(self, _):
         self.active_gesture.keymaps = self.__class__.__temp_selected_keymaps__
         return {'FINISHED'}
 
-    def draw(self, context):
+    def draw(self, _):
         layout = self.layout.column()
         layout.emboss = 'NONE'
         layout.label(text=self.pref.active_gesture.name)
@@ -73,5 +73,5 @@ class OperatorTempModifierKey(Operator):
 
     gesture: StringProperty()
 
-    def execute(self, context):
+    def execute(self, _):
         return {'PASS_THROUGH'}

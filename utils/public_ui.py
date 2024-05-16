@@ -67,7 +67,7 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
     draw_func(layout,**)
     draw_func_data{}
     """
-    from .property import TempDrawProperty
+    from props import TempDrawProperty
 
     extend = TempDrawProperty.temp_wm_prop()
 
@@ -134,33 +134,33 @@ class PublicGpuDraw:
         hh = height / 2 - radius
 
         points = [0] * rounded_segments * 4 * 3
-        j = 0
-        jj = rounded_segments * 3
-        jjj = rounded_segments * 3 * 2
-        jjjj = rounded_segments * 3 * 3
+        a = 0
+        b = rounded_segments * 3
+        c = rounded_segments * 3 * 2
+        d = rounded_segments * 3 * 3
         for i in range(segments):
             rad = (i / segments) * (math.pi / 2)
             x = radius * math.cos(rad) + wh
             y = radius * math.sin(rad) + hh
-            points[j] = x
-            points[j] = 0
-            points[j] = y
+            points[a] = x
+            points[a] = 0
+            points[a] = y
 
-            points[jj] = -y
-            points[jj] = 0
-            points[jj] = x
+            points[b] = -y
+            points[b] = 0
+            points[b] = x
 
-            points[jjj] = -x
-            points[jjj] = 0
-            points[jjj] = -y
+            points[c] = -x
+            points[c] = 0
+            points[c] = -y
 
-            points[jjjj] = y
-            points[jjjj] = 0
-            points[jjjj] = -x
+            points[d] = y
+            points[d] = 0
+            points[d] = -x
 
-            j += 1
-            jj += 1
-            jjj += 1
-            jjjj += 1
+            a += 1
+            b += 1
+            c += 1
+            d += 1
 
         return points

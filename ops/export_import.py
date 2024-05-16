@@ -47,7 +47,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 
     selected_all: BoolProperty(name='选择所有', get=get_all, set=set_all)
 
-    def invoke(self, context, event):
+    def invoke(self, context, _):
         if self.run_execute:
             return self.execute(context)
         elif self.preset_show:
@@ -80,7 +80,7 @@ class Import(PublicFileOperator):
         Import.preset = items
         return items
 
-    def execute(self, context):
+    def execute(self, _):
         if self.preset_show:
             return {'FINISHED'}
         self.restore()
@@ -91,7 +91,7 @@ class Import(PublicFileOperator):
         Import.preset = {}
         return {'FINISHED'}
 
-    def draw(self, context):
+    def draw(self, _):
         layout = self.layout
         row = layout.row()
 
@@ -185,7 +185,7 @@ class Export(PublicFileOperator):
         }
         return data
 
-    def draw(self, context):
+    def draw(self, _):
         layout = self.layout
 
         layout.prop(self, 'author', emboss=True)
@@ -206,7 +206,7 @@ class Export(PublicFileOperator):
             'index_gesture',
         )
 
-    def execute(self, context):
+    def execute(self, _):
         if not len(self.export_data['gesture']):
             self.report({'WARNING'}, "未选择导出项")
         else:

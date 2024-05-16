@@ -76,7 +76,7 @@ class GestureProperty(PropertyGroup):
     def gen_gesture_prop(default, subtype='PIXEL'):
         return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 20}
 
-    def update_threshold_confirm(self, context):
+    def update_threshold_confirm(self, _):
         if self.threshold > self.threshold_confirm:
             self['threshold_confirm'] = self.threshold_confirm + 20
 
@@ -126,7 +126,6 @@ class GestureProperty(PropertyGroup):
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')
         col.label(text='Color:')
-        row = col.row(align=True)
         col.prop(draw, 'background_default_color')
         col.prop(draw, 'background_active_color')
         col.prop(draw, 'text_default_color')
@@ -376,7 +375,7 @@ class PropertyDraw:
 class PreferencesDraw(GestureDraw, PropertyDraw):
 
     # 绘制右边层
-    def right_layout(self: bpy.types.Panel, context: bpy.context):
+    def right_layout(self: bpy.types.Panel, _):
         pref = get_pref()
 
         column = self.layout.column(align=True)
@@ -389,16 +388,16 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
             sub_column.enabled = pref.enabled
         getattr(PreferencesDraw, f'draw_ui_{pref.show_page.lower()}')(sub_column)
 
-    def left_layout(self: bpy.types.Panel, context: bpy.context):
+    def left_layout(self: bpy.types.Panel, _):
         layout = self.layout
         layout.label(text='left_layout')
 
-    def bottom_layout(self: bpy.types.Panel, context: bpy.context):
+    def bottom_layout(self: bpy.types.Panel, _):
         layout = self.layout
         layout.label(text='bottom_layout')
         PreferencesDraw.exit(layout)
 
-    def left_bottom_layout(self: bpy.types.Panel, context: bpy.context):
+    def left_bottom_layout(self: bpy.types.Panel, _):
         layout = self.layout
         layout.label(text='left_bottom_layout')
         PreferencesDraw.exit(layout)
@@ -443,7 +442,7 @@ class GesturePreferences(PublicProperty,
     def is_show_property(self):
         return self.show_page == 'PROPERTY'
 
-    def draw(self, context):
+    def draw(self, _):
         layout = self.layout
         self.right_layout(layout)
 

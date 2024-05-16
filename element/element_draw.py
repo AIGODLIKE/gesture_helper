@@ -2,10 +2,11 @@
 # 预览绘制
 import bpy
 
+from . import ElementCURE
+from ..ops.set_direction import SetDirection
 from ..utils.icons import Icons
 from ..utils.public import get_pref
 from ..utils.public_ui import icon_two
-from ..ops.set_direction import SetDirection
 
 
 class ElementDraw:
@@ -91,12 +92,12 @@ class ElementDraw:
         elif self.is_operator:
             is_operator = self.operator_type == 'OPERATOR'
             row = layout.row(align=True)
-            a = row.column()
-            a.prop(self, 'name')
-            a.prop(self, 'operator_type')
+            col = row.column()
+            col.prop(self, 'name')
+            col.prop(self, 'operator_type')
             if is_operator:
-                a.prop(self, 'operator_bl_idname')
-                a.prop(self, 'operator_properties')
+                col.prop(self, 'operator_bl_idname')
+                col.prop(self, 'operator_properties')
             SetDirection.draw_direction(row.column())
 
             if is_operator:
@@ -108,6 +109,11 @@ class ElementDraw:
                 layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
                 if self.other_property.auto_update_element_operator_properties:
                     self.from_tmp_kmi_operator_update_properties()
+            else:
+                row = layout.row(align=True)
+                row.operator(ElementCURE.ScriptEdit.bl_idname)
+                row.label(text=f"脚本字数:{len(self.operator_script)}")
+
         elif self.is_child_gesture:
             row = layout.row(align=True)
             column = row.column()

@@ -1,4 +1,4 @@
-from .utils import register as reg
+from . import register_mod
 
 bl_info = {
     "name": "Gesture Helper",
@@ -15,8 +15,8 @@ ADDON_VERSION = bl_info['version']
 
 
 def register():
-    reg.register()
+    register_mod.register()
 
 
 def unregister():
-    reg.unregister()
+    register_mod.unregister()

@@ -12,11 +12,11 @@ class SetDirection(Operator):
     direction: StringProperty()
 
     @classmethod
-    def poll(cls, context):
+    def poll(cls, _):
         pref = get_pref()
         return pref.active_element
 
-    def execute(self, context):
+    def execute(self, _):
         get_pref().active_element.direction = self.direction
         return {'FINISHED'}
 

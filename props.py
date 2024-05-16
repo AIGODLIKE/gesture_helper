@@ -10,16 +10,16 @@ class TempDrawProperty(PropertyGroup):
 
     @staticmethod
     def key():
-        from .public import ADDON_NAME
+        from .utils.public import ADDON_NAME
         return ADDON_NAME + '_reg_ui_prop'
 
     @classmethod
-    def reg(cls):
+    def register_property(cls):
         bpy.utils.register_class(TempDrawProperty)
         setattr(bpy.types.WindowManager, cls.key(), PointerProperty(type=TempDrawProperty))
 
     @classmethod
-    def un_reg(cls):
+    def unregister_property(cls):
         bpy.utils.unregister_class(TempDrawProperty)
         delattr(bpy.types.WindowManager, cls.key())
 
@@ -64,8 +64,10 @@ class TempDrawProperty(PropertyGroup):
 
 
 def register():
-    TempDrawProperty.reg()
+    TempDrawProperty.register_property()
+    bpy.types.Text.gesture_element_hash = StringProperty()
 
 
 def unregister():
-    TempDrawProperty.un_reg()
+    TempDrawProperty.unregister_property()
+    del bpy.types.Text.gesture_element_hash

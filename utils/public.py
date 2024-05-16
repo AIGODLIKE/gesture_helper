@@ -115,7 +115,7 @@ class PublicProperty(PublicCacheFunc):
             if ae:
                 ae.to_operator_tmp_kmi()
                 ae.__check_duplicate_name__()
-        except Exception as e:
+        except Exception:
             ...
 
     @property

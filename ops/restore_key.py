@@ -16,7 +16,7 @@ class RestoreKey(Operator):
         keymap = getattr(context, "keymap", None)
         return keymap
 
-    def execute(self, context):
+    def execute(self, _):
         from ..utils.public import get_pref
         get_pref().active_gesture.restore_key()
         return {'FINISHED'}

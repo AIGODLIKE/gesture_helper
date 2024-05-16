@@ -178,7 +178,7 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         try:
             self.poll_bool
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     @property
@@ -187,7 +187,7 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
             self.properties
             self.operator_func
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def init_direction_by_sort(self):

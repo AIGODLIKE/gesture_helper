@@ -46,13 +46,14 @@ class OperatorProperty:
                                 items=ENUM_OPERATOR_TYPE,
                                 default='OPERATOR'
                                 )
+    operator_script: StringProperty(name='操作脚本', description='操作符的脚本', default='print("Emm")')
 
-    def update_operator_properties_sync_from_temp_properties(self, context):
+    def update_operator_properties_sync_from_temp_properties(self, _):
         if self.is_operator:
             self.from_tmp_kmi_operator_update_properties()
             self['operator_properties_sync_from_temp_properties'] = False
 
-    def update_operator_properties_sync_to_properties(self, context):
+    def update_operator_properties_sync_to_properties(self, _):
         if self.is_operator:
             self.to_operator_tmp_kmi()
             self['operator_properties_sync_to_properties'] = False

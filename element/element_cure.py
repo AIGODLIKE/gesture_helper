@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
-from ..utils.public import PublicProperty, PublicOperator
+from ..utils.public import PublicProperty, PublicOperator, get_pref
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 
 
@@ -32,7 +32,7 @@ class ElementCURE:
     class ElementPoll(PublicProperty, PublicOperator, PublicCacheFunc):
 
         @classmethod
-        def poll(cls, context):
+        def poll(cls, _):
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
@@ -56,7 +56,7 @@ class ElementCURE:
         def add_name(self):
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
-        def execute(self, context):
+        def execute(self, _):
             add = self.collection.add()
             add.cache_clear()
 
@@ -68,16 +68,16 @@ class ElementCURE:
             add.init()
             add.cache_clear()
             add.name = self.add_name
-            return {"FINISHED"}
+            return {'FINISHED'}
 
     class REMOVE(ElementPoll):
         bl_idname = 'gesture.element_remove'
         bl_label = '删除手势项'
 
-        def execute(self, context):
+        def execute(self, _):
             self.pref.active_element.remove()
             self.cache_clear()
-            return {"FINISHED"}
+            return {'FINISHED'}
 
     class MOVE(ElementPoll):
         bl_idname = 'gesture.element_move'
@@ -106,7 +106,7 @@ class ElementCURE:
         def other(self):
             return self.pref.other_property
 
-        def execute(self, context):
+        def execute(self, _):
             other = self.other
             move_from = ElementCURE.MOVE.move_item
 
@@ -115,7 +115,7 @@ class ElementCURE:
                 self.cache_clear()
                 other.is_move_element = False
                 ElementCURE.MOVE.move_item = None
-                return {"FINISHED"}
+                return {'FINISHED'}
             elif move_from:
                 self.move()
                 ae = self.active_element
@@ -127,12 +127,12 @@ class ElementCURE:
                 self.cache_clear()
                 other.is_move_element = False
                 ElementCURE.MOVE.move_item = None
-                return {"FINISHED"}
+                return {'FINISHED'}
 
             ElementCURE.MOVE.move_item = self.active_element
             other.is_move_element = True
             self.cache_clear()
-            return {"FINISHED"}
+            return {'FINISHED'}
 
     class SORT(ElementPoll):
         bl_idname = 'gesture.element_sort'
@@ -143,7 +143,7 @@ class ElementCURE:
         def execute(self, _):
             self.active_element.sort(self.is_next)
             self.cache_clear()
-            return {"FINISHED"}
+            return {'FINISHED'}
 
     class COPY(ElementPoll):
         bl_idname = 'gesture.element_copy'
@@ -159,4 +159,73 @@ class ElementCURE:
                 ae.collection[-1].__check_duplicate_name__()
 
             self.cache_clear()
-            return {"FINISHED"}
+            return {'FINISHED'}
+
+    class ScriptEdit(ElementPoll):
+        bl_idname = 'gesture.element_operator_script_edit'
+        bl_label = '编辑操作脚本'
+
+        # 获取脚本数据块
+        def get_text_data(self) -> bpy.types.Text:
+            active = self.active_element
+            name = active.name
+            text = bpy.data.texts.get(name)
+            if text is None:
+                text = bpy.data.texts.new(name)
+            text.clear()
+            text.write(active.operator_script)
+            text.gesture_element_hash = str(hash(self.active_element))
+            return text
+
+        def execute(self, context):
+            get_text_window(context, self.get_text_data())
+            return {'FINISHED'}
+
+    class ScriptSave(ElementPoll):
+        bl_idname = 'gesture.element_operator_script_save'
+        bl_label = '保存脚本'
+
+        @staticmethod
+        def register_ui():
+            bpy.types.TEXT_HT_header.append(draw_save_script_button)
+
+        @staticmethod
+        def unregister_ui():
+            bpy.types.TEXT_HT_header.remove(draw_save_script_button)
+
+        def execute(self, context):
+            text = context.space_data.text
+            self.active_element.operator_script = text.as_string()
+            bpy.data.texts.remove(text)
+            bpy.ops.wm.window_close()
+            return {'FINISHED'}
+
+
+def draw_save_script_button(self, context):
+    layout = self.layout
+    pref = get_pref()
+    text = context.space_data.text
+    active = pref.active_element
+
+    if text.gesture_element_hash == str(hash(active)):
+        row = layout.row()
+        row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name}")
+
+
+def get_text_window(context: bpy.types.Context, text: bpy.types.Text) -> bpy.types.Window:
+    window = get_text_editor_window(context)
+    if not window:
+        bpy.ops.wm.window_new()
+        window = bpy.context.window_manager.windows[-1]
+    area = window.screen.areas[-1]
+    area.type = "TEXT_EDITOR"
+    area.spaces[0].text = text
+
+
+def get_text_editor_window(context: bpy.types.Context):
+    windows = context.window_manager.windows.values()
+    for window in windows:
+        areas = window.screen.areas.values()
+        area = areas[0]
+        if len(areas) == 1 and area.type == "TEXT_EDITOR":
+            return window

@@ -1,10 +1,7 @@
-import traceback
-
 
 def cache_update_lock(func, cache_clear=False):
     """缓存更新锁"""
     cls = PublicCache
-
     def wap(*args, **kwargs):
         if cls.__is_updatable__:
             cls.__is_updatable__ = False
@@ -13,7 +10,6 @@ def cache_update_lock(func, cache_clear=False):
             if cache_clear:
                 PublicCacheFunc.cache_clear()
             return func_return
-
     return wap
 
 
@@ -106,11 +102,8 @@ class PublicCacheFunc(PublicCache):
     def cache_clear():
         cls = PublicCacheFunc
         if cls.__is_updatable__:
-            caller_name = traceback.extract_stack()[-2][2]
-            from .public import get_pref, get_debug
+            from .public import get_pref
             get_pref.cache_clear()
-            if get_debug():
-                print(f'gesture cache_clear 被 {caller_name} 调用')
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()
