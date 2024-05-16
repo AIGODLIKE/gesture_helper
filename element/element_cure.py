@@ -163,7 +163,7 @@ class ElementCURE:
 
     class ScriptEdit(ElementPoll):
         bl_idname = 'gesture.element_operator_script_edit'
-        bl_label = '编辑操作脚本'
+        bl_label = '编辑脚本'
 
         # 获取脚本数据块
         def get_text_data(self) -> bpy.types.Text:
@@ -177,13 +177,27 @@ class ElementCURE:
             text.gesture_element_hash = str(hash(self.active_element))
             return text
 
+        @staticmethod
+        def add_save_key(context):
+            keymap = get_text_generic_keymap(context)
+            if keymap is not None:
+                keymap.keymap_items.new(ElementCURE.ScriptSave.bl_idname, type="S", value="PRESS", ctrl=True)
+
         def execute(self, context):
             get_text_window(context, self.get_text_data())
+            self.add_save_key(context)
             return {'FINISHED'}
 
     class ScriptSave(ElementPoll):
         bl_idname = 'gesture.element_operator_script_save'
         bl_label = '保存脚本'
+
+        @classmethod
+        def poll(cls, context):
+            pref = get_pref()
+            h = context.space_data.text.gesture_element_hash
+            hashOk = h == str(hash(pref.active_element))
+            return super().poll(context) and hashOk
 
         @staticmethod
         def register_ui():
@@ -193,12 +207,36 @@ class ElementCURE:
         def unregister_ui():
             bpy.types.TEXT_HT_header.remove(draw_save_script_button)
 
+        def remove_save_key(self, context):
+            keymap = get_text_generic_keymap(context)
+            if keymap is not None:
+                while True:
+                    ops = keymap.keymap_items.find_from_operator(self.bl_idname)
+                    if ops is None:
+                        break
+                    keymap.keymap_items.remove(ops)
+
         def execute(self, context):
             text = context.space_data.text
             self.active_element.operator_script = text.as_string()
             bpy.data.texts.remove(text)
+            self.remove_save_key(context)
             bpy.ops.wm.window_close()
             return {'FINISHED'}
+
+
+def get_text_generic_keymap(context) -> bpy.types.KeyMapItem | None:
+    return get_keymap(context, 'Text Generic')
+
+
+def get_keymap(context, keymap_name):
+    kc = context.window_manager.keyconfigs
+    keymaps = kc.user.keymaps
+    keymap = keymaps.get(keymap_name)
+    if keymap is None:
+        um = kc.user.keymaps.get(keymap_name)
+        keymap = keymaps.new(keymap_name, space_type=um.space_type, region_type=um.region_type)
+    return keymap
 
 
 def draw_save_script_button(self, context):
@@ -209,6 +247,7 @@ def draw_save_script_button(self, context):
 
     if text.gesture_element_hash == str(hash(active)):
         row = layout.row()
+        row.alert = True
         row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name}")
 
 

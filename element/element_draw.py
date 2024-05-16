@@ -98,6 +98,9 @@ class ElementDraw:
             if is_operator:
                 col.prop(self, 'operator_bl_idname')
                 col.prop(self, 'operator_properties')
+            else:
+                col.operator(ElementCURE.ScriptEdit.bl_idname)
+                col.label(text=f"脚本字数:{len(self.operator_script)}")
             SetDirection.draw_direction(row.column())
 
             if is_operator:
@@ -109,10 +112,6 @@ class ElementDraw:
                 layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
                 if self.other_property.auto_update_element_operator_properties:
                     self.from_tmp_kmi_operator_update_properties()
-            else:
-                row = layout.row(align=True)
-                row.operator(ElementCURE.ScriptEdit.bl_idname)
-                row.label(text=f"脚本字数:{len(self.operator_script)}")
 
         elif self.is_child_gesture:
             row = layout.row(align=True)
