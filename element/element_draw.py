@@ -100,7 +100,14 @@ class ElementDraw:
                 col.prop(self, 'operator_properties')
             else:
                 col.operator(ElementCURE.ScriptEdit.bl_idname)
-                col.label(text=f"脚本字数:{len(self.operator_script)}")
+                rr = col.row()
+                rr.label(text=f"脚本字数:{len(self.operator_script)}")
+                rr.prop(self, 'preview_operator_script', only_icon=True)
+                if self.preview_operator_script:
+                    script_box = col.box()
+                    for i in self.operator_script.split('\n'):
+                        script_box.label(i)
+
             SetDirection.draw_direction(row.column())
 
             if is_operator:

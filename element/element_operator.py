@@ -48,6 +48,8 @@ class OperatorProperty:
                                 )
     operator_script: StringProperty(name='操作脚本', description='操作符的脚本', default='print("Emm")')
 
+    preview_operator_script: BoolProperty(name='预览脚本')
+
     def update_operator_properties_sync_from_temp_properties(self, _):
         if self.is_operator:
             self.from_tmp_kmi_operator_update_properties()
