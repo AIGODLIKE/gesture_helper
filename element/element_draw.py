@@ -91,6 +91,7 @@ class ElementDraw:
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
             is_operator = self.operator_type == 'OPERATOR'
+            preview_script = self.preview_operator_script
             row = layout.row(align=True)
             col = row.column()
             col.prop(self, 'name')
@@ -100,14 +101,11 @@ class ElementDraw:
                 col.prop(self, 'operator_properties')
             else:
                 col.operator(ElementCURE.ScriptEdit.bl_idname)
-                rr = col.row()
+                rr = col.row(align=True)
                 rr.label(text=f"脚本字数:{len(self.operator_script)}")
-                rr.prop(self, 'preview_operator_script', only_icon=True)
-                if self.preview_operator_script:
-                    script_box = col.box()
-                    for i in self.operator_script.split('\n'):
-                        script_box.label(i)
-
+                rr.separator_spacer()
+                rr.prop(self, 'preview_operator_script', icon_only=True, icon=icon_two(preview_script, style="HIDE"),
+                        emboss=False)
             SetDirection.draw_direction(row.column())
 
             if is_operator:
@@ -119,6 +117,11 @@ class ElementDraw:
                 layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
                 if self.other_property.auto_update_element_operator_properties:
                     self.from_tmp_kmi_operator_update_properties()
+            else:
+                if preview_script:
+                    script_box = layout.box()
+                    for i in self.operator_script.split('\n'):
+                        script_box.label(text=i)
 
         elif self.is_child_gesture:
             row = layout.row(align=True)

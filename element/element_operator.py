@@ -6,6 +6,7 @@ from bpy.props import StringProperty, EnumProperty, BoolProperty
 from ..utils import PropertySetUtils
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.public_cache import cache_update_lock
+from ..utils.string_eval import try_call_exec
 
 
 class OperatorProperty:
@@ -143,7 +144,13 @@ class ElementOperator(OperatorProperty):
             print('running_operator ERROR', e)
 
     def running_by_script(self):
-        pass
+        try:
+            try_call_exec(self.operator_script)
+        except Exception as e:
+            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
 
     def operator_tmp_kmi_properties_clear(self):
         properties = self.operator_tmp_kmi.properties
