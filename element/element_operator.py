@@ -116,6 +116,12 @@ class ElementOperator(OperatorProperty):
     def running_operator(self) -> None:
         """运行此self的操作符
         """
+        if self.operator_type == "OPERATOR":
+            self.running_by_bl_idname()
+        else:
+            self.running_by_script()
+
+    def running_by_bl_idname(self):
         try:
             prop = ast.literal_eval(self.operator_properties)
             func = self.operator_func
@@ -133,6 +139,9 @@ class ElementOperator(OperatorProperty):
                 )
         except Exception as e:
             print('running_operator ERROR', e)
+
+    def running_by_script(self):
+        pass
 
     def operator_tmp_kmi_properties_clear(self):
         properties = self.operator_tmp_kmi.properties
