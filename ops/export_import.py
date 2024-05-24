@@ -7,10 +7,10 @@ from datetime import datetime
 import bpy
 from bpy.props import BoolProperty, StringProperty
 
-from ..ui.ui_list import ImportPresetUIList
-from ..utils import PropertyGetUtils, PropertySetUtils
 from ..gesture import GestureKeymap
-from ..utils.public import PublicOperator, PublicProperty, get_pref
+from ..ui.ui_list import ImportPresetUIList
+from ..utils import PropertySetUtils
+from ..utils.public import PublicOperator, PublicProperty, get_pref, get_debug
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'index_element',
@@ -21,8 +21,20 @@ EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
-    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'direction', 'operator_properties', 'operator_context', 'operator_bl_idname'],
+    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'direction', 'operator_properties', 'operator_context', 'operator_bl_idname',
+                 'operator_type', 'operator_script', 'preview_operator_script'],
 }
+
+
+def get_backups_folder(user_custom_path: bool = True) -> str:
+    from ..utils.public import ADDON_FOLDER
+    prop = get_pref().other_property
+
+    folder_path = os.path.join(ADDON_FOLDER, 'backups')
+    if prop.enabled_backups_to_specified_path and user_custom_path:
+        if os.path.isdir(prop.backups_path):
+            folder_path = prop.backups_path
+    return folder_path
 
 
 class PublicFileOperator(PublicOperator, PublicProperty):
@@ -60,7 +72,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 
 class Import(PublicFileOperator):
     bl_label = '导入手势'
-    bl_idname = 'gesture.import'
+    bl_idname = 'gesture.gesture_import'
     preset = {}
 
     @property
@@ -83,7 +95,7 @@ class Import(PublicFileOperator):
     def execute(self, _):
         if self.preset_show:
             return {'FINISHED'}
-        self.restore()
+        self.gesture_import()
         self.cache_clear()
         self.update_state()
         self.cache_clear()
@@ -104,11 +116,12 @@ class Import(PublicFileOperator):
             ops.run_execute = True
 
     @cache_update_lock
-    def restore(self):
+    def gesture_import(self):
         try:
             data = self.read_json()
             restore = data['gesture']
-            print('restore', restore)
+            if get_debug('key'):
+                print('restore', restore)
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)
             auth = data['author']
             des = data['description']
@@ -124,6 +137,27 @@ class Import(PublicFileOperator):
         with open(self.filepath, 'r') as file:
             return json.load(file)
 
+    @staticmethod
+    def restore():
+        """
+        恢复
+        """
+        try:
+            backups_path = get_backups_folder()
+
+            if os.path.isdir(backups_path):
+                key = "Gesture Close Addon Backups.json"
+                if key in os.listdir(backups_path):
+                    bpy.ops.gesture.gesture_import(
+                        # 'EXEC_DEFAULT',
+                        filepath=os.path.join(backups_path, key),
+                        run_execute=True,
+                    )
+            else:
+                print("try load gesture config, not found backups folder")
+        except Exception as e:
+            print("try auto restore error", e.args)
+
 
 class Export(PublicFileOperator):
     bl_label = '导出手势'
@@ -131,44 +165,33 @@ class Export(PublicFileOperator):
 
     author: StringProperty(name='作者', default='小萌新')
     description: StringProperty(name='描述', default='这是一个描述')
+    is_auto_backups: BoolProperty(name="是自动备份", default=False, options={"SKIP_SAVE"})
+    is_close_backups: BoolProperty(name="是关闭插件备份", default=False, options={"SKIP_SAVE"})
 
     @property
-    def ymdhm(self):
-        return datetime.fromtimestamp(time.time())
+    def file_string(self):
+        date = datetime.fromtimestamp(time.time())
+        if self.is_auto_backups:
+            date = f'Auto Backups {date}'
+        if self.is_close_backups:
+            date = f'Close Addon Backups'
+        return date
 
     @property
-    def file_name(self):
-        folder = self.filepath
+    def file_path(self):
+        folder_path = self.filepath
+
+        if self.is_auto_backups or self.is_close_backups:
+            folder_path = get_backups_folder(not self.is_close_backups)
         name = 'Gesture'
-        if not os.path.exists(folder) or os.path.isfile(folder):
-            name = os.path.basename(folder)
-            folder = os.path.dirname(folder)
-        new_name = name if name.endswith('.json') else f'{name} {self.ymdhm}.json'.replace(':', ' ')
-        return os.path.abspath(os.path.join(folder, new_name))
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
-    @property
-    def gesture_data(self):
-
-        def filter_data(dd):
-            res = {}
-            if 'element_type' in dd:
-                t = dd['element_type']
-                for i in EXPORT_PROPERTY_ITEM[t]:
-                    if i in dd:
-                        res[i] = dd[i]
-            else:
-                res.update(dd)
-            if 'element' in dd:
-                res['element'] = {k: filter_data(v) for k, v in dd['element'].items()}
-            return res
-
-        data = {}
-        for index, g in enumerate(self.pref.gesture):
-            if g.selected:
-                origin = PropertyGetUtils.props_data(g, EXPORT_PROPERTY_EXCLUDE)
-                item = filter_data(origin)
-                data[str(index)] = item
-        return data
+        if os.path.isfile(folder_path):
+            name = os.path.basename(folder_path)
+            folder_path = os.path.dirname(folder_path)
+        new_name = name if name.endswith('.json') else f'{name} {self.file_string}.json'.replace(':', ' ')
+        return os.path.abspath(os.path.join(folder_path, new_name))
 
     @property
     def export_data(self):
@@ -181,7 +204,7 @@ class Export(PublicFileOperator):
             'author': self.author,
             'description': self.description,
 
-            'gesture': self.gesture_data
+            'gesture': self.pref.get_gesture_data(self.is_auto_backups or self.is_close_backups)
         }
         return data
 
@@ -207,38 +230,33 @@ class Export(PublicFileOperator):
         )
 
     def execute(self, _):
-        if not len(self.export_data['gesture']):
+        if len(self.pref.gesture) == 0:
+            ...
+        elif not len(self.export_data['gesture']):
             self.report({'WARNING'}, "未选择导出项")
         else:
             self.write_json_file()
-            self.report({'INFO'}, "导出完成!")
+            self.report({'INFO'}, f"导出完成!\t{self.file_path}")
         return {'FINISHED'}
 
     def write_json_file(self):
-        with open(self.file_name, 'w+') as file:
+        with open(self.file_path, 'w') as file:
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
 
     @staticmethod
-    def backups():
+    def backups(is_blender_close: bool = False):
         """
-        备份
+        只在关闭插件时进行操作
+        备份分为两种,
+        一种是关闭插件,一种是关闭Blender
         """
-        from ..utils.public import ADDON_FOLDER
         try:
-            prop = get_pref().other_property
-            if prop.auto_backups:
-                if prop.enabled_backups_to_specified_path:
-                    if os.path.isdir(prop.backups_path):
-                        bpy.ops.gesture.export(
-                            'EXEC_DEFAULT',
-                            author='Emm',
-                            description='auto_backups',
-                            filepath=prop.backups_path)
-                else:
-                    bpy.ops.gesture.export(
-                        'EXEC_DEFAULT',
-                        author='Emm',
-                        description='auto_backups',
-                        filepath=os.path.join(ADDON_FOLDER, 'auto_backups'))
+            bpy.ops.gesture.export(
+                'EXEC_DEFAULT',
+                author='Emm',
+                description='auto_backups',
+                is_auto_backups=get_pref().other_property.auto_backups,
+                is_close_backups=not is_blender_close,
+            )
         except Exception as e:
-            print(e.args)
+            print("try auto backups error", e.args)

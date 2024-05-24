@@ -19,8 +19,11 @@ def get_pref():
 
 def get_debug(key=None):
     prop = get_pref().debug_property
-    if key == 'key':
-        return prop.debug_key
+    if prop.debug_mode:
+        if key == 'key':
+            return prop.debug_key
+        elif key == 'export_import':
+            return prop.debug_export_import
     return prop.debug_mode
 
 
@@ -31,7 +34,8 @@ def get_gesture_direction_items(iteration):
     for item in iteration:
         if item.is_selected_structure:  # 是选择结构
             if item.is_available_selected_structure:  # 是可用的选择结构
-                if item.poll_bool and (not last_selected_structure or item.is_selected_if):  # 是True
+                # 是True
+                if item.poll_bool and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_direction_items(item.element)
                     direction.update(child)
                     last_selected_structure = item
@@ -115,7 +119,7 @@ class PublicProperty(PublicCacheFunc):
             if ae:
                 ae.to_operator_tmp_kmi()
                 ae.__check_duplicate_name__()
-        except Exception:
+        except Exception as e:
             ...
 
     @property
@@ -202,7 +206,8 @@ class PublicSortAndRemovePropertyGroup:
     def _set_index(self, value):
         ...
 
-    index = property(fget=_get_index, fset=_set_index, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index, fset=_set_index,
+                     doc='通过当前项的index,来设置索引的index值,以及移动项')
 
     @property
     def is_last(self) -> bool:

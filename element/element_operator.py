@@ -42,6 +42,7 @@ class OperatorProperty:
 
     operator_properties: StringProperty(name='操作符属性',
                                         update=lambda self, context: self.update_operator_properties())
+    
     operator_type: EnumProperty(name='操作类型',
                                 description='操作的类型',
                                 items=ENUM_OPERATOR_TYPE,
@@ -49,7 +50,7 @@ class OperatorProperty:
                                 )
     operator_script: StringProperty(name='操作脚本', description='操作符的脚本', default='print("Emm")')
 
-    preview_operator_script: BoolProperty(name='预览脚本')
+    preview_operator_script: BoolProperty(name='预览脚本', default=True)
 
     def update_operator_properties_sync_from_temp_properties(self, _):
         if self.is_operator:

@@ -57,3 +57,4 @@ def register():
 def unregister():
     unregister_classes()
     ElementCURE.ScriptSave.unregister_ui()
+    print()

@@ -44,6 +44,7 @@ class DebugProperty(PropertyGroup):
     debug_mode: BoolProperty(name='Debug模式', default=False)
     debug_key: BoolProperty(name='Debug快捷键', default=False)
     debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
+    debug_export_import: BoolProperty(name='Debug导入导出', default=False)
 
 
 class OtherProperty(PropertyGroup):
@@ -56,7 +57,7 @@ class OtherProperty(PropertyGroup):
     auto_backups: BoolProperty(
         name='自动备份',
         description='在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 "auto_backups" 文件夹',
-        default=False,
+        default=True,
     )
     enabled_backups_to_specified_path: BoolProperty(
         name='指定备份路径',
@@ -69,6 +70,7 @@ class OtherProperty(PropertyGroup):
         subtype='DIR_PATH',
         default=os.path.join(ADDON_FOLDER, 'auto_backups')
     )
+    init_addon: BoolProperty(name="已初始化插件", default=False)
 
 
 class GestureProperty(PropertyGroup):
@@ -99,11 +101,11 @@ class GestureProperty(PropertyGroup):
         row = layout.row()
         column = row.column(align=True)
         column.prop(g, 'automatically_handle_conflicting_keymaps')
-        if other['auto_backups']:
+        if other.auto_backups:
             box = column.box()
             box.prop(other, 'auto_backups')
             box.prop(other, 'enabled_backups_to_specified_path')
-            if other['enabled_backups_to_specified_path']:
+            if other.enabled_backups_to_specified_path:
                 box.prop(other, 'backups_path')
         else:
             column.prop(other, 'auto_backups')
@@ -113,6 +115,7 @@ class GestureProperty(PropertyGroup):
         column.prop(debug, 'debug_mode')
         column.prop(debug, 'debug_key')
         column.prop(debug, 'debug_draw_gpu_mode')
+        column.prop(debug, 'debug_export_import')
 
         col = row.column(align=True)
         col.label(text='手势:')
@@ -433,6 +436,31 @@ class GesturePreferences(PublicProperty,
         description="""启用禁用整个系统,主要是keymap""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
     show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
+
+    def get_gesture_data(self, get_all: bool = False) -> {}:
+        from .ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
+        from .utils import PropertyGetUtils
+
+        def filter_data(dd):
+            res = {}
+            if 'element_type' in dd:
+                t = dd['element_type']
+                for i in EXPORT_PROPERTY_ITEM[t]:
+                    if i in dd:
+                        res[i] = dd[i]
+            else:
+                res.update(dd)
+            if 'element' in dd:
+                res['element'] = {k: filter_data(v) for k, v in dd['element'].items()}
+            return res
+
+        data = {}
+        for index, g in enumerate(self.pref.gesture):
+            if g.selected or get_all:
+                origin = PropertyGetUtils.props_data(g, EXPORT_PROPERTY_EXCLUDE)
+                item = filter_data(origin)
+                data[str(index)] = item
+        return data
 
     @property
     def is_show_gesture(self):
