@@ -67,7 +67,7 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
     draw_func(layout,**)
     draw_func_data{}
     """
-    from props import TempDrawProperty
+    from ..props import TempDrawProperty
 
     extend = TempDrawProperty.temp_wm_prop()
 
