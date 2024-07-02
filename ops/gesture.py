@@ -444,7 +444,7 @@ class GestureOperator(GestureHandle):
         if not ops:
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
                 if self.is_debug:
-                    print('PASS_THROUGH')
+                    print('PASS_THROUGH', self.event.type, self.event.value)
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
             ...
