@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+
+blender_version_min = "4.2.0"
+id = "DevelopmentKitTool"
+license = ["UNKNOWN",]
+maintainer = ""
+name = "Gesture Helper"
+tagline = "手势助手,可以快速的使用手势运行blender 操作符或是更改属性"
+type = "add-on"
+version = "1.0.2"
+tags = ["幻之境",]
