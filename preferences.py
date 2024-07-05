@@ -99,6 +99,8 @@ class GestureProperty(PropertyGroup):
 
         row = layout.row()
         column = row.column(align=True)
+        ops = column.operator("preferences.keymap_restore")
+        ops.all = True
         if other.auto_backups:
             box = column.box()
             box.prop(other, 'auto_backups')
