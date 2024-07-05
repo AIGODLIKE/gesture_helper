@@ -87,7 +87,6 @@ class GestureProperty(PropertyGroup):
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
 
-    automatically_handle_conflicting_keymaps: BoolProperty(name='设置快捷键映射时自动处理冲突快捷键', default=True)
     show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
 
     @staticmethod
@@ -100,7 +99,8 @@ class GestureProperty(PropertyGroup):
 
         row = layout.row()
         column = row.column(align=True)
-        column.prop(g, 'automatically_handle_conflicting_keymaps')
+        ops = column.operator("preferences.keymap_restore")
+        ops.all = True
         if other.auto_backups:
             box = column.box()
             box.prop(other, 'auto_backups')

@@ -9,6 +9,7 @@ from bpy.props import StringProperty, IntProperty, BoolProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
 
+from .gesture_pass_through_keymap import GesturePassThroughKeymap
 from ..utils.public import PublicOperator, PublicProperty, get_debug
 from ..utils.public_gpu import PublicGpu
 
@@ -66,8 +67,7 @@ class GesturePointKDTree:
             return self.time_list[0]
 
 
-class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
-                     ):
+class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty, GesturePassThroughKeymap):
     __temp_draw_class__ = {}
 
     @staticmethod
@@ -78,8 +78,6 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty
     def space_subclasses(cls):
         cls.refresh_space()
         sub = bpy.types.Space.__subclasses__()
-        if bpy.types.SpaceConsole in sub:
-            sub.remove(bpy.types.SpaceConsole)
         return sub
 
     def register_draw(self):
@@ -427,10 +425,10 @@ class GestureOperator(GestureHandle):
     def modal(self, context, event):
         self.update_modal(context, event)
         if self.is_exit:
-            return self.exit()
+            return self.exit(context, event)
         return {'RUNNING_MODAL'}
 
-    def exit(self):
+    def exit(self, context: bpy.types.Context, event: bpy.types.Event):
         self.unregister_draw()
         ops = self.try_running_operator()
         wm = bpy.context.window_manager
@@ -444,7 +442,16 @@ class GestureOperator(GestureHandle):
         if not ops:
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
                 if self.is_debug:
-                    print('PASS_THROUGH')
+                    area = context.area
+                    view_type = getattr(context.space_data, "view_type", None)
+                    view = getattr(context.space_data, "view", None)
+                    mode = getattr(context.space_data, "mode", None)
+
+                    region_type = bpy.context.region.type
+                    print(f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}')
+                    print(f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}")
+                    print(f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}")
+                self.try_pass_through_keymap(context, event)
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
             ...

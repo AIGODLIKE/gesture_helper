@@ -22,7 +22,10 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             if self.add_keymap in OperatorSetKeyMaps.__temp_selected_keymaps__:
                 OperatorSetKeyMaps.__temp_selected_keymaps__.remove(self.add_keymap)
             else:
-                OperatorSetKeyMaps.__temp_selected_keymaps__.append(self.add_keymap)
+                if len(OperatorSetKeyMaps.__temp_selected_keymaps__) == 0:
+                    OperatorSetKeyMaps.__temp_selected_keymaps__ = [self.add_keymap, ]
+                else:
+                    OperatorSetKeyMaps.__temp_selected_keymaps__.append(self.add_keymap)
             return {'FINISHED'}
 
         from bl_keymap_utils import keymap_hierarchy

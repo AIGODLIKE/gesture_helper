@@ -43,6 +43,7 @@ class PollData:
             {'name': 'Weight Paint', 'item': 'PAINT_WEIGHT'},
             {'name': 'Vertex Paint', 'item': 'PAINT_VERTEX'},
             {'name': 'Texture Paint', 'item': 'PAINT_TEXTURE'},
+            {'name': 'Image Paint', 'item': 'PAINT_TEXTURE'},
             {'name': 'Particle', 'item': 'PARTICLE'},
             {'name': 'Object', 'item': 'OBJECT'},
             None,

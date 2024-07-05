@@ -39,7 +39,7 @@ def get_backups_folder(user_custom_path: bool = True) -> str:
 
 class PublicFileOperator(PublicOperator, PublicProperty):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN', 'SKIP_SAVE'}, )
-    preset_show: BoolProperty(options={'HIDDEN'}, )
+    preset_show: BoolProperty(options={'HIDDEN', 'SKIP_SAVE'}, )
     filename_ext = ".json"
     filter_glob: StringProperty(
         default="*.json",
@@ -114,6 +114,7 @@ class Import(PublicFileOperator):
             ops = column.operator(self.bl_idname, text=k)
             ops.filepath = v
             ops.run_execute = True
+            ops.preset_show = False
 
     @cache_update_lock
     def gesture_import(self):
