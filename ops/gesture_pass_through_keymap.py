@@ -15,7 +15,7 @@ class GesturePassThroughKeymap:
         "EDIT_ARMATURE": "Armature",
         "EDIT_TEXT": "Font",
         "EDIT_METABALL": "Metaball",
-        "EDIT_SURFACE": "Curves",
+        "EDIT_SURFACE": "Curve",
         "EDIT_CURVE": "Curve",
 
         "POSE": "Pose",
@@ -23,11 +23,6 @@ class GesturePassThroughKeymap:
         "SCULPT_GREASE_PENCIL": "Grease Pencil Sculpt Mode",
         "PAINT_GREASE_PENCIL": "Grease Pencil Paint Mode",
         "WEIGHT_GREASE_PENCIL": "Grease Pencil Weight Paint",
-    }
-    image_mode_map = {
-        "PAINT": "Image Paint",
-        "VIEW": "Image",
-        # "MASK": "Image",
     }
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
@@ -45,7 +40,7 @@ class GesturePassThroughKeymap:
         if is3d:
             key = self.object_mode_map.get(context.mode)
         elif isImage:
-            key = self.image_mode_map.get(getattr(context.space_data, "mode", None))
+            key = "Image Paint"
         else:
             for k in keymaps.keys():
                 if k.lower() == context.mode.lower():
