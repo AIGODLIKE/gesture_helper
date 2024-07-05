@@ -78,8 +78,6 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty, GesturePassThrou
     def space_subclasses(cls):
         cls.refresh_space()
         sub = bpy.types.Space.__subclasses__()
-        if bpy.types.SpaceConsole in sub:
-            sub.remove(bpy.types.SpaceConsole)
         return sub
 
     def register_draw(self):
@@ -445,8 +443,14 @@ class GestureOperator(GestureHandle):
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
                 if self.is_debug:
                     area = context.area
-                    print('PASS_THROUGH', self.event.type, self.event.value)
-                    print(area.type, context.mode, getattr(context.space_data, "mode", None))
+                    view_type = getattr(context.space_data, "view_type", None)
+                    view = getattr(context.space_data, "view", None)
+                    mode = getattr(context.space_data, "mode", None)
+
+                    region_type = bpy.context.region.type
+                    print(f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}')
+                    print(f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}")
+                    print(f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}")
                 self.try_pass_through_keymap(context, event)
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
