@@ -63,14 +63,51 @@ class GesturePassThroughKeymap:
         "GRAPH": "Clip Graph Editor",
         "DOPESHEET": "Clip Dopesheet Editor",
     }
+
     pass_through_idname = (
+        # 菜单
         'wm.call_menu',
         'wm.call_panel',
-
         'wm.call_menu_pie',
-        'object.delete',
-        'outliner.operation',
-        'buttons.context_menu',
+        'buttons.context_menu',  # 属性菜单
+
+        'object.delete',  # 删除
+        'outliner.operation',  # 大纲
+
+        'nla.tracks_add',
+        'nla.actionclip_add',
+
+        # 选择
+        'object.select_all',
+        'mesh.select_all',
+        'outliner.select_all',
+        'info.select_all',
+        'text.select_all',
+        'gpencil.select_all',
+        'grease_pencil.select_all',
+        'paint.face_select_all',
+        'paint.vert_select_all',
+        'paintcurve.select',
+        'pose.select_all',
+        'curve.select_all',
+        'curves.select_all',
+        'armature.select_all',
+        'mball.select_all',
+        'particle.select_all',
+        'font.select_all',
+        'console.select_all',
+        'anim.channels_select_all',
+        'uv.select_all',
+        'mask.select_all',
+        'marker.select_all',
+        'graph.select_all',
+        'node.select_all',
+        'file.select_all',
+        'action.select_all',
+        'nla.select_all',
+        'sequencer.select_all',
+        'clip.select_all',
+        'clip.graph_select_all_markers'
     )
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
