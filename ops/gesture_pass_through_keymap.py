@@ -73,6 +73,7 @@ class GesturePassThroughKeymap:
 
         'object.delete',  # 删除
         'outliner.operation',  # 大纲
+        'object.move_to_collection',  # 合并
 
         'nla.tracks_add',
         'nla.actionclip_add',
