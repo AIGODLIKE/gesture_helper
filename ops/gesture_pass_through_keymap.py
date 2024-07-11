@@ -23,7 +23,6 @@ class GesturePassThroughKeymap:
         "SCULPT_GREASE_PENCIL": "Grease Pencil Sculpt Mode",
         "PAINT_GREASE_PENCIL": "Grease Pencil Paint Mode",
         "WEIGHT_GREASE_PENCIL": "Grease Pencil Weight Paint",
-
     }
 
     area_map = {

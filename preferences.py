@@ -20,6 +20,7 @@ from .utils.public_ui import icon_two
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
+isDebug = os.environ.get('USERNAME') in ("EM1", "emm")
 
 
 class DrawProperty(PropertyGroup):
@@ -39,12 +40,15 @@ class DrawProperty(PropertyGroup):
     mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(.1, .9, 1, 1))
     gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(0, .7, .9, 1))
 
+    gesture_operator_color: FloatVectorProperty(name='手势操作符颜色', **public_color, default=(0, .7, .9, 1))
+    gesture_operator_color: FloatVectorProperty(name='手势操作符颜色', **public_color, default=(0, .7, .9, 1))
+
 
 class DebugProperty(PropertyGroup):
-    debug_mode: BoolProperty(name='Debug模式', default=False)
-    debug_key: BoolProperty(name='Debug快捷键', default=False)
-    debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=False)
-    debug_export_import: BoolProperty(name='Debug导入导出', default=False)
+    debug_mode: BoolProperty(name='Debug模式', default=isDebug)
+    debug_key: BoolProperty(name='Debug快捷键', default=isDebug)
+    debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=isDebug)
+    debug_export_import: BoolProperty(name='Debug导入导出', default=isDebug)
 
 
 class OtherProperty(PropertyGroup):
@@ -55,7 +59,7 @@ class OtherProperty(PropertyGroup):
         description='移动元素 整个元素需要只有移动操作符可用',
         options={"SKIP_SAVE"})
     auto_backups: BoolProperty(
-        name='自动备份',
+        name='启用自动备份',
         description='在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 "auto_backups" 文件夹',
         default=True,
     )
@@ -91,33 +95,71 @@ class GestureProperty(PropertyGroup):
 
     @staticmethod
     def draw(layout):
-        pref = get_pref()
-        g = pref.gesture_property
-        draw = pref.draw_property
-        other = pref.other_property
-        debug = pref.debug_property
-
         row = layout.row()
         column = row.column(align=True)
-        ops = column.operator("preferences.keymap_restore")
-        ops.all = True
-        if other.auto_backups:
-            box = column.box()
-            box.prop(other, 'auto_backups')
-            box.prop(other, 'enabled_backups_to_specified_path')
-            if other.enabled_backups_to_specified_path:
-                box.prop(other, 'backups_path')
-        else:
-            column.prop(other, 'auto_backups')
+
+        GestureProperty.draw_backups(column)
         column.separator()
 
-        column.label(text='Debug')
-        column.prop(debug, 'debug_mode')
-        column.prop(debug, 'debug_key')
-        column.prop(debug, 'debug_draw_gpu_mode')
-        column.prop(debug, 'debug_export_import')
+        ops = column.operator("preferences.keymap_restore")
+        ops.all = True
+        GestureProperty.draw_debug(column)
 
         col = row.column(align=True)
+        GestureProperty.draw_gesture_property(col)
+        GestureProperty.draw_color(col)
+
+    @staticmethod
+    def draw_backups(layout: bpy.types.UILayout):
+        pref = get_pref()
+        other = pref.other_property
+        column = layout.column()
+
+        box = column.box()
+        box.label(text="Auto Backups")
+        box.prop(other, 'auto_backups')
+        box.prop(other, 'enabled_backups_to_specified_path')
+        if other.enabled_backups_to_specified_path:
+            box.prop(other, 'backups_path')
+        # if other.auto_backups:
+        # else:
+        #     column.prop(other, 'auto_backups')
+
+    @staticmethod
+    def draw_debug(layout: bpy.types.UILayout):
+        pref = get_pref()
+        debug = pref.debug_property
+
+        debug_box = layout.box()
+        debug_box.label(text='Debug')
+        debug_box.prop(debug, 'debug_mode')
+        debug_box.prop(debug, 'debug_key')
+        debug_box.prop(debug, 'debug_draw_gpu_mode')
+        debug_box.prop(debug, 'debug_export_import')
+
+    @staticmethod
+    def draw_color(layout: bpy.types.UILayout):
+        pref = get_pref()
+        draw = pref.draw_property
+
+        box = layout.box()
+
+        box.label(text='Color:')
+        box.prop(draw, 'background_default_color')
+        box.prop(draw, 'background_active_color')
+        box.prop(draw, 'text_default_color')
+        box.prop(draw, 'text_active_color')
+        box.prop(draw, 'mouse_trajectory_color')
+        box.prop(draw, 'gesture_trajectory_color')
+
+    @staticmethod
+    def draw_gesture_property(layout: bpy.types.UILayout):
+        pref = get_pref()
+
+        col = layout.box()
+
+        g = pref.gesture_property
+        draw = pref.draw_property
         col.label(text='手势:')
         col.prop(draw, 'text_gpu_draw_size')
         col.prop(draw, 'text_gpu_draw_radius')
@@ -128,13 +170,6 @@ class GestureProperty(PropertyGroup):
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')
-        col.label(text='Color:')
-        col.prop(draw, 'background_default_color')
-        col.prop(draw, 'background_active_color')
-        col.prop(draw, 'text_default_color')
-        col.prop(draw, 'text_active_color')
-        col.prop(draw, 'mouse_trajectory_color')
-        col.prop(draw, 'gesture_trajectory_color')
 
 
 class ElementDraw:

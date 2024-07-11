@@ -7,7 +7,9 @@ from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 
 
 class ElementCURE:
-
+    """
+    增删查改
+    """
     @cache_update_lock
     def copy(self):
         from ..utils import PropertyGetUtils, PropertySetUtils
