@@ -131,6 +131,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 y *= 0.7
 
                 gpu.matrix.translate([x, y])
-                self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1), "line_width": 5})
+                # self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1), "line_width": 5})
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
             self.draw_text((0, 0), self.text, color=self.text_color, size=self.text_size)

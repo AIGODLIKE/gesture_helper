@@ -1,4 +1,4 @@
-class GestureDraw:
+class GestureDrawUI:
     def draw_item(self, layout):
         layout.prop(self, 'enabled', text='')
         layout.separator()

@@ -1,15 +1,9 @@
 from bpy.props import BoolProperty
 
-from ..utils.public import PublicOperator, PublicProperty
-from ..utils.public_cache import cache_update_lock
-
 
 class GestureCURE:
-    @cache_update_lock
-    def copy(self):
-        from ..utils import PropertyGetUtils, PropertySetUtils
-        copy_data = PropertyGetUtils.props_data(self)
-        PropertySetUtils.set_prop(self.pref, 'gesture', {'0': copy_data})
+    """    手势项 增删查改    """
+    from ..utils.public import PublicOperator, PublicProperty
 
     class GesturePoll(PublicOperator, PublicProperty):
 

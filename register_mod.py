@@ -33,7 +33,10 @@ def restore():
 def register():
     icons.Icons.register()
     for module in module_list:
-        module.register()
+        try:
+            module.register()
+        except Exception as e:
+            print(e.args, "\n")
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
     gesture_keymap.GestureKeymap.key_init()

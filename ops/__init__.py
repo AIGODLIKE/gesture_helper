@@ -1,13 +1,13 @@
 import bpy
 
+from . import export_import, switch_mode
 from . import gesture
+from . import gesture_quick_add
+from . import restore_key
+from . import set_direction
 from . import set_key
 from . import set_poll
 from . import switch_ui
-from . import export_import
-from . import restore_key
-from . import set_direction
-from .sub import switch_mode
 
 operator_list = (
     switch_ui.SwitchGestureWindow,
@@ -18,6 +18,7 @@ operator_list = (
     set_key.OperatorTempModifierKey,
 
     gesture.GestureOperator,
+    gesture_quick_add.GestureQuickAdd,
 
     export_import.Export,
     export_import.Import,

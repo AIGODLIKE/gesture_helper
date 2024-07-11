@@ -1,7 +1,5 @@
 import bpy
 
-from ..utils.public_key import get_kmi_operator_properties
-
 
 class GesturePassThroughKeymap:
     object_mode_map = {
@@ -152,7 +150,7 @@ class GesturePassThroughKeymap:
                     key = k
 
         if key in keymaps.keys():
-            from .gesture import GestureOperator
+            from ..ops.gesture import GestureOperator
             k = keymaps[key]
             match_gesture_key = []
             match_origin_key = []
@@ -175,6 +173,7 @@ class GesturePassThroughKeymap:
 
 
 def try_operator_pass_through_right(kmi) -> bool:
+    from ..utils.public_key import get_kmi_operator_properties
     try:
         sp = kmi.idname.split('.')
         prefix, suffix = sp

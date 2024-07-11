@@ -15,6 +15,7 @@ from bpy.types import AddonPreferences, PropertyGroup
 from . import gesture
 from .element.element_property import ElementAddProperty
 from .ops import export_import
+from .ops.gesture_quick_add import GestureQuickAdd
 from .utils.public import ADDON_NAME, get_pref, PublicProperty, get_debug
 from .utils.public_ui import icon_two
 
@@ -29,9 +30,9 @@ class DrawProperty(PropertyGroup):
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 
     text_gpu_draw_size: IntProperty(name='文字大小', description='Gpu绘制的文字大小', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=10)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7)
-    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=5, min=2, max=114)
+    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=10, min=5, max=120)
+    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7, min=5, max=120)
+    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=5, min=2, max=20)
 
     background_operator_color: FloatVectorProperty(name='操作符颜色', **public_color,
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])
@@ -250,7 +251,7 @@ class GestureDraw:
 
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
-        from .gesture import gesture_cure
+        from .ops import gesture_cure
         GestureDraw.public_cure(layout, gesture_cure.GestureCURE)
 
     @staticmethod
@@ -428,6 +429,7 @@ class PreferencesDraw(GestureDraw, PropertyDraw):
         row = column.row(align=True)
         row.prop(pref, 'enabled', text='')
         row.prop(pref, 'show_page', expand=True)
+        row.operator(GestureQuickAdd.bl_idname, icon="RNA_ADD")
         sub_column = column.column(align=True)
         if pref.is_show_gesture:
             sub_column.enabled = pref.enabled
