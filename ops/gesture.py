@@ -5,6 +5,7 @@ import time
 
 import bpy
 import gpu
+import bgl
 from bpy.props import StringProperty, IntProperty, BoolProperty
 from mathutils import Vector
 from mathutils.kdtree import KDTree
@@ -204,6 +205,7 @@ class GestureGpuDraw(PublicGpu, PublicOperator, PublicProperty, GesturePassThrou
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
+
         if len(bpy.context.screen.areas) > 8:
             if bpy.context.area != self.area:
                 return

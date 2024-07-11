@@ -33,15 +33,17 @@ class DrawProperty(PropertyGroup):
     text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7)
     line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=5, min=2, max=114)
 
-    background_default_color: FloatVectorProperty(name='背景默认颜色', **public_color, default=(.05, .05, .05, 1))
-    background_active_color: FloatVectorProperty(name='背景活动颜色', **public_color, default=(.2, .2, .2, 1))
+    background_operator_color: FloatVectorProperty(name='操作符颜色', **public_color,
+                                                   default=[0.019382, 0.019382, 0.019382, 1.000000])
+    background_child_color: FloatVectorProperty(name='子级颜色', **public_color,
+                                                default=[0.431968, 0.222035, 0.650622, 1.000000])
+    background_active_color: FloatVectorProperty(name='活动颜色', **public_color,
+                                                 default=[0.738785, 0.776229, 1.000000, 1.000000])
+
     text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
     text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
     mouse_trajectory_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color, default=(.1, .9, 1, 1))
     gesture_trajectory_color: FloatVectorProperty(name='手势轨迹颜色', **public_color, default=(0, .7, .9, 1))
-
-    gesture_operator_color: FloatVectorProperty(name='手势操作符颜色', **public_color, default=(0, .7, .9, 1))
-    gesture_operator_color: FloatVectorProperty(name='手势操作符颜色', **public_color, default=(0, .7, .9, 1))
 
 
 class DebugProperty(PropertyGroup):
@@ -86,7 +88,7 @@ class GestureProperty(PropertyGroup):
         if self.threshold > self.threshold_confirm:
             self['threshold_confirm'] = self.threshold_confirm + 20
 
-    timeout: IntProperty(name='Gesture TimeOut(ms)', **gen_gesture_prop(300, 'TIME'))
+    timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(300, 'TIME'))
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(150))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
@@ -96,13 +98,12 @@ class GestureProperty(PropertyGroup):
     @staticmethod
     def draw(layout):
         row = layout.row()
+        row.use_property_split = True
         column = row.column(align=True)
 
         GestureProperty.draw_backups(column)
         column.separator()
 
-        ops = column.operator("preferences.keymap_restore")
-        ops.all = True
         GestureProperty.draw_debug(column)
 
         col = row.column(align=True)
@@ -113,14 +114,16 @@ class GestureProperty(PropertyGroup):
     def draw_backups(layout: bpy.types.UILayout):
         pref = get_pref()
         other = pref.other_property
-        column = layout.column()
+        column = layout.column(heading="Auto Backups")
 
         box = column.box()
-        box.label(text="Auto Backups")
         box.prop(other, 'auto_backups')
         box.prop(other, 'enabled_backups_to_specified_path')
         if other.enabled_backups_to_specified_path:
             box.prop(other, 'backups_path')
+
+        ops = column.operator("preferences.keymap_restore")
+        ops.all = True
         # if other.auto_backups:
         # else:
         #     column.prop(other, 'auto_backups')
@@ -130,8 +133,7 @@ class GestureProperty(PropertyGroup):
         pref = get_pref()
         debug = pref.debug_property
 
-        debug_box = layout.box()
-        debug_box.label(text='Debug')
+        debug_box = layout.column(heading="Debug").box()
         debug_box.prop(debug, 'debug_mode')
         debug_box.prop(debug, 'debug_key')
         debug_box.prop(debug, 'debug_draw_gpu_mode')
@@ -141,16 +143,21 @@ class GestureProperty(PropertyGroup):
     def draw_color(layout: bpy.types.UILayout):
         pref = get_pref()
         draw = pref.draw_property
-
         box = layout.box()
+        box.label(text="Color")
 
-        box.label(text='Color:')
-        box.prop(draw, 'background_default_color')
-        box.prop(draw, 'background_active_color')
-        box.prop(draw, 'text_default_color')
-        box.prop(draw, 'text_active_color')
-        box.prop(draw, 'mouse_trajectory_color')
-        box.prop(draw, 'gesture_trajectory_color')
+        bb = box.column(heading="背景")
+        bb.prop(draw, 'background_operator_color')
+        bb.prop(draw, 'background_child_color')
+        bb.prop(draw, 'background_active_color')
+
+        bb = box.column(heading="字体")
+        bb.prop(draw, 'text_default_color')
+        bb.prop(draw, 'text_active_color')
+
+        bb = box.column(heading="轨迹")
+        bb.prop(draw, 'mouse_trajectory_color')
+        bb.prop(draw, 'gesture_trajectory_color')
 
     @staticmethod
     def draw_gesture_property(layout: bpy.types.UILayout):
@@ -160,7 +167,7 @@ class GestureProperty(PropertyGroup):
 
         g = pref.gesture_property
         draw = pref.draw_property
-        col.label(text='手势:')
+        col.label(text='手势')
         col.prop(draw, 'text_gpu_draw_size')
         col.prop(draw, 'text_gpu_draw_radius')
         col.prop(draw, 'text_gpu_draw_margin')

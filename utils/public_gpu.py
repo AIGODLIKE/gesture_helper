@@ -205,9 +205,12 @@ class PublicGpu:
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
             indices = get_indices_from_vertex(vertex)
-            shader = gpu.shader.from_builtin('UNIFORM_COLOR')
-            batch = batch_for_shader(shader, 'TRIS', {"pos": vertex}, indices=indices)
-            shader.uniform_float("color", color)
+            shader = gpu.shader.from_builtin('SMOOTH_COLOR')
+            batch = batch_for_shader(shader,
+                                     'TRIS',
+                                     {"pos": vertex, "color": [color for _ in range(len(vertex))]},
+                                     indices=indices)
+            # shader.uniform_float("color", color)
             batch.draw(shader)
 
     @staticmethod

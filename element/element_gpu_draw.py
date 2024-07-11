@@ -59,14 +59,27 @@ class ElementGpuProperty:
         return self == self.ops.direction_element and distance_ok
 
     @property
-    def draw_color(self):
+    def text_color(self):
+        """
+        文字颜色
+        :return:
+        """
         draw = self.draw_property
         return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
     @property
-    def rounded_rectangle_color(self):
+    def background_color(self):
+        """
+        背景颜色
+        :return:
+        """
         draw = self.draw_property
-        return draw.background_active_color if self.is_active_direction else draw.background_default_color
+        if self.is_active_direction:
+            return draw.background_active_color
+        elif self.element_type == "OPERATOR":
+            return draw.background_operator_color
+        elif self.element_type == "CHILD_GESTURE":
+            return draw.background_child_color
 
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
@@ -102,12 +115,15 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 offset = (0, -hh / 2)
 
             margin = self.text_margin  # px
+            width = w + margin * 2
+            height = h + margin * 2
+            hh = height / 2
             rounded_rectangle = {
-                "radius": self.text_radius,
+                "radius": self.text_radius if (hh > self.text_radius) else height,
                 "position": (0, 0),
-                "width": w + margin * 2,
-                "height": h + margin * 2,
-                "color": self.rounded_rectangle_color
+                "width": width,
+                "height": height,
+                "color": self.background_color
             }
             gpu.matrix.translate(offset)
             with gpu.matrix.push_pop():
@@ -115,6 +131,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 y *= 0.7
 
                 gpu.matrix.translate([x, y])
+                self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1), "line_width": 5})
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
-                self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1)})
-            self.draw_text((0, 0), self.text, color=self.draw_color, size=self.text_size)
+            self.draw_text((0, 0), self.text, color=self.text_color, size=self.text_size)
