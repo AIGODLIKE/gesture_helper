@@ -23,9 +23,11 @@ class ElementPoll:
         Returns:
             bool: _description_
         """
-
         try:
-            return try_call_eval(self.poll_string)
+            poll_res = try_call_eval(self.poll_string)
+            if self.is_debug:
+                print(f"poll_bool\t{poll_res}\t{self.poll_string}")
+            return poll_res
         except Exception as e:
             print(e.args)
             import traceback

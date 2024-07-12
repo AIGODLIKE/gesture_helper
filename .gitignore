@@ -3,3 +3,4 @@
 __pycache__
 /auto_backups/*.json
 /auto_backups
+/auto_backups/*

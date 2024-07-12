@@ -31,7 +31,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
 
     def modal(self, context, event):
         if self.is_debug:
-            print(self.bl_idname, "\tmodal\t", event.type, event.value)
+            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}")
         self.update_modal(context, event)
         if self.is_exit:
             return self.exit(context, event)

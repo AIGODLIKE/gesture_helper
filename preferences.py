@@ -52,6 +52,7 @@ class DebugProperty(PropertyGroup):
     debug_key: BoolProperty(name='Debug快捷键', default=isDebug)
     debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=isDebug)
     debug_export_import: BoolProperty(name='Debug导入导出', default=isDebug)
+    debug_poll: BoolProperty(name='Debug Poll', default=isDebug)
 
 
 class OtherProperty(PropertyGroup):
@@ -139,6 +140,7 @@ class GestureProperty(PropertyGroup):
         debug_box.prop(debug, 'debug_key')
         debug_box.prop(debug, 'debug_draw_gpu_mode')
         debug_box.prop(debug, 'debug_export_import')
+        debug_box.prop(debug, 'debug_poll')
 
     @staticmethod
     def draw_color(layout: bpy.types.UILayout):

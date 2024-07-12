@@ -131,6 +131,12 @@ class ElementDraw:
             SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
+        """
+        # layout.label(text='gesture gesture_direction_items\t' + str(self.active_gesture.gesture_direction_items))
+        使用blender 绘制此属性时poll会出现错误
+        :param layout:
+        :return:
+        """
         layout.separator()
         layout.label(text=str(self))
         layout.label(text='index\t' + str(self.index))
@@ -138,11 +144,10 @@ class ElementDraw:
         layout.label(text='parent_element\t' + str(self.parent_element))
         layout.label(text='operator_properties\t' + str(self.operator_properties))
         layout.label(text='collection_iteration\t' + str(self.collection_iteration))
-        layout.label(text='gesture gesture_direction_items\t' + str(self.active_gesture.gesture_direction_items))
         layout.label(text='element gesture_direction_items\t' + str(self.gesture_direction_items))
         layout.separator()
         for i in self.bl_rna.properties.keys():
-            if i not in ('rna_type', 'name', 'relationship'):
+            if i not in ('rna_type', 'name', 'relationship', "poll_string"):
                 row = layout.row()
                 row.label(text=i)
                 row.prop(self, i, expand=True, )

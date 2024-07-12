@@ -247,7 +247,7 @@ def draw_save_script_button(self, context):
     text = context.space_data.text
     active = pref.active_element
 
-    if text.gesture_element_hash == str(hash(active)):
+    if getattr(text,"gesture_element_hash", False) == str(hash(active)):
         row = layout.row()
         row.alert = True
         row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name}")

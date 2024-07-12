@@ -175,7 +175,13 @@ class Export(PublicFileOperator):
         if self.is_auto_backups:
             date = f'Auto Backups {date}'
         if self.is_close_backups:
-            date = f'Close Addon Backups'
+            now = datetime.now()
+            # 提取年、月、日
+            year = now.year
+            month = now.month
+            day = now.day
+
+            date = f'Close Addon Backups {year}-{month:02d}-{day:02d}'
         return date
 
     @property

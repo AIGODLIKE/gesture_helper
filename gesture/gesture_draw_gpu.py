@@ -5,60 +5,22 @@ from ..utils.public import get_debug
 from ..utils.public_gpu import PublicGpu
 
 
-class GestureGpuDraw(PublicGpu):
-    __temp_draw_class__ = {}
-
-    @staticmethod
-    def refresh_space():
-        return list(getattr(bpy.types, i) for i in dir(bpy.types) if 'Space' in i)
-
-    @classmethod
-    def space_subclasses(cls):
-        cls.refresh_space()
-        sub = bpy.types.Space.__subclasses__()
-        return sub
-
-    def register_draw(self):
-        if not GestureGpuDraw.__temp_draw_class__:
-            if self.is_debug:
-                print('register_draw')
-            for cls in self.space_subclasses():
-                sub_class = {}
-                # bpy.types.Region.bl_rna.properties['type'].enum_items_static
-                for identifier in {'WINDOW', 'HEADER', }:  # 'UI', 'TOOLS'
-                    try:
-                        sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
-                    except Exception as e:
-                        if self.is_debug:
-                            print(e.args)
-                GestureGpuDraw.__temp_draw_class__[cls] = sub_class
-            self.tag_redraw()
-
-    @classmethod
-    def unregister_draw(cls):
-        if get_debug():
-            print('unregister_draw')
-        for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
-            for key, value in sub_class.items():
-                c.draw_handler_remove(value, key)
-        GestureGpuDraw.__temp_draw_class__.clear()
-        cls.tag_redraw()
-
-    def gpu_draw_trajectory_mouse_move(self):
-        draw = self.draw_property
-        color = draw.mouse_trajectory_color
-        self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
-
-    def gpu_draw_trajectory_gesture_line(self):
-        draw = self.draw_property
-        color = draw.gesture_trajectory_color
-
-        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
-
-    def gpu_draw_trajectory_gesture_point(self):
-        self.draw_2d_points(self.trajectory_tree.points_list)
-
+class DrawDebug(PublicGpu):
     def gpu_draw_debug(self):
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
+        gpu.state.depth_mask_set(True)
+
+        if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
+            self.__gpu_draw_debug()
+
+    def __gpu_draw_debug(self):
+        """
+        Bug pool 失效
+         data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
+         data.append('direction_element:' + str(self.direction_element))
+        :return:
+        """
         area = bpy.context.area
         region = bpy.context.region
         data = ['area.x:' + str(area.x),
@@ -104,14 +66,75 @@ class GestureGpuDraw(PublicGpu):
             data.append('angle_unsigned:' + str(self.angle_unsigned))
             data.append('distance:' + str(self.distance))
             data.append('direction:' + str(self.direction))
-            data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
-            data.append('direction_element:' + str(self.direction_element))
             data.append('find_closest_point:' + str(self.find_closest_point))
             data.append('operator_time:' + str(self.operator_time))
         self.draw_rectangle(0, 0, 400, len(data) * 30)
         for index, i in enumerate(data):
             j = index + 1
             self.draw_text((5, 30 * j), text=i)
+
+
+class GestureGpuDraw(DrawDebug):
+    __temp_draw_class__ = {}
+    __temp_debug_draw_class__ = {}
+
+    @staticmethod
+    def refresh_space():
+        return list(getattr(bpy.types, i) for i in dir(bpy.types) if 'Space' in i)
+
+    @classmethod
+    def space_subclasses(cls):
+        cls.refresh_space()
+        sub = bpy.types.Space.__subclasses__()
+        return sub
+
+    def register_draw(self):
+        if not GestureGpuDraw.__temp_draw_class__:
+            if self.is_debug:
+                print('register_draw')
+            for cls in self.space_subclasses():
+                sub_class = {}
+                debug_class = {}
+                # bpy.types.Region.bl_rna.properties['type'].enum_items_static
+                for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
+                    try:
+                        sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
+                        debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
+                                                                       'POST_PIXEL')
+                    except Exception as e:
+                        if self.is_debug:
+                            print(e.args)
+                GestureGpuDraw.__temp_draw_class__[cls] = sub_class
+                GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
+            self.tag_redraw()
+
+    @classmethod
+    def unregister_draw(cls):
+        if get_debug():
+            print('unregister_draw')
+        for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
+            for key, value in sub_class.items():
+                c.draw_handler_remove(value, key)
+        for c, debug_class in GestureGpuDraw.__temp_debug_draw_class__.items():
+            for key, value in debug_class.items():
+                c.draw_handler_remove(value, key)
+        GestureGpuDraw.__temp_draw_class__.clear()
+        GestureGpuDraw.__temp_debug_draw_class__.clear()
+        cls.tag_redraw()
+
+    def gpu_draw_trajectory_mouse_move(self):
+        draw = self.draw_property
+        color = draw.mouse_trajectory_color
+        self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
+
+    def gpu_draw_trajectory_gesture_line(self):
+        draw = self.draw_property
+        color = draw.gesture_trajectory_color
+
+        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
+
+    def gpu_draw_trajectory_gesture_point(self):
+        self.draw_2d_points(self.trajectory_tree.points_list)
 
     def gpu_draw_gesture(self):
         gp = self.gesture_property
@@ -146,7 +169,5 @@ class GestureGpuDraw(PublicGpu):
         if len(bpy.context.screen.areas) > 8:
             if bpy.context.area != self.area:
                 return
-        if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
-            self.gpu_draw_debug()
         if self.is_draw_gpu:
             self.gpu_draw_gesture()
