@@ -1,6 +1,29 @@
 # 替换偏好设置ui
 import bpy
 
+from ..preferences import PreferencesDraw
+
+
+class ReplaceUI:
+
+    # 绘制右边层
+    def right_layout(self: bpy.types.Panel, _):
+        PreferencesDraw.preferences_draw(self.layout)
+
+    def left_layout(self: bpy.types.Panel, _):
+        layout = self.layout
+        layout.label(text='left_layout')
+
+    def bottom_layout(self: bpy.types.Panel, _):
+        layout = self.layout
+        layout.label(text='bottom_layout')
+        PreferencesDraw.exit(layout)
+
+    def left_bottom_layout(self: bpy.types.Panel, _):
+        layout = self.layout
+        layout.label(text='left_bottom_layout')
+        PreferencesDraw.exit(layout)
+
 
 class SwitchGestureUi:
     """设置UI"""
@@ -42,11 +65,10 @@ class SwitchGestureUi:
     @classmethod
     def set_layout_func(cls):
         """设置活动Layout的绘制方法"""
-        from ..preferences import PreferencesDraw
-        bpy.types.USERPREF_PT_addons.draw = PreferencesDraw.right_layout
-        bpy.types.USERPREF_PT_navigation_bar.draw = PreferencesDraw.left_layout
-        bpy.types.USERPREF_HT_header.draw = PreferencesDraw.bottom_layout
-        bpy.types.USERPREF_PT_save_preferences.draw = PreferencesDraw.left_bottom_layout
+        bpy.types.USERPREF_PT_addons.draw = ReplaceUI.right_layout
+        bpy.types.USERPREF_PT_navigation_bar.draw = ReplaceUI.left_layout
+        bpy.types.USERPREF_HT_header.draw = ReplaceUI.bottom_layout
+        bpy.types.USERPREF_PT_save_preferences.draw = ReplaceUI.left_bottom_layout
 
     @classmethod
     def reduction_ui(cls):

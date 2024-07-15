@@ -1,6 +1,10 @@
+import os
+
 import bpy
 
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
+isDebug = os.environ.get('USERNAME') in ("EM1", "emm")
+public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 
 
 def is_blender_close() -> bool:

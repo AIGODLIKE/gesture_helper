@@ -1,11 +1,13 @@
 import bpy.utils
 
 from . import ui_list
+from . import panel
 
 operator_list = (
     ui_list.GestureUIList,
     ui_list.ElementUIList,
     ui_list.ImportPresetUIList,
+    panel.GesturePanel,
 )
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
