@@ -17,6 +17,11 @@ def get_pref():
     return bpy.context.preferences.addons[ADDON_NAME].preferences
 
 
+def tag_redraw():
+    for area in bpy.context.window.screen.areas:
+        area.tag_redraw()
+
+
 def get_debug(key=None):
     prop = get_pref().debug_property
     if prop.debug_mode:
@@ -154,8 +159,7 @@ class PublicOperator(Operator):
 
     @staticmethod
     def tag_redraw():
-        for area in bpy.context.window.screen.areas:
-            area.tag_redraw()
+        tag_redraw()
 
 
 class PublicUniqueNamePropertyGroup:

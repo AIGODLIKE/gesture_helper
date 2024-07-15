@@ -28,7 +28,7 @@ class BackupsProperty(PropertyGroup):
     def draw_backups(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
         pref = get_pref()
-        other = pref.other_property
+        other = pref.backups_property
         column = layout.column(heading="Auto Backups")
 
         box = column.box()

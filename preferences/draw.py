@@ -16,6 +16,7 @@ class PreferencesDraw(GestureDraw):
 
         row = column.row(align=True)
         row.prop(pref, 'enabled', text='')
+
         row.prop(pref, 'show_page', expand=True)
         row.operator(GestureQuickAdd.bl_idname, icon="RNA_ADD")
         sub_column = column.column(align=True)
