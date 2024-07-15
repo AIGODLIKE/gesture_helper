@@ -262,7 +262,7 @@ class Export(PublicFileOperator):
                 'EXEC_DEFAULT',
                 author='Emm',
                 description='auto_backups',
-                is_auto_backups=get_pref().other_property.auto_backups,
+                is_auto_backups=get_pref().backups_property.auto_backups,
                 is_close_backups=not is_blender_close,
             )
         except Exception as e:

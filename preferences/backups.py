@@ -28,15 +28,15 @@ class BackupsProperty(PropertyGroup):
     def draw_backups(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
         pref = get_pref()
-        other = pref.backups_property
+        backups = pref.backups_property
         column = layout.column(heading="Auto Backups")
 
         box = column.box()
-        box.prop(other, 'auto_backups')
-        box.prop(other, 'enabled_backups_to_specified_path')
-        if other.enabled_backups_to_specified_path:
-            box.prop(other, 'backups_path')
+        box.prop(backups, 'auto_backups')
+        box.prop(backups, 'enabled_backups_to_specified_path')
+        if backups.enabled_backups_to_specified_path:
+            box.prop(backups, 'backups_path')
 
-        # if other.auto_backups:
+        # if backups.auto_backups:
         # else:
-        #     column.prop(other, 'auto_backups')
+        #     column.prop(backups, 'auto_backups')
