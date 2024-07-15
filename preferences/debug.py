@@ -23,13 +23,12 @@ class DebugProperty(PropertyGroup):
         pref = get_pref()
         debug = pref.debug_property
 
-        col = layout.column(heading="Debug", align=True)
+        col = layout.box().column(heading="Debug", align=True)
 
         ops = col.operator("preferences.keymap_restore")
         ops.all = True
-        box = col.box()
-        box.prop(debug, 'debug_mode')
-        box.prop(debug, 'debug_key')
-        box.prop(debug, 'debug_draw_gpu_mode')
-        box.prop(debug, 'debug_export_import')
-        box.prop(debug, 'debug_poll')
+        col.prop(debug, 'debug_mode')
+        col.prop(debug, 'debug_key')
+        col.prop(debug, 'debug_draw_gpu_mode')
+        col.prop(debug, 'debug_export_import')
+        col.prop(debug, 'debug_poll')

@@ -30,23 +30,21 @@ class PreferencesDraw(GestureDraw):
         :param layout:
         :return:
         """
-        from ..preferences.other import OtherProperty
-        from ..preferences import DrawProperty, DebugProperty
-        from . import GestureProperty
+        from .. import preferences
 
         row = layout.row()
         row.use_property_split = True
         column = row.column(align=True)
 
-        OtherProperty.draw_backups(column)
+        preferences.BackupsProperty.draw_backups(column)
 
-        DebugProperty.draw_debug(column)
+        preferences.DebugProperty.draw_debug(column)
 
-        col = row.column(align=True)
+        col = row.box().column(align=True)
         col.label(text='手势')
-        GestureProperty.draw_gesture_property(col)
-        DrawProperty.draw_text_property(col)
-        DrawProperty.draw_color_property(col)
+        preferences.GestureProperty.draw_gesture_property(col)
+        preferences.DrawProperty.draw_text_property(col)
+        preferences.DrawProperty.draw_color_property(col)
 
     @staticmethod
     def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':

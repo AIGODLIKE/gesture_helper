@@ -28,7 +28,7 @@ EXPORT_PROPERTY_ITEM = {
 
 def get_backups_folder(user_custom_path: bool = True) -> str:
     from ..utils.public import ADDON_FOLDER
-    prop = get_pref().other_property
+    prop = get_pref().backups_property
 
     folder_path = os.path.join(ADDON_FOLDER, 'backups')
     if prop.enabled_backups_to_specified_path and user_custom_path:

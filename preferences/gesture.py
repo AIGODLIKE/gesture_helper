@@ -23,7 +23,7 @@ class GestureProperty(PropertyGroup):
     def draw_gesture_property(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
         pref = get_pref()
-        col = layout.box()
+        col = layout.box().column(align=True)
         g = pref.gesture_property
         col.prop(g, 'timeout')
         col.prop(g, 'radius')

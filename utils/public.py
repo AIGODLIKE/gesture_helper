@@ -84,6 +84,10 @@ class PublicProperty(PublicCacheFunc):
         return self.pref.debug_property
 
     @property
+    def backups_property(self):
+        return self.pref.backups_property
+
+    @property
     def other_property(self):
         return self.pref.other_property
 

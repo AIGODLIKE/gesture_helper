@@ -1,4 +1,3 @@
-
 import bpy.utils
 from bpy.props import (
     CollectionProperty,
@@ -8,6 +7,7 @@ from bpy.props import (
     EnumProperty)
 from bpy.types import AddonPreferences, PropertyGroup
 
+from .backups import BackupsProperty
 from .debug import DebugProperty
 from .draw import PreferencesDraw
 from .draw_property import DrawProperty
@@ -32,6 +32,7 @@ class GesturePreferences(PublicProperty,
     draw_property: PointerProperty(type=DrawProperty)
     debug_property: PointerProperty(type=DebugProperty)
     other_property: PointerProperty(type=OtherProperty)
+    backups_property: PointerProperty(type=BackupsProperty)
     gesture_property: PointerProperty(type=GestureProperty)
     add_element_property: PointerProperty(type=AddElementProperty)
 
@@ -82,6 +83,7 @@ class GesturePreferences(PublicProperty,
 classes_list = (
     DrawProperty,
     DebugProperty,
+    BackupsProperty,
     OtherProperty,
     GestureProperty,
     AddElementProperty,
