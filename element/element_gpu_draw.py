@@ -75,10 +75,13 @@ class ElementGpuProperty:
         """
         draw = self.draw_property
         if self.is_active_direction:
-            return draw.background_active_color
-        elif self.element_type == "OPERATOR":
+            if self.is_operator:
+                return draw.background_operator_active_color
+            elif self.is_child_gesture:
+                return draw.background_child_active_color
+        elif self.is_operator:
             return draw.background_operator_color
-        elif self.element_type == "CHILD_GESTURE":
+        elif self.is_child_gesture:
             return draw.background_child_color
 
 

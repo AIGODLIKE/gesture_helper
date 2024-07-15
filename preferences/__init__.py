@@ -76,7 +76,7 @@ class GesturePreferences(PublicProperty,
 
     def draw(self, _):
         layout = self.layout
-        self.right_layout(layout)
+        self.preferences_draw(layout)
 
 
 classes_list = (

@@ -3,6 +3,7 @@ from bpy.props import BoolProperty
 from bpy.types import PropertyGroup
 
 from ..utils import isDebug
+from ..utils.public import get_pref
 
 
 class DebugProperty(PropertyGroup):
@@ -19,13 +20,16 @@ class DebugProperty(PropertyGroup):
         :param layout:
         :return:
         """
-        from utils.public import get_pref
         pref = get_pref()
         debug = pref.debug_property
 
-        debug_box = layout.column(heading="Debug").box()
-        debug_box.prop(debug, 'debug_mode')
-        debug_box.prop(debug, 'debug_key')
-        debug_box.prop(debug, 'debug_draw_gpu_mode')
-        debug_box.prop(debug, 'debug_export_import')
-        debug_box.prop(debug, 'debug_poll')
+        col = layout.column(heading="Debug", align=True)
+
+        ops = col.operator("preferences.keymap_restore")
+        ops.all = True
+        box = col.box()
+        box.prop(debug, 'debug_mode')
+        box.prop(debug, 'debug_key')
+        box.prop(debug, 'debug_draw_gpu_mode')
+        box.prop(debug, 'debug_export_import')
+        box.prop(debug, 'debug_poll')

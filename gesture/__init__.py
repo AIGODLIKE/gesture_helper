@@ -2,18 +2,16 @@ import bpy
 from bpy.props import CollectionProperty, BoolProperty, StringProperty
 from bpy.types import PropertyGroup
 
-from ..ops.gesture_cure import GestureCURE
-from .gesture_draw_ui import GestureDrawUI
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
 from ..element import Element
 from ..element import ElementCURE
+from ..ops.gesture_cure import GestureCURE
 from ..utils.public import PublicProperty
 
 
-class Gesture(GestureDrawUI,
-              GestureKeymap,
+class Gesture(GestureKeymap,
               GestureProperty,
               GestureRelationship,
 
@@ -24,6 +22,12 @@ class Gesture(GestureDrawUI,
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
     description: StringProperty(default="这是一个手势...")
+
+    def draw_item(self, layout):
+        layout.prop(self, 'enabled', text='')
+        layout.separator()
+        layout.prop(self, 'name', text='')
+        layout.label(text=self.description)
 
 
 classes_list = (

@@ -124,12 +124,12 @@ class GestureGpuDraw(DrawDebug):
 
     def gpu_draw_trajectory_mouse_move(self):
         draw = self.draw_property
-        color = draw.mouse_trajectory_color
+        color = draw.trajectory_mouse_color
         self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
         draw = self.draw_property
-        color = draw.gesture_trajectory_color
+        color = draw.trajectory_gesture_color
 
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
 

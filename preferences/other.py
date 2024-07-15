@@ -43,8 +43,6 @@ class OtherProperty(PropertyGroup):
         if other.enabled_backups_to_specified_path:
             box.prop(other, 'backups_path')
 
-        ops = column.operator("preferences.keymap_restore")
-        ops.all = True
         # if other.auto_backups:
         # else:
         #     column.prop(other, 'auto_backups')

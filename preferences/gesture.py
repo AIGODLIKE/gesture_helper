@@ -20,29 +20,6 @@ class GestureProperty(PropertyGroup):
     show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
 
     @staticmethod
-    def draw(layout):
-        from ..preferences.draw import DrawProperty
-        from ..preferences.other import OtherProperty
-
-        row = layout.row()
-        row.use_property_split = True
-        column = row.column(align=True)
-
-        OtherProperty.draw_backups(column)
-        column.separator()
-
-        GestureProperty.draw_debug(column)
-
-        col = row.column(align=True)
-
-        cc = layout.box()
-        cc.label(text='手势')
-        GestureProperty.draw_gesture_property(cc)
-        DrawProperty.draw_text_property(cc)
-
-        DrawProperty.draw_color_property(col)
-
-    @staticmethod
     def draw_gesture_property(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
         pref = get_pref()
