@@ -2,6 +2,7 @@ import bpy
 
 from . import ops, ui, props, preferences
 from .gesture import gesture_keymap
+from .ops.gesture_quick_add import GestureQuickAddKeymap
 from .utils import public_cache, icons, is_blender_close
 from .utils.public import get_pref
 
@@ -27,7 +28,7 @@ def restore():
             prop.init_addon = True
             Import.restore()
     except Exception as e:
-        ...
+        print(e.args)
 
 
 def register():
@@ -40,7 +41,7 @@ def register():
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
     gesture_keymap.GestureKeymap.key_init()
-
+    GestureQuickAddKeymap.register()
     pref = get_pref()
     pref.other_property.is_move_element = False
 
@@ -54,6 +55,7 @@ def unregister():
         bpy.app.timers.unregister(update_state)
     if bpy.app.timers.is_registered(restore):
         bpy.app.timers.unregister(restore)
+    GestureQuickAddKeymap.unregister()
 
     Export.backups(is_blender_close())
 

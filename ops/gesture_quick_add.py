@@ -1,30 +1,46 @@
 import bpy
 from mathutils import Vector
 
-from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..lib.bpu import BpuLayout
-from ..utils.public import PublicOperator, PublicProperty
+from ..utils.public import PublicOperator
 
 
-class GestureQuickAddDraw(GestureGpuDraw, PublicProperty):
-    __draw_class__ = {}
+class GestureQuickAddKeymap:
+    """注册快捷键"""
+    kc = bpy.context.window_manager.keyconfigs.addon  # 获取按键配置addon的
+    km = kc.keymaps.new(name='Window', space_type='EMPTY', region_type='WINDOW')
+    kmi = None
+
+    @classmethod
+    def register(cls):
+        cls.kmi = cls.km.keymap_items.new(GestureQuickAdd.bl_idname, 'ACCENT_GRAVE', 'PRESS',
+                                          ctrl=True, alt=True, shift=True)
+
+    @classmethod
+    def unregister(cls):
+        cls.kc.keymaps.remove(cls.kmi)
+
+
+class GestureQuickAdd(PublicOperator):
+    bl_idname = "gesture.quick_add"
+    bl_label = "Quick Add"
+    is_in_quick_add = False  # 是在添加模式
 
     def __init__(self):
+        super().__init__()
+        self.__difference_mouse__ = None
+        self.bpu = BpuLayout()
+
         self.start_mouse_position = None
         self.mouse_position = Vector((0, 0))
+
+    @classmethod
+    def poll(cls, context):
+        return not cls.is_in_quick_add
 
     @property
     def is_exit(self):
         return self.is_right_mouse
-
-
-class GestureQuickAdd(GestureQuickAddDraw, PublicOperator):
-    bl_idname = "gesture.quick_add"
-    bl_label = "Quick Add"
-
-    def __init__(self):
-        self.__difference_mouse__ = None
-        self.bpu = BpuLayout()
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
@@ -33,6 +49,7 @@ class GestureQuickAdd(GestureQuickAddDraw, PublicOperator):
 
         wm = context.window_manager
         wm.modal_handler_add(self)
+        GestureQuickAdd.is_in_quick_add = True
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
@@ -41,6 +58,13 @@ class GestureQuickAdd(GestureQuickAddDraw, PublicOperator):
         self.bpu.register_draw()
 
         nm = Vector((event.mouse_x, event.mouse_y))
+
+        with self.bpu as bpu:
+            bpu.mouse_position = self.mouse_position
+            column = bpu.column()
+            for i in range(4):
+                column.label(f"text {i}")
+
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":
                 self.__difference_mouse__ = self.start_mouse_position - nm
@@ -53,7 +77,7 @@ class GestureQuickAdd(GestureQuickAddDraw, PublicOperator):
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
         if self.is_exit:
-            self.unregister_draw()
             self.bpu.unregister_draw()
+            GestureQuickAdd.is_in_quick_add = False
             return {'FINISHED'}
         return {'PASS_THROUGH'}

@@ -7,6 +7,9 @@ from ...utils.public_gpu import PublicGpu
 
 
 class BpuDraw(BpuProperty, PublicGpu):
+    def __init__(self):
+        super().__init__()
+
     def gpu_draw(self):
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')

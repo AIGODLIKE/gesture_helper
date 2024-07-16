@@ -32,6 +32,9 @@ operator_list = (
 
 register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
 
+kc = bpy.context.window_manager.keyconfigs.addon  # 获取按键配置addon的
+# km = kc.keymaps.new(name='3D View', space_type='VIEW_3D', region_type='WINDOW')
+kmi = None
 
 def register():
     register_classes()

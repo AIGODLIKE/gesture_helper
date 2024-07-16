@@ -146,3 +146,4 @@ class GestureKeymap(KeymapProperty):
         kmi.ctrl = False
         kmi.alt = False
         self.to_temp_kmi()
+

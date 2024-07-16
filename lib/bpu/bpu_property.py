@@ -10,7 +10,20 @@ class BpuProperty:
     _width: int  # 绘制的宽度
     _height: int  # 绘制的高度
 
-    _type: BPUType
+    _type: BPUType  # 类型
 
-    mouse_position: Vector
+    level: int  # 绘制的层级
 
+    mouse_position: Vector  # 鼠标位置
+
+    text: str  # 绘制的文字 label operator
+    font_id: int  # 绘制的文字字体
+
+    @property
+    def is_layout(self):
+        return self._type.is_layout
+
+    def __init__(self):
+        self._type = BPUType.UNKNOWN
+        self.level = 0
+        self.font_id = 0
