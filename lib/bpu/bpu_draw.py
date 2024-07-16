@@ -24,8 +24,10 @@ class BpuDraw(BpuProperty, PublicGpu):
             draw_circle_2d([0, 0], [1, 0.5, 0.5, 0], 100.0)
             self.draw_text([0, 0], size=64)
             self.draw_text([0, 0], text=str(bpy.context.area.type), size=24)
-
-            self.draw_layout()
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.__margins_vector__)
+                self.draw_layout()
+            print("\n")
 
     def draw_tips(self):
         self.draw_rectangle(0, 0, 300, 100, color=[0.800424, 0.085840, 0.174684, 1.000000])
@@ -38,18 +40,18 @@ class BpuDraw(BpuProperty, PublicGpu):
 
         :return:
         """
-        with gpu.matrix.push_pop():
-            gpu.matrix.translate(self.__margins_vector__)
-            if self.type.is_layout:
-                measure = self.__measure__
-                self.draw_rectangle(0, 0, measure[0], measure[1])
-            elif self.type.is_draw_item:
-                ...
-                self.draw_text([0, 0], text=self.text)
 
+        print("draw_layout", self.type, f"\tmeasure:{self.__measure__}", f"\ttext:{self.text}",
+              f"\tmargins_vector:{self.__margins_vector__}")
+        if self.type.is_layout:
+            measure = self.__measure__
+            self.draw_rectangle(0, 0, measure[0], measure[1])
+        elif self.type.is_draw_item:
+            self.draw_text([0, 0], text=self.text)
+
+        if self.children:
             self.draw_children_layout()
 
     def draw_children_layout(self):
         for child in self.children:
-            with gpu.matrix.push_pop():
-                child.draw_layout()
+            child.draw_layout()

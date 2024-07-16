@@ -9,6 +9,7 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
 
     def __init__(self):
         super().__init__()
+        self.type = BPUType.PARENT
 
     def __layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局
@@ -16,7 +17,10 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         layout = BpuLayout()
         layout.type = layout_type
         layout.font_id = self.font_id
-        self._temp_children.append(layout)
+        if self.type == BPUType.PARENT:
+            self._temp_children.append(layout)
+        else:
+            self.children.append(layout)
         return layout
 
     def label(self, text="Hollow Word"):
@@ -44,6 +48,7 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
     def __enter__(self):
         self.is_updating = True
         self._temp_children = []
+        self.children = []
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):

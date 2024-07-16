@@ -11,6 +11,8 @@ class BPUType(Enum):
     LABEL = 50
     OPERATOR = 200
 
+    PARENT = 500
+
     UNKNOWN = 1000
 
     @property

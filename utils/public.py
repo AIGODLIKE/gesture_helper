@@ -6,9 +6,9 @@ from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc, cache_update_lock
-from .. import __package__ as package
+from .. import __package__ as __addon_name__
 
-ADDON_NAME = package
+ADDON_NAME = __addon_name__
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src/preset'))
 

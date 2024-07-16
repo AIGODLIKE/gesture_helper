@@ -50,6 +50,13 @@ class GestureQuickAdd(PublicOperator):
         wm = context.window_manager
         wm.modal_handler_add(self)
         GestureQuickAdd.is_in_quick_add = True
+
+        with self.bpu as bpu:
+            bpu.mouse_position = self.mouse_position
+            column = bpu.column()
+            for i in range(4):
+                column.label(f"text {i}")
+
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
@@ -58,12 +65,6 @@ class GestureQuickAdd(PublicOperator):
         self.bpu.register_draw()
 
         nm = Vector((event.mouse_x, event.mouse_y))
-
-        with self.bpu as bpu:
-            bpu.mouse_position = self.mouse_position
-            column = bpu.column()
-            for i in range(4):
-                column.label(f"text {i}")
 
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":
