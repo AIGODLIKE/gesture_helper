@@ -1,20 +1,21 @@
 from functools import cache
-from os.path import dirname, basename, realpath, join, abspath
+from os.path import dirname, realpath, join, abspath
 
 import bpy
 from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc, cache_update_lock
+from .. import __package__ as package
 
+ADDON_NAME = package
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
-ADDON_NAME = basename(ADDON_FOLDER)
 PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src/preset'))
 
 
 @cache
 def get_pref():
-    return bpy.context.preferences.addons[ADDON_NAME].preferences
+    return bpy.context.preferences.addons.get(ADDON_NAME).preferences
 
 
 def tag_redraw():

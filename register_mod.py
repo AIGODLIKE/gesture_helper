@@ -1,10 +1,6 @@
 import bpy
 
 from . import ops, ui, props, preferences
-from .gesture import gesture_keymap
-from .ops.gesture_quick_add import GestureQuickAddKeymap
-from .utils import public_cache, icons, is_blender_close
-from .utils.public import get_pref
 
 module_list = (
     ui,
@@ -15,12 +11,17 @@ module_list = (
 
 
 def update_state():
+    from .utils.public import get_pref
     pref = get_pref()
     pref.update_state()
 
 
 def restore():
     from .ops.export_import import Import
+    from .utils.public import get_pref
+    from .gesture import gesture_keymap
+    from .utils import public_cache
+
     pref = get_pref()
     try:
         prop = pref.other_property
@@ -30,20 +31,27 @@ def restore():
     except Exception as e:
         print(e.args)
 
+    public_cache.PublicCacheFunc.cache_clear()
+    gesture_keymap.GestureKeymap.key_remove()
+    gesture_keymap.GestureKeymap.key_init()
+
 
 def register():
+    from .utils.public import get_pref
+    from .ops.gesture_quick_add import GestureQuickAddKeymap
+
+    from .utils import icons
     icons.Icons.register()
     for module in module_list:
         try:
             module.register()
         except Exception as e:
             print(e.args, "\n")
-    public_cache.PublicCacheFunc.cache_clear()
-    gesture_keymap.GestureKeymap.key_remove()
-    gesture_keymap.GestureKeymap.key_init()
+
     GestureQuickAddKeymap.register()
     pref = get_pref()
-    pref.other_property.is_move_element = False
+    if pref is not None:
+        pref.other_property.is_move_element = False
 
     bpy.app.timers.register(update_state, first_interval=3)
     bpy.app.timers.register(restore, first_interval=0.001)
@@ -51,6 +59,11 @@ def register():
 
 def unregister():
     from .ops.export_import import Export
+    from .gesture import gesture_keymap
+
+    from .ops.gesture_quick_add import GestureQuickAddKeymap
+    from .utils import icons, is_blender_close
+
     if bpy.app.timers.is_registered(update_state):
         bpy.app.timers.unregister(update_state)
     if bpy.app.timers.is_registered(restore):

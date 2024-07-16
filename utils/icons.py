@@ -11,7 +11,7 @@ class Icons:
     def register(cls):
         global icons
         icons = bpy.utils.previews.new()
-        from .public import ADDON_FOLDER
+        from ..utils.public import ADDON_FOLDER
         icon_folder = os.path.join(ADDON_FOLDER, r'src\icon')
         for file in os.listdir(icon_folder):
             name, suffix = file.split('.')

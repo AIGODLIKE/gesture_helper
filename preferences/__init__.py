@@ -15,7 +15,7 @@ from .gesture import GestureProperty
 from .other import OtherProperty
 from .. import gesture
 from ..element.element_property import ElementAddProperty
-from ..utils.public import ADDON_NAME, PublicProperty
+from ..utils.public import PublicProperty
 
 AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
 
@@ -23,6 +23,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 class GesturePreferences(PublicProperty,
                          AddonPreferences,
                          PreferencesDraw):
+    from ..utils.public import ADDON_NAME
     bl_idname = ADDON_NAME
 
     # 项配置

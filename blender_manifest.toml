@@ -1,11 +1,11 @@
-schema_version = "1.0.0"
+schema_version = "1.0.3"
 
 blender_version_min = "4.2.0"
-id = "DevelopmentKitTool"
-license = ["UNKNOWN",]
-maintainer = ""
+id = "gesture_helper"
+license = ["UNKNOWN", ]
+maintainer = "小萌新"
 name = "Gesture Helper"
 tagline = "手势助手,可以快速的使用手势运行blender 操作符或是更改属性"
 type = "add-on"
 version = "1.0.3"
-tags = ["幻之境",]
+tags = ["幻之境","AIGODLIKE Community" ]

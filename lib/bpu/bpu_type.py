@@ -22,3 +22,26 @@ class BPUType(Enum):
     def is_draw_text(self):
         """是需要绘制文字类型"""
         return self.name in ['LABEL', 'OPERATOR']
+
+    @property
+    def is_horizontal_layout(self):
+        """是水平布局"""
+        return self.name in ['COLUMN', 'BOX']
+
+    @property
+    def is_vertical_layout(self):
+        """是垂直布局"""
+        return self.name in ['ROW', 'BOX']
+
+    @property
+    def is_draw_item(self):
+        """是绘制项"""
+        return self.name in ['LABEL', 'OPERATOR']
+
+
+class Quadrant(Enum):
+    """绘制的象限位置"""
+    ONE = 1
+    TWO = 2
+    THREE = 3
+    FOUR = 4
