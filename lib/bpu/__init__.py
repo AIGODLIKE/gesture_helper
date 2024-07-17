@@ -11,16 +11,21 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         super().__init__()
         self.type = BPUType.PARENT
 
+    def __repr__(self):
+        return f"BpuLayout{self.type, self.text, id(self)}"  # self.__measure__
+
     def __layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局
         绘制及测量时根据布局类型 计算方法"""
         layout = BpuLayout()
         layout.type = layout_type
         layout.font_id = self.font_id
+        layout.level = self.level + 1
         if self.type == BPUType.PARENT:
-            self._temp_children.append(layout)
+            self.__temp_children__.append(layout)
         else:
-            self.children.append(layout)
+            self.__draw_children__.append(layout)
+        layout.__clear_children__()
         return layout
 
     def label(self, text="Hollow Word"):
@@ -40,17 +45,19 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         return self.__layout__(BPUType.SPLIT)
 
     def operator(self, operator, text=""):
-        ...
+        return self.__layout__(BPUType.OPERATOR)
 
-    def __tree__(self):
-        ...
+    # def __tree__(self):
+    #     ...
+
+    def __clear_children__(self):
+        self.__draw_children__ = []
+        self.__temp_children__ = []
 
     def __enter__(self):
-        self.is_updating = True
-        self._temp_children = []
-        self.children = []
+        self.__clear_children__()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.is_updating = False
-        self.children = self._temp_children
+        if self.type == BPUType.PARENT:
+            self.__draw_children__ = self.__temp_children__

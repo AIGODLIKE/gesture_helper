@@ -16,11 +16,12 @@ class BpuProperty:
     text: str = ""  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
 
-    children = []  # 子级,不需要父级
-    _temp_children = []  # 临时子级,在更新时使用
+    __temp_children__ = []  # 添加时的临时子级
+    __draw_children__ = []  # 绘制子级
 
-    # in_updating: bool = False  # 正在更新中
     __measure_res__ = None  # 测量结果
+
+    is_invert = False  # 是反转
 
     @property
     def __margins_vector__(self):
@@ -31,6 +32,15 @@ class BpuProperty:
         else:
             return Vector((self.margins, self.margins))
 
+    def __measure_vector__(self, parent_layout):
+        measure = self.__measure__
+        if parent_layout.type.is_horizontal_layout:
+            return Vector((measure[0], 0))
+        elif parent_layout.type.is_vertical_layout:
+            return Vector((0, measure[1]))
+        else:
+            return Vector(measure)
+
     @property
     def __measure__(self) -> Vector:
         """测量数据"""
@@ -40,9 +50,9 @@ class BpuProperty:
         if self.type.is_draw_text:
             td = blf.dimensions(self.font_id, self.text)
             self.__measure_res__ = Vector([td[0], td[1]]) + self.__margins_vector__
-        elif self.type.is_layout:
+        elif self.type.is_draw_child:
             measure = Vector([0, 0])
-            for child in self.children:
+            for child in self.__temp_children__:
                 measure += child.__measure__
             self.__measure_res__ = measure + self.__margins_vector__
         return self.__measure_res__
@@ -50,3 +60,15 @@ class BpuProperty:
     @property
     def is_layout(self):
         return self.type.is_layout
+
+    @property
+    def is_draw_child(self):
+        return self.__draw_children__ and self.type.is_draw_child
+
+    @property
+    def draw_children(self):
+        """绘制子级时需判断是否反转
+        """
+        if self.is_invert:
+            return self.__draw_children__
+        return self.__draw_children__[::-1]

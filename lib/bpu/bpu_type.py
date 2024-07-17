@@ -15,10 +15,20 @@ class BPUType(Enum):
 
     UNKNOWN = 1000
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
     @property
     def is_layout(self):
         """是布局"""
         return self.name in ['ROW', 'COLUMN', 'BOX', 'SPLIT']
+
+    @property
+    def is_draw_child(self):
+        return self.is_layout or self.name == "PARENT"
 
     @property
     def is_draw_text(self):
@@ -27,13 +37,21 @@ class BPUType(Enum):
 
     @property
     def is_horizontal_layout(self):
-        """是水平布局"""
-        return self.name in ['COLUMN', 'BOX']
+        """是水平布局
+        -----------
+        """
+        return self.name in ['ROW', 'BOX']
 
     @property
     def is_vertical_layout(self):
-        """是垂直布局"""
-        return self.name in ['ROW', 'BOX']
+        """是垂直布局
+        ¦
+        ¦
+        ¦
+        ¦
+        ¦
+        """
+        return self.name in ['COLUMN', 'BOX']
 
     @property
     def is_draw_item(self):
