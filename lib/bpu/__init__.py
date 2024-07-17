@@ -50,10 +50,6 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
     # def __tree__(self):
     #     ...
 
-    def __clear_children__(self):
-        self.__draw_children__ = []
-        self.__temp_children__ = []
-
     def __enter__(self):
         self.__clear_children__()
         return self

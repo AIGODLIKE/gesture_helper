@@ -18,7 +18,7 @@ class GestureQuickAddKeymap:
 
     @classmethod
     def unregister(cls):
-        cls.kc.keymaps.remove(cls.kmi)
+        cls.km.keymap_items.remove(cls.kmi)
 
 
 class GestureQuickAdd(PublicOperator):

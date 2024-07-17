@@ -27,13 +27,18 @@ class BPUType(Enum):
         return self.name in ['ROW', 'COLUMN', 'BOX', 'SPLIT']
 
     @property
-    def is_draw_child(self):
-        return self.is_layout or self.name == "PARENT"
+    def is_parent(self):
+        """是父级"""
+        return self.name == "PARENT"
 
     @property
     def is_draw_text(self):
         """是需要绘制文字类型"""
         return self.name in ['LABEL', 'OPERATOR']
+
+    @property
+    def is_draw_child(self):
+        return self.is_layout or self.is_parent
 
     @property
     def is_horizontal_layout(self):
