@@ -12,12 +12,12 @@ class BpuProperty:
 
     text: str = ""  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
-    font_size = 25
+    font_color = (1, 1, 1, 1)  # 字体颜色
 
     __draw_children__ = []  # 绘制子级
     __temp_children__ = []  # 添加时的临时子级
 
-    is_invert = False  # 是反转
+    is_invert: bool = False  # 是反转
 
     def __clear_children__(self):
         self.__draw_children__ = []

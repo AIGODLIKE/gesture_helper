@@ -6,6 +6,8 @@ from mathutils import Vector
 from .bpu_measure import BpuMeasure
 from ...utils.public_gpu import PublicGpu
 
+FONT_SIZE = 50
+
 
 class BpuDraw(BpuMeasure, PublicGpu):
     def __init__(self):
@@ -24,8 +26,8 @@ class BpuDraw(BpuMeasure, PublicGpu):
             gpu.matrix.translate((-area.x, -area.y))
             gpu.matrix.translate(self.mouse_position)
 
-            self.draw_2d_points(Vector([0, 0]), color=(1, 0, 0, 1), point_size=50)
-            self.draw_text([-200, 50], text=str(bpy.context.area.type), size=24)
+            self.draw_2d_points(Vector([0, 0]), color=(1, 0, 0, 0.3), point_size=50)
+            self.draw_text([-200, 50], text=str(bpy.context.area.type), font_id=self.font_id)
             self.draw_layout()
             print("\n\n")
 
@@ -36,19 +38,20 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
         :return:
         """
-        blf.size(self.font_id, self.font_size)
-        print("  " * self.level, self.type, f"\tdraw_size:{self.draw_size}", f"\ttext:{self.text}", flush=True)
+
+        print("  " * self.level, self.type, f"\tdraw_size:{self.draw_size}",
+              f"\t\ttext:{self.text}", flush=True)
 
         if self.type.is_layout:
             self.draw_rectangle(0, 0, self.draw_width, self.draw_height)
-            self.draw_2d_line(([-10, 0], [-10, self.draw_height]), color=(0, 1, 0, 1))
+            self.draw_bound_box()
         elif self.type.is_draw_item:
-            # with gpu.matrix.push_pop():
-            #     self.draw_rectangle(0, 0, self.draw_width, -self.draw_height - self.margin * 2, color=(0, 1, 0, 1))
-            # with gpu.matrix.push_pop():
-            self.draw_text([0, 0], text=self.text)
-
-            self.draw_2d_line(([0, 0], [0, -self.draw_height]), color=(0, 1, 0, 1))
+            font_id = self.font_id
+            blf.position(font_id, 0, -self.__height__, self.level)
+            blf.color(font_id, *(1, 1, 1, 1))
+            blf.size(font_id, FONT_SIZE)
+            blf.draw(font_id, self.text)
+            self.draw_bound_box()
 
         if self.is_draw_child:
             with gpu.matrix.push_pop():
@@ -63,3 +66,22 @@ class BpuDraw(BpuMeasure, PublicGpu):
                     gpu.matrix.translate(cm)
                     # print(f"\t\t{child.type}\tchild translate", co)
                     child.draw_layout()
+
+    def draw_bound_box(self):
+        self.draw_2d_line(self.__bound_box__,
+                          color=self.__bound_color__,
+                          line_width=1)
+
+    @property
+    def __bound_box__(self):
+        if self.type.is_layout:
+            return [0, 0], [0, self.draw_height], [self.draw_width, self.draw_height], [self.draw_width, 0], [0, 0]
+        else:
+            return [0, 0], [0, -self.draw_height], [self.draw_width, -self.draw_height], [self.draw_width, 0], [0, 0]
+
+    @property
+    def __bound_color__(self):
+        if self.type.is_layout:
+            return 0.6, 0, 0, .8
+        else:
+            return 0, 0.6, 0, .8

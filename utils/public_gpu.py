@@ -103,9 +103,9 @@ class PublicGpu:
             column=0,
     ):
         x, y = position
-        blf.position(font_id, x, y - (size * (column + 1)), 1)
         blf.size(font_id, size)
         blf.color(font_id, *color)
+        blf.position(font_id, x, y - (size * (column + 1)), 1)
         blf.draw(font_id, str(text))
 
     @staticmethod
