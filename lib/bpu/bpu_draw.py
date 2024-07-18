@@ -11,6 +11,10 @@ def __box_path__(width, height):
     return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
 
 
+IS_DEBUG_DRAW = True
+IS_DEBUG_XY = True
+
+
 class BpuDraw(BpuMeasure, PublicGpu):
     def __init__(self):
         super().__init__()
@@ -22,66 +26,98 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
         area = bpy.context.region
 
-        # self.draw_tips()
-        print("draw_layout", flush=True)
         with gpu.matrix.push_pop():
             gpu.matrix.translate((-area.x, -area.y))
-            gpu.matrix.translate(self.mouse_position)
+            gpu.matrix.translate(self.offset_position)
 
             self.draw_2d_points(Vector([0, 0]), color=(1, 0, 0, 0.3), point_size=50)
-            self.draw_text([-200, 50], text=str(bpy.context.area.type), font_id=self.font_id)
+
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate((-500, 100))
+                self.draw_text([0, 50], text=str(bpy.context.area.type), font_id=self.font_id)
+                self.draw_text([0, 0], text=str(self.offset_position), font_id=self.font_id)
+                self.draw_text([0, -50], text=str(self.mouse_position), font_id=self.font_id)
             self.__measure__()
             self.draw_layout()
-            print("\n\n")
 
-    def draw_layout(self, parent: 'BpuMeasure' = None):
+    def draw_layout(self):
         """
         先测量宽高
         然后绘制子级
 
+        :type parent: BpuMeasure
         :return:
         """
-
-        print("  " * self.level, self.type, f"\tdraw_size:{self.draw_size}",
-              f"\t\ttext:{self.text}", flush=True)
-
         if self.type.is_layout:
-            self.draw_rectangle(0, 0, self.draw_width, self.draw_height)
-            self.draw_2d_line(self.__margin_box__,
-                              color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
-                              line_width=1)
-
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(self.parent_offset(parent))
-                self.draw_2d_line(self.__bound_box__,
-                                  color=[0.052861, 0.205076, 1.000024, 1.000000],  # 绿
+                gpu.matrix.translate((self.draw_width / 2, self.draw_height / 2))
+                self.draw_rounded_rectangle_area([0, 0], radius=50, color=(0, 0, 0, 1.0), width=self.draw_width,
+                                                 height=self.draw_height, segments=15)
+            if IS_DEBUG_DRAW:
+                self.draw_2d_line(self.__margin_box__,
+                                  color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
                                   line_width=1)
 
+                with gpu.matrix.push_pop():
+                    gpu.matrix.translate(self.parent_offset())
+                    self.draw_2d_line(self.__bound_box__,
+                                      color=[0.052861, 0.205076, 1.000024, 1.000000],  # 绿
+                                      line_width=1)
         elif self.type.is_draw_item:
-            self.draw_2d_line(self.__margin_box__,
-                              color=(0, 0.6, 0, .8),  # 绿
-                              line_width=1)
-
+            if IS_DEBUG_DRAW:
+                self.draw_2d_line(self.__margin_box__,
+                                  color=(0, 0.6, 0, .8),  # 绿
+                                  line_width=1)
+            self.draw_haver()
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__margin_vector__)
-                self.draw_2d_line(self.__bound_box__,
-                                  color=(0.6, 0, 0, .8),  # 红
-                                  line_width=1)
+
+                if IS_DEBUG_DRAW:
+                    self.draw_2d_line(self.__bound_box__,
+                                      color=(0.6, 0, 0, .8),  # 红
+                                      line_width=1)
+
                 font_id = self.font_id
                 blf.position(font_id, 0, 0, self.level)
                 blf.color(font_id, *(1, 1, 1, 1))
                 blf.size(font_id, self.font_size)
                 blf.draw(font_id, self.text)
 
+        if IS_DEBUG_XY:
+            size = 15
+            a = self.offset_position + self.item_position
+            self.draw_text([0, 0], str(self.item_position), size=size, color=(1, 1, 1, 1))
+            self.draw_text([300, 0], str(self.is_haver), size=size, color=(1, 0, 0, 1))
+            self.draw_text([600, 0], str(a), size=size, color=(1, 0, 0, 1))
+            self.draw_text([900, 0], str(a + self.draw_size), size=size, color=(1, 0, 0, 1))
+            self.draw_text([1200, 0], str(self.parent), size=size, color=(1, 0, 0, 1))
+
         if self.is_draw_child:
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(self.parent_offset(parent))
+                po = self.parent_offset()
+                gpu.matrix.translate(po)
 
                 last_offset = Vector([0, 0])
+                offset_vector = po
                 for (index, child) in enumerate(self.draw_children):
                     gpu.matrix.translate(last_offset)
-                    child.draw_layout(self)
+                    offset_vector += last_offset
                     last_offset = child.child_offset(self, index)
+
+                    child.item_position = offset_vector
+                    child.draw_layout()
+
+    def draw_haver(self):
+        if self.is_haver:
+            if self.parent.type.is_horizontal_layout:
+                w, h = self.draw_width, self.parent.__child_max_height__
+            else:
+                w, h = self.parent.__child_max_width__, self.draw_height
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate((w / 2, h / 2))
+                self.draw_rounded_rectangle_area([0, 0], radius=50, color=[0.52861, 0.52861, 0.52861, 1.000000],
+                                                 width=w, height=h,
+                                                 segments=15)
 
     @property
     def __margin_box__(self):
@@ -94,7 +130,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
         height = self.__height__
         width = self.__width__
         if self.type.is_horizontal_layout:
-            return __box_path__(width, self.__max_height__)
+            return __box_path__(width, self.__child_max_height__)
         elif self.type.is_vertical_layout:
-            return __box_path__(self.__max_width__, height)
+            return __box_path__(self.__child_max_width__, height)
         return __box_path__(width, height)

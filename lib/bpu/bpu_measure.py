@@ -2,7 +2,6 @@ import blf
 from mathutils import Vector
 
 from .bpu_property import BpuProperty
-from .bpu_type import Quadrant
 
 
 class BpuMeasure(BpuProperty):
@@ -23,24 +22,22 @@ class BpuMeasure(BpuProperty):
         self.__width_list__ = []
 
     @property
-    def __max_width__(self) -> int:
+    def __child_max_width__(self) -> int:
         if self.__width_list__:
             return max(self.__width_list__)
         return -1
 
     @property
-    def __max_height__(self) -> int:
+    def __child_max_height__(self) -> int:
         if self.__height_list__:
             return max(self.__height_list__)
         return -1
-
 
     def __measure__(self, parent=None) -> None:
         """测量数据"""
         if self.__is_measurements_completed__:
             # 测量过,跳过
             return
-
         self.__height_list__ = []
         self.__width_list__ = []
 
@@ -65,7 +62,7 @@ class BpuMeasure(BpuProperty):
 
         margin = self.__margin__
         if self.type.is_horizontal_layout:
-            return self.__max_height__ + margin * 2
+            return self.__child_max_height__ + margin * 2
         elif self.type.is_vertical_layout:
             return self.__height__ + margin * 2
 
@@ -83,14 +80,14 @@ class BpuMeasure(BpuProperty):
         if self.type.is_horizontal_layout:
             return self.__width__ + margin * 2
         elif self.type.is_vertical_layout:
-            return self.__max_width__ + margin * 2
+            return self.__child_max_width__ + margin * 2
 
         # 文字
         return self.__width__ + margin * 2
 
     @property
-    def draw_size(self):
-        return self.draw_width, self.draw_height
+    def draw_size(self) -> Vector:
+        return Vector([self.draw_width, self.draw_height])
 
     def child_offset(self, parent: 'BpuMeasure', index: int = 0) -> Vector:
         """
@@ -106,13 +103,30 @@ class BpuMeasure(BpuProperty):
         elif parent.type.is_vertical_layout:
             return Vector((0, self.draw_height))
         else:
-            return Vector(self.draw_size)
+            return self.draw_size
 
-    def parent_offset(self, parent: 'BpuMeasure' = None) -> Vector:
+    def parent_offset(self) -> Vector:
         margin = self.__margin__
         if self.type.is_parent:
             return Vector([0, 0])
         else:
             return Vector([margin, margin])
-        # elif parent and parent.type.is_parent:
-        # return Vector([parent.__margin__, parent.__margin__])
+
+    @property
+    def is_haver(self) -> bool:
+        start_x, start_y = start = self.offset_position + self.item_position
+        if self.parent is not None:
+            if self.parent.type.is_vertical_layout:
+                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.draw_height
+            elif self.parent.type.is_horizontal_layout:
+                end_x, end_y = start_x + self.draw_width, start_y + self.parent.__child_max_height__
+            else:
+                end_x, end_y = start + self.draw_size
+        else:
+            end_x, end_y = start + self.draw_size
+
+        x, y = self.mouse_position
+        in_x = start_x < x < end_x
+        in_y = start_y < y < end_y
+        print("is_haver", in_x, in_y, "\n\t", x, y, self.text)
+        return in_x and in_y

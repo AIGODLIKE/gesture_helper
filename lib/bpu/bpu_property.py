@@ -1,13 +1,18 @@
 from mathutils import Vector
 
-from .bpu_type import BPUType, Quadrant
+from .bpu_type import BPUType
 
 
 class BpuProperty:
     type: BPUType = BPUType.UNKNOWN  # 类型
+    parent: "BpuLayout" = None
+
+    operator = None
 
     level: int = 0  # 绘制的层级
 
+    offset_position: Vector  # 偏移位置
+    item_position: Vector  # 偏移位置
     mouse_position: Vector  # 鼠标位置
 
     text: str = ""  # 绘制的文字 label operator
@@ -15,8 +20,17 @@ class BpuProperty:
     font_color = (1, 1, 1, 1)  # 字体颜色
     font_size = 24
 
-    text_margin = 10
+    text_margin = 15
     layout_margin = 50
+
+    @property
+    def parent_top(self):
+        """反回顶级的父级"""
+        if self.parent:
+            if self.parent.parent_top:
+                return self.parent.parent_top
+            else:
+                return self.parent
 
     @property
     def __margin_vector__(self) -> Vector:
@@ -38,8 +52,10 @@ class BpuProperty:
         self.__temp_children__ = []
 
     def __init__(self):
-        self.font_size = 24
         self.__clear_children__()
+
+        self.font_size = 24
+        self.mouse_position = self.item_position = self.offset_position = Vector([-1, -1])
 
     @property
     def is_layout(self) -> bool:

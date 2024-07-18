@@ -43,8 +43,8 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
     rounded_segments = segments * 4  # 圆角的边
-    w = (width - radius) / 2
-    h = (height - radius) / 2
+    w = int((width - radius) / 2) - radius / 2
+    h = int((height - radius) / 2) - radius / 2
     # 角度步长，通常以度为单位
     # 存储顶点坐标的列表
     vertex = []
@@ -210,7 +210,6 @@ class PublicGpu:
                                      'TRIS',
                                      {"pos": vertex, "color": [color for _ in range(len(vertex))]},
                                      indices=indices)
-            # shader.uniform_float("color", color)
             batch.draw(shader)
 
     @staticmethod

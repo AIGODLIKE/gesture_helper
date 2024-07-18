@@ -3,7 +3,6 @@ from mathutils import Vector
 
 from ..lib.bpu import BpuLayout
 from ..utils.public import PublicOperator
-from ..lib.bpu.bpu_type import Quadrant
 
 
 class GestureQuickAddKeymap:
@@ -34,7 +33,7 @@ class GestureQuickAdd(PublicOperator):
         self.bpu.font_size = 100
 
         self.start_mouse_position = None
-        self.mouse_position = Vector((0, 0))
+        self.offset_position = Vector((0, 0))
 
     @classmethod
     def poll(cls, context):
@@ -46,7 +45,7 @@ class GestureQuickAdd(PublicOperator):
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
-        self.mouse_position = self.start_mouse_position
+        self.offset_position = self.start_mouse_position
         self.init_invoke(event)
 
         wm = context.window_manager
@@ -63,15 +62,13 @@ class GestureQuickAdd(PublicOperator):
         nm = Vector((event.mouse_x, event.mouse_y))
 
         with self.bpu as bpu:
-            bpu.mouse_position = self.mouse_position
+            bpu.offset_position = self.offset_position
+            bpu.mouse_position = nm
             column = bpu.column()
             for i in range(4):
                 column.label(f"text {i}")
             column.label(event.type)
             column.label(event.value)
-            row = column.column()
-            row.label("sefse")
-            row.label("b")
 
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":
@@ -81,7 +78,7 @@ class GestureQuickAdd(PublicOperator):
             elif self.__difference_mouse__:
                 nd = self.start_mouse_position - nm
                 d = self.__difference_mouse__ - nd
-                self.mouse_position = nm - d
+                self.offset_position = nm - d
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
         if self.is_exit:
