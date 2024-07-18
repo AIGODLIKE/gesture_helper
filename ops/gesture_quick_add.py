@@ -30,6 +30,7 @@ class GestureQuickAdd(PublicOperator):
         super().__init__()
         self.__difference_mouse__ = None
         self.bpu = BpuLayout()
+        self.bpu.font_size = 100
 
         self.start_mouse_position = None
         self.mouse_position = Vector((0, 0))

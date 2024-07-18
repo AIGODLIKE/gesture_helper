@@ -21,6 +21,7 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         layout.type = layout_type
         layout.font_id = self.font_id
         layout.level = self.level + 1
+        layout.font_size = self.font_size
         if self.type == BPUType.PARENT:
             self.__temp_children__.append(layout)
         else:

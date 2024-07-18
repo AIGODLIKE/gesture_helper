@@ -6,8 +6,6 @@ from mathutils import Vector
 from .bpu_measure import BpuMeasure
 from ...utils.public_gpu import PublicGpu
 
-FONT_SIZE = 50
-
 
 class BpuDraw(BpuMeasure, PublicGpu):
     def __init__(self):
@@ -44,44 +42,45 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
         if self.type.is_layout:
             self.draw_rectangle(0, 0, self.draw_width, self.draw_height)
-            self.draw_bound_box()
         elif self.type.is_draw_item:
-            font_id = self.font_id
-            blf.position(font_id, 0, -self.__height__, self.level)
-            blf.color(font_id, *(1, 1, 1, 1))
-            blf.size(font_id, FONT_SIZE)
-            blf.draw(font_id, self.text)
-            self.draw_bound_box()
+            self.draw_2d_line(self.__margin_box__,
+                              color=(0, 0.6, 0, .8),  # 绿
+                              line_width=1)
+
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.__margin_vector__)
+                self.draw_2d_line(self.__bound_box__,
+                                  color=(0.6, 0, 0, .8),  # 红
+                                  line_width=1)
+                font_id = self.font_id
+                blf.position(font_id, 0, 0, self.level)
+                blf.color(font_id, *(1, 1, 1, 1))
+                blf.size(font_id, self.font_size)
+                blf.draw(font_id, self.text)
 
         if self.is_draw_child:
             with gpu.matrix.push_pop():
-                po = self.parent_offset(parent)
-                gpu.matrix.translate(po)
-                # print("\t\tpo", po, self.type)
-                for child in self.draw_children:
-                    co = child.child_offset(self)
-                    gpu.matrix.translate(co)
+                gpu.matrix.translate(self.parent_offset(parent))
+                last_offset = Vector([0, 0])
+                for (index, child) in enumerate(self.draw_children):
+                    gpu.matrix.translate(last_offset)
+                    child.draw_layout(self)
+                    last_offset = child.child_offset(self, index)
 
-                    cm = child.margin_offset(self)
-                    gpu.matrix.translate(cm)
-                    # print(f"\t\t{child.type}\tchild translate", co)
-                    child.draw_layout()
-
-    def draw_bound_box(self):
-        self.draw_2d_line(self.__bound_box__,
-                          color=self.__bound_color__,
-                          line_width=1)
+    @property
+    def __margin_box__(self):
+        height = self.draw_height
+        width = self.draw_width
+        return self.__box_path__(width, height)
 
     @property
     def __bound_box__(self):
-        if self.type.is_layout:
-            return [0, 0], [0, self.draw_height], [self.draw_width, self.draw_height], [self.draw_width, 0], [0, 0]
-        else:
-            return [0, 0], [0, -self.draw_height], [self.draw_width, -self.draw_height], [self.draw_width, 0], [0, 0]
+        height = self.__height__
+        width = self.__width__
+        return self.__box_path__(width, height)
 
-    @property
-    def __bound_color__(self):
-        if self.type.is_layout:
-            return 0.6, 0, 0, .8
-        else:
-            return 0, 0.6, 0, .8
+    def __box_path__(self, width, height):
+        return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
+        # if self.type.is_layout:
+        # else:
+        #     return [0, 0], [0, -height], [width, -height], [width, 0], [0, 0]
