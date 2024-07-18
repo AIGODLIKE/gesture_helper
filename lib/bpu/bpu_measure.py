@@ -2,6 +2,7 @@ import blf
 from mathutils import Vector
 
 from .bpu_property import BpuProperty
+from .bpu_type import Quadrant
 
 
 class BpuMeasure(BpuProperty):
@@ -33,7 +34,8 @@ class BpuMeasure(BpuProperty):
             return max(self.__height_list__)
         return -1
 
-    def __measure__(self) -> None:
+
+    def __measure__(self, parent=None) -> None:
         """测量数据"""
         if self.__is_measurements_completed__:
             # 测量过,跳过
@@ -45,23 +47,23 @@ class BpuMeasure(BpuProperty):
         if self.type.is_draw_text:
             blf.size(self.font_id, self.font_size)
             (self.__width__, self.__height__) = blf.dimensions(self.font_id, self.text)
-        elif self.type.is_layout:
+        elif self.type.is_draw_child:
             for child in self.__draw_children__:
-                child.__measure__()
+                child.__measure__(self)
                 self.__width_list__.append(child.draw_width)
                 self.__height_list__.append(child.draw_height)
+
             self.__width__ = sum(self.__width_list__)
             self.__height__ = sum(self.__height_list__)
-        # print("\tis_layout child", f"sm:{sum(self.__height_list__)}",
-        #       f"hl:{self.__height_list__} h:{self.__height__}", f"m:{margin}")
         self.__is_measurements_completed__ = True
 
     @property
     def draw_height(self) -> int:
         """绘制高度
         只有在绘制layout的时侯才需要此属性"""
-        margin = self.__margin__
         self.__measure__()
+
+        margin = self.__margin__
         if self.type.is_horizontal_layout:
             return self.__max_height__ + margin * 2
         elif self.type.is_vertical_layout:
@@ -75,6 +77,7 @@ class BpuMeasure(BpuProperty):
         """绘制宽度
         只有在绘制layout的时侯才需要此属性"""
         self.__measure__()
+
         margin = self.__margin__
 
         if self.type.is_horizontal_layout:

@@ -7,6 +7,10 @@ from .bpu_measure import BpuMeasure
 from ...utils.public_gpu import PublicGpu
 
 
+def __box_path__(width, height):
+    return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
+
+
 class BpuDraw(BpuMeasure, PublicGpu):
     def __init__(self):
         super().__init__()
@@ -26,6 +30,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
             self.draw_2d_points(Vector([0, 0]), color=(1, 0, 0, 0.3), point_size=50)
             self.draw_text([-200, 50], text=str(bpy.context.area.type), font_id=self.font_id)
+            self.__measure__()
             self.draw_layout()
             print("\n\n")
 
@@ -42,6 +47,16 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
         if self.type.is_layout:
             self.draw_rectangle(0, 0, self.draw_width, self.draw_height)
+            self.draw_2d_line(self.__margin_box__,
+                              color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
+                              line_width=1)
+
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.parent_offset(parent))
+                self.draw_2d_line(self.__bound_box__,
+                                  color=[0.052861, 0.205076, 1.000024, 1.000000],  # 绿
+                                  line_width=1)
+
         elif self.type.is_draw_item:
             self.draw_2d_line(self.__margin_box__,
                               color=(0, 0.6, 0, .8),  # 绿
@@ -61,6 +76,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
         if self.is_draw_child:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.parent_offset(parent))
+
                 last_offset = Vector([0, 0])
                 for (index, child) in enumerate(self.draw_children):
                     gpu.matrix.translate(last_offset)
@@ -71,16 +87,14 @@ class BpuDraw(BpuMeasure, PublicGpu):
     def __margin_box__(self):
         height = self.draw_height
         width = self.draw_width
-        return self.__box_path__(width, height)
+        return __box_path__(width, height)
 
     @property
     def __bound_box__(self):
         height = self.__height__
         width = self.__width__
-        return self.__box_path__(width, height)
-
-    def __box_path__(self, width, height):
-        return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
-        # if self.type.is_layout:
-        # else:
-        #     return [0, 0], [0, -height], [width, -height], [width, 0], [0, 0]
+        if self.type.is_horizontal_layout:
+            return __box_path__(width, self.__max_height__)
+        elif self.type.is_vertical_layout:
+            return __box_path__(self.__max_width__, height)
+        return __box_path__(width, height)

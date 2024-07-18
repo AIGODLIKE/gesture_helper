@@ -3,6 +3,7 @@ from mathutils import Vector
 
 from ..lib.bpu import BpuLayout
 from ..utils.public import PublicOperator
+from ..lib.bpu.bpu_type import Quadrant
 
 
 class GestureQuickAddKeymap:
@@ -68,6 +69,9 @@ class GestureQuickAdd(PublicOperator):
                 column.label(f"text {i}")
             column.label(event.type)
             column.label(event.value)
+            row = column.column()
+            row.label("sefse")
+            row.label("b")
 
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":

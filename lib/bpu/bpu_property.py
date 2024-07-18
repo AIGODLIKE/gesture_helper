@@ -1,6 +1,6 @@
 from mathutils import Vector
 
-from .bpu_type import BPUType
+from .bpu_type import BPUType, Quadrant
 
 
 class BpuProperty:
