@@ -12,9 +12,9 @@ class DrawDebug(PublicGpu):
         gpu.state.depth_mask_set(True)
 
         if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
-            self.__gpu_draw_debug()
+            self.__gpu_draw_debug__()
 
-    def __gpu_draw_debug(self):
+    def __gpu_draw_debug__(self):
         """
         Bug pool 失效
          data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
@@ -98,7 +98,7 @@ class GestureGpuDraw(DrawDebug):
                 # bpy.types.Region.bl_rna.properties['type'].enum_items_static
                 for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
                     try:
-                        sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
+                        sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
                         debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
                                                                        'POST_PIXEL')
                     except Exception as e:
@@ -161,7 +161,7 @@ class GestureGpuDraw(DrawDebug):
                 if not len(draw_items):
                     self.draw_text((0, 0), '暂无手势,请添加')
 
-    def gpu_draw(self):
+    def __gpu_draw__(self):
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)

@@ -4,11 +4,13 @@ from enum import Enum
 class BPUType(Enum):
     ROW = 10
     COLUMN = 20
-    BOX = 30
-    SPLIT = 40
-    # PROPERTY = 60
-    # SEPARATOR = 70
+    # SPLIT = 40
     LABEL = 50
+    # PROPERTY = 60
+    SEPARATOR = 70
+
+    MENU = 100
+
     OPERATOR = 200
 
     PARENT = 500
@@ -20,6 +22,11 @@ class BPUType(Enum):
 
     def __str__(self):
         return self.name
+
+    @property
+    def is_separator(self):
+        """是分隔"""
+        return self.name == "SEPARATOR"
 
     @property
     def is_layout(self):
@@ -38,6 +45,7 @@ class BPUType(Enum):
 
     @property
     def is_draw_child(self):
+        """是可以绘制子级"""
         return self.is_layout or self.is_parent
 
     @property
@@ -62,6 +70,11 @@ class BPUType(Enum):
     def is_draw_item(self):
         """是绘制项"""
         return self.name in ['LABEL', 'OPERATOR']
+
+    @property
+    def is_clickable(self):
+        """是可点击的"""
+        return self.name in ['OPERATOR']
 
 
 class Quadrant(Enum):

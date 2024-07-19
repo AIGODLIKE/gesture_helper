@@ -33,26 +33,46 @@ class BpuMeasure(BpuProperty):
             return max(self.__height_list__)
         return -1
 
-    def __measure__(self, parent=None) -> None:
+    def __measure__(self) -> None:
         """测量数据"""
         if self.__is_measurements_completed__:
             # 测量过,跳过
             return
+
         self.__height_list__ = []
         self.__width_list__ = []
-
-        if self.type.is_draw_text:
-            blf.size(self.font_id, self.font_size)
-            (self.__width__, self.__height__) = blf.dimensions(self.font_id, self.text)
+        if self.type.is_separator:  # 如果是分割线就不测量,使用父级的宽高
+            self.__measure_separator__()
+        elif self.type.is_draw_text:
+            self.__measure_text__()
         elif self.type.is_draw_child:
-            for child in self.__draw_children__:
-                child.__measure__(self)
-                self.__width_list__.append(child.draw_width)
-                self.__height_list__.append(child.draw_height)
+            self.__measure_children__()
 
-            self.__width__ = sum(self.__width_list__)
-            self.__height__ = sum(self.__height_list__)
         self.__is_measurements_completed__ = True
+
+    def __measure_separator__(self) -> None:
+        """测量分割线"""
+        p = self.parent
+        if p:
+            pt = p.type
+            if pt.is_horizontal_layout:
+                self.__height__ = 5
+            elif pt.is_vertical_layout:
+                self.__width__ = 5
+
+    def __measure_text__(self) -> None:
+        """测量文字"""
+        blf.size(self.font_id, self.font_size)
+        (self.__width__, self.__height__) = blf.dimensions(self.font_id, self.text)
+
+    def __measure_children__(self) -> None:
+        """测量子级"""
+        for child in self.__draw_children__:
+            child.__measure__()
+            self.__width_list__.append(child.draw_width)
+            self.__height_list__.append(child.draw_height)
+        self.__width__ = sum(self.__width_list__)
+        self.__height__ = sum(self.__height_list__)
 
     @property
     def draw_height(self) -> int:
@@ -76,8 +96,13 @@ class BpuMeasure(BpuProperty):
         self.__measure__()
 
         margin = self.__margin__
-
-        if self.type.is_horizontal_layout:
+        if self.type.is_separator:
+            parent_type = self.parent.type
+            if parent_type.is_vertical_layout:
+                return self.parent.__child_max_width__
+            elif parent_type.is_horizontal_layout:
+                return self.parent.__child_max_height__
+        elif self.type.is_horizontal_layout:
             return self.__width__ + margin * 2
         elif self.type.is_vertical_layout:
             return self.__child_max_width__ + margin * 2
@@ -130,3 +155,10 @@ class BpuMeasure(BpuProperty):
         in_y = start_y < y < end_y
         print("is_haver", in_x, in_y, "\n\t", x, y, self.text)
         return in_x and in_y
+
+    @property
+    def is_draw_haver(self) -> bool:
+        """是可以绘制haver的
+        只绘制操作符或者子菜单
+        """
+        return self.is_haver and self.type.is_clickable

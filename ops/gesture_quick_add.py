@@ -67,6 +67,7 @@ class GestureQuickAdd(PublicOperator):
             column = bpu.column()
             for i in range(4):
                 column.label(f"text {i}")
+            column.separator()
             column.label(event.type)
             column.label(event.value)
 

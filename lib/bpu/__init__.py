@@ -16,7 +16,7 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
     def __repr__(self):
         return f"BpuLayout{self.type, self.text, id(self)}"  # self.__measure__
 
-    def __layout__(self, layout_type: BPUType) -> "BpuLayout":
+    def __child_layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局
         绘制及测量时根据布局类型 计算方法"""
         layout = BpuLayout()
@@ -40,23 +40,24 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         return layout
 
     def label(self, text="Hollow Word"):
-        lab = self.__layout__(BPUType.LABEL)
+        lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
 
-    def box(self) -> "BpuLayout":
-        return self.__layout__(BPUType.BOX)
-
     def row(self) -> "BpuLayout":
-        return self.__layout__(BPUType.ROW)
+        return self.__child_layout__(BPUType.ROW)
 
     def column(self) -> "BpuLayout":
-        return self.__layout__(BPUType.COLUMN)
+        return self.__child_layout__(BPUType.COLUMN)
 
-    def split(self, factor=0.0, align=False) -> "BpuLayout":
-        return self.__layout__(BPUType.SPLIT)
+    def separator(self, show_line=True) -> None:
+        sep = self.__child_layout__(BPUType.SEPARATOR)
+        sep.__show_separator_line__ = show_line
 
-    def operator(self, operator, text=""):
-        return self.__layout__(BPUType.OPERATOR)
+    # def split(self, factor=0.0, align=False) -> "BpuLayout":
+    #     return self.__child_layout__(BPUType.SPLIT)
+
+    # def operator(self, operator, text=""):
+    #     return self.__child_layout__(BPUType.OPERATOR)
 
     # def __tree__(self):
     #     ...

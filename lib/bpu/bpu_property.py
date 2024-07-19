@@ -5,9 +5,10 @@ from .bpu_type import BPUType
 
 class BpuProperty:
     type: BPUType = BPUType.UNKNOWN  # 类型
-    parent: "BpuLayout" = None
+    parent: "BpuLayout" = None  # 父级
 
-    operator = None
+    operator = None  # 操作符
+    __show_separator_line__: bool  # 显示分割线
 
     level: int = 0  # 绘制的层级
 
@@ -18,10 +19,10 @@ class BpuProperty:
     text: str = ""  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
     font_color = (1, 1, 1, 1)  # 字体颜色
-    font_size = 24
+    font_size = 24  # 字体大小
 
-    text_margin = 15
-    layout_margin = 50
+    text_margin = 15  # 文字的间距
+    layout_margin = 50  # 布局间距
 
     @property
     def parent_top(self):
@@ -34,10 +35,12 @@ class BpuProperty:
 
     @property
     def __margin_vector__(self) -> Vector:
+        """间隔的Vector"""
         return Vector([self.__margin__, self.__margin__])
 
     @property
     def __margin__(self) -> int:
+        """间隔"""
         if self.type.is_layout:
             return self.layout_margin
         return self.text_margin
@@ -48,6 +51,7 @@ class BpuProperty:
     is_invert: bool = False  # 是反转
 
     def __clear_children__(self) -> None:
+        """清理子级"""
         self.__draw_children__ = []
         self.__temp_children__ = []
 
@@ -59,16 +63,20 @@ class BpuProperty:
 
     @property
     def is_layout(self) -> bool:
+        """是layout类型"""
         return self.type.is_layout
 
     @property
     def is_draw_child(self) -> bool:
+        """是可以绘制子级"""
         return self.__draw_children__ and self.type.is_draw_child
 
     @property
     def draw_children(self) -> list["BpuProperty"]:
-        """绘制子级时需判断是否反转
-        """
+        """反回绘制子级列表
+        绘制子级时需判断是否反转
+
+        从上向下绘制"""
         if self.is_invert:
             return self.__draw_children__
         return self.__draw_children__[::-1]

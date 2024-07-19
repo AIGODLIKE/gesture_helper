@@ -23,7 +23,7 @@ class BpuRegister:
                 # bpy.types.Region.bl_rna.properties['type'].enum_items_static
                 for identifier in {'WINDOW', }:  # 'UI', 'TOOLS'
                     try:
-                        sub_class[identifier] = cls.draw_handler_add(self.gpu_draw, (), identifier, 'POST_PIXEL')
+                        sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
                     except Exception as e:
                         print(e.args)
                 BpuRegister.__draw_class__[cls] = sub_class
