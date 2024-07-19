@@ -2,7 +2,16 @@ import bpy
 
 
 class OperatorProperties(dict):
-    ...
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __setattr__(self, key, value):
+        print("__setattr__", key, value)
+        super().__setattr__(key, value)
+
+    def __setitem__(self, key, value):
+        print("__setitem__", key, value)
+        super().__setitem__(key, value)
 
 
 class BpuOperator:
@@ -11,7 +20,7 @@ class BpuOperator:
 
     __bl_idname__ = None  # 绘制的bl_idname
 
-    __operator_properties__ = OperatorProperties()  # 操作属性
+    __operator_properties__: OperatorProperties  # 操作属性
     operator_context = 'INVOKE_DEFAULT'
 
     @property
@@ -48,6 +57,9 @@ class BpuOperator:
 
                 ops_property = ", ".join(
                     (f"{key}={g(value)}" for key, value in self.__operator_properties__.items()))
+                print(f"ops_property:\t{id(self.__operator_properties__)}\t{ops_property}\n{self}")
+                # for d in dir(self):
+                #     print(f"\t{d}：\t{getattr(self, d)}")
                 print(
                     f'running_operator bpy.ops.{self.__bl_idname__}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',

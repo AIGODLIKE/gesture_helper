@@ -3,7 +3,7 @@ from mathutils import Vector
 
 from .bpu_draw import BpuDraw
 from .bpu_event import BpuEvent
-from .bpu_operator import BpuOperator
+from .bpu_operator import BpuOperator, OperatorProperties
 from .bpu_property import BpuProperty
 from .bpu_register import BpuRegister
 from .bpu_type import BPUType
@@ -16,7 +16,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         self.type = BPUType.PARENT
 
     def __repr__(self):
-        return f"BpuLayout{self.type, self.__text__, id(self)}"  # self.__measure__
+        return f"BpuLayout{self.type, self.__text__}"  # self.__measure__
 
     def __child_layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局
@@ -65,11 +65,12 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         ops = self.__child_layout__(BPUType.OPERATOR)
         ops.__bl_idname__ = operator
         ops.text = text
+        ops.__operator_properties__ = OperatorProperties()
+        print(f"operator\t{id(ops.__operator_properties__)}\t{self}", flush=True)
         return ops.__operator_properties__
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":
     #     return self.__child_layout__(BPUType.SPLIT)
-
 
     def __enter__(self):
         self.__clear_children__()

@@ -55,7 +55,7 @@ class GestureQuickAdd(PublicOperator):
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
+        # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         self.init_module(event)
         self.bpu.register_draw()
 
@@ -69,10 +69,12 @@ class GestureQuickAdd(PublicOperator):
                 column.label(f"text {i}")
             column.separator()
             column.label(event.type)
-            ops = column.operator("mesh.primitive_plane_add", text="Emm 添加")
-            ops.size = 10
+            a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
+            a.size = 10
             ops = column.operator("mesh.primitive_plane_add")
-            ops.size = 2
+            ops.size = 100
+            print(type(a), id(a), a.items(), flush=True)
+            print(type(ops), id(ops), ops.items(), flush=True)
 
             column.label(event.value)
             bpu.check_event(event)
