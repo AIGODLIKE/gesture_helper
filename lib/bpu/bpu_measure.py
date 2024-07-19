@@ -63,19 +63,19 @@ class BpuMeasure(BpuProperty):
     def __measure_text__(self) -> None:
         """测量文字"""
         blf.size(self.font_id, self.font_size)
-        (self.__width__, self.__height__) = blf.dimensions(self.font_id, self.text)
+        (self.__width__, self.__height__) = blf.dimensions(self.font_id, self.__text__)
 
     def __measure_children__(self) -> None:
         """测量子级"""
         for child in self.__draw_children__:
             child.__measure__()
-            self.__width_list__.append(child.draw_width)
-            self.__height_list__.append(child.draw_height)
+            self.__width_list__.append(child.__draw_width__)
+            self.__height_list__.append(child.__draw_height__)
         self.__width__ = sum(self.__width_list__)
         self.__height__ = sum(self.__height_list__)
 
     @property
-    def draw_height(self) -> int:
+    def __draw_height__(self) -> int:
         """绘制高度
         只有在绘制layout的时侯才需要此属性"""
         self.__measure__()
@@ -90,7 +90,7 @@ class BpuMeasure(BpuProperty):
         return self.__height__ + margin * 2
 
     @property
-    def draw_width(self) -> int:
+    def __draw_width__(self) -> int:
         """绘制宽度
         只有在绘制layout的时侯才需要此属性"""
         self.__measure__()
@@ -111,26 +111,27 @@ class BpuMeasure(BpuProperty):
         return self.__width__ + margin * 2
 
     @property
-    def draw_size(self) -> Vector:
-        return Vector([self.draw_width, self.draw_height])
+    def __draw_size__(self) -> Vector:
+        """绘制大小"""
+        return Vector([self.__draw_width__, self.__draw_height__])
 
-    def child_offset(self, parent: 'BpuMeasure', index: int = 0) -> Vector:
+    def child_offset(self, parent: 'BpuMeasure') -> Vector:
         """
         子级偏移量
-        :param index:
         :param parent:
         :return:
         """
         if parent.type.is_parent:
             return Vector([0, 0])
         elif parent.type.is_horizontal_layout:
-            return Vector((self.draw_width, 0))
+            return Vector((self.__draw_width__, 0))
         elif parent.type.is_vertical_layout:
-            return Vector((0, self.draw_height))
+            return Vector((0, self.__draw_height__))
         else:
-            return self.draw_size
+            return self.__draw_size__
 
     def parent_offset(self) -> Vector:
+        """父级偏移"""
         margin = self.__margin__
         if self.type.is_parent:
             return Vector([0, 0])
@@ -139,21 +140,21 @@ class BpuMeasure(BpuProperty):
 
     @property
     def is_haver(self) -> bool:
+        """是活动项"""
         start_x, start_y = start = self.offset_position + self.item_position
         if self.parent is not None:
             if self.parent.type.is_vertical_layout:
-                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.draw_height
+                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
             elif self.parent.type.is_horizontal_layout:
-                end_x, end_y = start_x + self.draw_width, start_y + self.parent.__child_max_height__
+                end_x, end_y = start_x + self.__draw_width__, start_y + self.parent.__child_max_height__
             else:
-                end_x, end_y = start + self.draw_size
+                end_x, end_y = start + self.__draw_size__
         else:
-            end_x, end_y = start + self.draw_size
+            end_x, end_y = start + self.__draw_size__
 
         x, y = self.mouse_position
         in_x = start_x < x < end_x
         in_y = start_y < y < end_y
-        print("is_haver", in_x, in_y, "\n\t", x, y, self.text)
         return in_x and in_y
 
     @property

@@ -11,8 +11,8 @@ def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[in
     return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
 
 
-IS_DEBUG_DRAW: bool = True
-IS_DEBUG_XY: bool = True
+IS_DEBUG_DRAW: bool = False
+IS_DEBUG_XY: bool = False
 
 
 class BpuDraw(BpuMeasure, PublicGpu):
@@ -39,6 +39,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
                 self.draw_text([0, 50], text=str(bpy.context.area.type), font_id=self.font_id)
                 self.draw_text([0, 0], text=str(self.offset_position), font_id=self.font_id)
                 self.draw_text([0, -50], text=str(self.mouse_position), font_id=self.font_id)
+                self.draw_text([0, -100], text=str(self.__active_operator__), font_id=self.font_id)
             self.__layout__()
 
     def __layout__(self) -> None:
@@ -64,27 +65,29 @@ class BpuDraw(BpuMeasure, PublicGpu):
             self.draw_text([0, 0], str(self.item_position), size=size, color=(1, 1, 1, 1))
             self.draw_text([300, 0], str(self.is_haver), size=size, color=(1, 0, 0, 1))
             self.draw_text([600, 0], str(a), size=size, color=(1, 0, 0, 1))
-            self.draw_text([900, 0], str(a + self.draw_size), size=size, color=(1, 0, 0, 1))
+            self.draw_text([900, 0], str(a + self.__draw_size__), size=size, color=(1, 0, 0, 1))
             self.draw_text([1200, 0], f"parent:{self.parent}", size=size, color=(1, 0, 0, 1))
 
-    def __draw_separator__(self):
+    def __draw_separator__(self, factor=0.95):
+        """绘制分隔符"""
         parent = self.parent
-        if parent:
-            pt = parent.type
-            if pt.is_horizontal_layout:
-                vs = [Vector((0, 0)), Vector((0, parent.__child_max_height__))]
-            elif pt.is_vertical_layout:
-                vs = [Vector((0, 0)), Vector((parent.__child_max_width__, 0))]
-            else:
-                vs = [Vector((0, 0)), Vector((5, 5))]
-            with gpu.matrix.push_pop():
+        with gpu.matrix.push_pop():
+            if parent:
+                pt = parent.type
                 if pt.is_horizontal_layout:
-                    gpu.matrix.translate((self.draw_width / 2, 0))
+                    vs = [Vector((0, 0)), Vector((0, parent.__child_max_height__ * factor))]
+                    gpu.matrix.translate((0, parent.__child_max_height__ * (1 - factor) / 2))
                 elif pt.is_vertical_layout:
-                    gpu.matrix.translate((0, self.draw_height / 2))
-                self.draw_2d_line(vs,
-                                  color=[.28426, .28426, .28426, 1.000000],
-                                  line_width=5)
+                    vs = [Vector((0, 0)), Vector((parent.__child_max_width__ * factor, 0))]
+                    gpu.matrix.translate((parent.__child_max_width__ * (1 - factor) / 2, 0))
+                else:
+                    vs = [Vector((0, 0)), Vector((5, 5))]
+
+                if pt.is_horizontal_layout:
+                    gpu.matrix.translate((self.__draw_width__ / 2, 0))
+                elif pt.is_vertical_layout:
+                    gpu.matrix.translate((0, self.__draw_height__ / 2))
+                self.draw_2d_line(vs, color=[.4, .4, .4, 1], line_width=2)
 
     def __draw_item__(self) -> None:
         """绘制项"""
@@ -103,14 +106,14 @@ class BpuDraw(BpuMeasure, PublicGpu):
             blf.position(font_id, 0, 0, self.level)
             blf.color(font_id, *(1, 1, 1, 1))
             blf.size(font_id, self.font_size)
-            blf.draw(font_id, self.text)
+            blf.draw(font_id, self.__text__)
 
     def __draw_layout__(self) -> None:
         """绘制layout"""
         with gpu.matrix.push_pop():
-            gpu.matrix.translate((self.draw_width / 2, self.draw_height / 2))
-            self.draw_rounded_rectangle_area([0, 0], radius=50, color=(0, 0, 0, 1.0), width=self.draw_width,
-                                             height=self.draw_height, segments=15)
+            gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
+            self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=self.__draw_width__,
+                                             height=self.__draw_height__, segments=30)
         if IS_DEBUG_DRAW:
             self.draw_2d_line(self.__margin_box__,
                               color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
@@ -131,10 +134,10 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
                 last_offset = Vector([0, 0])
                 offset_vector = po
-                for (index, child) in enumerate(self.draw_children):
+                for child in self.draw_children:
                     gpu.matrix.translate(last_offset)
                     offset_vector += last_offset
-                    last_offset = child.child_offset(self, index)
+                    last_offset = child.child_offset(self)
 
                     child.item_position = offset_vector
                     child.__layout__()
@@ -142,21 +145,28 @@ class BpuDraw(BpuMeasure, PublicGpu):
     def __draw_haver__(self) -> None:
         """绘制haver"""
         if self.is_draw_haver:
+            if self.type.is_operator:
+                self.parent_top.__active_operator__ = self
+                self.parent_top.__mouse_in_area__ = True
+            elif self.parent_top.__active_operator__:
+                self.parent_top.__active_operator__ = None
+
             if self.parent.type.is_horizontal_layout:
-                w, h = self.draw_width, self.parent.__child_max_height__
+                w, h = self.__draw_width__, self.parent.__child_max_height__
             else:
-                w, h = self.parent.__child_max_width__, self.draw_height
+                w, h = self.parent.__child_max_width__, self.__draw_height__
             with gpu.matrix.push_pop():
                 gpu.matrix.translate((w / 2, h / 2))
-                self.draw_rounded_rectangle_area([0, 0], radius=5, color=[0.52861, 0.52861, 0.52861, 1.000000],
+                self.draw_rounded_rectangle_area([0, 0],
+                                                 radius=5, color=[0.52861, 0.52861, 0.52861, 1.000000],
                                                  width=w, height=h,
-                                                 segments=15)
+                                                 segments=20)
 
     @property
     def __margin_box__(self):
         """边距框"""
-        height = self.draw_height
-        width = self.draw_width
+        height = self.__draw_height__
+        width = self.__draw_width__
         return __box_path__(width, height)
 
     @property

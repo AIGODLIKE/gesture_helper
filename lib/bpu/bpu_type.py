@@ -74,7 +74,12 @@ class BPUType(Enum):
     @property
     def is_clickable(self):
         """是可点击的"""
-        return self.name in ['OPERATOR']
+        return self.name == 'OPERATOR'
+
+    @property
+    def is_operator(self):
+        """是操作符"""
+        return self.name == 'OPERATOR'
 
 
 class Quadrant(Enum):

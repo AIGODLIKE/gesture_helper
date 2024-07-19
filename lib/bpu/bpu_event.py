@@ -1,14 +1,11 @@
-from typing import Optional
-
 import bpy
-from mathutils import Vector
 
 
 class BpuEvent:
-
-    def __init__(self):
-        self.mouse_position = Vector((0, 0))
-
-    def click_event(self, event: bpy.types.Event) -> "BpuLayout":
+    def check_event(self, event: bpy.types.Event) -> "BpuLayout":
         """判断是否有在此页面上"""
-        ...
+        if event.type == "LEFTMOUSE" and event.value == "CLICK":  # left click
+            ao = getattr(self, "__active_operator__", False)
+            if ao:
+                getattr(ao, "running_operator")()
+            setattr(self, "__active_operator__", None)

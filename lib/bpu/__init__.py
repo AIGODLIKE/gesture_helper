@@ -1,20 +1,22 @@
+import bpy
 from mathutils import Vector
 
 from .bpu_draw import BpuDraw
 from .bpu_event import BpuEvent
+from .bpu_operator import BpuOperator
 from .bpu_property import BpuProperty
 from .bpu_register import BpuRegister
 from .bpu_type import BPUType
 
 
-class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
+class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
 
     def __init__(self):
         super().__init__()
         self.type = BPUType.PARENT
 
     def __repr__(self):
-        return f"BpuLayout{self.type, self.text, id(self)}"  # self.__measure__
+        return f"BpuLayout{self.type, self.__text__, id(self)}"  # self.__measure__
 
     def __child_layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局
@@ -40,32 +42,42 @@ class BpuLayout(BpuDraw, BpuRegister, BpuEvent):
         return layout
 
     def label(self, text="Hollow Word"):
+        """标签"""
         lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
 
     def row(self) -> "BpuLayout":
+        """行"""
         return self.__child_layout__(BPUType.ROW)
 
     def column(self) -> "BpuLayout":
+        """列"""
         return self.__child_layout__(BPUType.COLUMN)
 
     def separator(self, show_line=True) -> None:
+        """分割"""
         sep = self.__child_layout__(BPUType.SEPARATOR)
         sep.__show_separator_line__ = show_line
+
+    def operator(self, operator: str, text=None) -> "bpy.types.OperatorProperties":
+        if operator is None:
+            Exception("Error not operator")
+        ops = self.__child_layout__(BPUType.OPERATOR)
+        ops.__bl_idname__ = operator
+        ops.text = text
+        return ops.__operator_properties__
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":
     #     return self.__child_layout__(BPUType.SPLIT)
 
-    # def operator(self, operator, text=""):
-    #     return self.__child_layout__(BPUType.OPERATOR)
-
-    # def __tree__(self):
-    #     ...
 
     def __enter__(self):
         self.__clear_children__()
+        self.__mouse_in_area__ = False
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.type == BPUType.PARENT:
+            if not self.__mouse_in_area__:
+                self.__active_operator__ = None
             self.__draw_children__ = self.__temp_children__

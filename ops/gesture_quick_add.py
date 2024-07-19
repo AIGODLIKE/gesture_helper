@@ -69,7 +69,13 @@ class GestureQuickAdd(PublicOperator):
                 column.label(f"text {i}")
             column.separator()
             column.label(event.type)
+            ops = column.operator("mesh.primitive_plane_add", text="Emm 添加")
+            ops.size = 10
+            ops = column.operator("mesh.primitive_plane_add")
+            ops.size = 2
+
             column.label(event.value)
+            bpu.check_event(event)
 
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":

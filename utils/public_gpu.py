@@ -132,7 +132,6 @@ class PublicGpu:
         │ xy                         │
         └────────────────────────────┘
 
-
         Args:
             :param y2:
             :param x2:

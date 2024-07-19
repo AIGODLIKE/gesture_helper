@@ -1,3 +1,4 @@
+from bpy.app.translations import pgettext
 from mathutils import Vector
 
 from .bpu_type import BPUType
@@ -7,7 +8,6 @@ class BpuProperty:
     type: BPUType = BPUType.UNKNOWN  # 类型
     parent: "BpuLayout" = None  # 父级
 
-    operator = None  # 操作符
     __show_separator_line__: bool  # 显示分割线
 
     level: int = 0  # 绘制的层级
@@ -16,13 +16,24 @@ class BpuProperty:
     item_position: Vector  # 偏移位置
     mouse_position: Vector  # 鼠标位置
 
-    text: str = ""  # 绘制的文字 label operator
+    text: str = None  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
     font_color = (1, 1, 1, 1)  # 字体颜色
     font_size = 24  # 字体大小
 
     text_margin = 15  # 文字的间距
-    layout_margin = 50  # 布局间距
+    layout_margin = 10  # 布局间距
+
+    @property
+    def __text__(self):
+        """获取绘制的文字"""
+        if self.text:
+            return self.text
+        if self.type.is_operator:
+            text = getattr(self, "__operator_text__", "Error")
+            if text:
+                return pgettext(text, "Operator")
+        return "Error"
 
     @property
     def parent_top(self):
