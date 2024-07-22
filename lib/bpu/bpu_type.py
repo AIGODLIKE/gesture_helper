@@ -29,6 +29,11 @@ class BPUType(Enum):
         return self.name == "SEPARATOR"
 
     @property
+    def is_menu(self):
+        """是菜单"""
+        return self.name == "MENU"
+
+    @property
     def is_layout(self):
         """是布局"""
         return self.name in ['ROW', 'COLUMN', 'BOX', 'SPLIT']

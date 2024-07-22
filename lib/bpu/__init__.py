@@ -59,6 +59,18 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         sep = self.__child_layout__(BPUType.SEPARATOR)
         sep.__show_separator_line__ = show_line
 
+    def menu(self, text, menu_id="menu") -> "BpuLayout":
+        """菜单"""
+        if text is None:
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+            Exception("Menu Error not text")
+        m = self.__child_layout__(BPUType.MENU)
+        m.text = text
+        m.__menu_id__ = menu_id
+        return m
+
     def operator(self, operator: str, text=None) -> "bpy.types.OperatorProperties":
         if operator is None:
             Exception("Error not operator")

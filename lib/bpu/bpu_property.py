@@ -9,6 +9,7 @@ class BpuProperty:
     parent: "BpuLayout" = None  # 父级
 
     __show_separator_line__: bool  # 显示分割线
+    __menu_id__: str  # 菜单Id
 
     level: int = 0  # 绘制的层级
 
@@ -23,6 +24,7 @@ class BpuProperty:
 
     text_margin = 15  # 文字的间距
     layout_margin = 10  # 布局间距
+    __haver_map__ = dict()
 
     @property
     def __text__(self):
@@ -55,6 +57,9 @@ class BpuProperty:
         if self.type.is_layout:
             return self.layout_margin
         return self.text_margin
+    @property
+    def __mt__(self):
+        return self.__margin__ *2
 
     __draw_children__ = []  # 绘制子级
     __temp_children__ = []  # 添加时的临时子级
@@ -83,7 +88,7 @@ class BpuProperty:
         return self.__draw_children__ and self.type.is_draw_child
 
     @property
-    def draw_children(self) -> list["BpuProperty"]:
+    def draw_children(self) -> list["BpuLayout"]:
         """反回绘制子级列表
         绘制子级时需判断是否反转
 
