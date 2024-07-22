@@ -163,8 +163,14 @@ class GesturePassThroughKeymap:
             print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
             print(f"\tMatch Key\t{match_gesture_key}")
             print(f"\tOrigin Key\t{[i.idname for i in match_origin_key]}")
-            if len(match_origin_key) == 1:
+
+            ml = len(match_origin_key)
+            if ml == 1:
                 try_operator_pass_through_right(match_origin_key[0])
+            elif key == "Object Mode":
+                if ml > 1 and match_origin_key[0].idname == "object.delete":
+                    # 3D视图有两个删除事件
+                    try_operator_pass_through_right(match_origin_key[0])
             elif key == "Outliner":  # 为大纲视图单独处理事件
                 for m in match_origin_key:
                     ok = try_operator_pass_through_right(m)
