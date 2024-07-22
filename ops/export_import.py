@@ -170,19 +170,27 @@ class Export(PublicFileOperator):
     is_close_backups: BoolProperty(name="是关闭插件备份", default=False, options={"SKIP_SAVE"})
 
     @property
-    def file_string(self):
-        date = datetime.fromtimestamp(time.time())
-        if self.is_auto_backups:
-            date = f'Auto Backups {date}'
-        if self.is_close_backups:
-            now = datetime.now()
-            # 提取年、月、日
-            year = now.year
-            month = now.month
-            day = now.day
+    def ymd(self):
+        now = datetime.now()
+        # 提取年、月、日
+        year = now.year
+        month = now.month
+        day = now.day
+        return f"{year}-{month:02d}-{day:02d}"
 
-            date = f'Close Addon Backups {year}-{month:02d}-{day:02d}'
-        return date
+    @property
+    def file_string(self):
+        string = datetime.fromtimestamp(time.time())
+        if self.is_auto_backups:
+            if self.backups_file_mode == "ADDON_UNREGISTER":
+                string = f'Auto Backups {self.date}'
+            elif self.backups_file_mode == "ADDON_UNREGISTER_DAY":
+                string = f'Auto Backups {self.ymd}'
+            elif self.backups_file_mode == "ONLY_ONE":
+                string = f'Auto Backups'
+        if self.is_close_backups:
+            string = f'Close Addon Backups {self.ymd}'
+        return string
 
     @property
     def file_path(self):

@@ -1,7 +1,7 @@
 import os
 
 import bpy
-from bpy.props import BoolProperty, StringProperty
+from bpy.props import BoolProperty, StringProperty, EnumProperty
 from bpy.types import PropertyGroup
 
 
@@ -23,6 +23,15 @@ class BackupsProperty(PropertyGroup):
         subtype='DIR_PATH',
         default=os.path.join(ADDON_FOLDER, 'auto_backups')
     )
+    backups_file_mode:EnumProperty(
+        name="备份模式",
+        default="ADDON_UNREGISTER_DAY",
+        items=[
+            ("ADDON_UNREGISTER", "插件注销时", "每次插件注销时都会自动备份一次(在关闭插件或关闭Blender时会触发),如果频繁开关Blender将会有很多备份文件"),
+            ("ADDON_UNREGISTER_DAY", "插件注销时(每天保留一份)", "每天仅保留一份"),
+            ("ONLY_ONE", "仅保留一份", "仅保留一份")
+        ]
+    )
 
     @staticmethod
     def draw_backups(layout: bpy.types.UILayout):
@@ -33,6 +42,7 @@ class BackupsProperty(PropertyGroup):
 
         box = column.box()
         box.prop(backups, 'auto_backups')
+        box.prop(backups, 'backups_file_mode')
         box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
             box.prop(backups, 'backups_path')

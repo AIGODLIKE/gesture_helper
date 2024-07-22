@@ -67,9 +67,6 @@ class BpuOperator:
 
                 ops_property = ", ".join(
                     (f"{key}={g(value)}" for key, value in self.__operator_properties__.items()))
-                print(f"ops_property:\t{id(self.__operator_properties__)}\t{ops_property}\n{self}")
-                # for d in dir(self):
-                #     print(f"\t{d}：\t{getattr(self, d)}")
                 print(
                     f'running_operator bpy.ops.{self.__bl_idname__}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',

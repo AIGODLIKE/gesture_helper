@@ -65,7 +65,7 @@ class GestureQuickAdd(PublicOperator):
             return e
         return {'PASS_THROUGH'}
 
-    def draw_gpu(self,event):
+    def draw_gpu(self, event):
         try:
             self.bpu.register_draw()
             with self.bpu as bpu:
@@ -87,7 +87,7 @@ class GestureQuickAdd(PublicOperator):
             self.bpu.unregister_draw()
             print(e.args)
 
-    def modal_event(self,event):
+    def modal_event(self, event):
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":
                 self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
