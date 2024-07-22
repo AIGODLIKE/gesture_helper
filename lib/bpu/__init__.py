@@ -66,7 +66,6 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         ops.__bl_idname__ = operator
         ops.text = text
         ops.__operator_properties__ = OperatorProperties()
-        print(f"operator\t{id(ops.__operator_properties__)}\t{self}", flush=True)
         return ops.__operator_properties__
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":

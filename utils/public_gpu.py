@@ -199,7 +199,7 @@ class PublicGpu:
 
     @staticmethod
     def draw_rounded_rectangle_area(position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
-                                    segments=10):
+                                    segments=20):
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(radius, width, height, segments)

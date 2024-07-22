@@ -28,6 +28,7 @@ class GestureQuickAdd(PublicOperator):
 
     def __init__(self):
         super().__init__()
+        self.mouse_position = None
         self.__difference_mouse__ = None
         self.bpu = BpuLayout()
         self.bpu.font_size = 100
@@ -55,43 +56,50 @@ class GestureQuickAdd(PublicOperator):
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         self.init_module(event)
-        self.bpu.register_draw()
+        self.draw_gpu(event)
+        e = self.modal_event(event)
+        if e:
+            return e
+        return {'PASS_THROUGH'}
 
-        nm = Vector((event.mouse_x, event.mouse_y))
+    def draw_gpu(self,event):
+        try:
+            self.bpu.register_draw()
+            with self.bpu as bpu:
+                bpu.offset_position = self.offset_position
+                bpu.mouse_position = self.mouse_position
+                column = bpu.column()
+                for i in range(4):
+                    column.label(f"text {i}")
+                column.separator()
+                column.label(event.type)
+                a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
+                a.size = 10
+                ops = column.operator("mesh.primitive_plane_add")
+                ops.size = 100
 
-        with self.bpu as bpu:
-            bpu.offset_position = self.offset_position
-            bpu.mouse_position = nm
-            column = bpu.column()
-            for i in range(4):
-                column.label(f"text {i}")
-            column.separator()
-            column.label(event.type)
-            a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
-            a.size = 10
-            ops = column.operator("mesh.primitive_plane_add")
-            ops.size = 100
-            print(type(a), id(a), a.items(), flush=True)
-            print(type(ops), id(ops), ops.items(), flush=True)
+                column.label(event.value)
+                bpu.check_event(event)
+        except Exception as e:
+            self.bpu.unregister_draw()
+            print(e.args)
 
-            column.label(event.value)
-            bpu.check_event(event)
-
+    def modal_event(self,event):
         if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
             if event.value == "PRESS":
-                self.__difference_mouse__ = self.start_mouse_position - nm
+                self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
             elif event.value == "RELEASE":
                 self.__difference_mouse__ = None
             elif self.__difference_mouse__:
-                nd = self.start_mouse_position - nm
+                nd = self.start_mouse_position - self.mouse_position
                 d = self.__difference_mouse__ - nd
-                self.offset_position = nm - d
+                self.offset_position = self.mouse_position - d
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
         if self.is_exit:
             self.bpu.unregister_draw()
             GestureQuickAdd.is_in_quick_add = False
             return {'FINISHED'}
-        return {'PASS_THROUGH'}

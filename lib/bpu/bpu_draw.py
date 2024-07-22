@@ -113,7 +113,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
         with gpu.matrix.push_pop():
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
             self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=self.__draw_width__,
-                                             height=self.__draw_height__, segments=30)
+                                             height=self.__draw_height__, segments=40)
         if IS_DEBUG_DRAW:
             self.draw_2d_line(self.__margin_box__,
                               color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
@@ -160,7 +160,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
                 self.draw_rounded_rectangle_area([0, 0],
                                                  radius=5, color=[0.52861, 0.52861, 0.52861, 1.000000],
                                                  width=w, height=h,
-                                                 segments=20)
+                                                 segments=24)
 
     @property
     def __margin_box__(self):

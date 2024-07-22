@@ -1,17 +1,24 @@
 import bpy
 
 
-class OperatorProperties(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class OperatorProperties:
+    __data__ = dict()
+
+    def __init__(self):
+        self.__data__ = dict()
 
     def __setattr__(self, key, value):
-        print("__setattr__", key, value)
-        super().__setattr__(key, value)
+        if key != "__data__":
+            self.__data__[key] = value
+        else:
+            super().__setattr__(key, value)
 
-    def __setitem__(self, key, value):
-        print("__setitem__", key, value)
-        super().__setitem__(key, value)
+    def items(self):
+        return self.__data__.items()
+
+    @property
+    def map(self):
+        return self.__data__
 
 
 class BpuOperator:
@@ -22,6 +29,9 @@ class BpuOperator:
 
     __operator_properties__: OperatorProperties  # 操作属性
     operator_context = 'INVOKE_DEFAULT'
+
+    def __init__(self):
+        self.__operator_properties__ = OperatorProperties()
 
     @property
     def __operator_func__(self) -> "bpy.types.Operator":
@@ -50,7 +60,7 @@ class BpuOperator:
         try:
             func = self.__operator_func__
             if func:
-                func(self.operator_context, True, **self.__operator_properties__)
+                func(self.operator_context, True, **self.__operator_properties__.map)
 
                 def g(v):
                     return f'"{v}"' if type(v) is str else v
