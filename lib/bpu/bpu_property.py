@@ -71,6 +71,13 @@ class BpuProperty:
         self.__draw_children__ = []
         self.__temp_children__ = []
 
+    @property
+    def __children__(self):
+        if self.type.is_parent:
+            return self.__temp_children__
+        else:
+            return self.__draw_children__
+
     def __init__(self):
         self.__clear_children__()
 
@@ -85,7 +92,7 @@ class BpuProperty:
     @property
     def is_draw_child(self) -> bool:
         """是可以绘制子级"""
-        return self.__draw_children__ and self.type.is_draw_child
+        return self.__children__ and self.type.is_draw_child
 
     @property
     def draw_children(self) -> list["BpuLayout"]:
@@ -94,5 +101,5 @@ class BpuProperty:
 
         从上向下绘制"""
         if self.is_invert:
-            return self.__draw_children__
-        return self.__draw_children__[::-1]
+            return self.__children__
+        return self.__children__[::-1]

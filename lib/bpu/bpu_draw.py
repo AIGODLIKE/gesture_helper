@@ -48,6 +48,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
         然后绘制子级
         """
         if self.type.is_parent:
+            # print(f"draw parent layout \n{self.__draw_size__}\n{self.__child_max_width__}\n{self.type, self.__child_width_list__}")
             self.__draw_layout__()
         elif self.type.is_separator:
             self.__draw_separator__()

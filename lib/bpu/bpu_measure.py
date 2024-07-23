@@ -6,42 +6,52 @@ from .bpu_property import BpuProperty
 
 class BpuMeasure(BpuProperty):
     # text  不含边距
-    __text_width__ = -1
-    __text_height__ = -1
+    __text_width__ = -10
+    __text_height__ = -10
 
-    # layout  不含边距
-    __child_height_list__ = []
-    __child_width_list__ = []
-
-    __is_measurements_completed__ = False  # 是已完成测量
     separator_size = 5
 
     def __init__(self):
         super().__init__()
-        self.__is_measurements_completed__ = False
-        self.__child_height_list__ = []
-        self.__child_width_list__ = []
+        self.__clear_measure__()
+
+    def __clear_measure__(self):
+        self.__text_width__ = -100
+        self.__text_height__ = -100
+
+    @property
+    def __child_height_list__(self):
+        return [child.__draw_height__ for child in self.__children__]
+
+    @property
+    def __child_width_list__(self):
+        return [child.__draw_width__ for child in self.__children__]
+
+    # 子级总高宽
+    @property
+    def __child_sum_width__(self) -> int:
+        return sum(self.__child_width_list__)
+
+    @property
+    def __child_sum_height__(self) -> int:
+        return sum(self.__child_height_list__)
 
     @property
     def __child_max_width__(self) -> int:
         if self.__child_width_list__:
             return max(self.__child_width_list__)
-        return -10
+        return -100
 
     @property
     def __child_max_height__(self) -> int:
         if self.__child_height_list__:
             return max(self.__child_height_list__)
-        return -10
+        return -100
 
     def __measure__(self) -> None:
         """测量数据"""
-        if self.__is_measurements_completed__:
-            # 测量过,跳过
-            return
+        self.__clear_measure__()
 
-        self.__child_height_list__ = []
-        self.__child_width_list__ = []
         # 如果是分割线就不测量,使用父级的宽高
         if self.type.is_menu:
             self.__measure_text__()
@@ -50,8 +60,7 @@ class BpuMeasure(BpuProperty):
             self.__measure_text__()
         if self.type.is_draw_child:
             self.__measure_children__()
-
-        self.__is_measurements_completed__ = True
+        # print(f"__measure__\t{self.__draw_width__}\t{self}\t{self.__text__}")
 
     def __measure_text__(self) -> None:
         """测量文字"""
@@ -60,19 +69,14 @@ class BpuMeasure(BpuProperty):
 
     def __measure_children__(self) -> None:
         """测量子级"""
-        for child in self.__draw_children__:
+        # print(f"__measure_children__\n\t{self}\t{self.__children__}")
+        for child in self.__children__:
             child.__measure__()
-            self.__child_width_list__.append(child.__draw_width__)
-            self.__child_height_list__.append(child.__draw_height__)
-        self.__child_sum_width__ = sum(self.__child_width_list__)
-        self.__child_sum_height__ = sum(self.__child_height_list__)
 
     @property
     def __draw_height__(self) -> int:
         """绘制高度
         只有在绘制layout的时侯才需要此属性"""
-        self.__measure__()
-
         mt = self.__mt__
         if self.type.is_menu:
             return self.__text_height__ + mt
@@ -90,8 +94,6 @@ class BpuMeasure(BpuProperty):
     def __draw_width__(self) -> int:
         """绘制宽度
         只有在绘制layout的时侯才需要此属性"""
-        self.__measure__()
-
         mt = self.__mt__
 
         if self.type.is_menu:
@@ -143,10 +145,11 @@ class BpuMeasure(BpuProperty):
         """是活动项"""
         start_x, start_y = start = self.offset_position + self.item_position
         if self.parent is not None:
-            if self.parent.type.is_vertical_layout:
-                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
-            elif self.parent.type.is_horizontal_layout:
+            pt = self.parent.type
+            if pt.is_horizontal_layout:  # 水平 row
                 end_x, end_y = start_x + self.__draw_width__, start_y + self.parent.__child_max_height__
+            elif pt.is_vertical_layout or pt.is_parent:  # 垂直 column
+                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
             else:
                 end_x, end_y = start + self.__draw_size__
         else:
@@ -155,6 +158,7 @@ class BpuMeasure(BpuProperty):
         x, y = self.mouse_position
         in_x = start_x < x < end_x
         in_y = start_y < y < end_y
+        # print(f"is_haver\t{in_x}\t{in_y}\t{self}\t{start_y}\t{end_y}")
         return in_x and in_y
 
     @property
