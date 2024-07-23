@@ -26,13 +26,13 @@ class BpuMeasure(BpuProperty):
     def __child_max_width__(self) -> int:
         if self.__child_width_list__:
             return max(self.__child_width_list__)
-        return -1
+        return -10
 
     @property
     def __child_max_height__(self) -> int:
         if self.__child_height_list__:
             return max(self.__child_height_list__)
-        return -1
+        return -10
 
     def __measure__(self) -> None:
         """测量数据"""
@@ -80,9 +80,7 @@ class BpuMeasure(BpuProperty):
             return self.separator_size + mt
         elif self.type.is_horizontal_layout:
             return self.__child_max_height__ + mt
-        elif self.type.is_vertical_layout:
-            return self.__child_sum_height__ + mt
-        elif self.type.is_parent:
+        elif self.type.is_vertical_layout or self.type.is_parent:
             return self.__child_sum_height__ + mt
 
         # 文字
@@ -106,9 +104,7 @@ class BpuMeasure(BpuProperty):
                 return self.parent.__child_max_height__
         elif self.type.is_horizontal_layout:
             return self.__child_sum_width__ + mt
-        elif self.type.is_vertical_layout:
-            return self.__child_max_width__ + mt
-        elif self.type.is_parent:
+        elif self.type.is_vertical_layout or self.type.is_parent:
             return self.__child_max_width__ + mt
 
         # 文字

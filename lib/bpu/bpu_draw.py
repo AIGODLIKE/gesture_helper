@@ -78,22 +78,22 @@ class BpuDraw(BpuMeasure, PublicGpu):
         """绘制分隔符"""
         parent = self.parent
         with gpu.matrix.push_pop():
-            if parent:
-                pt = parent.type
-                if pt.is_horizontal_layout:
-                    vs = [Vector((0, 0)), Vector((0, parent.__child_max_height__ * factor))]
-                    gpu.matrix.translate((0, parent.__child_max_height__ * (1 - factor) / 2))
-                elif pt.is_vertical_layout:
-                    vs = [Vector((0, 0)), Vector((parent.__child_max_width__ * factor, 0))]
-                    gpu.matrix.translate((parent.__child_max_width__ * (1 - factor) / 2, 0))
-                else:
-                    vs = [Vector((0, 0)), Vector((5, 5))]
+            pt = parent.type
+            if pt.is_horizontal_layout:
+                vs = [Vector((0, 0)), Vector((0, parent.__child_max_height__ * factor))]
+                gpu.matrix.translate((0, parent.__child_max_height__ * (1 - factor) / 2))
+            elif pt.is_vertical_layout or pt.is_parent:
+                vs = [Vector((0, 0)), Vector((parent.__child_max_width__ * factor, 0))]
+                gpu.matrix.translate((parent.__child_max_width__ * (1 - factor) / 2, 0))
+            else:
+                Exception(f"Error parent Not match :{parent.type}")
+            if pt.is_horizontal_layout:
+                gpu.matrix.translate((self.__draw_width__ / 2, 0))
+            elif pt.is_vertical_layout or pt.is_parent:
+                gpu.matrix.translate((0, self.__draw_height__ / 2))
 
-                if pt.is_horizontal_layout:
-                    gpu.matrix.translate((self.__draw_width__ / 2, 0))
-                elif pt.is_vertical_layout:
-                    gpu.matrix.translate((0, self.__draw_height__ / 2))
-                self.draw_2d_line(vs, color=[.4, .4, .4, 1], line_width=2)
+            # print(f"separator:{parent.__child_max_height__,parent.__child_max_width__}\n{vs}\n")
+            self.draw_2d_line(vs, color=[.4, .4, .4, 1], line_width=2)
 
     def __draw_item__(self) -> None:
         """绘制项"""
