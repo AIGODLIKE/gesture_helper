@@ -191,11 +191,12 @@ class BpuDraw(BpuMeasure, PublicGpu):
         """边界框"""
         if self.type.is_horizontal_layout:
             return __box_path__(self.__child_sum_width__, self.__child_max_height__)
-        elif self.type.is_vertical_layout:
+        elif self.type.is_vertical_layout or self.type.is_parent:
             return __box_path__(self.__child_max_width__, self.__child_sum_height__)
         return __box_path__(self.__text_width__, self.__text_height__)
 
     def check_haver(self):
+        """检查haver"""
         ih = self.is_haver
         if self.type.is_parent:
             if not ih:
@@ -209,6 +210,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
                 self.__haver_map__[la] = ch.__menu_id__
             elif la in self.__haver_map__:
                 self.__haver_map__.pop(la)
+
     @property
     def __child_haver__(self) -> "BPULayout":
         """子级haver"""
