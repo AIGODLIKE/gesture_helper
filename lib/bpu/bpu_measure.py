@@ -73,6 +73,14 @@ class BpuMeasure(BpuProperty):
             self.__child_width_list__.append(child.__draw_width__)
 
     @property
+    def __child_draw_height__(self):
+        return self.__child_sum_height__ + self.__margin__ * 2
+
+    @property
+    def __child_draw_width__(self):
+        return self.__child_sum_width__ + self.__margin__ * 2
+
+    @property
     def __draw_height__(self) -> int:
         """绘制高度
         只有在绘制layout的时侯才需要此属性"""
@@ -142,7 +150,33 @@ class BpuMeasure(BpuProperty):
     @property
     def is_haver(self) -> bool:
         """是活动项"""
-        start_x, start_y = start = self.offset_position + self.item_position
+        if self.parent and self.parent.type.is_menu:
+            # print(f"__check_haver__\t{self}\t{self.parent}\t{self.parent.type}\n"
+            #       f"\t{self.__item_position__}\t{self.__child_menu_offset_position__}")
+            return self.__check_haver__(self.__item_position__ + self.__child_menu_offset_position__)
+        return self.__check_haver__(self.__item_position__)
+
+    @property
+    def __child_menu_haver__(self) -> bool:
+        """子级菜单是否在范围内"""
+        start_x, start_y = self.offset_position + self.__item_position__ + self.__child_menu_offset_position__ + self.__margin_vector__
+        end_x, end_y = start_x + self.__child_max_width__ + self.__mt__, start_y + self.__child_sum_height__ + self.__mt__
+
+        x, y = self.mouse_position
+        in_x = start_x < x < end_x
+        in_y = start_y < y < end_y
+        return in_x and in_y
+
+    @property
+    def is_draw_haver(self) -> bool:
+        """是可以绘制haver的
+        只绘制操作符或者子菜单
+        """
+        return self.is_haver and (self.type.is_clickable or self.type.is_menu)
+
+    def __check_haver__(self, position: Vector) -> bool:
+        """检查是否在范围内"""
+        start_x, start_y = start = self.offset_position + position
         if self.parent is not None:
             pt = self.parent.type
             if pt.is_horizontal_layout:  # 水平 row
@@ -157,12 +191,4 @@ class BpuMeasure(BpuProperty):
         x, y = self.mouse_position
         in_x = start_x < x < end_x
         in_y = start_y < y < end_y
-        # print(f"is_haver\t{in_x}\t{in_y}\t{self}\t{start_y}\t{end_y}")
         return in_x and in_y
-
-    @property
-    def is_draw_haver(self) -> bool:
-        """是可以绘制haver的
-        只绘制操作符或者子菜单
-        """
-        return self.is_haver and (self.type.is_clickable or self.type.is_menu)

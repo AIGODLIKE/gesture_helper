@@ -3,6 +3,7 @@ import bpy
 import gpu
 from mathutils import Vector
 
+from .bpu_debug import BpuDebug
 from .bpu_measure import BpuMeasure
 from ...utils.public_gpu import PublicGpu
 
@@ -12,15 +13,18 @@ def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[in
 
 
 IS_DEBUG_DRAW: bool = True
-IS_DEBUG_XY: bool = False
+IS_DEBUG_INFO: bool = True
 
 
-class BpuDraw(BpuMeasure, PublicGpu):
+class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
     def __init__(self):
         super().__init__()
 
     def __gpu_draw__(self):
         """gpu绘制主方法"""
+        if IS_DEBUG_DRAW:
+            print("\n")
+
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
@@ -28,6 +32,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
         area = bpy.context.region
 
         self.__measure__()
+        self.__layout_haver_list__ = []
         with gpu.matrix.push_pop():
             gpu.matrix.translate((-area.x, -area.y))
             gpu.matrix.translate(self.offset_position)
@@ -36,10 +41,16 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
             with gpu.matrix.push_pop():
                 gpu.matrix.translate((-500, 100))
-                self.draw_text([0, 50], text=str(bpy.context.area.type), font_id=self.font_id)
-                self.draw_text([0, 0], text=str(self.offset_position), font_id=self.font_id)
-                self.draw_text([0, -50], text=str(self.mouse_position), font_id=self.font_id)
-                self.draw_text([0, -100], text=str(self.__active_operator__), font_id=self.font_id)
+                for index, i in enumerate((
+                        str(bpy.context.area.type),
+                        str(self.offset_position),
+                        str(self.mouse_position),
+                        str(self.__active_operator__),
+                        f"haver:{self.__menu_haver_map__}",
+                        f"{self.__layout_haver_list__}",)
+                ):
+                    self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
+
             self.__layout__()
 
     def __layout__(self) -> None:
@@ -48,8 +59,8 @@ class BpuDraw(BpuMeasure, PublicGpu):
         然后绘制子级
         """
         if self.type.is_parent:
-            # print(f"draw parent layout \n{self.__draw_size__}\n{self.__child_max_width__}\n{self.type, self.__child_width_list__}")
             self.__draw_layout__()
+            # print(f"draw parent layout \n{self.__draw_size__}\n{self.__child_max_width__}\n{self.type, self.__child_width_list__}")
         elif self.type.is_separator:
             self.__draw_separator__()
         elif self.type.is_menu:
@@ -63,17 +74,6 @@ class BpuDraw(BpuMeasure, PublicGpu):
         if self.is_draw_child:
             self.__draw_child__()
         self.check_haver()
-
-    def __draw_debug__(self) -> None:
-        """绘制debug层"""
-        if IS_DEBUG_XY:
-            size = 15
-            a = self.offset_position + self.item_position
-            self.draw_text([0, 0], str(self.item_position), size=size, color=(1, 1, 1, 1))
-            self.draw_text([300, 0], str(self.is_haver), size=size, color=(1, 0, 0, 1))
-            self.draw_text([600, 0], str(a), size=size, color=(1, 0, 0, 1))
-            self.draw_text([900, 0], str(a + self.__draw_size__), size=size, color=(1, 0, 0, 1))
-            self.draw_text([1200, 0], f"parent:{self.parent}", size=size, color=(1, 0, 0, 1))
 
     def __draw_separator__(self, factor=0.95):
         """绘制分隔符"""
@@ -142,17 +142,21 @@ class BpuDraw(BpuMeasure, PublicGpu):
                 offset_vector += last_offset
                 last_offset = child.child_offset(self)
 
-                child.item_position = offset_vector
+                child.__item_position__ = offset_vector
                 child.__layout__()
 
     def __draw_haver__(self) -> None:
         """绘制haver"""
         if self.is_draw_haver:
+            # 操作符处理
             if self.type.is_operator:
                 self.parent_top.__active_operator__ = self
                 self.parent_top.__mouse_in_area__ = True
             elif self.parent_top.__active_operator__:
                 self.parent_top.__active_operator__ = None
+
+            if self.type.is_menu:
+                self.__menu_haver_map__[self.__menu_id__] = self
 
             if self.parent.type.is_horizontal_layout:
                 w, h = self.__draw_width__, self.parent.__child_max_height__
@@ -169,14 +173,24 @@ class BpuDraw(BpuMeasure, PublicGpu):
         如果两边都超了
         """
         self.__draw_item__()
-        if self.__menu_id__ in self.__haver_map__:
+        if self.__menu_id__ in self.parent_top.__menu_haver_map__:
             with gpu.matrix.push_pop():
-                gpu.matrix.translate((self.parent.__child_max_width__, 0))
+                tv = Vector((self.parent.__child_max_width__ + self.__margin__, 0)) - Vector(
+                    (0, self.__child_draw_height__ - self.__draw_height__))
+                gpu.matrix.translate(tv)
+
+                self.__child_menu_offset_position__ += self.__item_position__ + tv + self.__margin_vector__
+                for child in self.draw_children:
+                    child.__child_menu_offset_position__ += self.__child_menu_offset_position__
                 with gpu.matrix.push_pop():
-                    w = self.__child_max_width__+self.__mt__
-                    h = self.__child_sum_height__+self.__mt__
+                    w = self.__child_max_width__ + self.__mt__
+                    h = self.__child_sum_height__ + self.__mt__
+
                     gpu.matrix.translate((w / 2, h / 2))
-                    self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=w, height=h, segments=40)
+
+                    self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=w, height=h,
+                                                     segments=40)
+
                 self.__draw_child__()
 
     @property
@@ -197,24 +211,17 @@ class BpuDraw(BpuMeasure, PublicGpu):
 
     def check_haver(self):
         """检查haver"""
-        ih = self.is_haver
-        if self.type.is_parent:
-            if not ih:
-                # 没在里面
-                self.__haver_map__.clear()
-
-        ch = self.__child_haver__
-        if ch:
-            la = self.level+1
-            if ch.type.is_menu:
-                self.__haver_map__[la] = ch.__menu_id__
-            elif la in self.__haver_map__:
-                self.__haver_map__.pop(la)
-
-    @property
-    def __child_haver__(self) -> "BPULayout":
-        """子级haver"""
         if self.is_draw_child:
-            for child in self.draw_children:
-                if child.is_haver:
-                    return child
+            if self.is_haver:
+                self.parent_top.__layout_haver_list__.append(self)
+        # if getattr(self, "__menu_id__", False) and self.__menu_id__ in self.parent_top.__menu_haver_map__:
+        #     # if not self.__child_menu_haver__:
+        #     # self.parent_top.__menu_haver_map__.pop(self.__menu_id__)
+        #     print(f"__child_haver__\t{self.__child_menu_haver__}")
+        # ih = self.is_haver
+        # la = self.level
+        # if not ih:
+        #     # 没在里面
+        #     self.__menu_haver_map__.clear()
+        # elif la in self.__menu_haver_map__:
+        #     self.__menu_haver_map__.pop(la)

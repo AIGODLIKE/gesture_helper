@@ -14,8 +14,9 @@ class BpuProperty:
     level: int = 0  # 绘制的层级
 
     offset_position: Vector  # 偏移位置
-    item_position: Vector  # 偏移位置
     mouse_position: Vector  # 鼠标位置
+    __item_position__: Vector  # 项位置
+    __child_menu_offset_position__: Vector = Vector([0, 0])  # 子级位置 menu
 
     text: str = None  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
@@ -24,7 +25,14 @@ class BpuProperty:
 
     text_margin = 15  # 文字的间距
     layout_margin = 10  # 布局间距
-    __haver_map__ = dict()
+    __menu_haver_map__ = dict()
+    __layout_haver_list__ = list()
+
+    def __init__(self):
+        self.__clear_children__()
+        self.__layout_haver_list__ = []
+        self.font_size = 24
+        self.mouse_position = self.__item_position__ = self.offset_position = Vector([-1, -1])
 
     @property
     def __text__(self):
@@ -45,6 +53,8 @@ class BpuProperty:
                 return self.parent.parent_top
             else:
                 return self.parent
+        elif self.type.is_parent:
+            return self
 
     @property
     def __margin_vector__(self) -> Vector:
@@ -59,9 +69,10 @@ class BpuProperty:
         elif self.type.is_layout:
             return self.layout_margin
         return self.text_margin
+
     @property
     def __mt__(self):
-        return self.__margin__ *2
+        return self.__margin__ * 2
 
     __draw_children__ = []  # 绘制子级
     __temp_children__ = []  # 添加时的临时子级
@@ -79,12 +90,6 @@ class BpuProperty:
             return self.__temp_children__
         else:
             return self.__draw_children__
-
-    def __init__(self):
-        self.__clear_children__()
-
-        self.font_size = 24
-        self.mouse_position = self.item_position = self.offset_position = Vector([-1, -1])
 
     @property
     def is_layout(self) -> bool:

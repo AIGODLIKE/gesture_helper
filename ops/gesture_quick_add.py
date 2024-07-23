@@ -83,8 +83,18 @@ class GestureQuickAdd(PublicOperator):
 
                 menu = column.menu("text")
                 menu.label("fsef")
+                menu.operator("mesh.primitive_plane_add", "aaaaaa")
                 menu.label("fsef1")
                 menu.label("fsef2")
+                menu.operator("mesh.primitive_plane_add", "fasefase")
+
+                m = menu.menu("sub", "test_id")
+                m.label("sub menu 1")
+                m.label("sub menu 2")
+                m.label("sub menu A")
+                ops = m.operator("mesh.primitive_plane_add", "AAAAA")
+                ops = m.operator("mesh.primitive_plane_add", "AAseA")
+                ops = m.operator("mesh.primitive_plane_add", "AAAefaefA")
 
                 column.label(event.value)
                 bpu.check_event(event)
