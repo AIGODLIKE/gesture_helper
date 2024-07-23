@@ -6,8 +6,11 @@ from .bpu_property import BpuProperty
 
 class BpuMeasure(BpuProperty):
     # text  不含边距
-    __text_width__ = -10
-    __text_height__ = -10
+    __text_width__: int
+    __text_height__: int
+
+    __child_height_list__: list
+    __child_width_list__: list
 
     separator_size = 5
 
@@ -16,16 +19,10 @@ class BpuMeasure(BpuProperty):
         self.__clear_measure__()
 
     def __clear_measure__(self):
+        self.__child_height_list__ = []
+        self.__child_width_list__ = []
         self.__text_width__ = -100
         self.__text_height__ = -100
-
-    @property
-    def __child_height_list__(self):
-        return [child.__draw_height__ for child in self.__children__]
-
-    @property
-    def __child_width_list__(self):
-        return [child.__draw_width__ for child in self.__children__]
 
     # 子级总高宽
     @property
@@ -72,6 +69,8 @@ class BpuMeasure(BpuProperty):
         # print(f"__measure_children__\n\t{self}\t{self.__children__}")
         for child in self.__children__:
             child.__measure__()
+            self.__child_height_list__.append(child.__draw_height__)
+            self.__child_width_list__.append(child.__draw_width__)
 
     @property
     def __draw_height__(self) -> int:

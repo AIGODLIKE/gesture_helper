@@ -71,7 +71,7 @@ class GestureQuickAdd(PublicOperator):
             with self.bpu as bpu:
                 bpu.offset_position = self.offset_position
                 bpu.mouse_position = self.mouse_position
-                column = bpu
+                column = bpu.column()
                 for i in range(4):
                     column.label(f"text {i}")
                 column.separator()
