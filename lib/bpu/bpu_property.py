@@ -54,7 +54,9 @@ class BpuProperty:
     @property
     def __margin__(self) -> int:
         """间隔"""
-        if self.type.is_layout:
+        if self.parent and self.parent.type.is_parent:
+            return 0
+        elif self.type.is_layout:
             return self.layout_margin
         return self.text_margin
     @property

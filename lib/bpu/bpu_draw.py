@@ -203,7 +203,7 @@ class BpuDraw(BpuMeasure, PublicGpu):
                 # 没在里面
                 self.__haver_map__.clear()
 
-        ch =self.__child_haver__
+        ch = self.__child_haver__
         if ch:
             la = self.level+1
             if ch.type.is_menu:
