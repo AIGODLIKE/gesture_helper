@@ -4,7 +4,18 @@ from mathutils import Vector
 from .bpu_property import BpuProperty
 
 
-class BpuMeasure(BpuProperty):
+class BpuMenu:
+    @property
+    def __menu_child_offset_position__(self) -> Vector:
+        plm = self.parent.layout_margin
+        a = Vector((self.parent.__child_max_width__ + plm, -(self.__child_sum_height__ + self.layout_margin * 2)))
+        b = Vector((0, self.__draw_height__))
+        if self.parent.type.is_menu:
+            b -= Vector((0.5, 0))
+        return a + b
+
+
+class BpuMeasure(BpuProperty, BpuMenu):
     # text  不含边距
     __text_width__: int
     __text_height__: int
@@ -73,14 +84,6 @@ class BpuMeasure(BpuProperty):
             self.__child_width_list__.append(child.__draw_width__)
 
     @property
-    def __child_draw_height__(self):
-        return self.__child_sum_height__ + self.__margin__ * 2
-
-    @property
-    def __child_draw_width__(self):
-        return self.__child_sum_width__ + self.__margin__ * 2
-
-    @property
     def __draw_height__(self) -> int:
         """绘制高度
         只有在绘制layout的时侯才需要此属性"""
@@ -122,7 +125,7 @@ class BpuMeasure(BpuProperty):
     @property
     def __draw_size__(self) -> Vector:
         """绘制大小"""
-        return Vector([self.__draw_width__, self.__draw_height__])
+        return Vector((self.__draw_width__, self.__draw_height__))
 
     def child_offset(self, parent: 'BpuMeasure') -> Vector:
         """
@@ -142,25 +145,28 @@ class BpuMeasure(BpuProperty):
     def parent_offset(self) -> Vector:
         """父级偏移"""
         margin = self.__margin__
-        if self.type.is_parent:
-            return Vector([margin, margin])
+        if (self.parent and self.parent.type.is_menu) or self.type.is_menu:
+            p = self.parent.layout_margin
+            return Vector((p, p))
+        elif self.type.is_parent:
+            return Vector((margin, margin))
         else:
-            return Vector([margin, margin])
+            return Vector((margin, margin))
 
     @property
     def is_haver(self) -> bool:
         """是活动项"""
-        if self.parent and self.parent.type.is_menu:
-            # print(f"__check_haver__\t{self}\t{self.parent}\t{self.parent.type}\n"
-            #       f"\t{self.__item_position__}\t{self.__child_menu_offset_position__}")
-            return self.__check_haver__(self.__item_position__ + self.__child_menu_offset_position__)
-        return self.__check_haver__(self.__item_position__)
+        return self.__check_haver__()
 
     @property
-    def __child_menu_haver__(self) -> bool:
+    def __child_menu_is_haver__(self) -> bool:
         """子级菜单是否在范围内"""
-        start_x, start_y = self.offset_position + self.__item_position__ + self.__child_menu_offset_position__ + self.__margin_vector__
-        end_x, end_y = start_x + self.__child_max_width__ + self.__mt__, start_y + self.__child_sum_height__ + self.__mt__
+        o = self.__menu_child_offset_position__ if self.parent else Vector((0, 0))
+        start_x, start_y = self.offset_position + o
+        end_x, end_y = (
+            start_x + self.__child_max_width__ + self.layout_margin * 2,
+            start_y + self.__child_sum_height__ + self.layout_margin * 2
+        )
 
         x, y = self.mouse_position
         in_x = start_x < x < end_x
@@ -174,14 +180,16 @@ class BpuMeasure(BpuProperty):
         """
         return self.is_haver and (self.type.is_clickable or self.type.is_menu)
 
-    def __check_haver__(self, position: Vector) -> bool:
+    def __check_haver__(self) -> bool:
         """检查是否在范围内"""
-        start_x, start_y = start = self.offset_position + position
+        start_x, start_y = start = self.offset_position
         if self.parent is not None:
             pt = self.parent.type
             if pt.is_horizontal_layout:  # 水平 row
                 end_x, end_y = start_x + self.__draw_width__, start_y + self.parent.__child_max_height__
             elif pt.is_vertical_layout or pt.is_parent:  # 垂直 column
+                end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
+            elif pt.is_menu:
                 end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
             else:
                 end_x, end_y = start + self.__draw_size__

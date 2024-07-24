@@ -31,7 +31,7 @@ class GestureQuickAdd(PublicOperator):
         self.mouse_position = None
         self.__difference_mouse__ = None
         self.bpu = BpuLayout()
-        self.bpu.font_size = 100
+        self.bpu.font_size = 30
 
         self.start_mouse_position = None
         self.offset_position = Vector((0, 0))
@@ -71,7 +71,9 @@ class GestureQuickAdd(PublicOperator):
             with self.bpu as bpu:
                 bpu.offset_position = self.offset_position
                 bpu.mouse_position = self.mouse_position
+                print(f"draw_gpu\t{bpu.offset_position}")
                 column = bpu.column()
+                # column = bpu
                 for i in range(4):
                     column.label(f"text {i}")
                 column.separator()
@@ -82,11 +84,11 @@ class GestureQuickAdd(PublicOperator):
                 ops.size = 100
 
                 menu = column.menu("text")
-                menu.label("fsef")
-                menu.operator("mesh.primitive_plane_add", "aaaaaa")
+                menu.label("fsef开发了可发二十艾萨克发生")
+                menu.operator("mesh.primitive_plane_add", "aaaaa爱上发涩发a")
                 menu.label("fsef1")
                 menu.label("fsef2")
-                menu.operator("mesh.primitive_plane_add", "fasefase")
+                menu.operator("mesh.primitive_plane_add", "fasefase某某地某某地")
 
                 m = menu.menu("sub", "test_id")
                 m.label("sub menu 1")

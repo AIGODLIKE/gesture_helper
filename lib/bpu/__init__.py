@@ -30,10 +30,21 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         layout.text_margin = self.text_margin
         layout.parent = self
 
-        layout.__item_position__ = Vector([0, 0])
-        layout.__child_menu_offset_position__ = Vector([0, 0])
-        layout.offset_position = self.offset_position
         layout.mouse_position = self.mouse_position
+        layout.offset_position = self.offset_position.copy()
+        tp = self.type
+        if tp.is_horizontal_layout:
+            self.__measure__()
+            layout.offset_position += Vector((self.__child_sum_width__, 0)) + self.__margin_vector__
+        elif tp.is_vertical_layout or tp.is_parent:
+            self.__measure__()
+            layout.offset_position += Vector((0, self.__child_sum_height__)) + self.__margin_vector__
+        elif tp.is_menu:
+            self.__measure__()
+            layout.offset_position += Vector((0, self.__child_sum_height__)) + self.__layout_margin_vector__
+        else:
+            layout.offset_position += self.__margin_vector__
+
         if self.type == BPUType.PARENT:
             self.__temp_children__.append(layout)
         else:

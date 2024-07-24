@@ -15,24 +15,21 @@ class BpuProperty:
 
     offset_position: Vector  # 偏移位置
     mouse_position: Vector  # 鼠标位置
-    __item_position__: Vector  # 项位置
-    __child_menu_offset_position__: Vector = Vector([0, 0])  # 子级位置 menu
 
     text: str = None  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
     font_color = (1, 1, 1, 1)  # 字体颜色
-    font_size = 24  # 字体大小
+    font_size = -10  # 字体大小
 
-    text_margin = 15  # 文字的间距
-    layout_margin = 10  # 布局间距
+    text_margin = 30  # 文字的间距
+    layout_margin = 50  # 布局间距
     __menu_haver_map__ = dict()
     __layout_haver_list__ = list()
 
     def __init__(self):
         self.__clear_children__()
         self.__layout_haver_list__ = []
-        self.font_size = 24
-        self.mouse_position = self.__item_position__ = self.offset_position = Vector([-1, -1])
+        self.offset_position = self.mouse_position = Vector((0, 0))
 
     @property
     def __text__(self):
@@ -57,16 +54,34 @@ class BpuProperty:
             return self
 
     @property
+    def __layout_margin_vector__(self) -> Vector:
+        """间隔的Vector"""
+        return Vector((self.layout_margin, self.layout_margin))
+
+    @property
+    def __lmt__(self):
+        """间隔"""
+        return self.layout_margin * 2
+
+    @property
     def __margin_vector__(self) -> Vector:
         """间隔的Vector"""
-        return Vector([self.__margin__, self.__margin__])
+        return Vector((self.__margin__, self.__margin__))
+
+    @property
+    def __child_margin_vector__(self):
+        if self.type.is_menu:
+            return self.__layout_margin_vector__
+        return self.__margin_vector__
 
     @property
     def __margin__(self) -> int:
         """间隔"""
-        if self.parent and self.parent.type.is_parent:
-            return 0
+        if self.type.is_parent:
+            return self.layout_margin
         elif self.type.is_layout:
+            if self.parent and self.parent.type.is_parent:
+                return 0
             return self.layout_margin
         return self.text_margin
 
@@ -76,8 +91,6 @@ class BpuProperty:
 
     __draw_children__ = []  # 绘制子级
     __temp_children__ = []  # 添加时的临时子级
-
-    is_invert: bool = False  # 是反转
 
     def __clear_children__(self) -> None:
         """清理子级"""
@@ -100,13 +113,3 @@ class BpuProperty:
     def is_draw_child(self) -> bool:
         """是可以绘制子级"""
         return self.__children__ and self.type.is_draw_child
-
-    @property
-    def draw_children(self) -> list["BpuLayout"]:
-        """反回绘制子级列表
-        绘制子级时需判断是否反转
-
-        从上向下绘制"""
-        if self.is_invert:
-            return self.__children__
-        return self.__children__[::-1]
