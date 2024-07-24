@@ -16,7 +16,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         self.type = BPUType.PARENT
 
     def __repr__(self):
-        return f"BpuLayout{self.type, self.__text__}"  # self.__measure__
+        return f"BpuLayout{self.type, self.__text__, self.level}"  # self.__measure__
 
     def __child_layout__(self, layout_type: BPUType) -> "BpuLayout":
         """布局

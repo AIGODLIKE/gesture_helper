@@ -71,7 +71,6 @@ class GestureQuickAdd(PublicOperator):
             with self.bpu as bpu:
                 bpu.offset_position = self.offset_position
                 bpu.mouse_position = self.mouse_position
-                print(f"draw_gpu\t{bpu.offset_position}")
                 column = bpu.column()
                 # column = bpu
                 for i in range(4):

@@ -25,7 +25,8 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
     def __gpu_draw__(self):
         """gpu绘制主方法"""
         if IS_DEBUG_DRAW:
-            print("\n")
+            # print("\n")
+            ...
 
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
@@ -47,8 +48,8 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
                         str(self.offset_position),
                         str(self.mouse_position),
                         str(self.__active_operator__),
-                        f"haver:{self.__menu_haver_map__}",
-                        f"{self.__layout_haver_list__}",)
+                        f"haver:{self.__menu_haver__}",
+                        f"{self.__layout_haver__}",)
                 ):
                     self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
                 self.__layout_haver_list__ = []
@@ -151,8 +152,11 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             elif self.parent_top.__active_operator__:
                 self.parent_top.__active_operator__ = None
 
-            if self.type.is_menu:
-                self.__menu_haver_map__[self.__menu_id__] = self
+            pm = self.parent.__menu_haver__
+            if self.type.is_menu and self.level not in pm:
+                hv = pm.values()
+                if self.__menu_id__ not in hv:
+                    self.parent.__menu_haver__[self.level] = self.__menu_id__
 
             if self.parent.type.is_horizontal_layout:
                 w, h = self.__draw_width__, self.parent.__child_max_height__
@@ -169,7 +173,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         如果两边都超了
         """
         self.__draw_item__()
-        if self.__menu_id__ in self.parent_top.__menu_haver_map__:
+        if self.__menu_id__ in self.parent_top.__menu_haver__.values():
             with ((gpu.matrix.push_pop())):
                 if IS_DEBUG_POINT:
                     self.draw_2d_points(Vector((0, 0)), color=(1, 0.5, 0.5, 1), point_size=10)
@@ -230,20 +234,22 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
 
     def check_haver(self):
         """检查haver"""
-        # if getattr(self, "__menu_id__", False) and self.__menu_id__ in self.parent_top.__menu_haver_map__:
-        #     # if not self.__child_menu_haver__:
-        #     #     self.parent_top.__menu_haver_map__.pop(self.__menu_id__)
-        #     # print(f"__child_haver__\t{self}\t{self.__child_menu_is_haver__}")
-        #     ...
-
+        pt = self.parent_top
         if self.__child_menu_is_haver__:
-            self.parent_top.__layout_haver_list__.append(self)
+            pt.__layout_haver__.append(self)
         elif self.is_haver:
-            self.parent_top.__layout_haver_list__.append(self)
-        # ih = self.is_haver
-        # la = self.level
-        # if not ih:
-        #     # 没在里面
-        #     self.__menu_haver_map__.clear()
-        # elif la in self.__menu_haver_map__:
-        #     self.__menu_haver_map__.pop(la)
+            pt.__layout_haver__.append(self)
+
+        if self.parent:
+            for child in self.__children__:
+                if child.is_haver:
+                    if child.level in self.__menu_haver__:
+                        if self.type.is_menu:
+                            mi = getattr(child, "__menu_id__", False)
+                            if mi and mi != pt.__menu_haver__[child.level]:
+                                pt.__menu_haver__[child.level] = mi
+        if self.type.is_draw_text and self.is_haver:
+            keys = list(pt.__menu_haver__.keys())
+            for k in keys:
+                if k >= self.level:
+                    pt.__menu_haver__.pop(k)

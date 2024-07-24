@@ -23,12 +23,11 @@ class BpuProperty:
 
     text_margin = 30  # 文字的间距
     layout_margin = 50  # 布局间距
-    __menu_haver_map__ = dict()
-    __layout_haver_list__ = list()
+    __menu_haver__ = dict()  # 菜单的Haver
+    __layout_haver__ = list()  # 布局Haver
 
     def __init__(self):
         self.__clear_children__()
-        self.__layout_haver_list__ = []
         self.offset_position = self.mouse_position = Vector((0, 0))
 
     @property
@@ -96,6 +95,7 @@ class BpuProperty:
         """清理子级"""
         self.__draw_children__ = []
         self.__temp_children__ = []
+        self.__layout_haver__ = []
 
     @property
     def __children__(self):
