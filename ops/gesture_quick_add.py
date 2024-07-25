@@ -65,7 +65,7 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         self.mouse_position = None
         self.__difference_mouse__ = None
         self.gesture_bpu = BpuLayout()
-        self.gesture_bpu.font_size = 30
+        self.gesture_bpu.font_size = 20
 
         self.start_mouse_position = None
         self.offset_position = Vector((0, 0))
@@ -104,13 +104,15 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         try:
             self.gesture_bpu.register_draw()
             with self.gesture_bpu as bpu:
-                bpu.offset_position = self.offset_position
+                bpu.offset_position = self.offset_position - Vector((600, 0))
                 bpu.mouse_position = self.mouse_position
                 # __draw__(bpu, event)
                 for g in self.pref.gesture.values()[::-1]:
                     o = bpu.operator("wm.context_set_int", g.name, active=g.is_active)
                     o.data_path = "window_manager.gesture_index"
                     o.value = g.index
+                bpu.separator()
+                bpu.label("选择手势")
 
                 if bpu.check_event(event):
                     return True
