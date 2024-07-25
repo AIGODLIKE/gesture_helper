@@ -35,18 +35,18 @@ class BpuDebug:
                 offset += Vector((0, 20,))
 
     def __draw_haver_position_debug__(self):
-        op = self.offset_position
+        op = self.__offset__
         a = self.mouse_position - op
-        # text = f"{op.x:.0f} {op.y:.0f}  {a.x:.0f} {a.y:.0f}"
         text = f"{'H' if self.is_haver else ''}"
+        text = f"{op.x:.0f} {op.y:.0f} {self.__draw_height__} {self.__draw_width__} {a.x:.0f} {a.y:.0f} {text} "
         w = self.parent.__child_max_width__ if (self.parent is not None) else self.__draw_width__
         self.___draw_haver_debug___(Vector((w, self.__draw_height__)), text)
 
     def __draw_menu_child_layout_position_debug__(self):
-        op = self.offset_position + self.__menu_child_offset_position__
+        op = self.__offset__ + self.___menu_child_offset_position___
         a = self.mouse_position - op
-        # text = f"{op.x:.0f} {op.y:.0f}\t{a.x:.0f} {a.y:.0f}"
         text = f"{'MH' if self.__child_menu_is_haver__ else ''}"
+        text = f"{op.x:.0f} {op.y:.0f}\t{a.x:.0f} {a.y:.0f} {self.___menu_child_offset_position___} {text}"
         v = Vector((self.__child_max_width__, self.__child_sum_height__)) + self.__layout_margin_vector__ * 2
         self.___draw_haver_debug___(v, text)
 

@@ -26,8 +26,11 @@ class BpuProperty:
     __menu_haver__ = dict()  # 菜单的Haver
     __layout_haver__ = list()  # 布局Haver
 
+    active = False  # 是活动项
+
     def __init__(self):
         self.__clear_children__()
+        self.active = False
         self.offset_position = self.mouse_position = Vector((0, 0))
 
     @property

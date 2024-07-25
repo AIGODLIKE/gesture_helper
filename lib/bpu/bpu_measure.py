@@ -4,9 +4,9 @@ from mathutils import Vector
 from .bpu_property import BpuProperty
 
 
-class BpuMenu:
+class BpuOffset:
     @property
-    def __menu_child_offset_position__(self) -> Vector:
+    def ___menu_child_offset_position___(self) -> Vector:
         plm = self.parent.layout_margin
         a = Vector((self.parent.__child_max_width__ + plm, -(self.__child_sum_height__ + self.layout_margin * 2)))
         b = Vector((0, self.__draw_height__))
@@ -14,8 +14,37 @@ class BpuMenu:
             b -= Vector((0.5, 0))
         return a + b
 
+    @property
+    def __offset__(self):
+        if self.type.is_parent:
+            return self.offset_position
 
-class BpuMeasure(BpuProperty, BpuMenu):
+        if not self.parent:
+            return Vector([-999, 0])
+
+        p = self.parent
+        index = p.__children__.index(self)
+        cl = p.__children__[:index]
+        w = Vector([sum([c.__draw_width__ for c in cl]), 0])
+        h = Vector([0, sum([c.__draw_height__ for c in cl])])
+
+        pt = p.type
+        if pt.is_menu:
+            m = p.__offset__ + p.___menu_child_offset_position___
+            return m + self.__layout_margin_vector__ + h
+        elif pt.is_parent:
+            return h + p.__margin_vector__ + self.offset_position
+        elif pt.is_horizontal_layout:
+            return Vector([-9, 0])
+            return w + p.__margin_vector__ + self.__offset__
+        elif pt.is_vertical_layout:
+            return Vector([-99, 0])
+            return h + p.__margin_vector__ + self.__offset__
+        else:
+            return Vector([0, 0])
+
+
+class BpuMeasure(BpuProperty, BpuOffset):
     # text  不含边距
     __text_width__: int
     __text_height__: int
@@ -68,7 +97,6 @@ class BpuMeasure(BpuProperty, BpuMenu):
             self.__measure_text__()
         if self.type.is_draw_child:
             self.__measure_children__()
-        # print(f"__measure__\t{self.__draw_width__}\t{self}\t{self.__text__}")
 
     def __measure_text__(self) -> None:
         """测量文字"""
@@ -77,7 +105,6 @@ class BpuMeasure(BpuProperty, BpuMenu):
 
     def __measure_children__(self) -> None:
         """测量子级"""
-        # print(f"__measure_children__\n\t{self}\t{self.__children__}")
         for child in self.__children__:
             child.__measure__()
             self.__child_height_list__.append(child.__draw_height__)
@@ -156,33 +183,7 @@ class BpuMeasure(BpuProperty, BpuMenu):
     @property
     def is_haver(self) -> bool:
         """是活动项"""
-        return self.__check_haver__()
-
-    @property
-    def __child_menu_is_haver__(self) -> bool:
-        """子级菜单是否在范围内"""
-        o = self.__menu_child_offset_position__ if self.parent else Vector((0, 0))
-        start_x, start_y = self.offset_position + o
-        end_x, end_y = (
-            start_x + self.__child_max_width__ + self.layout_margin * 2,
-            start_y + self.__child_sum_height__ + self.layout_margin * 2
-        )
-
-        x, y = self.mouse_position
-        in_x = start_x < x < end_x
-        in_y = start_y < y < end_y
-        return in_x and in_y
-
-    @property
-    def is_draw_haver(self) -> bool:
-        """是可以绘制haver的
-        只绘制操作符或者子菜单
-        """
-        return self.is_haver and (self.type.is_clickable or self.type.is_menu)
-
-    def __check_haver__(self) -> bool:
-        """检查是否在范围内"""
-        start_x, start_y = start = self.offset_position
+        start_x, start_y = start = self.offset_position if self.type.is_parent else self.__offset__
         if self.parent is not None:
             pt = self.parent.type
             if pt.is_horizontal_layout:  # 水平 row
@@ -200,3 +201,24 @@ class BpuMeasure(BpuProperty, BpuMenu):
         in_x = start_x < x < end_x
         in_y = start_y < y < end_y
         return in_x and in_y
+
+    @property
+    def __child_menu_is_haver__(self) -> bool:
+        """子级菜单是否在范围内"""
+        start_x, start_y = self.__offset__ + self.___menu_child_offset_position___ if self.parent else self.offset_position
+        end_x, end_y = (
+            start_x + self.__child_max_width__ + self.layout_margin * 2,
+            start_y + self.__child_sum_height__ + self.layout_margin * 2
+        )
+
+        x, y = self.mouse_position
+        in_x = start_x < x < end_x
+        in_y = start_y < y < end_y
+        return in_x and in_y
+
+    @property
+    def is_draw_haver(self) -> bool:
+        """是可以绘制haver的
+        只绘制操作符或者子菜单
+        """
+        return self.is_haver and (self.type.is_clickable or self.type.is_menu)

@@ -59,7 +59,6 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         先测量宽高
         然后绘制子级
         """
-        # print(f"__layout__\t{self.type}\t{self.offset_position}")
         if self.type.is_parent:
             self.__draw_layout__()
         elif self.type.is_separator:
@@ -106,6 +105,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         if IS_DEBUG_DRAW:
             self.draw_2d_line(self.__margin_box__, color=(0, 0.6, 0, .8),  # 绿
                               line_width=1)
+        self.__draw_active__()
         self.__draw_haver__()
         with gpu.matrix.push_pop():
             gpu.matrix.translate(self.__margin_vector__)
@@ -158,14 +158,24 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
                 if self.__menu_id__ not in hv:
                     self.parent.__menu_haver__[self.level] = self.__menu_id__
 
-            if self.parent.type.is_horizontal_layout:
-                w, h = self.__draw_width__, self.parent.__child_max_height__
-            else:
-                w, h = self.parent.__child_max_width__, self.__draw_height__
-            with gpu.matrix.push_pop():
-                gpu.matrix.translate((w / 2, h / 2))
-                self.draw_rounded_rectangle_area([0, 0], radius=5, color=[0.52861, 0.52861, 0.52861, 1.000000], width=w,
-                                                 height=h, segments=24)
+            self.___draw_background_color___([0.52861, 0.52861, 0.52861, 1.000000])
+
+    def __draw_active__(self) -> None:
+        """绘制active"""
+        if self.active:
+            self.___draw_background_color___([0.063011, 0.168267, 0.450779, 1.000000])
+
+    def ___draw_background_color___(self, color: list):
+        if self.parent.type.is_horizontal_layout:
+            w, h = self.__draw_width__, self.parent.__child_max_height__
+        else:
+            w, h = self.parent.__child_max_width__, self.__draw_height__
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate((w / 2, h / 2))
+            self.draw_rounded_rectangle_area([0, 0], radius=5,
+                                             color=color,
+                                             width=w,
+                                             height=h, segments=24)
 
     def __draw_menu__(self) -> None:
         """
@@ -174,17 +184,11 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         """
         self.__draw_item__()
         if self.__menu_id__ in self.parent_top.__menu_haver__.values():
-            with ((gpu.matrix.push_pop())):
+            with (((gpu.matrix.push_pop()))):
                 if IS_DEBUG_POINT:
                     self.draw_2d_points(Vector((0, 0)), color=(1, 0.5, 0.5, 1), point_size=10)
 
-                for child in self.__children__:
-                    if self.type.is_menu and self.parent and self.parent.type.is_menu:
-                        child.offset_position += self.__menu_child_offset_position__ + self.parent.__menu_child_offset_position__
-                    else:
-                        child.offset_position += self.__menu_child_offset_position__
-
-                gpu.matrix.translate(self.__menu_child_offset_position__)
+                gpu.matrix.translate(self.___menu_child_offset_position___)
 
                 if IS_DEBUG_POINT:
                     self.draw_2d_points(Vector((0, 0)), color=(1, 0.5, 0, 1), point_size=10)

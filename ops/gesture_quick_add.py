@@ -73,23 +73,29 @@ class GestureQuickAdd(PublicOperator):
                 bpu.mouse_position = self.mouse_position
                 column = bpu.column()
                 # column = bpu
-                for i in range(4):
-                    column.label(f"text {i}")
-                column.separator()
+
                 column.label(event.type)
                 a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
                 a.size = 10
-                ops = column.operator("mesh.primitive_plane_add")
-                ops.size = 100
 
                 menu = column.menu("text")
+                menu.active = True
                 menu.label("fsef开发了可发二十艾萨克发生")
                 menu.operator("mesh.primitive_plane_add", "aaaaa爱上发涩发a")
                 menu.label("fsef1")
                 menu.label("fsef2")
                 menu.operator("mesh.primitive_plane_add", "fasefase某某地某某地")
 
+                for i in range(4):
+                    column.label(f"text {i} sdjrogijsodirgiosjdrg")
+                column.separator()
+
+                ops = column.operator("mesh.primitive_plane_add")
+                ops.size = 100
+                #616
+
                 m = menu.menu("sub", "test_id")
+                m.active = True
                 m.label("sub menu 1")
                 m.label("sub menu 2")
                 m.label("sub menu A")
