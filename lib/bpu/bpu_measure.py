@@ -35,7 +35,6 @@ class BpuOffset:
         elif pt.is_parent:
             return h + p.__margin_vector__ + self.offset_position
         elif pt.is_horizontal_layout:
-            return Vector([-9, 0])
             return w + p.__margin_vector__ + p.__offset__
         elif pt.is_vertical_layout:
             return h + p.__margin_vector__ + p.__offset__
