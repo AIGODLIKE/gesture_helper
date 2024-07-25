@@ -1,3 +1,5 @@
+import re
+
 import blf
 import bpy
 import gpu
@@ -12,10 +14,15 @@ def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[in
     return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
 
 
-IS_DEBUG_DRAW: bool = True  # 绘制
-IS_DEBUG_INFO: bool = True  # 绘制左下角信息
-IS_DEBUG_HAVER: bool = True  # 绘制是否为Haver
-IS_DEBUG_POINT: bool = True  # 绘制线POING
+def contains_chinese(text):
+    pattern = re.compile(r'[\u4e00-\u9fff]+')
+    return bool(pattern.search(text))
+
+
+IS_DEBUG_DRAW: bool = False  # 绘制
+IS_DEBUG_INFO: bool = False  # 绘制左下角信息
+IS_DEBUG_HAVER: bool = False  # 绘制是否为Haver
+IS_DEBUG_POINT: bool = False  # 绘制线POINT
 
 
 class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
@@ -112,6 +119,12 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             if IS_DEBUG_DRAW:
                 self.draw_2d_line(self.__bound_box__, color=(0.6, 0, 0, .8),  # 红
                                   line_width=1)
+
+            if contains_chinese(self.__text__):
+                pt = self.parent.type
+                if pt.is_vertical_layout or pt.is_parent or pt.is_menu:
+                    gpu.matrix.translate(Vector([0, self.__text_height__ * 0.15]))
+
             font_id = self.font_id
             blf.position(font_id, 0, 0, self.level)
             blf.color(font_id, *(1, 1, 1, 1))

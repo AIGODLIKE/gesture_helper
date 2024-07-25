@@ -21,8 +21,8 @@ class BpuProperty:
     font_color = (1, 1, 1, 1)  # 字体颜色
     font_size = -10  # 字体大小
 
-    text_margin = 30  # 文字的间距
-    layout_margin = 50  # 布局间距
+    text_margin = 8  # 文字的间距
+    layout_margin = 20  # 布局间距
     __menu_haver__ = dict()  # 菜单的Haver
     __layout_haver__ = list()  # 布局Haver
 
