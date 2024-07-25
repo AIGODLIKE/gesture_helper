@@ -1,12 +1,13 @@
 from bpy.app.translations import pgettext
 from mathutils import Vector
 
-from .bpu_type import BPUType
+from .bpu_type import BPUType, Quadrant
 
 
 class BpuProperty:
     type: BPUType = BPUType.UNKNOWN  # 类型
     parent: "BpuLayout" = None  # 父级
+    quadrant: Quadrant = Quadrant.ONE
 
     __show_separator_line__: bool  # 显示分割线
     __menu_id__: str  # 菜单Id

@@ -1,5 +1,4 @@
 import bpy
-from mathutils import Vector
 
 from .bpu_draw import BpuDraw
 from .bpu_event import BpuEvent
@@ -32,19 +31,6 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
 
         layout.mouse_position = self.mouse_position
         layout.offset_position = self.offset_position.copy()
-
-        # tp = self.type
-        # if tp.is_horizontal_layout:
-        #     self.__measure__()
-        #     layout.offset_position += Vector((self.__child_sum_width__, 0)) + self.__margin_vector__
-        # elif tp.is_vertical_layout or tp.is_parent:
-        #     self.__measure__()
-        #     layout.offset_position += Vector((0, self.__child_sum_height__)) + self.__margin_vector__
-        # elif tp.is_menu:
-        #     self.__measure__()
-        #     layout.offset_position += Vector((0, self.__child_sum_height__)) + self.__layout_margin_vector__
-        # else:
-        #     layout.offset_position += self.__margin_vector__
 
         if self.type == BPUType.PARENT:
             self.__temp_children__.append(layout)
@@ -83,13 +69,14 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         m.__menu_id__ = menu_id
         return m
 
-    def operator(self, operator: str, text=None) -> "bpy.types.OperatorProperties":
+    def operator(self, operator: str, text=None, active=False) -> "bpy.types.OperatorProperties":
         if operator is None:
             Exception("Error not operator")
         ops = self.__child_layout__(BPUType.OPERATOR)
         ops.__bl_idname__ = operator
         ops.text = text
         ops.__operator_properties__ = OperatorProperties()
+        ops.active = active
         return ops.__operator_properties__
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":

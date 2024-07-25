@@ -20,7 +20,7 @@ def contains_chinese(text):
 
 
 IS_DEBUG_DRAW: bool = False  # 绘制
-IS_DEBUG_INFO: bool = False  # 绘制左下角信息
+IS_DEBUG_INFO: bool = True  # 绘制左下角信息
 IS_DEBUG_HAVER: bool = False  # 绘制是否为Haver
 IS_DEBUG_POINT: bool = False  # 绘制线POINT
 
@@ -45,21 +45,24 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             gpu.matrix.translate((-area.x, -area.y))
             gpu.matrix.translate(self.offset_position)
 
-            self.draw_2d_points(Vector((0, 0)), color=(1, 0, 0, 0.3), point_size=50)
+            if IS_DEBUG_INFO:
+                self.draw_2d_points(Vector((0, 0)), color=(1, 0, 0, 0.3), point_size=50)
+
             self.__layout__()
 
-            with gpu.matrix.push_pop():
-                gpu.matrix.translate((-500, 100))
-                for index, i in enumerate((
-                        str(bpy.context.area.type),
-                        str(self.offset_position),
-                        str(self.mouse_position),
-                        str(self.__active_operator__),
-                        f"haver:{self.__menu_haver__}",
-                        f"{self.__layout_haver__}",)
-                ):
-                    self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
-                self.__layout_haver_list__ = []
+            if IS_DEBUG_INFO:
+                with gpu.matrix.push_pop():
+                    gpu.matrix.translate((-500, 100))
+                    for index, i in enumerate((
+                            str(bpy.context.area.type),
+                            str(self.offset_position),
+                            str(self.mouse_position),
+                            str(self.__active_operator__),
+                            f"haver:{self.__menu_haver__}",
+                            f"{self.__layout_haver__}",)
+                    ):
+                        self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
+                    self.__layout_haver_list__ = []
 
     def __layout__(self) -> None:
         """

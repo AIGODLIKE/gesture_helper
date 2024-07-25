@@ -2,7 +2,41 @@ import bpy
 from mathutils import Vector
 
 from ..lib.bpu import BpuLayout
-from ..utils.public import PublicOperator
+from ..utils.public import PublicOperator, PublicProperty
+
+
+def __draw__(bpu, event):
+    # column = bpu.column()
+    column = bpu
+    column.label(event.type)
+    a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
+    a.size = 10
+
+    menu = column.menu("text")
+    menu.active = True
+    menu.label("fsef开发了可发二十艾萨克发生")
+    menu.operator("mesh.primitive_plane_add", "aaaaa爱上发涩发a")
+    menu.label("fsef1")
+    menu.label("fsef2")
+    menu.operator("mesh.primitive_plane_add", "fasefase某某地某某地")
+
+    for i in range(4):
+        column.label(f"text {i} sdjrogijsodirgiosjdrg")
+    column.separator()
+
+    ops = column.operator("mesh.primitive_plane_add")
+    ops.size = 100
+
+    m = menu.menu("sub", "test_id")
+    m.active = True
+    m.label("sub menu 1")
+    m.label("sub menu 2")
+    m.label("sub menu A")
+    ops = m.operator("mesh.primitive_plane_add", "AAAAA")
+    ops = m.operator("mesh.primitive_plane_add", "AAseA")
+    ops = m.operator("mesh.primitive_plane_add", "AAAefaefA")
+
+    column.label(event.value)
 
 
 class GestureQuickAddKeymap:
@@ -21,7 +55,7 @@ class GestureQuickAddKeymap:
         cls.km.keymap_items.remove(cls.kmi)
 
 
-class GestureQuickAdd(PublicOperator):
+class GestureQuickAdd(PublicOperator, PublicProperty):
     bl_idname = "gesture.quick_add"
     bl_label = "Quick Add"
     is_in_quick_add = False  # 是在添加模式
@@ -30,8 +64,8 @@ class GestureQuickAdd(PublicOperator):
         super().__init__()
         self.mouse_position = None
         self.__difference_mouse__ = None
-        self.bpu = BpuLayout()
-        self.bpu.font_size = 30
+        self.gesture_bpu = BpuLayout()
+        self.gesture_bpu.font_size = 30
 
         self.start_mouse_position = None
         self.offset_position = Vector((0, 0))
@@ -59,58 +93,35 @@ class GestureQuickAdd(PublicOperator):
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         self.init_module(event)
-        self.draw_gpu(event)
+        if self.draw_gesture_gpu(event):
+            return {'RUNNING_MODAL'}
         e = self.modal_event(event)
         if e:
             return e
         return {'PASS_THROUGH'}
 
-    def draw_gpu(self, event):
+    def draw_gesture_gpu(self, event):
         try:
-            self.bpu.register_draw()
-            with self.bpu as bpu:
+            self.gesture_bpu.register_draw()
+            with self.gesture_bpu as bpu:
                 bpu.offset_position = self.offset_position
                 bpu.mouse_position = self.mouse_position
-                # column = bpu.column()
-                column = bpu
+                # __draw__(bpu, event)
+                for g in self.pref.gesture.values()[::-1]:
+                    o = bpu.operator("wm.context_set_int", g.name, active=g.is_active)
+                    o.data_path = "window_manager.gesture_index"
+                    o.value = g.index
 
-                column.label(event.type)
-                a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
-                a.size = 10
-
-                menu = column.menu("text")
-                menu.active = True
-                menu.label("fsef开发了可发二十艾萨克发生")
-                menu.operator("mesh.primitive_plane_add", "aaaaa爱上发涩发a")
-                menu.label("fsef1")
-                menu.label("fsef2")
-                menu.operator("mesh.primitive_plane_add", "fasefase某某地某某地")
-
-                for i in range(4):
-                    column.label(f"text {i} sdjrogijsodirgiosjdrg")
-                column.separator()
-
-                ops = column.operator("mesh.primitive_plane_add")
-                ops.size = 100
-                #616
-
-                m = menu.menu("sub", "test_id")
-                m.active = True
-                m.label("sub menu 1")
-                m.label("sub menu 2")
-                m.label("sub menu A")
-                ops = m.operator("mesh.primitive_plane_add", "AAAAA")
-                ops = m.operator("mesh.primitive_plane_add", "AAseA")
-                ops = m.operator("mesh.primitive_plane_add", "AAAefaefA")
-
-                column.label(event.value)
-                bpu.check_event(event)
+                if bpu.check_event(event):
+                    return True
         except Exception as e:
-            self.bpu.unregister_draw()
+            self.gesture_bpu.unregister_draw()
             print(e.args)
 
     def modal_event(self, event):
-        if event.type == "SPACE" or (event.type == "MOUSEMOVE" and event.type_prev == "SPACE"):
+        space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
+        mv = (event.type == "MOUSEMOVE" and event.type_prev == "SPACE")
+        if space or mv:
             if event.value == "PRESS":
                 self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
             elif event.value == "RELEASE":
@@ -122,6 +133,6 @@ class GestureQuickAdd(PublicOperator):
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
         if self.is_exit:
-            self.bpu.unregister_draw()
+            self.gesture_bpu.unregister_draw()
             GestureQuickAdd.is_in_quick_add = False
             return {'FINISHED'}

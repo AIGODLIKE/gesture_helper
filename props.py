@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import PointerProperty, BoolProperty, StringProperty
+from bpy.props import PointerProperty, BoolProperty, StringProperty, IntProperty
 from bpy_types import PropertyGroup
 
 
@@ -63,11 +63,27 @@ class TempDrawProperty(PropertyGroup):
     default_bool_value: BoolProperty(name='添加布尔属性的默认值')
 
 
+def __get_gesture_index__(self):
+    from .utils.public import get_pref
+    pref = get_pref()
+    if len(pref.gesture) > 0:
+        return pref.index_gesture
+    return -1
+
+
+def __set_gesture_index__(self, value):
+    from .utils.public import get_pref
+    pref = get_pref()
+    pref.index_gesture = value
+
+
 def register():
     TempDrawProperty.register_property()
     bpy.types.Text.gesture_element_hash = StringProperty()
+    bpy.types.WindowManager.gesture_index = IntProperty(get=__get_gesture_index__, set=__set_gesture_index__)
 
 
 def unregister():
     TempDrawProperty.unregister_property()
     del bpy.types.Text.gesture_element_hash
+    del bpy.types.WindowManager.gesture_index

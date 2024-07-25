@@ -35,6 +35,10 @@ class GestureProperty(PublicProperty):
     )
 
     @property
+    def is_active(self):
+        return self.pref.active_gesture == self
+
+    @property
     def event_window_position(self):
         return Vector((self.event.mouse_x, self.event.mouse_y))
 
