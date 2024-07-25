@@ -71,8 +71,8 @@ class GestureQuickAdd(PublicOperator):
             with self.bpu as bpu:
                 bpu.offset_position = self.offset_position
                 bpu.mouse_position = self.mouse_position
-                column = bpu.column()
-                # column = bpu
+                # column = bpu.column()
+                column = bpu
 
                 column.label(event.type)
                 a = column.operator("mesh.primitive_plane_add", text="Emm 添加")
