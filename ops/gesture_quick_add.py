@@ -65,7 +65,7 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         self.mouse_position = None
         self.__difference_mouse__ = None
         self.gesture_bpu = BpuLayout()
-        self.gesture_bpu.font_size = 20
+        self.element_bpu = BpuLayout()
 
         self.start_mouse_position = None
         self.offset_position = Vector((0, 0))
@@ -93,14 +93,20 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         self.init_module(event)
-        if self.draw_gesture_gpu(event):
+        e = self.draw_element(event)
+        g = self.draw_gesture(event)
+        if e or g:
             return {'RUNNING_MODAL'}
-        e = self.modal_event(event)
-        if e:
-            return e
+        m = self.modal_event(event)
+        if m:
+            return m
         return {'PASS_THROUGH'}
 
-    def draw_gesture_gpu(self, event):
+    def cancel(self, context):
+        self.gesture_bpu.unregister_draw()
+        self.element_bpu.unregister_draw()
+
+    def draw_gesture(self, event) -> bool:
         try:
             self.gesture_bpu.register_draw()
             with self.gesture_bpu as bpu:
@@ -119,6 +125,37 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         except Exception as e:
             self.gesture_bpu.unregister_draw()
             print(e.args)
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+        return False
+
+    def draw_element(self, event):
+        try:
+            with self.element_bpu as bpu:
+                bpu.offset_position = self.offset_position + Vector((600, 0))
+                bpu.mouse_position = self.mouse_position
+
+                ag = self.pref.active_gesture
+                if ag and ag.element:
+                    self.draw_element_child(ag.element, bpu)
+                else:
+                    bpu.label("请选择一个手势", alert=True)
+                if bpu.check_event(event):
+                    return True
+        except Exception as e:
+            self.element_bpu.unregister_draw()
+            print(e.args)
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+        return False
+
+    def draw_element_child(self, element, bpu: BpuLayout):
+        for e in element.values()[::-1]:
+            if e.show_child:
+                self.draw_element_child(e.element, bpu)
+            bpu.label(f"{' ' * e.level}{e.name}")
 
     def modal_event(self, event):
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
@@ -136,5 +173,6 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
 
         if self.is_exit:
             self.gesture_bpu.unregister_draw()
+            self.element_bpu.unregister_draw()
             GestureQuickAdd.is_in_quick_add = False
             return {'FINISHED'}

@@ -21,7 +21,7 @@ class BpuProperty(BpuColor):
     text: str = None  # 绘制的文字 label operator
     font_id: int = 0  # 绘制的文字字体
     font_color = (1, 1, 1, 1)  # 字体颜色
-    font_size = -10  # 字体大小
+    font_size = 20  # 字体大小
 
     text_margin = 8  # 文字的间距
     layout_margin = 20  # 布局间距
@@ -29,10 +29,12 @@ class BpuProperty(BpuColor):
     __layout_haver__ = list()  # 布局Haver
 
     active = False  # 是活动项
+    alert = False  # 警告
 
     def __init__(self):
         self.__clear_children__()
         self.active = False
+        self.alert = False
         self.offset_position = self.mouse_position = Vector((0, 0))
 
     @property

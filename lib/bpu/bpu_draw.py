@@ -32,7 +32,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
     def __gpu_draw__(self):
         """gpu绘制主方法"""
         if IS_DEBUG_DRAW:
-            # print("\n")
+            print("__gpu_draw__\n")
             ...
 
         gpu.state.blend_set('ALPHA')
@@ -41,6 +41,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
 
         area = bpy.context.region
         self.__measure__()
+        self.__layout_haver__ = list()
         with gpu.matrix.push_pop():
             gpu.matrix.translate((-area.x, -area.y))
             gpu.matrix.translate(self.offset_position)
@@ -134,7 +135,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
 
             font_id = self.font_id
             blf.position(font_id, 0, 0, self.level)
-            blf.color(font_id, *self.__text_color__)
+            blf.color(font_id, *self.___text_color___)
             blf.size(font_id, self.font_size)
             blf.draw(font_id, self.__text__)
         self.__draw_haver_position_debug__()
@@ -194,6 +195,10 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         """绘制active"""
         if self.active:
             self.___draw_background_color___(self.__active_color__)
+
+    def __draw_alert__(self) -> None:
+        if self.alert:
+            self.___draw_background_color___(self.__alert_background_color__)
 
     def ___draw_background_color___(self, color: list):
         if self.parent.type.is_horizontal_layout:
@@ -277,9 +282,9 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
     def check_haver(self):
         """检查haver"""
         pt = self.parent_top
-        if self.__child_menu_is_haver__:
+        if self.type.is_menu and self.__child_menu_is_haver__:
             pt.__layout_haver__.append(self)
-        elif self.is_haver:
+        if self.is_haver:
             pt.__layout_haver__.append(self)
 
         if self.parent:

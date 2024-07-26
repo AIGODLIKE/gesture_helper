@@ -1,6 +1,6 @@
 import bpy
 
-from ...utils.public import get_debug, tag_redraw
+from ...utils.public import tag_redraw
 
 
 class BpuRegister:
@@ -17,24 +17,31 @@ class BpuRegister:
         return sub
 
     def register_draw(self):
-        if not BpuRegister.__draw_class__:
+        # if get_debug():
+        #     print(f"register_draw\t{id(self)}\t{id(self.__draw_class__)}")
+        i = id(self)
+        if i not in self.__draw_class__:
+            sub_class = {}
             for cls in self.space_subclasses():
-                sub_class = {}
                 # bpy.types.Region.bl_rna.properties['type'].enum_items_static
                 for identifier in {'WINDOW', }:  # 'UI', 'TOOLS'
                     try:
-                        sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
+                        sub_class[(cls, identifier)] = cls.draw_handler_add(
+                            self.__gpu_draw__,
+                            (),
+                            identifier,
+                            'POST_PIXEL')
                     except Exception as e:
                         print(e.args)
-                BpuRegister.__draw_class__[cls] = sub_class
+            self.__draw_class__[i] = sub_class
         tag_redraw()
 
-    @classmethod
-    def unregister_draw(cls):
-        if get_debug():
-            print('unregister_draw')
-        for c, debug_class in BpuRegister.__draw_class__.items():
-            for key, value in debug_class.items():
-                c.draw_handler_remove(value, key)
-        BpuRegister.__draw_class__.clear()
+    def unregister_draw(self):
+        # if get_debug():
+        #     print(f'unregister_draw\t{id(self)}')
+        i = id(self)
+        if i in self.__draw_class__:
+            for (c, identifier), draw_fun in self.__draw_class__[i].items():
+                c.draw_handler_remove(draw_fun,identifier)
+            self.__draw_class__.pop(i)
         tag_redraw()

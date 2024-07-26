@@ -39,10 +39,12 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         layout.__clear_children__()
         return layout
 
-    def label(self, text="Hollow Word"):
+    def label(self, text="Hollow Word", alert=False):
         """标签"""
         lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
+        if alert:
+            lab.__text_color__ = lab.__alert_background_color__
 
     def row(self) -> "BpuLayout":
         """行"""
@@ -83,6 +85,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
     #     return self.__child_layout__(BPUType.SPLIT)
 
     def __enter__(self):
+        self.register_draw()
         self.__clear_children__()
         self.__mouse_in_area__ = False
         return self
