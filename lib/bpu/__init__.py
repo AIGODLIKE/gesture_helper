@@ -1,3 +1,5 @@
+from typing import Any
+
 import bpy
 
 from .bpu_draw import BpuDraw
@@ -80,6 +82,20 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         ops.__operator_properties__ = OperatorProperties()
         ops.active = active
         return ops.__operator_properties__
+
+    def prop(self, data: Any, property: str, icon='NONE', only_icon=False) -> None:
+        """https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#rna-enum-property-type-items
+        BOOLEAN:Boolean.
+        INT:Integer.
+        FLOAT:Float.
+        STRING:String.
+        ENUM:Enumeration.
+        POINTER:Pointer.
+        COLLECTION:Collection.
+        """
+        rna = data.rna_type.properties[property]
+        value = getattr(data, property)
+        tp = rna.type
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":
     #     return self.__child_layout__(BPUType.SPLIT)

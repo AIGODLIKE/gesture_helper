@@ -12,6 +12,7 @@ class BPUType(Enum):
     MENU = 100
 
     OPERATOR = 200
+    PROP = 300
 
     PARENT = 500
 

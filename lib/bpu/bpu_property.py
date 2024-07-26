@@ -30,7 +30,7 @@ class BpuProperty(BpuColor):
 
     active = False  # 是活动项
     alert = False  # 警告
-
+         
     def __init__(self):
         self.__clear_children__()
         self.active = False
