@@ -26,6 +26,15 @@ EXPORT_PROPERTY_ITEM = {
 }
 
 
+def ymd():
+    now = datetime.now()
+    # 提取年、月、日
+    year = now.year
+    month = now.month
+    day = now.day
+    return f"{year}-{month:02d}-{day:02d}"
+
+
 def get_backups_folder(user_custom_path: bool = True) -> str:
     from ..utils.public import ADDON_FOLDER
     prop = get_pref().backups_property
@@ -48,16 +57,16 @@ class PublicFileOperator(PublicOperator, PublicProperty):
     )
     run_execute: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'}, )
 
-    def get_all(self):
+    def __get_all__(self):
         pref = get_pref()
         return all((i.selected for i in pref.gesture))
 
-    def set_all(self, value):
+    def __set_all__(self, value):
         pref = get_pref()
         for i in pref.gesture:
             i.selected = value
 
-    selected_all: BoolProperty(name='选择所有', get=get_all, set=set_all)
+    selected_all: BoolProperty(name='选择所有', get=__get_all__, set=__set_all__)
 
     def invoke(self, context, _):
         if self.run_execute:
@@ -121,8 +130,8 @@ class Import(PublicFileOperator):
         try:
             data = self.read_json()
             restore = data['gesture']
-            if get_debug('key'):
-                print('restore', restore)
+            # if get_debug('key'):
+            #     print('restore', restore)
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)
             auth = data['author']
             des = data['description']
@@ -147,7 +156,7 @@ class Import(PublicFileOperator):
             backups_path = get_backups_folder()
 
             if os.path.isdir(backups_path):
-                key = "Gesture Close Addon Backups.json"
+                key = f"Gesture Close Addon Backups {ymd()}.json"
                 if key in os.listdir(backups_path):
                     bpy.ops.gesture.gesture_import(
                         # 'EXEC_DEFAULT',
@@ -170,26 +179,18 @@ class Export(PublicFileOperator):
     is_close_backups: BoolProperty(name="是关闭插件备份", default=False, options={"SKIP_SAVE"})
 
     @property
-    def ymd(self):
-        now = datetime.now()
-        # 提取年、月、日
-        year = now.year
-        month = now.month
-        day = now.day
-        return f"{year}-{month:02d}-{day:02d}"
-
-    @property
     def file_string(self):
         string = datetime.fromtimestamp(time.time())
+        mode = self.pref.backups_property
         if self.is_auto_backups:
-            if self.backups_file_mode == "ADDON_UNREGISTER":
+            if mode == "ADDON_UNREGISTER":
                 string = f'Auto Backups {self.date}'
-            elif self.backups_file_mode == "ADDON_UNREGISTER_DAY":
-                string = f'Auto Backups {self.ymd}'
-            elif self.backups_file_mode == "ONLY_ONE":
+            elif mode == "ADDON_UNREGISTER_DAY":
+                string = f'Auto Backups {ymd()}'
+            elif mode == "ONLY_ONE":
                 string = f'Auto Backups'
         if self.is_close_backups:
-            string = f'Close Addon Backups {self.ymd}'
+            string = f'Close Addon Backups {ymd()}'
         return string
 
     @property
@@ -256,6 +257,7 @@ class Export(PublicFileOperator):
 
     def write_json_file(self):
         with open(self.file_path, 'w') as file:
+            print(f"write_json_file\t{self.file_path}")
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
 
     @staticmethod
@@ -266,11 +268,13 @@ class Export(PublicFileOperator):
         一种是关闭插件,一种是关闭Blender
         """
         try:
+            is_auto_backups = get_pref().backups_property.auto_backups
+            print(f"gesture backups\t{is_blender_close}\t{is_auto_backups}")
             bpy.ops.gesture.export(
                 'EXEC_DEFAULT',
                 author='Emm',
                 description='auto_backups',
-                is_auto_backups=get_pref().backups_property.auto_backups,
+                is_auto_backups=is_auto_backups,
                 is_close_backups=not is_blender_close,
             )
         except Exception as e:

@@ -16,11 +16,15 @@ def update_state():
     pref.update_state()
 
 
-def restore():
+def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
     from .gesture import gesture_keymap
     from .utils import public_cache
+
+    public_cache.PublicCacheFunc.cache_clear()
+    gesture_keymap.GestureKeymap.key_remove()
+    gesture_keymap.GestureKeymap.key_init()
 
     pref = get_pref()
     try:
@@ -28,16 +32,15 @@ def restore():
         if not prop.init_addon:
             prop.init_addon = True
             Import.restore()
+        prop.is_move_element = False
     except Exception as e:
+        import traceback
+        traceback.print_stack()
+        traceback.print_exc()
         print(e.args)
-
-    public_cache.PublicCacheFunc.cache_clear()
-    gesture_keymap.GestureKeymap.key_remove()
-    gesture_keymap.GestureKeymap.key_init()
 
 
 def register():
-    from .utils.public import get_pref
     from .ops.gesture_quick_add import GestureQuickAddKeymap
 
     from .utils import icons
@@ -46,15 +49,15 @@ def register():
         try:
             module.register()
         except Exception as e:
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
             print(e.args, "\n")
 
     GestureQuickAddKeymap.register()
-    pref = get_pref()
-    if pref is not None:
-        pref.other_property.is_move_element = False
 
     bpy.app.timers.register(update_state, first_interval=3)
-    bpy.app.timers.register(restore, first_interval=0.001)
+    bpy.app.timers.register(init_register, first_interval=0.001)
 
 
 def unregister():
@@ -66,8 +69,8 @@ def unregister():
 
     if bpy.app.timers.is_registered(update_state):
         bpy.app.timers.unregister(update_state)
-    if bpy.app.timers.is_registered(restore):
-        bpy.app.timers.unregister(restore)
+    if bpy.app.timers.is_registered(init_register):
+        bpy.app.timers.unregister(init_register)
     GestureQuickAddKeymap.unregister()
 
     Export.backups(is_blender_close())

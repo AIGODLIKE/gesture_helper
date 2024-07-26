@@ -67,7 +67,7 @@ def __get_gesture_index__(self):
     from .utils.public import get_pref
     pref = get_pref()
     if len(pref.gesture) > 0:
-        return pref.index_gesture
+        return getattr(pref, "index_gesture", -10)
     return -1
 
 

@@ -83,29 +83,30 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def draw_property(self):
-        return self.pref.draw_property
+        return self._pref().draw_property
 
     @property
     def debug_property(self):
-        return self.pref.debug_property
+        return self._pref().debug_property
 
     @property
     def backups_property(self):
-        return self.pref.backups_property
+        return self._pref().backups_property
 
     @property
     def other_property(self):
-        return self.pref.other_property
+        return self._pref().other_property
 
     @property
     def gesture_property(self):
-        return self.pref.gesture_property
+        return self._pref().gesture_property
 
     @property
     def active_gesture(self):
-        index = self.pref.index_gesture
         try:
-            return self.pref.gesture[index]
+            index = getattr(self.pref, "index_gesture", None)
+            if index is not None:
+                return self.pref.gesture[index]
         except IndexError:
             ...
 
