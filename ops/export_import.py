@@ -10,7 +10,7 @@ from bpy.props import BoolProperty, StringProperty
 from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
 from ..utils import PropertySetUtils
-from ..utils.public import PublicOperator, PublicProperty, get_pref, get_debug
+from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'index_element',
@@ -150,7 +150,7 @@ class Import(PublicFileOperator):
     @staticmethod
     def restore():
         """
-        恢复
+        恢复数据
         """
         try:
             backups_path = get_backups_folder()

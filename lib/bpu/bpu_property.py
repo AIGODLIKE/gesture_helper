@@ -1,10 +1,11 @@
 from bpy.app.translations import pgettext
 from mathutils import Vector
 
+from .bpu_color import BpuColor
 from .bpu_type import BPUType, Quadrant
 
 
-class BpuProperty:
+class BpuProperty(BpuColor):
     type: BPUType = BPUType.UNKNOWN  # 类型
     parent: "BpuLayout" = None  # 父级
     quadrant: Quadrant = Quadrant.ONE

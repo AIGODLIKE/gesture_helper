@@ -106,22 +106,26 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             elif pt.is_vertical_layout or pt.is_parent:
                 gpu.matrix.translate((0, self.__draw_height__ / 2))
 
-            # print(f"separator:{parent.__child_max_height__,parent.__child_max_width__}\n{vs}\n")
-            self.draw_2d_line(vs, color=[.4, .4, .4, 1], line_width=2)
+            self.draw_2d_line(vs, color=self.__separator_color__, line_width=2)
         self.__draw_haver_position_debug__()
 
     def __draw_item__(self) -> None:
         """绘制项"""
         if IS_DEBUG_DRAW:
-            self.draw_2d_line(self.__margin_box__, color=(0, 0.6, 0, .8),  # 绿
-                              line_width=1)
+            self.draw_2d_line(
+                self.__margin_box__,
+                color=self.__debug_item_margin_color__,
+                line_width=self.__debug_line__
+            )
         self.__draw_active__()
         self.__draw_haver__()
         with gpu.matrix.push_pop():
             gpu.matrix.translate(self.__margin_vector__)
             if IS_DEBUG_DRAW:
-                self.draw_2d_line(self.__bound_box__, color=(0.6, 0, 0, .8),  # 红
-                                  line_width=1)
+                self.draw_2d_line(
+                    self.__bound_box__,
+                    color=self.__debug_item_bound_color__,
+                    line_width=self.__debug_line__)
 
             if contains_chinese(self.__text__):
                 pt = self.parent.type
@@ -130,7 +134,7 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
 
             font_id = self.font_id
             blf.position(font_id, 0, 0, self.level)
-            blf.color(font_id, *(1, 1, 1, 1))
+            blf.color(font_id, *self.__text_color__)
             blf.size(font_id, self.font_size)
             blf.draw(font_id, self.__text__)
         self.__draw_haver_position_debug__()
@@ -139,15 +143,25 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
         """绘制layout"""
         with gpu.matrix.push_pop():
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
-            self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=self.__draw_width__,
-                                             height=self.__draw_height__, segments=40)
+            self.draw_rounded_rectangle_area(
+                [0, 0],
+                radius=self.__layout_radius__,
+                color=self.__background_color__,
+                width=self.__draw_width__,
+                height=self.__draw_height__,
+                segments=self.__layout_segments__)
         if IS_DEBUG_DRAW:
-            self.draw_2d_line(self.__margin_box__, color=[0.590620, 0.012983, 0.013702, 1.000000],  # 红
-                              line_width=1)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.parent_offset())
-                self.draw_2d_line(self.__bound_box__, color=[0.052861, 0.205076, 1.000024, 1.000000],  # 绿
-                                  line_width=1)
+                self.draw_2d_line(
+                    self.__bound_box__,
+                    color=self.__debug_layout_margin_color__,
+                    line_width=self.__debug_line__)
+            self.draw_2d_line(
+                self.__margin_box__,
+                color=self.__debug_layout_bound_color__,
+                line_width=self.__debug_line__
+            )
 
     def __draw_child__(self) -> None:
         """绘制子级"""
@@ -174,12 +188,12 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
                 if self.__menu_id__ not in hv:
                     self.parent.__menu_haver__[self.level] = self.__menu_id__
 
-            self.___draw_background_color___([0.52861, 0.52861, 0.52861, 1.000000])
+            self.___draw_background_color___(self.__haver_color__)
 
     def __draw_active__(self) -> None:
         """绘制active"""
         if self.active:
-            self.___draw_background_color___([0.063011, 0.168267, 0.450779, 1.000000])
+            self.___draw_background_color___(self.__active_color__)
 
     def ___draw_background_color___(self, color: list):
         if self.parent.type.is_horizontal_layout:
@@ -215,19 +229,27 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
 
                     gpu.matrix.translate((w / 2, h / 2))
                     self.__draw_layout__()
-                    self.draw_rounded_rectangle_area([0, 0], radius=10, color=[.01, .01, .01, 1], width=w, height=h,
-                                                     segments=40)
+                    self.draw_rounded_rectangle_area(
+                        [0, 0],
+                        radius=self.__layout_radius__,
+                        color=self.__background_color__,
+                        width=w,
+                        height=h,
+                        segments=self.__layout_segments__)
 
                 if IS_DEBUG_DRAW:
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate(self.__layout_margin_vector__)
-                        self.draw_2d_line(__box_path__(self.__child_max_width__, self.__child_sum_height__)
-                                          , color=[0.5, 0.205076, 1.000024, 1.000000],
-                                          line_width=1)
-                    self.draw_2d_line(__box_path__(self.__child_max_width__ + self.layout_margin * 2,
-                                                   self.__child_sum_height__ + self.layout_margin * 2)
-                                      , color=[0.152177, 0.170711, 1.000000, 1.000000],
-                                      line_width=1)
+                        self.draw_2d_line(
+                            __box_path__(self.__child_max_width__, self.__child_sum_height__),
+                            color=self.__debug_menu_margin_color__,
+                            line_width=self.__debug_line__)
+                    self.draw_2d_line(
+                        __box_path__(self.__child_max_width__ + self.layout_margin * 2,
+                                     self.__child_sum_height__ + self.layout_margin * 2),
+                        color=self.__debug_menu_bound_color__,
+                        line_width=self.__debug_line__
+                    )
                 if IS_DEBUG_POINT:
                     self.draw_2d_points(Vector((0, 0)), color=(0, 0, 1, 1), point_size=10)
 
