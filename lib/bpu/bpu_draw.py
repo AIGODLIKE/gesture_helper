@@ -6,7 +6,7 @@ import gpu
 from mathutils import Vector
 
 from .bpu_debug import BpuDebug
-from .bpu_measure import BpuMeasure
+from .bpu_prop_layout import BpuPropLayout
 from ...utils.public_gpu import PublicGpu
 
 
@@ -19,13 +19,13 @@ def contains_chinese(text):
     return bool(pattern.search(text))
 
 
-IS_DEBUG_DRAW: bool = False  # 绘制
+IS_DEBUG_DRAW: bool = True  # 绘制
 IS_DEBUG_INFO: bool = True  # 绘制左下角信息
-IS_DEBUG_HAVER: bool = False  # 绘制是否为Haver
-IS_DEBUG_POINT: bool = False  # 绘制线POINT
+IS_DEBUG_HAVER: bool = True  # 绘制是否为Haver
+IS_DEBUG_POINT: bool = True  # 绘制线POINT
 
 
-class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
+class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
     def __init__(self):
         super().__init__()
 
@@ -35,20 +35,17 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             print("__gpu_draw__\n")
             ...
 
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
-        gpu.state.depth_mask_set(True)
-
         area = bpy.context.region
         self.__measure__()
         self.__layout_haver__ = list()
         with gpu.matrix.push_pop():
-            gpu.matrix.translate((-area.x, -area.y))
+            gpu.matrix.translate([-area.x, -area.y])
             gpu.matrix.translate(self.offset_position)
 
             if IS_DEBUG_INFO:
                 self.draw_2d_points(Vector((0, 0)), color=(1, 0, 0, 0.3), point_size=50)
 
+            gpu.matrix.translate(self.__quadrant_translate__)
             self.__layout__()
 
             if IS_DEBUG_INFO:
@@ -64,12 +61,17 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
                     ):
                         self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
                     self.__layout_haver_list__ = []
+        self.__layout_haver_histories__ = self.__layout_haver__
 
     def __layout__(self) -> None:
         """
         先测量宽高
         然后绘制子级
         """
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
+        gpu.state.depth_mask_set(True)
+
         if self.type.is_parent:
             self.__draw_layout__()
         elif self.type.is_separator:
@@ -80,6 +82,8 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             self.__draw_layout__()
         elif self.type.is_draw_item:
             self.__draw_item__()
+        elif self.type.is_prop:
+            self.__draw_property__()
 
         self.__draw_debug__()
         if self.is_draw_child:
@@ -113,11 +117,14 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
     def __draw_item__(self) -> None:
         """绘制项"""
         if IS_DEBUG_DRAW:
-            self.draw_2d_line(
-                self.__margin_box__,
-                color=self.__debug_item_margin_color__,
-                line_width=self.__debug_line__
-            )
+            if self.type.is_prop:
+                ...
+            else:
+                self.draw_2d_line(
+                    self.__margin_box__,
+                    color=self.__debug_item_margin_color__,
+                    line_width=self.__debug_line__
+                )
         self.__draw_active__()
         self.__draw_haver__()
         with gpu.matrix.push_pop():
@@ -131,14 +138,15 @@ class BpuDraw(BpuMeasure, PublicGpu, BpuDebug):
             if contains_chinese(self.__text__):
                 pt = self.parent.type
                 if pt.is_vertical_layout or pt.is_parent or pt.is_menu:
-                    gpu.matrix.translate(Vector([0, self.__text_height__ * 0.15]))
+                    gpu.matrix.translate(Vector([0, self.__text_height__ * 0.1]))
 
             font_id = self.font_id
             blf.position(font_id, 0, 0, self.level)
             blf.color(font_id, *self.___text_color___)
             blf.size(font_id, self.font_size)
             blf.draw(font_id, self.__text__)
-        self.__draw_haver_position_debug__()
+        if not self.type.is_prop:
+            self.__draw_haver_position_debug__()
 
     def __draw_layout__(self) -> None:
         """绘制layout"""

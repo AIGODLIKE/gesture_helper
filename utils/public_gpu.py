@@ -92,6 +92,22 @@ def get_indices_from_vertex(vertex):
 
 
 class PublicGpu:
+    @staticmethod
+    def draw_image(position, height, width, texture):
+        shader = gpu.shader.from_builtin('IMAGE')
+        gpu.matrix.translate(position)
+        batch = batch_for_shader(
+            shader, 'TRI_FAN',
+            {
+                "pos": ((0, 0), (width, 0), (width, height), (0, height)),
+                "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
+            },
+        )
+        shader.bind()
+        shader.uniform_sampler("image", texture)
+
+        with gpu.matrix.push_pop():
+            batch.draw(shader)
 
     @staticmethod
     def draw_text(
@@ -152,7 +168,6 @@ class PublicGpu:
 
     @staticmethod
     def draw_circle(position, radius, *, color=(1, 1, 1, 1.0), line_width=2, segments=128):
-
         from math import pi, ceil, acos
         import gpu
 

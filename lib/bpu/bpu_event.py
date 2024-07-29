@@ -10,4 +10,4 @@ class BpuEvent:
                 getattr(ao, "running_operator")()
                 return True
             setattr(self, "__active_operator__", None)
-        return bool(len(self.__layout_haver__))
+        return bool(len(self.parent_top.__layout_haver_histories__))

@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector
 
 from ..lib.bpu import BpuLayout
+from ..lib.bpu.bpu_type import Quadrant
 from ..utils.public import PublicOperator, PublicProperty
 
 
@@ -60,12 +61,14 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
     bl_label = "Quick Add"
     is_in_quick_add = False  # 是在添加模式
 
+    offset = Vector((500, 0))
+
     def __init__(self):
         super().__init__()
         self.mouse_position = None
         self.__difference_mouse__ = None
-        self.gesture_bpu = BpuLayout()
-        self.element_bpu = BpuLayout()
+        self.gesture_bpu = BpuLayout(Quadrant.LIFT)
+        self.element_bpu = BpuLayout(Quadrant.RIGHT)
 
         self.start_mouse_position = None
         self.offset_position = Vector((0, 0))
@@ -110,7 +113,7 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         try:
             self.gesture_bpu.register_draw()
             with self.gesture_bpu as bpu:
-                bpu.offset_position = self.offset_position - Vector((600, 0))
+                bpu.offset_position = self.offset_position - self.offset
                 bpu.mouse_position = self.mouse_position
                 # __draw__(bpu, event)
                 for g in self.pref.gesture.values()[::-1]:
@@ -133,14 +136,18 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
     def draw_element(self, event):
         try:
             with self.element_bpu as bpu:
-                bpu.offset_position = self.offset_position + Vector((600, 0))
+                bpu.offset_position = self.offset_position + self.offset
                 bpu.mouse_position = self.mouse_position
+                # bpu.font_size = 50
+                bpu.layout_margin = 80
 
                 ag = self.pref.active_gesture
-                if ag and ag.element:
-                    self.draw_element_child(ag.element, bpu)
-                else:
+                if not ag:
                     bpu.label("请选择一个手势", alert=True)
+                elif not ag.element:
+                    bpu.label("请选择一个元素", alert=True)
+                else:
+                    self.draw_element_child(ag.element, bpu)
                 if bpu.check_event(event):
                     return True
         except Exception as e:
@@ -155,7 +162,10 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
         for e in element.values()[::-1]:
             if e.show_child:
                 self.draw_element_child(e.element, bpu)
-            bpu.label(f"{' ' * e.level}{e.name}")
+            bpu.prop(e, "enabled", text=f"{' ' * e.level}{e.name}")
+            # row = bpu.row()
+            # row.prop(e, "enabled")
+            # row.label(f"{' ' * e.level}{e.name}")
 
     def modal_event(self, event):
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)

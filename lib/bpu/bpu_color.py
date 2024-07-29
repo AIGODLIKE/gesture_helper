@@ -27,6 +27,7 @@ class BpuColor:
 
     __debug_line__ = 1
     __separator_line__ = 2
+    __line__ = 1
 
     @property
     def ___text_color___(self) -> list[int]:

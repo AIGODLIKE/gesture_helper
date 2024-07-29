@@ -35,11 +35,12 @@ class BpuOperator:
 
     @property
     def __operator_func__(self) -> "bpy.types.Operator":
-        sp = self.__bl_idname__.split('.')
-        if len(sp) == 2:
-            prefix, suffix = sp
-            func = getattr(getattr(bpy.ops, prefix), suffix)
-            return func
+        if self.__bl_idname__:
+            sp = self.__bl_idname__.split('.')
+            if len(sp) == 2:
+                prefix, suffix = sp
+                func = getattr(getattr(bpy.ops, prefix), suffix)
+                return func
 
     @property
     def __operator_text__(self) -> str:

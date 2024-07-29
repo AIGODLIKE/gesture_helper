@@ -20,11 +20,12 @@ def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
     from .gesture import gesture_keymap
-    from .utils import public_cache
+    from .utils import public_cache, texture
 
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
     gesture_keymap.GestureKeymap.key_init()
+    texture.Texture.register()
 
     pref = get_pref()
     try:
@@ -65,7 +66,7 @@ def unregister():
     from .gesture import gesture_keymap
 
     from .ops.gesture_quick_add import GestureQuickAddKeymap
-    from .utils import icons, is_blender_close
+    from .utils import icons, is_blender_close, texture
 
     if bpy.app.timers.is_registered(update_state):
         bpy.app.timers.unregister(update_state)
@@ -79,3 +80,4 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
+    texture.Texture.unregister()

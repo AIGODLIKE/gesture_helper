@@ -88,6 +88,8 @@ class BpuMeasure(BpuProperty, BpuOffset):
         self.__clear_measure__()
 
         # 如果是分割线就不测量,使用父级的宽高
+        if self.type.is_prop:
+            self.__measure_prop__()
         if self.type.is_menu:
             self.__measure_text__()
             self.__measure_children__()
@@ -96,10 +98,21 @@ class BpuMeasure(BpuProperty, BpuOffset):
         if self.type.is_draw_child:
             self.__measure_children__()
 
-    def __measure_text__(self) -> None:
+    def __measure_prop__(self) -> None:
+        if self.__property_type__ == "BOOLEAN":
+            if self.only_icon:  # 只显示图标,使用父级的宽高
+                ...
+            elif self.text:  # 使用自定义文字
+                self.__measure_text__(self.text)
+            elif self.__property_name__:  # 使用属性的值
+                self.__measure_text__(str(self.__property_name__))
+
+    def __measure_text__(self, text=None) -> None:
         """测量文字"""
+        if not text:
+            text = self.__text__
         blf.size(self.font_id, self.font_size)
-        (self.__text_width__, self.__text_height__) = blf.dimensions(self.font_id, self.__text__)
+        (self.__text_width__, self.__text_height__) = blf.dimensions(self.font_id, self.___translation_text___(text))
 
     def __measure_children__(self) -> None:
         """测量子级"""
@@ -107,6 +120,43 @@ class BpuMeasure(BpuProperty, BpuOffset):
             child.__measure__()
             self.__child_height_list__.append(child.__draw_height__)
             self.__child_width_list__.append(child.__draw_width__)
+
+    @property
+    def ___draw_height_property___(self) -> int:
+        pt = self.parent.type
+        if self.__property_type__ == "BOOLEAN":
+            if self.only_icon:
+                if pt.is_horizontal_layout:
+                    return self.parent.__child_max_height__
+                elif pt.is_vertical_layout:
+                    return self.parent.__child_max_width__
+            elif self.text or self.__property_name__:
+                # 使用文字
+                return self.__text_height__
+
+            if pt.is_horizontal_layout:
+                return self.parent.__child_max_height__ + self.__text_width__
+            elif pt.is_vertical_layout:
+                return self.parent.__child_max_width__ + self.__text_width__
+        return -1
+
+    @property
+    def ___draw_width_property___(self) -> int:
+        pt = self.parent.type
+        if self.__property_type__ == "BOOLEAN":
+            if self.only_icon:
+                if pt.is_horizontal_layout:
+                    return self.parent.__child_max_height__
+                elif pt.is_vertical_layout:
+                    return self.parent.__child_max_height__
+            elif self.text or self.__property_name__:
+                # 使用文字 一个图标的高度+宽度
+                return self.__text_width__ + self.__text_height__ + self.__mt__
+            if pt.is_horizontal_layout:
+                return self.parent.__child_max_height__ + self.__text_width__
+            elif pt.is_vertical_layout:
+                return self.parent.__child_max_height__ + self.__text_width__
+        return -1
 
     @property
     def __draw_height__(self) -> int:
@@ -121,7 +171,9 @@ class BpuMeasure(BpuProperty, BpuOffset):
             return self.__child_max_height__ + mt
         elif self.type.is_vertical_layout or self.type.is_parent:
             return self.__child_sum_height__ + mt
-
+        elif self.type.is_prop:
+            h = self.___draw_height_property___ + mt
+            return h
         # 文字
         return self.__text_height__ + mt
 
@@ -143,7 +195,11 @@ class BpuMeasure(BpuProperty, BpuOffset):
             return self.__child_sum_width__ + mt
         elif self.type.is_vertical_layout or self.type.is_parent:
             return self.__child_max_width__ + mt
-
+        elif self.type.is_prop:
+            w = self.___draw_width_property___ + mt
+            # print(
+            #     f"\t__draw_width__\t{w}\t{self.__property_rna__}\t{self.__property_value__}\t{self.__property_type__}\t{self.__text_width__}")
+            return w
         # 文字
         return self.__text_width__ + mt
 
@@ -181,7 +237,8 @@ class BpuMeasure(BpuProperty, BpuOffset):
     @property
     def is_haver(self) -> bool:
         """是活动项"""
-        start_x, start_y = start = self.offset_position if self.type.is_parent else self.__offset__
+        offset = self.offset_position if self.type.is_parent else self.__offset__
+        start_x, start_y = start = offset + self.parent_top.__quadrant_translate__
         if self.parent is not None:
             pt = self.parent.type
             if pt.is_horizontal_layout:  # 水平 row
@@ -203,7 +260,8 @@ class BpuMeasure(BpuProperty, BpuOffset):
     @property
     def __child_menu_is_haver__(self) -> bool:
         """子级菜单是否在范围内"""
-        start_x, start_y = self.__offset__ + self.___menu_child_offset_position___ if self.parent else self.offset_position
+        offset = self.__offset__ + self.___menu_child_offset_position___ if self.parent else self.offset_position
+        start_x, start_y = offset + self.parent_top.__quadrant_translate__
         end_x, end_y = (
             start_x + self.__child_max_width__ + self.layout_margin * 2,
             start_y + self.__child_sum_height__ + self.layout_margin * 2

@@ -7,13 +7,14 @@ from .bpu_event import BpuEvent
 from .bpu_operator import BpuOperator, OperatorProperties
 from .bpu_property import BpuProperty
 from .bpu_register import BpuRegister
-from .bpu_type import BPUType
+from .bpu_type import BPUType, Quadrant
 
 
 class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
 
-    def __init__(self):
+    def __init__(self, quadrant: Quadrant = Quadrant.ONE):
         super().__init__()
+        self.__quadrant__ = quadrant
         self.type = BPUType.PARENT
 
     def __repr__(self):
@@ -36,6 +37,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
 
         if self.type == BPUType.PARENT:
             self.__temp_children__.append(layout)
+            self.offset_position += layout.__quadrant_translate__
         else:
             self.__draw_children__.append(layout)
         layout.__clear_children__()
@@ -83,7 +85,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         ops.active = active
         return ops.__operator_properties__
 
-    def prop(self, data: Any, property: str, icon='NONE', only_icon=False) -> None:
+    def prop(self, data: Any, prop: str, text=None, icon='NONE', only_icon=False) -> None:
         """https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#rna-enum-property-type-items
         BOOLEAN:Boolean.
         INT:Integer.
@@ -93,9 +95,19 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         POINTER:Pointer.
         COLLECTION:Collection.
         """
-        rna = data.rna_type.properties[property]
-        value = getattr(data, property)
-        tp = rna.type
+        if data is None:
+            Exception("Error not data")
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+        p = self.__child_layout__(BPUType.PROP)
+        p.__property_rna__ = rna = data.rna_type.properties[prop]
+        p.__property_name__ = rna.name
+        p.__property_value__ = getattr(data, prop, None)
+        p.__property_type__ = rna.type
+        p.text = text
+        p.only_icon = only_icon
+        p.icon = icon
 
     # def split(self, factor=0.0, align=False) -> "BpuLayout":
     #     return self.__child_layout__(BPUType.SPLIT)
