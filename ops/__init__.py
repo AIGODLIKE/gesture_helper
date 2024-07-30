@@ -2,7 +2,7 @@ import bpy
 
 from . import export_import, switch_mode
 from . import gesture
-from . import gesture_quick_add
+from .qucik_add import gesture_quick_add
 from . import restore_key
 from . import set_direction
 from . import set_key

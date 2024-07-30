@@ -60,7 +60,6 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                             f"{self.__layout_haver__}",)
                     ):
                         self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
-                    self.__layout_haver_list__ = []
         self.__layout_haver_histories__ = self.__layout_haver__
 
     def __layout__(self) -> None:

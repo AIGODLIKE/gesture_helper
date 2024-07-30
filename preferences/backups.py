@@ -25,7 +25,7 @@ class BackupsProperty(PropertyGroup):
     )
     backups_file_mode:EnumProperty(
         name="备份模式",
-        default="ADDON_UNREGISTER_DAY",
+        default="ONLY_ONE",
         items=[
             ("ADDON_UNREGISTER", "插件注销时", "每次插件注销时都会自动备份一次(在关闭插件或关闭Blender时会触发),如果频繁开关Blender将会有很多备份文件"),
             ("ADDON_UNREGISTER_DAY", "插件注销时(每天保留一份)", "每天仅保留一份"),

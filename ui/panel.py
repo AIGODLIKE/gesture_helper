@@ -11,4 +11,9 @@ class GesturePanel(bpy.types.Panel, PublicProperty):
     bl_category = "Gesture"
 
     def draw(self, context):
-        self.pref.preferences_draw(self.layout)
+        from ..ops.qucik_add.gesture_quick_add import GestureQuickAdd
+        if GestureQuickAdd.is_quick_add_mode:
+            from ..preferences.draw_gesture import GestureDraw
+            GestureDraw.draw_element(self.layout)
+        else:
+            self.pref.preferences_draw(self.layout)

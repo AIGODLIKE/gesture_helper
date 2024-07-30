@@ -9,13 +9,13 @@ class PreferencesDraw(GestureDraw):
     @staticmethod
     def preferences_draw(layout: bpy.types.UILayout):
         """绘制偏好设置"""
-        from ..ops.gesture_quick_add import GestureQuickAdd
+        from ..ops.qucik_add.gesture_quick_add import GestureQuickAdd
         pref = get_pref()
 
         column = layout.column(align=True)
 
         row = column.row(align=True)
-        row.prop(pref, 'enabled', text='')
+        row.prop(pref, 'enabled', text="")
 
         row.prop(pref, 'show_page', expand=True)
         row.operator(GestureQuickAdd.bl_idname, icon="RNA_ADD")

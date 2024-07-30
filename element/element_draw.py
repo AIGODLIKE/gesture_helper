@@ -76,7 +76,6 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
-
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression
             icon = Icons.get(self.selected_type).icon_id

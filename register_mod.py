@@ -42,7 +42,7 @@ def init_register():
 
 
 def register():
-    from .ops.gesture_quick_add import GestureQuickAddKeymap
+    from .ops.qucik_add.keymap import GestureQuickAddKeymap
 
     from .utils import icons
     icons.Icons.register()
@@ -65,7 +65,7 @@ def unregister():
     from .ops.export_import import Export
     from .gesture import gesture_keymap
 
-    from .ops.gesture_quick_add import GestureQuickAddKeymap
+    from .ops.qucik_add.keymap import GestureQuickAddKeymap
     from .utils import icons, is_blender_close, texture
 
     if bpy.app.timers.is_registered(update_state):
