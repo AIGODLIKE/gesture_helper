@@ -34,13 +34,34 @@ class BpuProperty(BpuColor):
     alert = False  # 警告
 
     # 属性
+    __property_data__ = None
     __property_rna__ = None
     __property_value__ = None
-    __property_name__ = None
-    __property_type__ = None  # https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#rna-enum-property-type-items
+    __property_name_string__ = None
+    __property_identifier__ = None
+    __property_type__ = None
+    # https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#rna-enum-property-type-items
     only_icon = False
     icon = None
     translate = True
+
+    @property
+    def ___last_haver___(self) -> "BpuLayout":
+        if self.parent_top.__layout_haver_histories__:
+            last = self.parent_top.__layout_haver_histories__[0]
+            return last
+
+    @property
+    def __active_operator__(self) -> "BpuLayout":
+        lh = self.___last_haver___
+        if lh and lh.type.is_operator:
+            return lh
+
+    @property
+    def __active_property__(self) -> "BpuLayout":
+        lh = self.___last_haver___
+        if lh and lh.type.is_prop:
+            return lh
 
     @property
     def __quadrant_translate__(self) -> Vector:
@@ -96,8 +117,8 @@ class BpuProperty(BpuColor):
         """获取绘制的文字"""
         if self.text:
             return self.text
-        if self.__property_name__:
-            return self.__property_name__
+        if self.__property_name_string__:
+            return self.__property_name_string__
         text = getattr(self, "__operator_text__", None)
         if text:
             return text

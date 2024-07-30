@@ -22,7 +22,6 @@ class OperatorProperties:
 
 
 class BpuOperator:
-    __active_operator__ = None  # 活动操作符
     __mouse_in_area__ = False
 
     __bl_idname__ = None  # 绘制的bl_idname

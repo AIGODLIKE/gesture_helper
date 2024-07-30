@@ -32,7 +32,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
     def __gpu_draw__(self):
         """gpu绘制主方法"""
         if IS_DEBUG_DRAW:
-            print("__gpu_draw__\n")
+            # print("__gpu_draw__\n")
             ...
 
         area = bpy.context.region
@@ -155,7 +155,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             self.draw_rounded_rectangle_area(
                 [0, 0],
                 radius=self.__layout_radius__,
-                color=self.__background_color__,
+                color=self.__background_normal_color__,
                 width=self.__draw_width__,
                 height=self.__draw_height__,
                 segments=self.__layout_segments__)
@@ -185,28 +185,22 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         """绘制haver"""
         if self.is_draw_haver:
             # 操作符处理
-            if self.type.is_operator:
-                self.parent_top.__active_operator__ = self
-                self.parent_top.__mouse_in_area__ = True
-            elif self.parent_top.__active_operator__:
-                self.parent_top.__active_operator__ = None
-
             pm = self.parent.__menu_haver__
             if self.type.is_menu and self.level not in pm:
                 hv = pm.values()
                 if self.__menu_id__ not in hv:
                     self.parent.__menu_haver__[self.level] = self.__menu_id__
 
-            self.___draw_background_color___(self.__haver_color__)
+            self.___draw_background_color___(self.__background_haver_color__)
 
     def __draw_active__(self) -> None:
         """绘制active"""
         if self.active:
-            self.___draw_background_color___(self.__active_color__)
+            self.___draw_background_color___(self.__background_active_color__)
 
     def __draw_alert__(self) -> None:
         if self.alert:
-            self.___draw_background_color___(self.__alert_background_color__)
+            self.___draw_background_color___(self.__background_alert_color__)
 
     def ___draw_background_color___(self, color: list):
         if self.parent.type.is_horizontal_layout:
@@ -245,7 +239,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                     self.draw_rounded_rectangle_area(
                         [0, 0],
                         radius=self.__layout_radius__,
-                        color=self.__background_color__,
+                        color=self.__background_normal_color__,
                         width=w,
                         height=h,
                         segments=self.__layout_segments__)

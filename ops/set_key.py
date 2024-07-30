@@ -35,7 +35,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
     def execute(self, _):
         self.active_gesture.keymaps = self.__class__.__temp_selected_keymaps__
-        return {'FINISHED'}
+        return {'FINISHED', "RUNNING_MODAL"}
 
     def draw(self, _):
         layout = self.layout.column()

@@ -104,8 +104,8 @@ class BpuMeasure(BpuProperty, BpuOffset):
                 ...
             elif self.text:  # 使用自定义文字
                 self.__measure_text__(self.text)
-            elif self.__property_name__:  # 使用属性的值
-                self.__measure_text__(str(self.__property_name__))
+            elif self.__property_name_string__:  # 使用属性的值
+                self.__measure_text__(str(self.__property_name_string__))
 
     def __measure_text__(self, text=None) -> None:
         """测量文字"""
@@ -130,7 +130,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
                     return self.parent.__child_max_height__
                 elif pt.is_vertical_layout:
                     return self.parent.__child_max_width__
-            elif self.text or self.__property_name__:
+            elif self.text or self.__property_name_string__:
                 # 使用文字
                 return self.__text_height__
 
@@ -149,7 +149,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
                     return self.parent.__child_max_height__
                 elif pt.is_vertical_layout:
                     return self.parent.__child_max_height__
-            elif self.text or self.__property_name__:
+            elif self.text or self.__property_name_string__:
                 # 使用文字 一个图标的高度+宽度
                 return self.__text_width__ + self.__text_height__ + self.__mt__
             if pt.is_horizontal_layout:

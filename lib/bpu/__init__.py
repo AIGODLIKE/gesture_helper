@@ -48,7 +48,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
         if alert:
-            lab.__text_color__ = lab.__alert_background_color__
+            lab.__text_normal_color__ = lab.__background_alert_color__
 
     def row(self) -> "BpuLayout":
         """行"""
@@ -101,8 +101,10 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
             traceback.print_exc()
             traceback.print_stack()
         p = self.__child_layout__(BPUType.PROP)
+        p.__property_data__ = data
         p.__property_rna__ = rna = data.rna_type.properties[prop]
-        p.__property_name__ = rna.name
+        p.__property_name_string__ = rna.name
+        p.__property_identifier__ = rna.identifier
         p.__property_value__ = getattr(data, prop, None)
         p.__property_type__ = rna.type
         p.text = text
@@ -120,6 +122,4 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.type == BPUType.PARENT:
-            if not self.__mouse_in_area__:
-                self.__active_operator__ = None
             self.__draw_children__ = self.__temp_children__
