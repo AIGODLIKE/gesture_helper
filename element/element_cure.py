@@ -7,9 +7,8 @@ from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 
 
 class ElementCURE:
-    """
-    增删查改
-    """
+    """增删查改"""
+
     @cache_update_lock
     def copy(self):
         from ..utils import PropertyGetUtils, PropertySetUtils
@@ -38,8 +37,8 @@ class ElementCURE:
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
-        bl_idname = 'gesture.element_add'
         bl_label = '添加手势项'
+        bl_idname = 'gesture.element_add'
 
         @property
         def collection(self):
@@ -73,8 +72,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):
-        bl_idname = 'gesture.element_remove'
         bl_label = '删除手势项'
+        bl_idname = 'gesture.element_remove'
 
         def execute(self, _):
             self.pref.active_element.remove()
@@ -137,8 +136,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class SORT(ElementPoll):
-        bl_idname = 'gesture.element_sort'
         bl_label = '排序手势项'
+        bl_idname = 'gesture.element_sort'
 
         is_next: BoolProperty()
 
@@ -164,8 +163,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):
-        bl_idname = 'gesture.element_operator_script_edit'
         bl_label = '编辑脚本'
+        bl_idname = 'gesture.element_operator_script_edit'
 
         # 获取脚本数据块
         def get_text_data(self) -> bpy.types.Text:
@@ -191,8 +190,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptSave(ElementPoll):
-        bl_idname = 'gesture.element_operator_script_save'
         bl_label = '保存脚本'
+        bl_idname = 'gesture.element_operator_script_save'
 
         @classmethod
         def poll(cls, context):
@@ -247,7 +246,7 @@ def draw_save_script_button(self, context):
     text = context.space_data.text
     active = pref.active_element
 
-    if getattr(text,"gesture_element_hash", False) == str(hash(active)):
+    if getattr(text, "gesture_element_hash", False) == str(hash(active)):
         row = layout.row()
         row.alert = True
         row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name}")

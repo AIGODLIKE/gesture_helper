@@ -2,7 +2,7 @@ from bpy.props import BoolProperty
 
 
 class GestureCURE:
-    """    手势项 增删查改    """
+    """手势项 增删查改"""
     from ..utils.public import PublicOperator, PublicProperty
 
     class GesturePoll(PublicOperator, PublicProperty):

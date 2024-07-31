@@ -1,7 +1,8 @@
 import bpy.utils
 
-from . import ui_list
+from . import context_menu
 from . import panel
+from . import ui_list
 
 operator_list = (
     ui_list.GestureUIList,
@@ -15,7 +16,9 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(operat
 
 def register():
     register_classes()
+    context_menu.register()
 
 
 def unregister():
+    context_menu.unregister()
     unregister_classes()

@@ -45,6 +45,11 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
     def modal(self, context, event):
         # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
 
+        button_pointer = getattr(context, "button_pointer", None)
+        button_prop = getattr(context, "button_prop", None)
+        button_operator = getattr(context, "button_operator", None)
+        print(self.bl_idname, button_pointer, button_prop, button_operator)
+
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         self.init_module(event)
         res = self.gpu.draw_run(self, event)
