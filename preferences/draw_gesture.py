@@ -106,7 +106,8 @@ class GestureDraw:
 
         column.separator()
 
-        column.operator(
+        sort_column = column.column(align=True)
+        sort_column.operator(
             cls.SORT.bl_idname,
             icon='SORT_DESC',
             text=''
@@ -116,7 +117,7 @@ class GestureDraw:
             moving = other.is_move_element
             icon = 'DOT' if moving else 'GRIP'
 
-            row = column.row()
+            row = sort_column.row(align=True)
             if moving:
                 move_item = cls.MOVE.move_item
                 row.enabled = bool(move_item and not move_item.is_root)
@@ -126,13 +127,13 @@ class GestureDraw:
                 text=''
             )
             if moving:
-                column.operator(
+                sort_column.operator(
                     cls.MOVE.bl_idname,
                     icon='CANCEL',
                     text=''
                 ).cancel = True
 
-        column.operator(
+        sort_column.operator(
             cls.SORT.bl_idname,
             icon='SORT_ASC',
             text=''

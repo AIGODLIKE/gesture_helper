@@ -14,13 +14,23 @@ class CreateElement(PublicOperator, PublicProperty):
         items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
         name='布尔模式',
         options={'HIDDEN', 'SKIP_SAVE'})
+    enum_mode: EnumProperty(
+        items=[('CYCLE', '循环', ''), ('SET', '设置', '')],
+        name='枚举模式',
+        options={'HIDDEN', 'SKIP_SAVE'}
+    )
 
-    def execute(self, context):
+    def invoke(self, context, event):
         bpy.ops.ui.copy_data_path_button(full_path=True)
 
+        return self.execute(context)
+
+    def execute(self, context):
         button_pointer = getattr(context, "button_pointer", None)
         button_prop = getattr(context, "button_prop", None)
         button_operator = getattr(context, "button_operator", None)
         print(self.bl_idname, button_pointer, button_prop, button_operator)
+
         print(bpy.context.window_manager.clipboard)
+
         return {'FINISHED'}
