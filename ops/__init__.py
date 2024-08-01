@@ -7,7 +7,8 @@ from . import set_direction
 from . import set_key
 from . import set_poll
 from . import switch_ui
-from .qucik_add.create_element import CreateElement
+from .qucik_add.create_element_operator import CreateElementOperator
+from .qucik_add.create_element_property import CreateElementProperty
 from .qucik_add.gesture_quick_add import GestureQuickAdd
 
 operator_list = (
@@ -20,7 +21,9 @@ operator_list = (
 
     gesture.GestureOperator,
     GestureQuickAdd,
-    CreateElement,
+    
+    CreateElementProperty,
+    CreateElementOperator,
 
     export_import.Export,
     export_import.Import,
