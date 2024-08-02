@@ -7,7 +7,7 @@ from ..utils.public import get_pref
 
 class DrawProperty(PropertyGroup):
     from ..utils import public_color
-    element_split_factor: FloatProperty(name='拆分系数', default=0.09, max=0.95, min=0.01)
+    element_split_factor: FloatProperty(name='拆分系数', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)
 

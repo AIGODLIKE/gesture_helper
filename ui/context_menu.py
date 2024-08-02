@@ -17,14 +17,22 @@ class ContextMenu:
     def context_menu(self, context):
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
-        if show_operator or show_property:
 
-            layout = self.layout
-            layout.alert = True
+        button_pointer = getattr(context, "button_pointer", None)
+
+        show = not getattr(context, "show_gesture_add_menu", False)
+
+        layout = self.layout
+
+        if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
+            layout.label(text="添加手势", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
+            layout.label(text="动态枚举属性无法添加!!")
+        elif (show_operator or show_property) and show:
+            button_prop = getattr(context, "button_prop", None)
+            layout.context_pointer_set('show_gesture_add_menu', self)
             layout.label(text="添加手势", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
 
             if show_property:
-                button_prop = getattr(context, "button_prop", None)
                 layout.operator(CreateElementProperty.bl_idname,
                                 text=f"添加属性 {pgettext(button_prop.name, '*')}")
 

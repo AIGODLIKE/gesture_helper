@@ -42,10 +42,13 @@ class DrawElement:
         relationship = add.relationship
         add_child = add.is_have_add_child
 
-        split = layout.split(factor=.4)
+        if bpy.context.region.width < 2000:
+            split = layout.box().column(align=True)
+        else:
+            split = layout.split(factor=.4)
 
         row = split.row(align=True)
-        row.label(text='添加元素关系')
+        row.label(text='元素关系:')
         row.prop(add, 'relationship', expand=True)
 
         sub_row = split.row(align=True)
@@ -68,4 +71,3 @@ class DrawElement:
                 ops.relationship = relationship
         else:
             sub_row.row(align=True).label(text="无法为 '操作符' 添加子级")
-
