@@ -40,6 +40,9 @@ class ElementCURE:
         bl_label = '添加手势项'
         bl_idname = 'gesture.element_add'
 
+        add_active_radio: BoolProperty(name="添加元素时是否设置为活动项", default=False,
+                                       options={'HIDDEN', 'SKIP_SAVE'})
+
         @property
         def collection(self):
             r = self.relationship
@@ -69,6 +72,11 @@ class ElementCURE:
             add.__init_element__()
             add.cache_clear()
             add.name = self.add_name
+
+            if self.pref.add_element_property.add_active_radio or self.add_active_radio:
+                if self.active_element:
+                    self.active_element.show_child = True
+                add.radio = True
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):

@@ -50,6 +50,7 @@ class DrawElement:
         row = split.row(align=True)
         row.label(text='元素关系:')
         row.prop(add, 'relationship', expand=True)
+        row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
         sub_row = split.row(align=True)
         sub_row.enabled = add_child

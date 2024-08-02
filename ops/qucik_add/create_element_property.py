@@ -57,6 +57,8 @@ DATA_PATHS = dict(
 
     ImagePaint="bpy.context.tool_settings.image_paint",
     BrushTextureSlot="bpy.context.tool_settings.image_paint.brush.texture_slot",
+
+    WindowManager="bpy.context.window_manager",
 )
 BRUSH_PATH = dict(
     # 3D paint settings
@@ -132,6 +134,7 @@ class ElementProperty(PublicOperator, PublicProperty):
 
             layout.label(text=f"button_pointer:\t{pointer}")
             layout.label(text=f"button_prop:\t{prop}")
+            layout.label(text=f"subtype:\t{prop.subtype}")
             layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
@@ -183,6 +186,7 @@ class ElementProperty(PublicOperator, PublicProperty):
 class CreateElementProperty(ElementProperty):
     bl_label = '创建属性元素'
     bl_idname = 'gesture.create_element_property'
+    # bl_options = {'REGISTER', 'UNDO'}
 
     boolean_mode: EnumProperty(
         items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
@@ -206,34 +210,33 @@ class CreateElementProperty(ElementProperty):
         button_prop = getattr(context, "button_prop", None)
         return button_pointer and button_prop
 
-    def draw(self, context) -> None:
-        super().draw(context)
-
     def invoke(self, context, event) -> set[str]:
-        print("\ninvoke")
+        print(f"\n{self.bl_idname}\tinvoke")
         self.from_context_get_info(context)
         self.copy_data_path()
 
-        prop = {'operator': self, 'cancel_default': False, 'width': 800}
-        return context.window_manager.invoke_props_dialog(**prop)
+        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
 
     def execute(self, context) -> set[str]:
         self.from_context_get_info(context)
         name = self.button_pointer.__class__.__name__
         identifier = self.button_prop.identifier
 
-        print("\nexecute", identifier, name, "\n", self.data_path)
+        print("\nexecute", self.data_path)
         return {'FINISHED', "RUNNING_MODAL"}
 
     def copy_data_path(self) -> None:
         """复制数据路径"""
         pointer_name = self.button_pointer.__class__.__name__
         prop_identifier = self.button_prop.identifier
-
-        if type(self.button_pointer.id_data) is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":  # 是文本编辑器
+        id_data_type = type(self.button_pointer.id_data)
+        if id_data_type is bpy.types.Mesh:
+            self.data_path = f"bpy.context.object.data.{prop_identifier}"
+            return
+        elif id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":  # 是文本编辑器
             self.data_path = f"bpy.context.space_data.text.{prop_identifier}"
             return
-        if pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # 工作台渲染
+        elif pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # 工作台渲染
             self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
             return
         elif pointer_name in DATA_PATHS:

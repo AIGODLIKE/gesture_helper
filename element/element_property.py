@@ -17,6 +17,8 @@ class ElementAddProperty:
         items=ENUM_ELEMENT_TYPE,
     )
 
+    add_active_radio: BoolProperty(name="添加元素时是否设置为活动项", default=False)
+
     @staticmethod
     @cache_update_lock
     def update_selected_type():
