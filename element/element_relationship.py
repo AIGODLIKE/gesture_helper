@@ -190,7 +190,7 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         except Exception:
             return False
 
-    def init_direction_by_sort(self):
+    def __init_direction_by_sort__(self):
         """初始化方向按排序"""
         ds = list(self.parent_gesture_direction_items.keys())
         for k in range(1, 9):

@@ -66,7 +66,7 @@ class ElementCURE:
 
             add.element_type = self.element_type
             add.selected_type = self.selected_type
-            add.init()
+            add.__init_element__()
             add.cache_clear()
             add.name = self.add_name
             return {'FINISHED'}

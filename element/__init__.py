@@ -30,5 +30,5 @@ class Element(ElementCURE,
     index_element: IntProperty(name='索引')
 
     @cache_update_lock
-    def init(self):
-        getattr(self, f'init_{self.element_type.lower()}')()
+    def __init_element__(self):
+        getattr(self, f'__init_{self.element_type.lower()}__')()

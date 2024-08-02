@@ -75,8 +75,8 @@ class ElementDirectionProperty(ElementAddProperty):
         default='8'
     )
 
-    def init_child_gesture(self):
-        self.init_direction_by_sort()
+    def __init_child_gesture__(self):
+        self.__init_direction_by_sort__()
         self.selected_type = 'IF'
 
 
