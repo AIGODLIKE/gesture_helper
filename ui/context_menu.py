@@ -5,8 +5,9 @@ from ..ops.qucik_add.create_element_operator import CreateElementOperator
 from ..ops.qucik_add.create_element_property import CreateElementProperty
 
 
-class ContextMenu:
+class ContextMenu(bpy.types.Menu):
     bl_label = "Button Context Menu"
+    show_context_menu = False  # 用于在添加后退出面板
 
     def draw(self, context):
         self.layout.separator()
@@ -15,6 +16,7 @@ class ContextMenu:
         menu.context_menu(context)
 
     def context_menu(self, context):
+        ContextMenu.show_context_menu = True
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
 
@@ -45,10 +47,7 @@ class ContextMenu:
 
 def register():
     if not hasattr(bpy.types, "WM_MT_button_context"):
-        tp = type(
-            "WM_MT_button_context",
-            (ContextMenu, bpy.types.Menu), {})
-        bpy.utils.register_class(tp)
+        bpy.utils.register_class(type("WM_MT_button_context", (ContextMenu,), {}))
     bpy.types.WM_MT_button_context.append(ContextMenu.context_menu)
 
 

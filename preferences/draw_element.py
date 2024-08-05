@@ -11,6 +11,7 @@ class DrawElement:
         prop = pref.draw_property
         if act:
             if not prop.element_show_left_side:
+                act.draw_alert(layout)
                 act.draw_item_property(layout)
             if get_debug():
                 act.draw_debug(layout)

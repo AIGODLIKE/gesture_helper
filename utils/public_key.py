@@ -1,6 +1,5 @@
-from functools import cache
-
 import bpy
+from functools import cache
 from mathutils import Vector, Euler, Matrix
 
 from . import PropertyGetUtils
@@ -14,12 +13,12 @@ def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
     return keymap_items.new(id_name, "NONE", "PRESS")
 
 
-def simple_set_property(prop, to):
+def simple_set_property(prop, to) -> None:
     for k, v in prop.items():  # TIPS简单的赋值,这个属性在这里只有字符串,所以可以这样弄
         setattr(to, k, v)
 
 
-def get_temp_keymap():
+def get_temp_keymap() -> 'bpy.types.KeyMap':
     keyconfig = bpy.context.window_manager.keyconfigs.addon
     return keyconfig.keymaps.get('TEMP', keyconfig.keymaps.new('TEMP'))
 
@@ -41,7 +40,7 @@ def get_temp_kmi(id_name: str, properties: dict) -> 'bpy.types.KeyMapItem':
     return kmi
 
 
-def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
+def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
     """获取kmi操作符的属性
     """
     properties = kmi.properties
@@ -52,12 +51,12 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
         prop = getattr(properties, item, None)
         typ = type(prop)
         if prop:
-            if prop and typ == Vector:
+            if typ == Vector:
                 # 属性阵列-浮点数组
                 dictionary[item] = dictionary[item].to_tuple()
-            elif prop and typ == Euler:
+            elif typ == Euler:
                 dictionary[item] = dictionary[item][:]
-            elif prop and typ == Matrix:
+            elif typ == Matrix:
                 dictionary[item] = tuple(i[:] for i in dictionary[item])
             elif typ == bpy.types.bpy_prop_array:
                 dictionary[item] = dictionary[item][:]
@@ -77,7 +76,7 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem'):
                 'MESH_OT_duplicate',
                 'MESH_OT_offset_edge_loops',
                 'MESH_OT_extrude_faces_indiv',
-            ]:
+            ]:  # 一些奇怪的操作符属性,不太好解析也用不上
                 ...
             else:
                 print('emm 未知属性,', typ, dictionary[item])

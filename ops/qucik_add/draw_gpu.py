@@ -20,10 +20,14 @@ class DrawGpu:
             with self.gesture_bpu as bpu:
                 bpu.offset_position = ops.offset_position - ops.offset
                 bpu.mouse_position = ops.mouse_position
-                for g in ops.pref.gesture.values()[::-1]:
-                    o = bpu.operator("wm.context_set_int", g.name, active=g.is_active)
-                    o.data_path = "window_manager.gesture_index"
-                    o.value = g.index
+                gesture_list = ops.pref.gesture.values()
+                if gesture_list:
+                    for g in gesture_list[::-1]:
+                        o = bpu.operator("wm.context_set_int", g.name, active=g.is_active)
+                        o.data_path = "window_manager.gesture_index"
+                        o.value = g.index
+                else:
+                    bpu.label("暂无手势,请添加", alert=True)
                 bpu.separator()
                 bpu.label("选择手势")
 

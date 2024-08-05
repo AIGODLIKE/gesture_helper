@@ -1,6 +1,5 @@
-from functools import cache
-
 from bpy.props import BoolProperty
+from functools import cache
 
 from ..utils.public import (
     PublicSortAndRemovePropertyGroup,
@@ -31,17 +30,19 @@ def get_available_selected_structure(element) -> bool:
     prev_type = getattr(prev, 'selected_type', None)  # 上一个类型
 
     if not element.is_selected_structure:
+        # 上一个不是选择结构
         return False
     elif element.is_selected_if:
+        # 上一个是选择结构if
         return element.enabled
     elif element.is_selected_elif or element.is_selected_else:
         if prev_type:
             # 不是 else即正确 并且这个元素是启用的
-            return not prev.is_selected_else and prev.is_available_selected_structure and element.enabled
+            return not prev.is_selected_else and prev.__selected_structure_is_validity__ and element.enabled
         else:
             return False
     else:
-        print('例外', element)
+        Exception('例外', element)
     return False
 
 
@@ -120,8 +121,7 @@ class RadioSelect:
             if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
                 self.to_operator_tmp_kmi()
 
-    radio: BoolProperty(name='单选',
-                        update=lambda self, context: self.update_radio())
+    radio: BoolProperty(name='单选', update=lambda self, context: self.update_radio())
 
     @property
     def radio_iteration(self):
@@ -157,49 +157,22 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         return self.parent_gesture.element_iteration
 
     @property
-    def is_available_selected_structure(self) -> bool:  # 是一个可用的选择结构
-        return get_available_selected_structure(self)
-
-    @property
-    def is_show_alert(self) -> bool:
+    def is_alert(self) -> bool:
+        """是显示警告的UI"""
         if self.is_selected_structure:  # 选择结构
-            if self.enabled:  # 启用了的
-                return not self.is_available_selected_structure
-            # 没启用的话就不过这个逻辑
+            # 是一个可用的选择结构
+            return not self.__selected_structure_is_validity__
         elif self.is_operator:
-            return not self.is_available_operator
-        # elif self.is_child_gesture:
-        #     return self.
-
+            return not (self.__operator_id_name_is_validity__ and self.__operator_properties_is_validity__)
         return False
 
     @property
-    def is_available_poll(self) -> bool:  # 是一个可用的poll
-        try:
-            self.poll_bool
-            return True
-        except Exception:
-            return False
-
-    @property
-    def is_available_operator(self) -> bool:  # 是一个可用的操作符
-        try:
-            self.properties
-            self.operator_func
-            return True
-        except Exception:
-            return False
-
-    def __init_direction_by_sort__(self):
-        """初始化方向按排序"""
-        ds = list(self.parent_gesture_direction_items.keys())
-        for k in range(1, 9):
-            s = str(k)
-            if s not in ds:
-                self.direction = s
-                return
+    def __selected_structure_is_validity__(self) -> bool:
+        """是一个可用的选择结构"""
+        return get_available_selected_structure(self) and self.__poll_bool_is_validity__
 
     def remove_after(self):
+        """删除之后判断索引是否需要偏移"""
         print('remove_after', self)
         parent = self.parent
         index = parent.index_element
@@ -210,3 +183,12 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
                 col[index].radio = True
             else:
                 col[-1].radio = True
+
+    def __init_direction_by_sort__(self):
+        """初始化方向按排序"""
+        ds = list(self.parent_gesture_direction_items.keys())
+        for k in range(1, 9):
+            s = str(k)
+            if s not in ds:
+                self.direction = s
+                return

@@ -3,88 +3,37 @@ from bl_ui.properties_paint_common import UnifiedPaintPanel
 from bpy.app.translations import pgettext
 from bpy.props import EnumProperty, StringProperty
 
+from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
 from ...utils.public import get_pref, PublicOperator, PublicProperty
 
-DATA_PATHS = dict(
-    View3DShading="bpy.context.space_data.shading",
-    View3DOverlay="bpy.context.space_data.overlay",
-    View3DCursor="bpy.context.scene.cursor",
-    ToolSettings="bpy.context.tool_settings",
-    RenderSettings="bpy.context.scene.render",
-    TransformOrientationSlot="bpy.context.scene.transform_orientation_slots[0]",
 
-    BrushGpencilSettings="bpy.context.tool_settings.brush.gpencil_settings",
-    UnifiedPaintSettings="bpy.context.tool_settings.unified_paing_settings",
-
-    SpaceUVEditor="bpy.context.space_data.uv_editor",
-    SpaceTextEditor="bpy.context.space_data",
-    SpaceDopeSheetEditor="bpy.context.space_data",
-    SpaceImageEditor="bpy.context.space_data",
-    SpaceView3D="bpy.context.space_data",
-    SpaceOutliner="bpy.context.space_data",
-
-    Scene="bpy.context.scene",
-    Screen="bpy.context.screen",
-    World="bpy.context.scene.world",
-    WorkSpace="bpy.context.workspace",
-    Object="bpy.context.object",
-    Material="bpy.context.object.active_material",
-    Area="bpy.context.area",
-    Region="bpy.context.region",
-    GPUFXSettings="bpy.context.space_data.fx_settings",
-    GPUSSAOSettings="bpy.context.space_data.fx_settings.ssao",
-    GPUDOFSettings="bpy.context.space_data.fx_settings.dof",
-    DopeSheet="bpy.context.space_data.dopesheet",
-    FileSelectParams="bpy.context.space_data.params",
-    SceneEEVEE="bpy.context.scene.eevee",
-    CyclesRenderSettings="bpy.context.scene.cycles",
-    SceneDisplay="bpy.context.scene.display",
-
-    Preferences="bpy.context.preferences",
-    PreferencesInput="bpy.context.preferences.inputs",
-    PreferencesEdit="bpy.context.preferences.edit",
-    PreferencesFilePaths="bpy.context.preferences.filepaths",
-    PreferencesSystem="bpy.context.preferences.system",
-    PreferencesView="bpy.context.preferences.view",
-
-    GpPaint="bpy.context.tool_settings.gpencil_paint",
-    GPencilSculptSettings="bpy.context.tool_settings.gpencil_sculpt",
-
-    ColorManagedViewSettings="bpy.context.scene.view_settings",
-    ViewLayer="bpy.context.scene.view_layers",
-    UnitSettings="bpy.context.scene.unit_settings",
-    RigidBodyWorld="bpy.context.scene.rigidbody_world",
-
-    ImagePaint="bpy.context.tool_settings.image_paint",
-    BrushTextureSlot="bpy.context.tool_settings.image_paint.brush.texture_slot",
-
-    WindowManager="bpy.context.window_manager",
-)
-BRUSH_PATH = dict(
-    # 3D paint settings
-    SCULPT='bpy.context.tool_settings.sculpt',
-    PAINT_VERTEX='bpy.context.tool_settings.vertex_paint',
-    PAINT_WEIGHT='bpy.context.tool_settings.weight_paint',
-    PAINT_TEXTURE='bpy.context.tool_settings.image_paint',
-    PARTICLE='bpy.context.tool_settings.particle_edit',
-
-    # 2D paint settings
-    PAINT_2D='bpy.context.tool_settings.image_paint',
-    # Grease Pencil settings
-    PAINT_GPENCIL='bpy.context.tool_settings.gpencil_paint',
-    SCULPT_GPENCIL='bpy.context.tool_settings.gpencil_sculpt_paint',
-    WEIGHT_GPENCIL='bpy.context.tool_settings.gpencil_weight_paint',
-    VERTEX_GPENCIL='bpy.context.tool_settings.gpencil_vertex_paint',
-    SCULPT_CURVES='bpy.context.tool_settings.curves_sculpt',
-    PAINT_GREASE_PENCIL='bpy.context.tool_settings.gpencil_paint',
-    SCULPT_GREASE_PENCIL='bpy.context.tool_settings.gpencil_sculpt_paint',
-
-    WEIGHT_GREASE_PENCIL='bpy.context.tool_settings.gpencil_weight_paint',
-)
+class OpsProperty:
+    boolean_mode: EnumProperty(
+        items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
+        name='布尔模式',
+        options={'HIDDEN'})
+    enum_mode: EnumProperty(
+        items=[('CYCLE', '循环设置 枚举值 (如果设置值和当前值相同,则切换到上一个值)',
+                '使用 bpy.ops.wm.context_cycle_enum 操作符'),
+               ('SET', '直接设置 枚举值', '使用 bpy.ops.wm.context_set_enum 操作符')],
+        name='枚举模式',
+        options={'HIDDEN'})
+    data_path: StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
+    property_type: EnumProperty(items=[
+        ("BOOLEAN", "Boolean", ""),
+        ("INT", " Integer", ""),
+        ("FLOAT", "Float", ""),
+        ("STRING", " String", ""),
+        ("ENUM", "Enumeration", ""),
+        ("POINTER", " Pointer", ""),
+        ("COLLECTION", "Collection", ""),
+    ])
 
 
-class ElementProperty(PublicOperator, PublicProperty):
+class Draw(PublicOperator, PublicProperty, OpsProperty):
     def draw(self, context):
+        from ...ui.context_menu import ContextMenu
+
         layout = self.layout.column()
         layout.operator_context = "EXEC_DEFAULT"
 
@@ -96,7 +45,7 @@ class ElementProperty(PublicOperator, PublicProperty):
 
         pref = get_pref()
 
-        if prop:
+        if prop and ContextMenu.show_context_menu:
             prop_type = prop.type
 
             text = pgettext(prop.name, prop.translation_context)
@@ -138,10 +87,11 @@ class ElementProperty(PublicOperator, PublicProperty):
             layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        for item in self.rna_type.properties["boolean_mode"].enum_items:
+        for item in self.rna_type.properties["boolean_mode"].enum_items:  # 绘制添加的布尔模式
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
             ops.boolean_mode = item.identifier
             ops.data_path = self.data_path
+            ops.property_type = "BOOLEAN"
 
     def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
         ...
@@ -183,22 +133,68 @@ class ElementProperty(PublicOperator, PublicProperty):
         ...
 
 
-class CreateElementProperty(ElementProperty):
+class Create(Draw):
+    def create_bool(self):
+        """
+        bpy.ops.wm.context_set_boolean()
+        bpy.ops.wm.context_toggle()
+        :return:
+        """
+        bpy.ops.gesture.element_add(add_active_radio=True, element_type="OPERATOR")
+        ae = self.active_element
+        if ae:
+            bm = self.boolean_mode
+            # if bm == "SET_TRUE":
+            #
+            # elif bm == "SET_FALSE":
+            #     ...
+            # elif bm == "SWITCH":
+
+    def create_int(self):
+        ...
+
+    def create_float(self):
+        ...
+
+    def create_string(self):
+        ...
+
+    def create_enum(self):
+        ...
+
+    def create(self):
+        """
+        https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#property-type-items
+        TODO
+
+        BOOLEAN:Boolean.
+        INT:Integer.
+        FLOAT:Float.
+        STRING:String.
+        ENUM:Enumeration.
+        POINTER:Pointer.
+        COLLECTION:Collection.
+
+        :return:
+        """
+        pt = self.property_type
+        if pt == "BOOLEAN":
+            self.create_boolean()
+        elif pt == "INT":
+            self.create_int()
+        elif pt == "FLOAT":
+            self.create_float()
+        elif pt == "STRING":
+            self.create_string()
+        elif pt == "ENUM":
+            self.create_enum()
+
+
+class CreateElementProperty(Create):
     bl_label = '创建属性元素'
     bl_idname = 'gesture.create_element_property'
-    # bl_options = {'REGISTER', 'UNDO'}
 
-    boolean_mode: EnumProperty(
-        items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
-        name='布尔模式',
-        options={'HIDDEN'})
-    enum_mode: EnumProperty(
-        items=[('CYCLE', '循环设置 枚举值 (如果设置值和当前值相同,则切换到上一个值)',
-                '使用 bpy.ops.wm.context_cycle_enum 操作符'),
-               ('SET', '直接设置 枚举值', '使用 bpy.ops.wm.context_set_enum 操作符')],
-        name='枚举模式',
-        options={'HIDDEN'})
-    data_path: StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
+    # bl_options = {'REGISTER', 'UNDO'}
 
     def __init__(self):
         self.button_prop = None
@@ -215,9 +211,12 @@ class CreateElementProperty(ElementProperty):
         self.from_context_get_info(context)
         self.copy_data_path()
 
-        return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
+        return context.window_manager.invoke_popup(**{'operator': self, 'width': 600})
 
     def execute(self, context) -> set[str]:
+        from ...ui.context_menu import ContextMenu
+        ContextMenu.show_context_menu = False
+
         self.from_context_get_info(context)
         name = self.button_pointer.__class__.__name__
         identifier = self.button_prop.identifier
@@ -239,13 +238,13 @@ class CreateElementProperty(ElementProperty):
         elif pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # 工作台渲染
             self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
             return
-        elif pointer_name in DATA_PATHS:
-            self.data_path = f"{DATA_PATHS[pointer_name]}.{prop_identifier}"
+        elif pointer_name in CREATE_ELEMENT_DATA_PATHS:
+            self.data_path = f"{CREATE_ELEMENT_DATA_PATHS[pointer_name]}.{prop_identifier}"
             return
         elif pointer_name == 'Brush' and bpy.context.object:
             mode = UnifiedPaintPanel.get_brush_mode(bpy.context)
-            if mode in BRUSH_PATH:
-                self.data_path = f"{BRUSH_PATH[mode]}.{prop_identifier}"
+            if mode in CREATE_ELEMENT_BRUSH_PATH:
+                self.data_path = f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.{prop_identifier}"
                 return
 
         # 使用Blender操作符

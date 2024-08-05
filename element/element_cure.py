@@ -9,6 +9,9 @@ from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 class ElementCURE:
     """增删查改"""
 
+    def __init__(self):
+        pass
+
     @cache_update_lock
     def copy(self):
         from ..utils import PropertyGetUtils, PropertySetUtils
@@ -257,7 +260,7 @@ def draw_save_script_button(self, context):
     if getattr(text, "gesture_element_hash", False) == str(hash(active)):
         row = layout.row()
         row.alert = True
-        row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name}")
+        row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name} Ctrl + S")
 
 
 def get_text_window(context: bpy.types.Context, text: bpy.types.Text) -> bpy.types.Window:

@@ -19,7 +19,7 @@ class ElementDraw:
         column = layout.column(align=True)
 
         split = column.split(factor=draw.element_split_factor)
-
+        split.alert = self.is_alert
         self.draw_item_left(split.row(align=True))
 
         right = split.row(align=True).split(factor=0.4)
@@ -38,10 +38,8 @@ class ElementDraw:
     def draw_item_left(self, layout: 'bpy.types.UILayout'):
         pref = get_pref()
         row = layout.row()
-        row.alert = self.is_show_alert
         if pref.draw_property.element_show_enabled_button:
             row.prop(self, 'enabled', text='')
-
         if self.is_operator:
             row.label(text='', icon='GEOMETRY_NODES')
         elif self.is_child_gesture:
@@ -92,12 +90,16 @@ class ElementDraw:
             is_operator = self.operator_type == 'OPERATOR'
             preview_script = self.preview_operator_script
             row = layout.row(align=True)
-            col = row.column()
+            col = row.column(align=True)
             col.prop(self, 'name')
             col.prop(self, 'operator_type')
             if is_operator:
-                col.prop(self, 'operator_bl_idname')
-                col.prop(self, 'operator_properties')
+                c = col.column(align=True)
+                c.alert = not self.__operator_id_name_is_validity__
+                c.prop(self, 'operator_bl_idname')
+                b = col.column(align=True)
+                b.alert = not self.__operator_properties_is_validity__
+                b.prop(self, 'operator_properties')
             else:
                 col.operator(ElementCURE.ScriptEdit.bl_idname)
                 rr = col.row(align=True)
@@ -150,3 +152,34 @@ class ElementDraw:
                 row = layout.row()
                 row.label(text=i)
                 row.prop(self, i, expand=True, )
+
+    def draw_alert(self, layout):
+        """绘制警告信息
+        如果元素有错误将会显示"""
+        from .element_relationship import get_available_selected_structure
+        alert_list = []
+        if self.is_selected_structure:
+            if not self.__poll_bool_is_validity__:
+                alert_list.append(f'条件错误: {self.poll_string}')
+            if not get_available_selected_structure(self):
+                alert_list.append(f'选择结构错误')
+                alert_list.append(f'上一个元素可能不是选择结构')
+                alert_list.append(f'或者上一个结构的表达式错误')
+                if self.is_selected_elif:
+                    alert_list.append(f'elif 的上一个选择结构需要是if 或 elif')
+                elif self.is_selected_else:
+                    alert_list.append(f'else 的上一个选择结构需要是if 或 elif')
+                else:
+                    alert_list.append(f'我也不知道是那里错了')
+        elif self.is_operator:
+            if not self.__operator_id_name_is_validity__:
+                alert_list.append(f'操作符错误')
+                alert_list.append(f'未找到操作符: {self.operator_bl_idname}')
+            if not self.__operator_properties_is_validity__:
+                alert_list.append(f'操作符属性错误: {self.operator_properties}')
+        if alert_list:
+            col = layout.box().column(align=True)
+            col.alert = True
+            col.label(text='警告', icon='ERROR')
+            for alert in alert_list:
+                col.label(text=alert)

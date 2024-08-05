@@ -55,5 +55,5 @@ ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)
 
 ENUM_OPERATOR_TYPE = [
     ('OPERATOR', '操作符', '输入Blender自带的操作符bl_idname'),
-    ('SCRIPT', '脚本', ''),
+    ('SCRIPT', '脚本', '使用自定义脚本运行操作符'),
 ]

@@ -1,20 +1,31 @@
 import ast
-
 import bpy
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
 from ..utils import PropertySetUtils
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.public_cache import cache_update_lock
-from ..utils.string_eval import try_call_exec
+from ..utils.string_eval import try_call_exec, try_call_eval
 
 
 class OperatorProperty:
+    def __analysis_operator_properties__(self, properties_string):
+        """解析操作符属性"""
+        try:
+            ps = f"dict{properties_string}"
+            print("__analysis_operator_properties__\n", ps)
+            properties = eval(ps) #高威
+            if properties:
+                self["operator_properties"] = str(properties)
+        except Exception as _:
+            import traceback
+            traceback.print_stack()
     @cache_update_lock
     def update_operator(self) -> None:
         """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
         掐头去尾
         bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
+        bpy.ops.transform.translate(value=(0.109431, 2.16517, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'INCREMENT'}, use_snap_project=False, snap_target='CLOSEST', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
         """
         if self.is_operator:
             value = self.operator_bl_idname.replace(' ', '')
@@ -24,9 +35,10 @@ class OperatorProperty:
             if ('(' in value) and (')' in value):
                 if value.endswith('()'):
                     self[key] = value[:-2]
-                else:  # 将后面的切掉
+                else:
                     index = value.index('(')
-                    self[key] = value[:index]
+                    self[key] = value[:index]  # 将后面的切掉
+                    self.__analysis_operator_properties__(value[index:])
             self.to_operator_tmp_kmi()
 
     @cache_update_lock
@@ -34,7 +46,9 @@ class OperatorProperty:
         self.to_operator_tmp_kmi()
 
     operator_bl_idname: StringProperty(name='操作符 bl_idname',
-                                       description='默认为添加猴头',
+                                       description='默认为添加猴头\n'
+                                                   '只取后面的标识符'
+                                                   'bpy.ops.mesh.primitive_monkey_add -> mesh.primitive_monkey_add',
                                        update=lambda self, context: self.update_operator())
 
     operator_context: EnumProperty(name='操作符上下文',
@@ -42,7 +56,7 @@ class OperatorProperty:
 
     operator_properties: StringProperty(name='操作符属性',
                                         update=lambda self, context: self.update_operator_properties())
-    
+
     operator_type: EnumProperty(name='操作类型',
                                 description='操作的类型',
                                 items=ENUM_OPERATOR_TYPE,
@@ -71,10 +85,9 @@ class OperatorProperty:
 
     # 直接将operator的self传给element,让那个来进行操作
 
-
-class ElementOperator(OperatorProperty):
     @property
     def properties(self):
+        """获取操作符的属性"""
         try:
             return ast.literal_eval(self.operator_properties)
         except Exception as e:
@@ -85,28 +98,20 @@ class ElementOperator(OperatorProperty):
 
     @property
     def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
+        """操作符临时 keymap item"""
         from ..utils.public_key import get_temp_kmi_by_id_name
         return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
     @property
-    def operator_tmp_kmi_properties(self):
+    def operator_tmp_kmi_properties(self) -> dict:
+        """操作符临时 keymap item 属性"""
         from ..utils.public_key import get_kmi_operator_properties
         properties = get_kmi_operator_properties(self.operator_tmp_kmi)
         return properties
 
-    def to_operator_tmp_kmi(self) -> None:
-        if self.is_operator:
-            self.operator_tmp_kmi_properties_clear()
-            PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
-
-    def from_tmp_kmi_operator_update_properties(self):
-        properties = self.operator_tmp_kmi_properties
-        if self.properties != properties:
-            self['operator_properties'] = str(properties)
-
     @property
     def operator_func(self) -> 'bpy.types.Operator':
-        """获取操作符的方法
+        """获取操作符
 
         Returns:
             bpy.types.Operator: _description_
@@ -117,15 +122,58 @@ class ElementOperator(OperatorProperty):
             func = getattr(getattr(bpy.ops, prefix), suffix)
             return func
 
+    @property
+    def __operator_id_name_is_validity__(self) -> bool:
+        """反回操作符id_name是否有效的布尔值"""
+        try:
+            fun = self.operator_func
+            fun.get_rna_type()
+            return fun is not None
+        except Exception as e:
+            print(e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            return False
+
+    @property
+    def __operator_properties_is_validity__(self) -> bool:
+        """反回操作符属性是否有效的布尔值"""
+        try:
+            ast.literal_eval(self.operator_properties)
+            return True
+        except Exception as _:
+            return False
+
+
+class ElementOperator(OperatorProperty):
+
+    def to_operator_tmp_kmi(self) -> None:
+        """从此元素的属性更新到临时 keymap item"""
+        if not self.is_operator:
+            Exception(f'{self}不是操作符')
+        self.operator_tmp_kmi_properties_clear()
+        PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
+
+    def from_tmp_kmi_operator_update_properties(self) -> None:
+        """从临时 keymap item 更新到属性"""
+        properties = self.operator_tmp_kmi_properties
+        if self.properties != properties:
+            self['operator_properties'] = str(properties)
+
     def running_operator(self) -> None:
-        """运行此self的操作符
+        """运行此元素的操作符
         """
         if self.operator_type == "OPERATOR":
-            self.running_by_bl_idname()
+            self.__running_by_bl_idname__()
+        elif self.operator_type == "SCRIPT":
+            self.__running_by_script__()
         else:
-            self.running_by_script()
+            Exception(f'{self}操作符类型错误')
 
-    def running_by_bl_idname(self):
+    def __running_by_bl_idname__(self):
+        """通过bl_idname运行操作符
+        """
         try:
             prop = ast.literal_eval(self.operator_properties)
             func = self.operator_func
@@ -144,7 +192,8 @@ class ElementOperator(OperatorProperty):
         except Exception as e:
             print('running_operator ERROR', e)
 
-    def running_by_script(self):
+    def __running_by_script__(self):
+        """运行自定义脚本"""
         try:
             try_call_exec(self.operator_script)
         except Exception as e:
@@ -154,11 +203,13 @@ class ElementOperator(OperatorProperty):
             traceback.print_exc()
 
     def operator_tmp_kmi_properties_clear(self):
+        """清空临时 keymap item 属性"""
         properties = self.operator_tmp_kmi.properties
         for key in list(properties.keys()):
             properties.pop(key)
 
     def __init_operator__(self):
+        """添加元素时初始化操作符属性"""
         self.__init_direction_by_sort__()
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
