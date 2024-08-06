@@ -22,6 +22,13 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     def invoke(self, context, event):
         self.init_invoke(event)
         self.cache_clear()
+
+        print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
+              event.value_prev)
+        pass_d = self.try_pass_annotations_eraser(context, event)
+        if pass_d:
+            return pass_d
+
         wm = context.window_manager
         self.timer = wm.event_timer_add(1 / 5, window=context.window)
         wm.modal_handler_add(self)
@@ -31,8 +38,9 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
 
     def modal(self, context, event):
         if self.is_debug:
-            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}")
+            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         self.update_modal(context, event)
+
         if self.is_exit:
             return self.exit(context, event)
         return {'RUNNING_MODAL'}

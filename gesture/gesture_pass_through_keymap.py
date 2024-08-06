@@ -177,6 +177,22 @@ class GesturePassThroughKeymap:
                     if ok:
                         return
 
+    @staticmethod
+    def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set:
+        """尝试跳过注释橡皮擦事件
+        GESTURE_OT_operator     modal   PRESS   D       prev RIGHTMOUSE PRESS   get_key:
+        GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
+        GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
+        """
+        if context.space_data.type in ("VIEW_3D", "NODE_EDITOR") and context.active_annotation_layer:
+            if (event.type, event.type_prev) in [
+                ('D', 'RIGHTMOUSE'),
+                ('RIGHTMOUSE', 'D'),
+                ('MOUSEMOVE', 'D'),
+                ('D', 'D')
+            ]:
+                return {'FINISHED', 'PASS_THROUGH'}
+
 
 def try_operator_pass_through_right(kmi) -> bool:
     from ..utils.public_key import get_kmi_operator_properties

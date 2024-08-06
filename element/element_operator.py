@@ -14,12 +14,13 @@ class OperatorProperty:
         try:
             ps = f"dict{properties_string}"
             print("__analysis_operator_properties__\n", ps)
-            properties = eval(ps) #高威
+            properties = eval(ps)  # 高威
             if properties:
                 self["operator_properties"] = str(properties)
         except Exception as _:
             import traceback
             traceback.print_stack()
+
     @cache_update_lock
     def update_operator(self) -> None:
         """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
@@ -91,9 +92,10 @@ class OperatorProperty:
         try:
             return ast.literal_eval(self.operator_properties)
         except Exception as e:
-            print('Properties Error', e.args)
+            print('Properties Error', self.operator_properties, e.args)
             import traceback
             traceback.print_stack()
+            traceback.print_exc()
             return {}
 
     @property
