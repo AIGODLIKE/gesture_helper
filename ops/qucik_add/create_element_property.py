@@ -1,8 +1,9 @@
 import bpy
 from bl_ui.properties_paint_common import UnifiedPaintPanel
 from bpy.app.translations import pgettext
-from bpy.props import EnumProperty, StringProperty
+from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty
 
+from ...utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
 from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
 from ...utils.public import get_pref, PublicOperator, PublicProperty
 
@@ -28,6 +29,15 @@ class OpsProperty:
         ("POINTER", " Pointer", ""),
         ("COLLECTION", "Collection", ""),
     ])
+
+    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM)
+    int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'})
+    float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'})
+
+    @property
+    def __context_data_path__(self) -> str:
+        """bpy.context.space_data.show_gizmo -> space_data.show_gizmo"""
+        return self.data_path.replace("bpy.context.", "")
 
 
 class Draw(PublicOperator, PublicProperty, OpsProperty):
@@ -94,10 +104,23 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             ops.property_type = "BOOLEAN"
 
     def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        ...
+        for item in self.rna_type.properties["value_mode"].enum_items:
+            ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
+            ops.value_mode = item.identifier
+            ops.data_path = self.data_path
+            ops.int_value = self.int_value
+            ops.property_type = "INT"
+
+        layout.prop(self, "int_value")
 
     def draw_float(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        ...
+        layout.prop(self, "float_value")
+        for item in self.rna_type.properties["value_mode"].enum_items:
+            ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
+            ops.value_mode = item.identifier
+            ops.data_path = self.data_path
+            ops.float_value = self.float_value
+            ops.property_type = "INT"
 
     def draw_string(self, context: bpy.types.Context, layout: bpy.types.UILayout):
         ...
@@ -134,7 +157,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
 
 
 class Create(Draw):
-    def create_bool(self):
+    def create_boolean(self):
         """
         bpy.ops.wm.context_set_boolean()
         bpy.ops.wm.context_toggle()
@@ -144,14 +167,18 @@ class Create(Draw):
         ae = self.active_element
         if ae:
             bm = self.boolean_mode
-            # if bm == "SET_TRUE":
-            #
-            # elif bm == "SET_FALSE":
-            #     ...
-            # elif bm == "SWITCH":
+            if bm == "SET_TRUE":
+                ae.operator_bl_idname = f"wm.context_set_boolean(data_path='{self.__context_data_path__}', value=True)"
+            elif bm == "SET_FALSE":
+                ae.operator_bl_idname = f"wm.context_set_boolean(data_path='{self.__context_data_path__}', value=False)"
+            elif bm == "SWITCH":
+                ae.operator_bl_idname = f"wm.context_toggle(data_path='{self.__context_data_path__}')"
 
     def create_int(self):
-        ...
+        bpy.ops.gesture.element_add(add_active_radio=True, element_type="OPERATOR")
+        ae = self.active_element
+        if ae:
+            vm = self.value_mode
 
     def create_float(self):
         ...
@@ -165,7 +192,6 @@ class Create(Draw):
     def create(self):
         """
         https://docs.blender.org/api/master/bpy_types_enum_items/property_type_items.html#property-type-items
-        TODO
 
         BOOLEAN:Boolean.
         INT:Integer.
@@ -174,7 +200,6 @@ class Create(Draw):
         ENUM:Enumeration.
         POINTER:Pointer.
         COLLECTION:Collection.
-
         :return:
         """
         pt = self.property_type
@@ -222,6 +247,7 @@ class CreateElementProperty(Create):
         identifier = self.button_prop.identifier
 
         print("\nexecute", self.data_path)
+        self.create()
         return {'FINISHED', "RUNNING_MODAL"}
 
     def copy_data_path(self) -> None:

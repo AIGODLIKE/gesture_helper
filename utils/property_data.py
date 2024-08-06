@@ -42,6 +42,7 @@ CREATE_ELEMENT_DATA_PATHS = {
     "PreferencesView": "bpy.context.preferences.view",
 
     "GpPaint": "bpy.context.tool_settings.gpencil_paint",
+    "GPencilLayer": "bpy.context.active_annotation_layer",
     "GPencilSculptSettings": "bpy.context.tool_settings.gpencil_sculpt",
 
     "ColorManagedViewSettings": "bpy.context.scene.view_settings",

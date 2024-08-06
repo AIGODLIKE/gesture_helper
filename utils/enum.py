@@ -57,3 +57,10 @@ ENUM_OPERATOR_TYPE = [
     ('OPERATOR', '操作符', '输入Blender自带的操作符bl_idname'),
     ('SCRIPT', '脚本', '使用自定义脚本运行操作符'),
 ]
+
+CREATE_ELEMENT_VALUE_MODE_ENUM = [
+    ("SET_VALUE", "设置值", "直接将属性设置为指定值"),
+    ("MOUSE_CHANGES_HORIZONTAL", "互动更改(水平方向)", "水平方向修改值"),
+    ("MOUSE_CHANGES_VERTICAL", "互动更改(垂直方向)", "垂直方向修改值"),
+    ("MOUSE_CHANGES_ARBITRARY", "互动更改(任意方向)", "任意方向修改值"),
+]
