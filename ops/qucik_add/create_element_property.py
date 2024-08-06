@@ -30,9 +30,9 @@ class OpsProperty:
         ("COLLECTION", "Collection", ""),
     ])
 
-    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM)
-    int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'})
-    float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'})
+    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM, name="值模式")
+    int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="整数值")
+    float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="浮点值")
 
     @property
     def __context_data_path__(self) -> str:
@@ -104,23 +104,30 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             ops.property_type = "BOOLEAN"
 
     def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        for item in self.rna_type.properties["value_mode"].enum_items:
-            ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
-            ops.value_mode = item.identifier
-            ops.data_path = self.data_path
-            ops.int_value = self.int_value
-            ops.property_type = "INT"
-
-        layout.prop(self, "int_value")
+        layout.label(text="修改整数值")
+        layout.prop(self, "value_mode", expand=True)
+        layout.separator()
+        if self.value_mode == "SET_VALUE":
+            layout.prop(self, "int_value")
+        layout.separator()
+        ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
+        ops.value_mode = self.value_mode
+        ops.data_path = self.data_path
+        ops.int_value = self.int_value
+        ops.property_type = "INT"
 
     def draw_float(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.prop(self, "float_value")
-        for item in self.rna_type.properties["value_mode"].enum_items:
-            ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
-            ops.value_mode = item.identifier
-            ops.data_path = self.data_path
-            ops.float_value = self.float_value
-            ops.property_type = "INT"
+        layout.label(text="修改浮点值")
+        layout.prop(self, "value_mode", expand=True)
+        layout.separator()
+        if self.value_mode == "SET_VALUE":
+            layout.prop(self, "float_value")
+        layout.separator()
+        ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
+        ops.value_mode = self.value_mode
+        ops.data_path = self.data_path
+        ops.float_value = self.float_value
+        ops.property_type = "INT"
 
     def draw_string(self, context: bpy.types.Context, layout: bpy.types.UILayout):
         ...

@@ -155,4 +155,4 @@ class ModalMouseOperator(Operator, StoreValue):
                 return min(x, y)
         else:
             raise ValueError("Invalid value mode: %r" % vm)
-# active_annotation_layer.annotation_opacity
+            # active_annotation_layer.annotation_opacity
