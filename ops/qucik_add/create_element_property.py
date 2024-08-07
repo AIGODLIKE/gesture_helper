@@ -192,9 +192,8 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         layout.prop(self, "string_value")
         layout.separator()
         ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
-        ops.value_mode = self.value_mode
         ops.data_path = self.data_path
-        ops.float_value = self.float_value
+        ops.string_value = self.string_value
         ops.property_type = "STRING"
 
     def draw_enum(self, context: bpy.types.Context, layout: bpy.types.UILayout):
@@ -280,7 +279,14 @@ class Create(Draw):
                 ae.operator_bl_idname = bl
 
     def create_string(self):
-        ...
+        """
+        bpy.ops.wm.context_set_string()
+        :return:
+        """
+        ae = self.active_element
+        if ae:
+            bi = f"wm.context_set_string(data_path='{self.__data_path__}', value='{self.string_value}')"
+            ae.operator_bl_idname = bi
 
     def create_enum(self):
         """
@@ -349,7 +355,7 @@ class CreateElementProperty(Create):
         print(f"\n{self.bl_idname}\tinvoke", self)
         self.from_context_get_info(context)
         self.copy_data_path()
-
+        self.init_string()
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 600})
 
     def execute(self, context) -> set[str]:
@@ -395,6 +401,11 @@ class CreateElementProperty(Create):
             clipboard = bpy.context.window_manager.clipboard
             print("use clipboard", clipboard)
             self.data_path = clipboard
+
+    def init_string(self):
+        prop = self.button_prop
+        if prop.type == "STRING":
+            self.string_value = getattr(self.button_pointer, prop.identifier, "")
 
     def update_data(self, layout, context):
         """更新数据"""
