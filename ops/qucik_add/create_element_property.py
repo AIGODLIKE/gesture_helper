@@ -64,7 +64,8 @@ class OpsProperty(Enum):
     boolean_mode: EnumProperty(
         items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
         name='布尔模式',
-        options={'HIDDEN', 'SKIP_SAVE'})
+        options={'HIDDEN', 'SKIP_SAVE'},
+    )
 
     data_path: StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
 
