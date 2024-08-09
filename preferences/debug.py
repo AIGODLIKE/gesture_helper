@@ -11,7 +11,7 @@ class DebugProperty(PropertyGroup):
     debug_key: BoolProperty(name='Debug快捷键', default=isDebug)
     debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=isDebug)
     debug_export_import: BoolProperty(name='Debug导入导出', default=isDebug)
-    debug_poll: BoolProperty(name='Debug Poll', default=isDebug)
+    debug_poll: BoolProperty(name='Debug Poll', default=False)
 
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):

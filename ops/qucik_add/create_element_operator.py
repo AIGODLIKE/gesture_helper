@@ -1,6 +1,14 @@
+import bpy
 from mathutils import Euler, Vector, Matrix
 
 from ...utils.public import PublicOperator, PublicProperty
+
+
+def __from_rna_get_bl_ops_idname__(bl_rna) -> str:
+    identifier = bl_rna.identifier
+    if "_OT_" in identifier:
+        a, b = identifier.split("_OT_")
+        return f"{a.lower()}.{b.lower()}"
 
 
 class CreateElementOperator(PublicOperator, PublicProperty):
@@ -19,8 +27,11 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         :param context:
         :return:
         """
+        bpy.ops.gesture.element_add(add_active_radio=True, element_type="OPERATOR")
+
         button_operator = getattr(context, "button_operator", None)
-        print(f"\n{self.bl_idname}\tinvoke")
+        bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
+        print(f"\n{self.bl_idname}\tinvoke\t", bl_idname)
 
         properties = {}
         for prop in dir(button_operator):
@@ -31,20 +42,27 @@ class CreateElementOperator(PublicOperator, PublicProperty):
                 if isinstance(value, (Euler, Vector, bpy_prop_array)):
                     value = value[:]
                 elif isinstance(value, Matrix):
-                    value = tuple((i[:] for i in value))
+                    res = ()
+                    for i in value:
+                        res += (*tuple(i[:]),)
+                    value = res
 
                 p = button_operator.bl_rna.properties[prop]
-                if getattr(p, "is_array", False):
-                    # print(value, "\t", default, "\t", dir(button_operator.bl_rna.properties[prop]))
-                    default = p.default_array
-                else:
-                    default = p.default
-                print(type(default), type(value), default, value)
-                if default != value:
-                    properties[prop] = value
-
-        print(properties)
-        # print(button_operator)
-        # print(button_operator.bl_rna.properties.keys())
-        # print(dir(button_operator))
+                print(prop, p.type, value)
+                if p.type not in ("POINTER", "COLLECTION"):
+                    if getattr(p, "is_array", False):
+                        default = p.default_array[:]
+                    else:
+                        if p.type == "ENUM" and p.default == '':
+                            default = value
+                        else:
+                            default = p.default
+                    if default != value:
+                        print("default != value", default)
+                        properties[prop] = value
+        pp = ",".join((f"{k}='{v}'" if type(v) is str else f"{k}={v}" for k, v in properties.items()))
+        ae = self.active_element
+        if ae:
+            ae.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
+            print(ae.operator_bl_idname)
         return {"FINISHED"}
