@@ -52,6 +52,9 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                 with gpu.matrix.push_pop():
                     gpu.matrix.translate((-500, 100))
                     for index, i in enumerate((
+                            getattr(bpy.context, "button_pointer", None),
+                            getattr(bpy.context, "button_prop", None),
+                            getattr(bpy.context, "button_operator", None),
                             str(bpy.context.area.type),
                             str(self.offset_position),
                             str(self.mouse_position),

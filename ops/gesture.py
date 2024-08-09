@@ -20,6 +20,8 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     timer = None
 
     def invoke(self, context, event):
+        self.register_draw()
+        self.init_trajectory()
         self.init_invoke(event)
         self.cache_clear()
 
@@ -37,19 +39,17 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        if self.is_debug:
-            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
-        self.update_modal(context, event)
-
+        self.event_trajectory(context)
+        self.init_module(event)
+        # if self.is_debug:
+        #     print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         if self.is_exit:
             return self.exit(context, event)
         return {'RUNNING_MODAL'}
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
-        self.unregister_draw()
+        self.__exit_modal__()
         ops = self.try_running_operator()
-        wm = bpy.context.window_manager
-        wm.event_timer_remove(self.timer)
 
         if self.is_debug:
             print('ops', ops, )
@@ -73,3 +73,11 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         else:
             ...
         return {'FINISHED'}
+
+    def cancel(self, context):
+        self.__exit_modal__()
+
+    def __exit_modal__(self):
+        self.unregister_draw()
+        wm = bpy.context.window_manager
+        wm.event_timer_remove(self.timer)

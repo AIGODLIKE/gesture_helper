@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from bpy.props import StringProperty
-from typing import Any
 
+from ..utils.public import get_debug
 from ..utils.string_eval import try_call_eval
 
 poll: str = """poll表达式
@@ -22,7 +22,7 @@ class ElementPoll:
         """尝试调用poll bool获取值
         可能会报错"""
         poll_res = try_call_eval(self.poll_string)
-        if self.is_debug:
+        if get_debug("poll"):
             print(f"poll_bool\t{poll_res}\t{self.poll_string}")
         return poll_res
 

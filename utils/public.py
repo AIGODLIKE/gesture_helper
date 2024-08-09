@@ -25,11 +25,14 @@ def tag_redraw():
 
 def get_debug(key=None):
     prop = get_pref().debug_property
-    if prop.debug_mode:
-        if key == 'key':
+    if prop.debug_mode and key:
+        kl = key.lower()
+        if kl == 'key':
             return prop.debug_key
-        elif key == 'export_import':
+        elif kl == 'export_import':
             return prop.debug_export_import
+        elif kl == "poll":
+            return prop.debug_poll
     return prop.debug_mode
 
 

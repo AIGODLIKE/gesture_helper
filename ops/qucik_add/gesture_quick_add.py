@@ -2,10 +2,10 @@ import bpy
 from mathutils import Vector
 
 from .draw_gpu import DrawGpu
-from ...utils.public import PublicOperator, PublicProperty
+from ..gesture import GestureOperator
 
 
-class GestureQuickAdd(PublicOperator, PublicProperty):
+class GestureQuickAdd(GestureOperator):
     bl_idname = "gesture.quick_add"
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
@@ -30,38 +30,58 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
     def is_exit(self):
         return self.is_right_mouse
 
+    @property
+    def is_draw_gpu(self) -> bool:
+        return True
+
+    def __sync_gesture__(self):
+        """同步手势名称"""
+        ag = self.pref.active_gesture
+        if ag:
+            self.gesture = ag.name
+
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
+        self.init_invoke(event)
+
         self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
         self.offset_position = self.start_mouse_position
-        self.init_invoke(event)
+
+        self.init_trajectory()
+        self.event_trajectory(context)
+        self.register_draw()
 
         wm = context.window_manager
         wm.modal_handler_add(self)
         GestureQuickAdd.is_quick_add_mode = True
 
         self.gpu.register_draw_fun()
+
+        self.__sync_gesture__()
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
-
-        button_pointer = getattr(context, "button_pointer", None)
-        button_prop = getattr(context, "button_prop", None)
-        button_operator = getattr(context, "button_operator", None)
-        print(self.bl_idname, button_pointer, button_prop, button_operator)
-
-        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         self.init_module(event)
+        self.__sync_gesture__()
+        # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
+        # button_pointer = getattr(context, "button_pointer", None)
+        # button_prop = getattr(context, "button_prop", None)
+        # button_operator = getattr(context, "button_operator", None)
+        # print(self.bl_idname, button_pointer, button_prop, button_operator)
+
+        self.event_trajectory(context)
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
+
         res = self.gpu.draw_run(self, event)
         if res:
             return res
+
         m = self.modal_event(event)
         if m:
             return m
         return {'PASS_THROUGH'}
 
     def cancel(self, context):
-        self.gesture_bpu.unregister_draw()
+        self.__exit_modal__()
 
     def modal_event(self, event):
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
@@ -78,6 +98,10 @@ class GestureQuickAdd(PublicOperator, PublicProperty):
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
         if self.is_exit:
-            self.gpu.unregister_draw_fun()
             GestureQuickAdd.is_quick_add_mode = False
+            self.__exit_modal__()
             return {'FINISHED'}
+
+    def __exit_modal__(self):
+        self.unregister_draw()
+        self.gpu.unregister_draw_fun()
