@@ -88,13 +88,13 @@ class GestureGpuDraw(DrawDebug):
         return sub
 
     def register_draw(self):
+        """
+        bpy.types.Region.bl_rna.properties['type'].enum_items_static
+        """
         if not GestureGpuDraw.__temp_draw_class__:
-            if self.is_debug:
-                print('register_draw')
             for cls in self.space_subclasses():
                 sub_class = {}
                 debug_class = {}
-                # bpy.types.Region.bl_rna.properties['type'].enum_items_static
                 for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
                     try:
                         sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
@@ -109,8 +109,7 @@ class GestureGpuDraw(DrawDebug):
 
     @classmethod
     def unregister_draw(cls):
-        if get_debug():
-            print('unregister_draw')
+        """取消绘制"""
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 c.draw_handler_remove(value, key)
@@ -122,20 +121,23 @@ class GestureGpuDraw(DrawDebug):
         cls.tag_redraw()
 
     def gpu_draw_trajectory_mouse_move(self):
+        """绘制轨迹鼠标移动的线"""
         draw = self.draw_property
         color = draw.trajectory_mouse_color
         self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
+        """绘制手势的轨迹线"""
         draw = self.draw_property
         color = draw.trajectory_gesture_color
-
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_point(self):
+        """绘制手势的轨迹点"""
         self.draw_2d_points(self.trajectory_tree.points_list)
 
     def gpu_draw_gesture(self):
+        """绘制手势"""
         gp = self.gesture_property
 
         region = bpy.context.region
@@ -161,6 +163,7 @@ class GestureGpuDraw(DrawDebug):
                     self.draw_text((0, 0), '暂无手势,请添加')
 
     def __gpu_draw__(self):
+        """绘制主入口"""
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
