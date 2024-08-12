@@ -1,6 +1,6 @@
 .idea
 .vs
 __pycache__
-/auto_backups/*.json
-/auto_backups
-/auto_backups/*
+/backups/*.json
+/backups
+/backups/*

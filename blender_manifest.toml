@@ -8,4 +8,4 @@ name = "Gesture Helper"
 tagline = "手势助手,可以快速的使用手势运行blender 操作符或是更改属性"
 type = "add-on"
 version = "1.0.3"
-tags = ["幻之境","AIGODLIKE Community" ]
+tags = ["幻之境", "AIGODLIKE Community"]

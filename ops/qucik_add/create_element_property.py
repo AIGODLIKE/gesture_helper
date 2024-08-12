@@ -38,17 +38,15 @@ class Enum:
             elif button_prop.enum_items_static_ui:
                 items = button_prop.enum_items_static_ui
             else:
-                items = [
-
-                ]
+                items = []
         else:
             items = []
 
-        aaa = [(item.identifier, item.name, item.description, item.icon, index)
-               for (index, item) in enumerate(items)]
-        if aaa:
-            if aaa != OpsProperty.___enum___:
-                OpsProperty.___enum___ = aaa
+        it = [(item.identifier, item.name, item.description, item.icon, index)
+              for (index, item) in enumerate(items)]
+        if it:
+            if it != OpsProperty.___enum___:
+                OpsProperty.___enum___ = it
         else:
             if OpsProperty.___enum___ != CREATE_ELEMENT_VALUE_MODE_ENUM:
                 OpsProperty.___enum___ = CREATE_ELEMENT_VALUE_MODE_ENUM

@@ -1,10 +1,11 @@
 import math
+import re
 from functools import cache
 
 import blf
 import gpu
 from gpu_extras.batch import batch_for_shader
-from mathutils import Euler
+from mathutils import Euler, Vector
 
 
 @cache
@@ -91,6 +92,13 @@ def get_indices_from_vertex(vertex):
     return indices
 
 
+def contains_chinese(text):
+    if not isinstance(text, str):
+        return False
+    pattern = re.compile(r'[\u4e00-\u9fff]+')
+    return bool(pattern.search(text))
+
+
 class PublicGpu:
     @staticmethod
     def draw_image(position, height, width, texture):
@@ -118,11 +126,16 @@ class PublicGpu:
             font_id=0,
             column=0,
     ):
-        x, y = position
-        blf.size(font_id, size)
-        blf.color(font_id, *color)
-        blf.position(font_id, x, y - (size * (column + 1)), 1)
-        blf.draw(font_id, str(text))
+        with gpu.matrix.push_pop():
+            if contains_chinese(text):
+                (width, height) = blf.dimensions(font_id, text)
+                gpu.matrix.translate(Vector([0, -height * .075]))
+
+            x, y = position
+            blf.size(font_id, size)
+            blf.color(font_id, *color)
+            blf.position(font_id, x, y - (size * (column + 1)), 1)
+            blf.draw(font_id, str(text))
 
     @staticmethod
     def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):

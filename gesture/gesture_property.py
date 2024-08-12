@@ -55,8 +55,10 @@ class GestureProperty(PublicProperty):
     def __last_region_position__(self) -> Vector:
         """最后一个区域位置"""
         region = bpy.context.region
-        x, y = self.__last_window_position__
-        return Vector(((x - region.x), (y - region.y)))
+        if self.is_draw_gpu:
+            x, y = self.__last_window_position__
+            return Vector(((x - region.x), (y - region.y)))
+        return False
 
     @property
     def operator_gesture(self) -> 'GestureProperty':

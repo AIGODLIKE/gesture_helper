@@ -31,8 +31,10 @@ class GestureQuickAdd(GestureOperator):
         return self.is_right_mouse
 
     @property
-    def is_draw_gpu(self) -> bool:
-        return True
+    def is_draw_gesture(self) -> bool:
+        if self.draw_trajectory_mouse_move:
+            return True
+        return self.operator_time
 
     def __sync_gesture__(self):
         """同步手势名称"""
