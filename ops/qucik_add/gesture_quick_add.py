@@ -49,12 +49,11 @@ class GestureQuickAdd(GestureOperator):
         self.init_trajectory()
         self.event_trajectory(context)
         self.register_draw()
+        self.gpu.register_draw_fun()
 
         wm = context.window_manager
         wm.modal_handler_add(self)
         GestureQuickAdd.is_quick_add_mode = True
-
-        self.gpu.register_draw_fun()
 
         self.__sync_gesture__()
         return {'RUNNING_MODAL'}

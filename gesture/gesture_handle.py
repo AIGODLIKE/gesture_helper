@@ -42,7 +42,7 @@ class GestureHandle:
         self.screen = context.screen
 
         self.event_count += 1
-        emp = self.event_window_position
+        emp = self.__mouse_position__
         if self.event_count > 2:
             not_draw = not self.is_draw_gesture
             if (not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp) and not_draw:

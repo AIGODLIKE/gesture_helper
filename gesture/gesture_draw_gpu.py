@@ -57,10 +57,9 @@ class DrawDebug(PublicGpu):
             data.append('is_beyond_threshold:' + str(self.is_beyond_threshold))
             data.append('is_beyond_threshold_confirm:' + str(self.is_beyond_threshold_confirm))
             data.append('--')
-            data.append('last_region_position:' + str(self.last_region_position))
-            data.append('last_window_position:' + str(self.last_window_position))
-            data.append('event_region_position:' + str(self.event_region_position))
-            data.append('event_window_position:' + str(self.event_window_position))
+            data.append('__last_region_position__:' + str(self.__last_region_position__))
+            data.append('__last_window_position__:' + str(self.__last_window_position__))
+            data.append('__mouse_position__:' + str(self.__mouse_position__))
             data.append('--')
             data.append('angle:' + str(self.angle))
             data.append('angle_unsigned:' + str(self.angle_unsigned))
@@ -150,7 +149,7 @@ class GestureGpuDraw(DrawDebug):
             self.gpu_draw_trajectory_gesture_point()
         if self.is_draw_gesture:
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(self.last_region_position)
+                gpu.matrix.translate(self.__last_region_position__)
                 if self.is_window_region_type:
                     self.draw_circle((0, 0), gp.threshold, line_width=2, segments=64)
                     if self.is_beyond_threshold:
