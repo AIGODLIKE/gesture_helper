@@ -1,7 +1,6 @@
 import bpy
 import gpu
 
-from ..utils.public import get_debug
 from ..utils.public_gpu import PublicGpu
 
 
@@ -104,19 +103,21 @@ class GestureGpuDraw(DrawDebug):
         bpy.types.Region.bl_rna.properties['type'].enum_items_static
         """
         if not GestureGpuDraw.__temp_draw_class__:
-            for cls in self.space_subclasses():
-                sub_class = {}
-                debug_class = {}
-                for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
-                    try:
-                        sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
-                        debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
-                                                                       'POST_PIXEL')
-                    except Exception as e:
-                        if self.is_debug:
-                            print(e.args)
-                GestureGpuDraw.__temp_draw_class__[cls] = sub_class
-                GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
+            # for cls in self.space_subclasses():
+            cls = bpy.context.space_data.rna_type.bl_rna
+            sub_class = {}
+            debug_class = {}
+            for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
+                try:
+                    sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
+                    debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
+                                                                   'POST_PIXEL')
+                except Exception as e:
+                    if self.is_debug:
+                        print(e.args)
+            GestureGpuDraw.__temp_draw_class__[cls] = sub_class
+            GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
+
             self.tag_redraw()
 
     @classmethod

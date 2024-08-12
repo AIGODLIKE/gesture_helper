@@ -5,15 +5,8 @@ from ...ops.qucik_add.show_tips import GestureShowTips
 class DrawGpu:
     def __init__(self):
         self.gesture_bpu = BpuLayout(Quadrant.LIFT)
+        self.gesture_bpu.font_size = 20
         self.tips = GestureShowTips()
-
-    def unregister_draw_fun(self):
-        self.gesture_bpu.unregister_draw()
-        self.tips.unregister_draw()
-
-    def register_draw_fun(self):
-        self.gesture_bpu.register_draw()
-        self.tips.register_draw()
 
     def draw_run(self, ops, event) -> set:
         try:
@@ -39,9 +32,7 @@ class DrawGpu:
                 tips.label("手势编辑模式  空白处点击右键退出")
                 if tips.check_event(event):
                     return {'FINISHED'}
-
         except Exception as e:
-            self.gesture_bpu.unregister_draw()
             print(e.args)
             import traceback
             traceback.print_exc()

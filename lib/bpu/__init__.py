@@ -115,7 +115,6 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
     #     return self.__child_layout__(BPUType.SPLIT)
 
     def __enter__(self):
-        self.register_draw()
         self.__clear_children__()
         self.__mouse_in_area__ = False
         return self

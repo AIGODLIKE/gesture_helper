@@ -13,10 +13,11 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
 
-    offset = Vector([500, 0])
+    offset = Vector([400, 0])
 
     def __init__(self):
         super().__init__()
+        self.timer = None
         self.mouse_position = None
         self.__difference_mouse__ = None
 
@@ -24,6 +25,12 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.offset_position = Vector((0, 0))
 
         self.gpu = DrawGpu()
+
+    def __gpu_draw__(self):
+        super().__gpu_draw__()
+        self.gpu.tips.__gpu_draw__()
+        self.gpu.gesture_bpu.__gpu_draw__()
+        ...
 
     @classmethod
     def poll(cls, context):
@@ -56,9 +63,9 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.init_trajectory()
         self.event_trajectory(context)
         self.register_draw()
-        self.gpu.register_draw_fun()
 
         wm = context.window_manager
+        self.timer = wm.event_timer_add(1 / 5, window=context.window)
         wm.modal_handler_add(self)
         GestureQuickAdd.is_quick_add_mode = True
 
@@ -71,7 +78,7 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.__sync_gesture__()
         self.init_module(event)
 
-        # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
+        print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         # button_pointer = getattr(context, "button_pointer", None)
         # button_prop = getattr(context, "button_prop", None)
         # button_operator = getattr(context, "button_operator", None)
@@ -83,7 +90,6 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         res = self.gpu.draw_run(self, event)
         if res:
             return res
-
         m = self.modal_event(event)
         if m:
             return m
@@ -112,4 +118,6 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
 
     def __exit_modal__(self):
         self.unregister_draw()
-        self.gpu.unregister_draw_fun()
+
+        wm = bpy.context.window_manager
+        wm.event_timer_remove(self.timer)
