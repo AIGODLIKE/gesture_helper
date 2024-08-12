@@ -1,6 +1,5 @@
 import time
 
-import bpy
 from bpy.props import IntProperty, BoolProperty
 
 from ..gesture.gesture_point_kd_tree import GesturePointKDTree
@@ -12,6 +11,10 @@ class GestureHandle:
     trajectory_tree: 'GesturePointKDTree'  # 轨迹树
     event_count: IntProperty()  # 事件数
     draw_trajectory_mouse_move: BoolProperty(options={'SKIP_SAVE'})
+
+    def __init__(self):
+        self.screen = None
+        self.area = None
 
     def check_return_previous(self):
         """检查回到之前的手势"""

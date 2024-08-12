@@ -2,10 +2,13 @@ import bpy
 from mathutils import Vector
 
 from .draw_gpu import DrawGpu
-from ..gesture import GestureOperator
+from ...gesture import GestureProperty
+from ...gesture.gesture_draw_gpu import GestureGpuDraw
+from ...gesture.gesture_handle import GestureHandle
+from ...utils.public import PublicOperator
 
 
-class GestureQuickAdd(GestureOperator):
+class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOperator):
     bl_idname = "gesture.quick_add"
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
@@ -43,6 +46,8 @@ class GestureQuickAdd(GestureOperator):
             self.gesture = ag.name
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
+        self.area = context.area
+        self.screen = context.screen
         self.init_invoke(event)
 
         self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
@@ -61,8 +66,11 @@ class GestureQuickAdd(GestureOperator):
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        self.init_module(event)
+        self.area = context.area
+        self.screen = context.screen
         self.__sync_gesture__()
+        self.init_module(event)
+
         # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         # button_pointer = getattr(context, "button_pointer", None)
         # button_prop = getattr(context, "button_prop", None)
