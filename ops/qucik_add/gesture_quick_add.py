@@ -105,7 +105,6 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
                 d = self.__difference_mouse__ - nd
                 self.offset_position = self.mouse_position - d
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
-
         if self.is_exit:
             GestureQuickAdd.is_quick_add_mode = False
             self.__exit_modal__()

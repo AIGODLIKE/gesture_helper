@@ -77,6 +77,18 @@ class GestureGpuDraw(DrawDebug):
     __temp_draw_class__ = {}
     __temp_debug_draw_class__ = {}
 
+    def __gpu_draw__(self):
+        """绘制主入口"""
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
+        gpu.state.depth_mask_set(True)
+
+        if len(bpy.context.screen.areas) > 8:
+            if bpy.context.area != self.area:
+                return
+        if self.is_draw_gpu:
+            self.gpu_draw_gesture()
+
     @staticmethod
     def refresh_space():
         return list(getattr(bpy.types, i) for i in dir(bpy.types) if 'Space' in i)
@@ -161,15 +173,3 @@ class GestureGpuDraw(DrawDebug):
                     d.draw_gpu_item(self)
                 if not len(draw_items):
                     self.draw_text((0, 0), '暂无手势,请添加')
-
-    def __gpu_draw__(self):
-        """绘制主入口"""
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
-        gpu.state.depth_mask_set(True)
-
-        if len(bpy.context.screen.areas) > 8:
-            if bpy.context.area != self.area:
-                return
-        if self.is_draw_gpu:
-            self.gpu_draw_gesture()
