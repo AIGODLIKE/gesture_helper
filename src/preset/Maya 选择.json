@@ -1,22 +1,23 @@
 {
-  "time": 1702020238.041768,
+  "time": 1723518081.857729,
   "blender_version": [
     4,
-    1,
+    3,
     0
   ],
   "addon_version": [
     1,
-    0
+    0,
+    3
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
   "gesture": {
-    "1": {
+    "0": {
       "name": "\u9009\u62e9 - Maya - Right Ctrl",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"Window\"]",
+      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\", \"Lattice\", \"Font\", \"Grease Pencil\", \"Pose\", \"Vertex Paint\", \"Weight Paint\", \"Sculpt\"]",
       "element": {
         "0": {
           "name": "\u7269\u4f53\u6a21\u5f0f",
@@ -30,40 +31,40 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "object.select_all",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u968f\u673a\u9009\u62e9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "object.select_random",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u9009\u62e9\u76f8\u673a",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "object.select_camera",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "3": {
               "name": "\u53d6\u6d88\u9009\u62e9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
-              "operator_properties": "{'action': 'DESELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "object.select_all",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'DESELECT'}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -85,20 +86,20 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_axis",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u9009\u62e9\u955c\u50cf",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_mirror",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -120,30 +121,30 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
-                      "operator_properties": "{'type': 'VERT_NORMAL'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'VERT_NORMAL'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u9876\u70b9\u7ec4",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'type': 'VERT_GROUPS'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'VERT_GROUPS'}",
+                      "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "\u8fde\u63a5\u8fb9\u6570\u91cf",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
-                      "operator_properties": "{'type': 'VERT_EDGES'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'VERT_EDGES'}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 },
@@ -159,70 +160,70 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
-                      "operator_properties": "{'type': 'EDGE_LENGTH'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_LENGTH'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u65b9\u5411",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
-                      "operator_properties": "{'type': 'EDGE_DIR'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_DIR'}",
+                      "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "\u4e00\u6761\u8fb9\u5468\u56f4\u7684\u9762\u7684\u6570\u91cf",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'type': 'EDGE_FACES'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_FACES'}",
+                      "operator_type": "OPERATOR"
                     },
                     "3": {
                       "name": "\u9762\u7684\u9876\u89d2",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "5",
-                      "operator_properties": "{'type': 'EDGE_FACE_ANGLE'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_FACE_ANGLE'}",
+                      "operator_type": "OPERATOR"
                     },
                     "4": {
                       "name": "\u5012\u89d2",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
-                      "operator_properties": "{'type': 'EDGE_BEVEL'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_BEVEL'}",
+                      "operator_type": "OPERATOR"
                     },
                     "5": {
                       "name": "\u7f1d\u5408\u8fb9",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "4",
-                      "operator_properties": "{'type': 'EDGE_SEAM'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_SEAM'}",
+                      "operator_type": "OPERATOR"
                     },
                     "6": {
                       "name": "\u9510\u5ea6",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
-                      "operator_properties": "{'type': 'EDGE_SHARP'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'EDGE_SHARP'}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 },
@@ -238,70 +239,70 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
-                      "operator_properties": "{'type': 'FACE_MATERIAL'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_MATERIAL'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u9762\u79ef",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'type': 'FACE_AREA'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_AREA'}",
+                      "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "\u5468\u957f",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
-                      "operator_properties": "{'type': 'FACE_PERIMETER'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_PERIMETER'}",
+                      "operator_type": "OPERATOR"
                     },
                     "3": {
                       "name": "\u76f8\u90bb\u9762\u6570\u91cf",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "5",
-                      "operator_properties": "{'type': 'VERT_FACES'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'VERT_FACES'}",
+                      "operator_type": "OPERATOR"
                     },
                     "4": {
                       "name": "\u9762\u6cd5\u5411",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
-                      "operator_properties": "{'type': 'FACE_NORMAL'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_NORMAL'}",
+                      "operator_type": "OPERATOR"
                     },
                     "5": {
                       "name": "\u5171\u9762",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "4",
-                      "operator_properties": "{'type': 'FACE_COPLANAR'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_COPLANAR'}",
+                      "operator_type": "OPERATOR"
                     },
                     "6": {
                       "name": "\u5e73\u76f4/\u5149\u6ed1",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
-                      "operator_properties": "{'type': 'FACE_SMOOTH'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mesh.select_similar",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'type': 'FACE_SMOOTH'}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 }
@@ -318,40 +319,40 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'action': 'SELECT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_all",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'action': 'SELECT'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u53cd\u8f6c",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{'action': 'INVERT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_all",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'action': 'INVERT'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u95f4\u9694\u5f0f\u5f03\u9009",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_nth",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u968f\u673a",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{'action': 'SELECT', 'seed': 114}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_random",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'action': 'SELECT', 'seed': 114}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -366,50 +367,50 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_non_manifold",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u677e\u6563\u51e0\u4f55\u5143\u7d20",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_loose",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u5185\u4fa7\u9762",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_interior_faces",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u6309\u5185\u4fa7\u9762",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_face_by_sides",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "4": {
                   "name": "\u672a\u5f52\u7ec4\u9876\u70b9",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_ungrouped",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -424,30 +425,30 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{'ring': False}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'ring': False}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u6536\u7f29\u9009\u533a",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_less",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u9009\u62e9\u5faa\u73af\u7ebf\u5185\u4fa7\u533a\u57df",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.loop_to_region",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -462,30 +463,30 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_more",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u5e76\u6392\u8fb9",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{'ring': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'ring': True}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u9009\u62e9\u533a\u57df\u8f6e\u5ed3\u7ebf",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.region_to_loop",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -500,70 +501,70 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{'type': 'FACE_FREESTYLE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'FACE_FREESTYLE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u9762\u533a\u57df",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar_region",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Freestyle \u8fb9\u6807\u8bb0",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
-                  "operator_properties": "{'type': 'EDGE_FREESTYLE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'EDGE_FREESTYLE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u9876\u70b9\u6298\u75d5",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'type': 'VERT_CREASE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'VERT_CREASE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "4": {
                   "name": "\u6298\u75d5",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{'type': 'EDGE_CREASE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'EDGE_CREASE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "5": {
                   "name": "\u591a\u8fb9\u5f62\u9762\u6570",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{'type': 'FACE_SIDES'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'FACE_SIDES'}",
+                  "operator_type": "OPERATOR"
                 },
                 "6": {
                   "name": "\u6309\u5c5e\u6027\u9009\u62e9",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mesh.select_by_attribute",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -572,10 +573,10 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "mesh.edges_select_sharp",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -591,70 +592,70 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.select_all",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u968f\u673a \u9009\u62e9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.select_random",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u95f4\u9694\u5f0f\u9009\u62e9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.select_nth",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "3": {
               "name": "\u9009\u62e9/\u5f03\u9009 \u9996\u9009\u70b9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.de_select_first",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "4": {
               "name": "\u9009\u62e9/\u5f03\u9009 \u672b\u9009\u70b9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.de_select_last",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "5": {
               "name": "\u9009\u62e9\u4e0b\u4e00\u9879",
               "element_type": "OPERATOR",
               "enabled": false,
               "direction": "4",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.select_next",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "6": {
               "name": "\u9009\u62e9\u4e0a\u4e00\u9879",
               "element_type": "OPERATOR",
               "enabled": false,
               "direction": "2",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "curve.select_previous",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -670,20 +671,20 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "mball.select_all",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u968f\u673a\u9009\u62e9\u878d\u7403",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "mball.select_random_metaelems",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'action': 'SELECT'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u76f8\u4f3c\u9879",
@@ -696,40 +697,40 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{'type': 'TYPE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mball.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'TYPE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u6309\u786c\u5ea6",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'type': 'STIFFNESS'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mball.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'STIFFNESS'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u6309\u534a\u5f84",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
-                  "operator_properties": "{'type': 'RADIUS'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mball.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'RADIUS'}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u6309\u65cb\u8f6c",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "mball.select_similar",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             }

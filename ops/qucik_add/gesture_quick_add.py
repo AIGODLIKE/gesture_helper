@@ -1,4 +1,5 @@
 import bpy
+from bpy.props import StringProperty
 from mathutils import Vector
 
 from .draw_gpu import DrawGpu
@@ -12,6 +13,8 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
     bl_idname = "gesture.quick_add"
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
+
+    gesture: StringProperty()
 
     offset = Vector([300, 0])
 

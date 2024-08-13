@@ -2,6 +2,7 @@
 # 切换
 
 import bpy
+from bpy.props import StringProperty
 
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
@@ -13,6 +14,7 @@ from ..utils.public import PublicOperator
 class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, PublicOperator):
     bl_idname = 'gesture.operator'
     bl_label = 'Gesture Operator'
+    gesture: StringProperty()
 
     def invoke(self, context, event):
         self.register_draw()

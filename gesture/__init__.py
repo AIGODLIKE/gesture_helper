@@ -21,7 +21,7 @@ class Gesture(GestureKeymap,
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
-    description: StringProperty(default="这是一个手势...")
+    description: StringProperty(default="这是一个手势...", name="注释")
 
     def draw_item(self, layout):
         layout.prop(self, 'enabled', text='')

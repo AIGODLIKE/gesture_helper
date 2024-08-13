@@ -47,17 +47,22 @@ class GesturePreferences(PublicProperty,
         from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
         from ..utils import PropertyGetUtils
 
-        def filter_data(dd):
+        def filter_data(filter_dict):
             res = {}
-            if 'element_type' in dd:
-                t = dd['element_type']
-                for i in EXPORT_PROPERTY_ITEM[t]:
-                    if i in dd:
-                        res[i] = dd[i]
+            if 'element_type' in filter_dict:
+                et = filter_dict['element_type']
+
+                ot = filter_dict.get("operator_type", None)
+                if et == "OPERATOR" and f"OPERATOR_{ot}" in EXPORT_PROPERTY_ITEM:
+                    et = f"OPERATOR_{ot}"
+
+                for i in EXPORT_PROPERTY_ITEM[et]:
+                    if i in filter_dict:
+                        res[i] = filter_dict[i]
             else:
-                res.update(dd)
-            if 'element' in dd:
-                res['element'] = {k: filter_data(v) for k, v in dd['element'].items()}
+                res.update(filter_dict)
+            if 'element' in filter_dict and len(filter_dict['element']) != 0:
+                res['element'] = {k: filter_data(v) for k, v in filter_dict['element'].items()}
             return res
 
         data = {}

@@ -13,16 +13,43 @@ from ..utils import PropertySetUtils
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
 
-EXPORT_PROPERTY_EXCLUDE = ('selected', 'relationship', 'show_child', 'level', 'index_element',
-                           'operator_properties_sync_to_properties',
-                           'operator_properties_sync_from_temp_properties')
+EXPORT_PROPERTY_EXCLUDE = (
+    'selected',
+    'relationship',
+    'show_child',
+    'level',
+    'index_element',
+    'operator_properties_sync_to_properties',
+    'operator_properties_sync_from_temp_properties',
+    'preview_operator_script',
+)
 
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
-    'OPERATOR': [*EXPORT_PUBLIC_ITEM, 'direction', 'operator_properties', 'operator_context', 'operator_bl_idname',
-                 'operator_type', 'operator_script', 'preview_operator_script'],
+    'OPERATOR': [
+        *EXPORT_PUBLIC_ITEM,
+        'direction',
+        'operator_bl_idname',
+        'operator_context',
+        'operator_properties',
+        'operator_type',
+        'operator_script',
+    ],
+    'OPERATOR_SCRIPT': [
+        *EXPORT_PUBLIC_ITEM,
+        'operator_type',
+        'operator_script',
+    ],
+    'OPERATOR_OPERATOR': [
+        *EXPORT_PUBLIC_ITEM,
+        'direction',
+        'operator_bl_idname',
+        'operator_context',
+        'operator_properties',
+        'operator_type',
+    ]
 }
 
 

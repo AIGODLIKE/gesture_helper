@@ -10,7 +10,6 @@ from ..utils.public_cache import cache_update_lock
 
 
 class GestureProperty(PublicProperty):
-    gesture: StringProperty()
     timer = None
 
     @cache_update_lock
