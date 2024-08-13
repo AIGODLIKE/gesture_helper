@@ -16,11 +16,13 @@ class GesturePointKDTree:
         return str(self.points_list) + str(self.child_element)
 
     def append(self, element, point: Vector):
-        index = len(self.child_element)
-        self.kd_tree.insert((*point, 0), index)
         self.points_list.append(point)
         self.child_element.append(element)
         self.time_list.append(time.time())
+        
+        self.kd_tree = KDTree(len(self.points_list))
+        for i, point in enumerate(self.points_list):
+            self.kd_tree.insert((*point, 0), i)
 
     def remove(self, index):
         val = index + 1

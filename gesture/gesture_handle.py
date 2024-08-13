@@ -21,7 +21,7 @@ class GestureHandle:
         point, index, distance = self.find_closest_point
         points_kd_tree = self.trajectory_tree
         if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
-            points_kd_tree.remove(index)
+            points_kd_tree.remove(0)
             self.gesture_direction_cache_clear()
 
     def try_running_operator(self):

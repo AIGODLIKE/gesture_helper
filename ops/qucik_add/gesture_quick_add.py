@@ -13,11 +13,12 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
 
-    offset = Vector([400, 0])
+    offset = Vector([350, 0])
 
     def __init__(self):
         super().__init__()
         self.timer = None
+        self.points_list = None
         self.mouse_position = None
         self.__difference_mouse__ = None
 
@@ -27,10 +28,9 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.gpu = DrawGpu()
 
     def __gpu_draw__(self):
-        super().__gpu_draw__()
         self.gpu.tips.__gpu_draw__()
         self.gpu.gesture_bpu.__gpu_draw__()
-        ...
+        super().__gpu_draw__()
 
     @classmethod
     def poll(cls, context):
@@ -42,15 +42,22 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
 
     @property
     def is_draw_gesture(self) -> bool:
+        """是绘制手势的布尔值"""
         if self.draw_trajectory_mouse_move:
             return True
-        return self.operator_time
+        return self.operator_time is not None
 
     def __sync_gesture__(self):
         """同步手势名称"""
         ag = self.pref.active_gesture
-        if ag:
+        if ag and self.gesture != ag.name:
             self.gesture = ag.name
+            tree = self.trajectory_tree
+            if len(tree) >= 2:
+                print(tree)
+            #     tree.remove(1)
+            #     print(tree)
+            #     ...
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         self.area = context.area
@@ -76,14 +83,14 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.area = context.area
         self.screen = context.screen
         self.__sync_gesture__()
-        self.init_module(event)
 
-        print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
+        # print(event.type, event.value, "\tprev", event.type_prev, event.value_prev)
         # button_pointer = getattr(context, "button_pointer", None)
         # button_prop = getattr(context, "button_prop", None)
         # button_operator = getattr(context, "button_operator", None)
         # print(self.bl_idname, button_pointer, button_prop, button_operator)
 
+        self.init_module(event)
         self.event_trajectory(context)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
 
@@ -104,12 +111,21 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         if space or mv:
             if event.value == "PRESS":
                 self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
+                self.points_list = self.trajectory_tree.points_list
             elif event.value == "RELEASE":
+                nd = self.start_mouse_position - self.mouse_position
+                diff = self.__difference_mouse__ - nd
+
+                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
+                self.points_list = None
                 self.__difference_mouse__ = None
             elif self.__difference_mouse__:
                 nd = self.start_mouse_position - self.mouse_position
-                d = self.__difference_mouse__ - nd
-                self.offset_position = self.mouse_position - d
+                diff = self.__difference_mouse__ - nd
+                self.offset_position = self.mouse_position - diff
+
+                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
+
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
         if self.is_exit:
             GestureQuickAdd.is_quick_add_mode = False

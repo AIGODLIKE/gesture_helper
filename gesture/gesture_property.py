@@ -2,7 +2,7 @@ import math
 import time
 
 import bpy
-from bpy.props import IntProperty, BoolProperty
+from bpy.props import IntProperty, BoolProperty, StringProperty
 from mathutils import Vector
 
 from ..utils.public import PublicProperty
@@ -10,6 +10,8 @@ from ..utils.public_cache import cache_update_lock
 
 
 class GestureProperty(PublicProperty):
+    gesture: StringProperty()
+    timer = None
 
     @cache_update_lock
     def copy(self) -> None:

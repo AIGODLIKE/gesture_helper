@@ -2,7 +2,6 @@
 # 切换
 
 import bpy
-from bpy.props import StringProperty
 
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
@@ -14,10 +13,6 @@ from ..utils.public import PublicOperator
 class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, PublicOperator):
     bl_idname = 'gesture.operator'
     bl_label = 'Gesture Operator'
-
-    gesture: StringProperty()
-
-    timer = None
 
     def invoke(self, context, event):
         self.register_draw()
@@ -52,7 +47,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         ops = self.try_running_operator()
 
         if self.is_debug:
-            print('ops', ops, )
+            print('ops', ops)
             print(self.is_draw_gesture, self.is_beyond_threshold_confirm, self.is_draw_gpu, self.is_beyond_threshold)
             print()
 
