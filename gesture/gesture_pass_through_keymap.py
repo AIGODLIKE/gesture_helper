@@ -107,6 +107,7 @@ class GesturePassThroughKeymap:
         'clip.select_all',
         'clip.graph_select_all_markers'
     )
+    __event__ = None
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
         """尝试透传按键事件
@@ -152,16 +153,18 @@ class GesturePassThroughKeymap:
         if key in keymaps.keys():
             from ..ops.gesture import GestureOperator
             k = keymaps[key]
-            match_gesture_key = []
             match_origin_key = []
             for item in k.keymap_items:
                 et = item.type == event.type
-                if item.idname == GestureOperator.bl_idname and et:
-                    match_gesture_key.append(item)
-                elif item.idname in self.pass_through_idname and et:
-                    match_origin_key.append(item)
+                if item.idname in self.pass_through_idname and et:
+                    if (
+                            bool(item.shift) == event.shift and
+                            bool(item.ctrl) == event.ctrl and
+                            bool(item.alt) == event.alt
+                    ):
+                        match_origin_key.append(item)
+            print(f"event", event.type, event.shift, event.ctrl, event.alt)
             print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-            print(f"\tMatch Key\t{match_gesture_key}")
             print(f"\tOrigin Key\t{[i.idname for i in match_origin_key]}")
 
             ml = len(match_origin_key)
@@ -192,6 +195,9 @@ class GesturePassThroughKeymap:
                 ('D', 'D')
             ]:
                 return {'FINISHED', 'PASS_THROUGH'}
+
+    def __invoke_key__(self, event):
+        self.__event__ = event
 
 
 def try_operator_pass_through_right(kmi) -> bool:

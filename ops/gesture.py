@@ -17,6 +17,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     gesture: StringProperty()
 
     def invoke(self, context, event):
+        self.__invoke_key__(event)
         self.register_draw()
         self.init_trajectory()
         self.init_invoke(event)
