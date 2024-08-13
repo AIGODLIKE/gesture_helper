@@ -13,7 +13,7 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
     bl_label = "Quick Add"
     is_quick_add_mode = False  # 是在添加模式
 
-    offset = Vector([350, 0])
+    offset = Vector([300, 0])
 
     def __init__(self):
         super().__init__()
@@ -106,6 +106,11 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         self.__exit_modal__()
 
     def modal_event(self, event):
+        """
+        TODO 空格移动界面
+        :param event:
+        :return:
+        """
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
         mv = (event.type == "MOUSEMOVE" and event.type_prev == "SPACE")
         if space or mv:

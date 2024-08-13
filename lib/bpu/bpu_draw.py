@@ -19,10 +19,10 @@ def contains_chinese(text):
     return bool(pattern.search(text))
 
 
-IS_DEBUG_DRAW: bool = True  # 绘制
-IS_DEBUG_INFO: bool = True  # 绘制左下角信息
-IS_DEBUG_HAVER: bool = True  # 绘制是否为Haver
-IS_DEBUG_POINT: bool = True  # 绘制线POINT
+IS_DEBUG_DRAW: bool = False  # 绘制
+IS_DEBUG_INFO: bool = False  # 绘制左下角信息
+IS_DEBUG_HAVER: bool = False  # 绘制是否为Haver
+IS_DEBUG_POINT: bool = False  # 绘制线POINT
 
 
 class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
