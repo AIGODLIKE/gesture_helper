@@ -1,11 +1,13 @@
 import ast
+
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
 from ..utils import PropertySetUtils
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.public_cache import cache_update_lock
-from ..utils.string_eval import try_call_exec, try_call_eval
+from ..utils.string_eval import try_call_exec
 
 
 class OperatorProperty:
@@ -172,6 +174,14 @@ class ElementOperator(OperatorProperty):
             self.__running_by_script__()
         else:
             Exception(f'{self}操作符类型错误')
+
+    @property
+    def __operator_name__(self) -> str:
+        if self.operator_type == "OPERATOR":
+            func = self.operator_func
+            if func:
+                rna = func.get_rna_type()
+                return pgettext(rna.name, rna.translation_context)
 
     def __running_by_bl_idname__(self):
         """通过bl_idname运行操作符

@@ -11,13 +11,15 @@ from ..ops.gesture_cure import GestureCURE
 from ..utils.public import PublicProperty
 
 
-class Gesture(GestureKeymap,
-              GestureProperty,
-              GestureRelationship,
+class Gesture(
+    GestureKeymap,
+    GestureProperty,
+    GestureRelationship,
 
-              PublicProperty,
+    PublicProperty,
 
-              PropertyGroup):
+    PropertyGroup,
+):
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)

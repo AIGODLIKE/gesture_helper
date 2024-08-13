@@ -336,6 +336,11 @@ class Create(Draw):
         elif pt == "ENUM":
             self.create_enum()
 
+        ae = self.active_element
+        bp = self.button_prop
+        if ae and bp:
+            ae.name = pgettext(bp.name, bp.translation_context)
+
 
 class CreateElementProperty(Create):
     bl_label = '创建属性元素'
