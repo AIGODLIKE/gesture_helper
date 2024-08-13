@@ -1,5 +1,5 @@
 {
-  "time": 1723518081.857729,
+  "time": 1723518255.0601661,
   "blender_version": [
     4,
     3,
@@ -17,7 +17,7 @@
       "name": "\u9009\u62e9 - Maya - Right Ctrl",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\", \"Lattice\", \"Font\", \"Grease Pencil\", \"Pose\", \"Vertex Paint\", \"Weight Paint\", \"Sculpt\"]",
+      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\"]",
       "element": {
         "0": {
           "name": "\u7269\u4f53\u6a21\u5f0f",
