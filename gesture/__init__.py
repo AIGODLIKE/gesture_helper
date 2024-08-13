@@ -26,10 +26,17 @@ class Gesture(
     description: StringProperty(default="这是一个手势...", name="注释")
 
     def draw_item(self, layout):
-        layout.prop(self, 'enabled', text='')
+        prop = self.draw_property
+        if prop.gesture_show_enabled_button:
+            layout.prop(self, 'enabled', text='')
+        if prop.gesture_show_keymap:
+            sp = layout.split(factor=prop.gesture_keymap_split_factor)
+            sp.label(text=self.__key_str__)
+            layout = sp.row(align=True)
         layout.separator()
         layout.prop(self, 'name', text='')
-        layout.label(text=self.description)
+        if prop.gesture_show_description:
+            layout.label(text=self.description)
 
 
 classes_list = (

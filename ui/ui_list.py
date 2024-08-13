@@ -5,16 +5,28 @@ from ..utils.public import PublicProperty
 from ..utils.public_ui import icon_two
 
 
-class GestureUIList(UIList):
+class GestureUIList(UIList, PublicProperty):
     bl_idname = 'DRAW_UL_gesture_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
         item.draw_item(layout)
 
+    def draw_filter(self, context, layout):
+        column = layout.column(align=True)
+        row = column.row(align=True)
 
-class ElementUIList(UIList,
-                    PublicProperty):
+        prop = self.draw_property
+        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.element_show_enabled_button, "HIDE"))
+        row.prop(prop, 'gesture_show_keymap', icon="BLANK1")
+        row.prop(prop, 'gesture_show_description', icon="INFO")
+
+        row = column.row(align=True)
+        row.active = prop.gesture_show_keymap
+        row.prop(prop, "gesture_keymap_split_factor")
+
+
+class ElementUIList(UIList, PublicProperty):
     bl_idname = 'DRAW_UL_element_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,

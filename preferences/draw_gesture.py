@@ -11,7 +11,96 @@ class GestureDraw:
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
         from ..ops import gesture_cure
-        GestureDraw.public_cure(layout, gesture_cure.GestureCURE)
+        cls = gesture_cure.GestureCURE
+
+        pref = get_pref()
+        draw_property = pref.draw_property
+        other = pref.other_property
+
+        column = layout.column(align=True)
+
+        column.operator(
+            cls.ADD.bl_idname,
+            icon='ADD',
+            text=''
+        )
+        column.operator(
+            cls.COPY.bl_idname,
+            icon='COPYDOWN',
+            text=''
+        )
+        column.operator(
+            cls.REMOVE.bl_idname,
+            icon='REMOVE',
+            text=''
+        )
+
+        column.separator()
+
+        sort_column = column.column(align=True)
+        sort_column.operator(
+            cls.SORT.bl_idname,
+            icon='SORT_DESC',
+            text=''
+        ).is_next = False
+
+        sort_column.operator(
+            cls.SORT.bl_idname,
+            icon='SORT_ASC',
+            text=''
+        ).is_next = True
+
+        column.separator()
+        column.separator()
+
+        import_id_name = export_import.Import.bl_idname
+        column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
+        column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
+        column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
+
+    @staticmethod
+    def draw_element_cure(layout: bpy.types.UILayout) -> None:
+        from ..element import ElementCURE
+        cls = ElementCURE
+        pref = get_pref()
+        draw_property = pref.draw_property
+        other = pref.other_property
+
+        column = layout.column(align=True)
+
+        DrawElement.draw_element_cure(column, cls)
+        column.separator()
+
+        sort_column = column.column(align=True)
+        sort_column.operator(
+            cls.SORT.bl_idname,
+            icon='SORT_DESC',
+            text=''
+        ).is_next = False
+
+        moving = other.is_move_element
+        icon = 'DOT' if moving else 'GRIP'
+
+        row = sort_column.row(align=True)
+        # TODO(move info)
+        # if moving:
+        #     move_item = cls.MOVE.move_item
+        #     row.enabled = bool(move_item and not move_item.is_root)
+        # row.operator(
+        #     cls.MOVE.bl_idname,
+        #     icon=icon,
+        #     text=''
+        # )
+        # if moving:
+        #     sort_column.operator(
+        #         cls.MOVE.bl_idname,
+        #         icon='CANCEL',
+        #         text=''
+        #     ).cancel = True
+
+        column.separator()
+        icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
+        column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
     @staticmethod
     def draw_gesture_key(layout) -> None:
@@ -70,87 +159,6 @@ class GestureDraw:
             GestureDraw.draw_element_cure(row)
         else:
             layout.label(text='请添加或选择一个手势')
-
-    @staticmethod
-    def draw_element_cure(layout: bpy.types.UILayout) -> None:
-        from ..element import ElementCURE
-        GestureDraw.public_cure(layout, ElementCURE)
-
-    @staticmethod
-    def public_cure(layout, cls) -> None:
-        is_element = cls.__name__ == 'ElementCURE'
-        pref = get_pref()
-        draw_property = pref.draw_property
-        other = pref.other_property
-
-        column = layout.column(align=True)
-        if is_element:
-            DrawElement.draw_element_cure(column, cls)
-            column.separator()
-        else:
-            column.operator(
-                cls.ADD.bl_idname,
-                icon='ADD',
-                text=''
-            )
-            column.operator(
-                cls.COPY.bl_idname,
-                icon='COPYDOWN',
-                text=''
-            )
-            column.operator(
-                cls.REMOVE.bl_idname,
-                icon='REMOVE',
-                text=''
-            )
-
-        column.separator()
-
-        sort_column = column.column(align=True)
-        sort_column.operator(
-            cls.SORT.bl_idname,
-            icon='SORT_DESC',
-            text=''
-        ).is_next = False
-
-        if is_element:
-            moving = other.is_move_element
-            icon = 'DOT' if moving else 'GRIP'
-
-            row = sort_column.row(align=True)
-            if moving:
-                move_item = cls.MOVE.move_item
-                row.enabled = bool(move_item and not move_item.is_root)
-            row.operator(
-                cls.MOVE.bl_idname,
-                icon=icon,
-                text=''
-            )
-            if moving:
-                sort_column.operator(
-                    cls.MOVE.bl_idname,
-                    icon='CANCEL',
-                    text=''
-                ).cancel = True
-
-        sort_column.operator(
-            cls.SORT.bl_idname,
-            icon='SORT_ASC',
-            text=''
-        ).is_next = True
-
-        if is_element:
-            column.separator()
-            icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
-            column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
-        else:
-            column.separator()
-            column.separator()
-
-            import_id_name = export_import.Import.bl_idname
-            column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
-            column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
-            column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
 
     @staticmethod
     def draw_ui_gesture(layout):

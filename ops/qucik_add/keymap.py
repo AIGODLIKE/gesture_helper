@@ -9,8 +9,8 @@ class GestureQuickAddKeymap:
 
     @classmethod
     def register(cls):
-        from .gesture_quick_add import GestureQuickAdd
-        cls.kmi = cls.km.keymap_items.new(GestureQuickAdd.bl_idname, 'ACCENT_GRAVE', 'PRESS',
+        from .gesture_preview import GesturePreview
+        cls.kmi = cls.km.keymap_items.new(GesturePreview.bl_idname, 'ACCENT_GRAVE', 'PRESS',
                                           ctrl=True, alt=True, shift=True)
 
     @classmethod

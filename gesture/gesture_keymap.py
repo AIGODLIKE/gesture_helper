@@ -1,8 +1,11 @@
-# 每一项手势的快捷键
-# 不需要去记录每一个快捷键的位置
-# 只需要记录快捷键用到的数据和空间
-# 每次开启插件的时候从数据里面当场新建一些快捷键并填入缓存数据
-# 使用临时快捷键来修改每一个快捷键的位置
+"""
+每一项手势的快捷键
+不需要去记录每一个快捷键的位置
+只需要记录快捷键用到的数据和空间
+每次开启插件的时候从数据里面当场新建一些快捷键并填入缓存数据
+使用临时快捷键来修改每一个快捷键的位置
+"""
+
 import json
 import traceback
 
@@ -147,3 +150,18 @@ class GestureKeymap(KeymapProperty):
         kmi.alt = False
         self.to_temp_kmi()
 
+    @property
+    def __key_str__(self) -> str:
+        """反回快捷键显示的字符"""
+        from ..utils.translate import translate_event_value
+        keymap = self.key
+        if keymap:
+            return "".join(
+                [
+                    k.title()[0] if isinstance(v, int) else translate_event_value(v)
+                    for k, v in keymap.items()
+                    if k == 'type' or (k in ('ctrl', 'shift', 'alt') and v == 1)
+                ]
+            )
+        else:
+            return "无快捷键"

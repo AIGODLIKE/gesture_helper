@@ -9,7 +9,7 @@ class PreferencesDraw(GestureDraw):
     @staticmethod
     def preferences_draw(layout: bpy.types.UILayout):
         """绘制偏好设置"""
-        from ..ops.qucik_add.gesture_quick_add import GestureQuickAdd
+        from ..ops.qucik_add.gesture_preview import GesturePreview
         pref = get_pref()
 
         column = layout.column(align=True)
@@ -18,7 +18,7 @@ class PreferencesDraw(GestureDraw):
         row.prop(pref, 'enabled', text="")
 
         row.prop(pref, 'show_page', expand=True)
-        row.operator(GestureQuickAdd.bl_idname, icon="RNA_ADD")
+        row.operator(GesturePreview.bl_idname, icon="RNA_ADD")
         sub_column = column.column(align=True)
         if pref.is_show_gesture:
             sub_column.enabled = pref.enabled

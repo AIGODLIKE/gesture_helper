@@ -7,6 +7,11 @@ from ..utils.public import get_pref
 
 class DrawProperty(PropertyGroup):
     from ..utils import public_color
+    gesture_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
+    gesture_show_keymap: BoolProperty(name='显示快捷键', default=True)
+    gesture_show_description: BoolProperty(name='显示注释', default=True)
+    gesture_keymap_split_factor: FloatProperty(name='快捷键拆分系数', default=0.2, max=0.95, min=0.01, step=0.01)
+
     element_split_factor: FloatProperty(name='拆分系数', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
     element_show_left_side: BoolProperty(name='显示在左侧', default=False)

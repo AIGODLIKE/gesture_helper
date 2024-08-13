@@ -1,12 +1,14 @@
 import bpy
 
 from . import ops, ui, props, preferences
+from .src import translate
 
 module_list = (
     ui,
     ops,
     preferences,
     props,
+    translate,
 )
 
 

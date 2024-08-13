@@ -10,7 +10,7 @@ from . import switch_ui
 from .modal_mouse import ModalMouseOperator
 from .qucik_add.create_element_operator import CreateElementOperator
 from .qucik_add.create_element_property import CreateElementProperty
-from .qucik_add.gesture_quick_add import GestureQuickAdd
+from .qucik_add.gesture_preview import GesturePreview
 
 operator_list = (
     switch_ui.SwitchGestureWindow,
@@ -21,7 +21,7 @@ operator_list = (
     set_key.OperatorTempModifierKey,
 
     gesture.GestureOperator,
-    GestureQuickAdd,
+    GesturePreview,
 
     CreateElementProperty,
     CreateElementOperator,

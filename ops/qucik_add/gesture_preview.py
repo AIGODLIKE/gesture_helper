@@ -9,10 +9,10 @@ from ...gesture.gesture_handle import GestureHandle
 from ...utils.public import PublicOperator
 
 
-class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOperator):
-    bl_idname = "gesture.quick_add"
-    bl_label = "Quick Add"
-    is_quick_add_mode = False  # 是在添加模式
+class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOperator):
+    bl_idname = "gesture.preview"
+    bl_label = "Gesture Preview"
+    is_preview_mode = False
 
     gesture: StringProperty()
 
@@ -37,7 +37,7 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
 
     @classmethod
     def poll(cls, context):
-        return not cls.is_quick_add_mode
+        return not cls.is_preview_mode
 
     @property
     def is_exit(self):
@@ -77,7 +77,7 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
         wm = context.window_manager
         self.timer = wm.event_timer_add(1 / 5, window=context.window)
         wm.modal_handler_add(self)
-        GestureQuickAdd.is_quick_add_mode = True
+        GesturePreview.is_preview_mode = True
 
         self.__sync_gesture__()
         return {'RUNNING_MODAL'}
@@ -136,7 +136,7 @@ class GestureQuickAdd(GestureHandle, GestureGpuDraw, GestureProperty, PublicOper
 
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
         if self.is_exit:
-            GestureQuickAdd.is_quick_add_mode = False
+            GesturePreview.is_preview_mode = False
             self.__exit_modal__()
             return {'FINISHED'}
 

@@ -12,6 +12,9 @@ ADDON_NAME = __addon_name__
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src/preset'))
 
+TRANSLATE_ID = "gesture"
+TRANSLATE_KEY = TRANSLATE_ID + "_keymap"
+
 
 @cache
 def get_pref():
