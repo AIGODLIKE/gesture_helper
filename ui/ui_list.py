@@ -25,6 +25,8 @@ class GestureUIList(UIList, PublicProperty):
         row.active = prop.gesture_show_keymap
         row.prop(prop, "gesture_keymap_split_factor")
 
+        column.prop(prop, "gesture_remove_tips", icon="INFO_LARGE")
+
 
 class ElementUIList(UIList, PublicProperty):
     bl_idname = 'DRAW_UL_element_items'
@@ -49,6 +51,8 @@ class ElementUIList(UIList, PublicProperty):
         row.prop(debug, 'debug_mode', icon='GHOST_ENABLED')
         row.prop(debug, 'debug_key', icon='GHOST_ENABLED')
         row.prop(debug, 'debug_draw_gpu_mode', icon='INFO')
+
+        column.prop(prop, "element_remove_tips", icon="INFO_LARGE")
 
 
 class ImportPresetUIList(UIList,

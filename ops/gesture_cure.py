@@ -25,8 +25,15 @@ class GestureCURE:
         bl_idname = 'gesture.gesture_remove'
         bl_label = '删除手势'
 
+        def invoke(self, context, event):
+            return context.window_manager.invoke_confirm(
+                self,
+                event,
+                title="确认删除手势?",
+                message=f"{self.active_gesture.name}",
+            )
+
         def execute(self, _):
-            # TODO Remove 确认
             act = self.pref.active_gesture
             act.key_unload()
             act.remove()

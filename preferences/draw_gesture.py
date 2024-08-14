@@ -10,12 +10,17 @@ class GestureDraw:
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
         from ..ops.gesture_cure import GestureCURE
+        pref = get_pref()
 
         column = layout.column(align=True)
 
         column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
         column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
+
+        rm = column.column(align=True)
+        rm.operator_context = "INVOKE_DEFAULT" if pref.draw_property.gesture_remove_tips else "EXEC_DEFAULT"
         column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
+
         column.separator()
 
         sort_column = column.column(align=True)

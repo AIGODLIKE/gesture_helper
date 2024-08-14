@@ -20,7 +20,9 @@ class DrawElement:
         cut.active = cut.enabled = not pref.__is_cut_element__
         cut.operator(ElementCURE.CUT.bl_idname, icon_value=pref.__get_icon__("CUT"), text='')
         cr.operator(ElementCURE.COPY.bl_idname, icon='COPYDOWN', text='')
-        cr.operator(ElementCURE.REMOVE.bl_idname, icon='REMOVE', text='')
+        rm = column.column(align=True)
+        rm.operator_context = "INVOKE_DEFAULT" if pref.draw_property.element_remove_tips else "EXEC_DEFAULT"
+        rm.operator(ElementCURE.REMOVE.bl_idname, icon='REMOVE', text='')
 
         column.separator()
 

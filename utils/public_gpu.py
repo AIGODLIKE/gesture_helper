@@ -185,7 +185,7 @@ class PublicGpu:
         import gpu
 
         if segments is None:
-            max_pixel_error = 0.25  # TODO: multiply 0.5 by display dpi
+            max_pixel_error = 0.25
             segments = int(ceil(pi / acos(1.0 - max_pixel_error / radius)))
             segments = max(segments, 8)
             segments = min(segments, 1000)

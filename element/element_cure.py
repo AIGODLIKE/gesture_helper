@@ -93,6 +93,14 @@ class ElementCURE:
         bl_label = '删除手势项'
         bl_idname = 'gesture.element_remove'
 
+        def invoke(self, context, event):
+            return context.window_manager.invoke_confirm(
+                self,
+                event,
+                title="确认删除元素?",
+                message=f"{self.active_element.name}",
+            )
+
         def execute(self, _):
             self.pref.active_element.remove()
             self.cache_clear()
