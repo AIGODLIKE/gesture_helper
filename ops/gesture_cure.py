@@ -26,6 +26,7 @@ class GestureCURE:
         bl_label = '删除手势'
 
         def execute(self, _):
+            # TODO Remove 确认
             act = self.pref.active_gesture
             act.key_unload()
             act.remove()

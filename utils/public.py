@@ -134,14 +134,27 @@ class PublicProperty(PublicCacheFunc):
                 ag.to_temp_kmi()
                 ag.__check_duplicate_name__()
             if ae:
-                ae.to_operator_tmp_kmi()
-                ae.__check_duplicate_name__()
+                if ae.element_type == "OPERATOR" and ae.operator_type == "OPERATOR":
+                    ae.to_operator_tmp_kmi()
         except Exception as e:
-            ...
+            print('update_state Error', e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
 
     @property
-    def is_debug(self):
+    def is_debug(self) -> bool:
         return get_debug()
+
+    @property
+    def __is_move_element__(self) -> bool:
+        return self.__element_move_item__ is not None
+
+    @property
+    def __element_move_item__(self) -> "Element":
+        """反回移动的element项"""
+        from ..element.element_cure import ElementCURE
+        return ElementCURE.MOVE.move_item
 
 
 class PublicOperator(Operator):
@@ -174,6 +187,7 @@ class PublicUniqueNamePropertyGroup:
     """不重复名称"""
 
     names_iteration: list
+    __is_check_duplicate_name__ = True
 
     @staticmethod
     def __generate_new_name__(names, new_name):
@@ -203,7 +217,8 @@ class PublicUniqueNamePropertyGroup:
 
     @update
     def rename(self):
-        self.__check_duplicate_name__()
+        if self.__is_check_duplicate_name__:
+            self.__check_duplicate_name__()
 
     name: StringProperty(
         name='名称',

@@ -13,7 +13,6 @@ class ElementDraw:
     def draw_item(self, layout: 'bpy.types.UILayout'):
         pref = get_pref()
         draw = pref.draw_property
-        other = pref.other_property
 
         layout.context_pointer_set('move_element', self)
         column = layout.column(align=True)
@@ -27,11 +26,13 @@ class ElementDraw:
         right.prop(self, 'radio', text='',
                    icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                    emboss=False)
-        if other.is_move_element:
-            from .. import ElementCURE
+
+        from .element_cure import ElementCURE
+        if ElementCURE.MOVE.move_item is not None:
             r = right.row()
             r.enabled = self.is_movable
-            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="HANDLETYPE_AUTO_CLAMP_VEC")
+            r.active = self.is_movable
+            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="UV_SYNC_SELECT", emboss=False)
 
         self.draw_item_child(column)
 
@@ -151,7 +152,7 @@ class ElementDraw:
             if i not in ('rna_type', 'name', 'relationship', "poll_string"):
                 row = layout.row()
                 row.label(text=i)
-                row.prop(self, i, expand=True, )
+                row.prop(self, i, expand=True)
 
     def draw_alert(self, layout):
         """绘制警告信息
@@ -170,7 +171,7 @@ class ElementDraw:
                 elif self.is_selected_else:
                     alert_list.append(f'else 的上一个选择结构需要是if 或 elif')
                 else:
-                    alert_list.append(f'我也不知道是那里错了')
+                    alert_list.append(f'我也不知道是那里错了 :>')
         elif self.is_operator:
             if not self.__operator_id_name_is_validity__:
                 alert_list.append(f'操作符错误')

@@ -10,47 +10,20 @@ class GestureDraw:
 
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
-        from ..ops import gesture_cure
-        cls = gesture_cure.GestureCURE
-
-        pref = get_pref()
-        draw_property = pref.draw_property
-        other = pref.other_property
+        from ..ops.gesture_cure import GestureCURE
 
         column = layout.column(align=True)
 
-        column.operator(
-            cls.ADD.bl_idname,
-            icon='ADD',
-            text=''
-        )
-        column.operator(
-            cls.COPY.bl_idname,
-            icon='COPYDOWN',
-            text=''
-        )
-        column.operator(
-            cls.REMOVE.bl_idname,
-            icon='REMOVE',
-            text=''
-        )
-
+        column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
+        column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
+        column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
         column.separator()
 
         sort_column = column.column(align=True)
-        sort_column.operator(
-            cls.SORT.bl_idname,
-            icon='SORT_DESC',
-            text=''
-        ).is_next = False
+        sort_column.operator(GestureCURE.SORT.bl_idname, icon='SORT_DESC', text='').is_next = False
 
-        sort_column.operator(
-            cls.SORT.bl_idname,
-            icon='SORT_ASC',
-            text=''
-        ).is_next = True
+        sort_column.operator(GestureCURE.SORT.bl_idname, icon='SORT_ASC', text='').is_next = True
 
-        column.separator()
         column.separator()
 
         import_id_name = export_import.Import.bl_idname
@@ -61,42 +34,22 @@ class GestureDraw:
     @staticmethod
     def draw_element_cure(layout: bpy.types.UILayout) -> None:
         from ..element import ElementCURE
-        cls = ElementCURE
         pref = get_pref()
         draw_property = pref.draw_property
-        other = pref.other_property
 
         column = layout.column(align=True)
+        column.enabled = ElementCURE.MOVE.move_item is None
 
-        DrawElement.draw_element_cure(column, cls)
+        cr = column.column(align=True)
+        cr.operator(ElementCURE.COPY.bl_idname, icon='COPYDOWN', text='')
+        cr.operator(ElementCURE.REMOVE.bl_idname, icon='REMOVE', text='')
+
         column.separator()
 
-        sort_column = column.column(align=True)
-        sort_column.operator(
-            cls.SORT.bl_idname,
-            icon='SORT_DESC',
-            text=''
-        ).is_next = False
-
-        moving = other.is_move_element
-        icon = 'DOT' if moving else 'GRIP'
-
-        row = sort_column.row(align=True)
-        # TODO(move info)
-        # if moving:
-        #     move_item = cls.MOVE.move_item
-        #     row.enabled = bool(move_item and not move_item.is_root)
-        # row.operator(
-        #     cls.MOVE.bl_idname,
-        #     icon=icon,
-        #     text=''
-        # )
-        # if moving:
-        #     sort_column.operator(
-        #         cls.MOVE.bl_idname,
-        #         icon='CANCEL',
-        #         text=''
-        #     ).cancel = True
+        sc = column.column(align=True)
+        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_DESC').is_next = False
+        sc.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='')
+        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_ASC').is_next = True
 
         column.separator()
         icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
@@ -118,6 +71,8 @@ class GestureDraw:
     def draw_gesture_item(layout: bpy.types.UILayout) -> None:
         pref = get_pref()
         row = layout.row(align=True)
+        row.enabled = row.active = not pref.__is_move_element__
+
         GestureDraw.draw_gesture_cure(row)
         column = row.column(align=True)
         from ..ui.ui_list import GestureUIList

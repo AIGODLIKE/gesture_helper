@@ -22,11 +22,19 @@ class ElementCURE:
 
     @property
     def is_movable(self) -> bool:
+        """是可以移动到的项目"""
         pe = self.parent_element
-        if pe:
-            if not pe.is_movable:
-                return False
+        # if pe:
+        #     if not pe.is_movable:
+        #         return False
+
         move_from = ElementCURE.MOVE.move_item
+        if move_from.parent_element == self:
+            # 移动到当前项的父级
+            return False
+        elif self in move_from.element_child_iteration:
+            # 移动到的是被移动的子级
+            return False
 
         is_ok = move_from and (self not in list(move_from.element))
         move_element = is_ok and move_from != self and self != self.parent_element
@@ -96,7 +104,7 @@ class ElementCURE:
         bl_label = '移动手势项'
         move_item = None
 
-        cancel: BoolProperty(default=False, options={'SKIP_SAVE'})
+        cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
 
         @cache_update_lock
         def move(self):
@@ -110,7 +118,6 @@ class ElementCURE:
                     PropertySetUtils.set_prop(move_to, 'element', {'0': move_data})
                 else:
                     PropertySetUtils.set_prop(move_from.parent_gesture, 'element', {'0': move_data})
-                self.other.is_move_element = False
                 move_from.remove()
             self.cache_clear()
 
@@ -119,16 +126,14 @@ class ElementCURE:
             return self.pref.other_property
 
         def execute(self, _):
-            other = self.other
             move_from = ElementCURE.MOVE.move_item
 
-            if self.cancel:
-
+            if self.cancel_move:
                 self.cache_clear()
-                other.is_move_element = False
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
             elif move_from:
+                # 有移动项,直接移动
                 self.move()
                 ae = self.active_element
                 self.cache_clear()
@@ -137,12 +142,10 @@ class ElementCURE:
                     ae.__check_duplicate_name__()
 
                 self.cache_clear()
-                other.is_move_element = False
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
 
             ElementCURE.MOVE.move_item = self.active_element
-            other.is_move_element = True
             self.cache_clear()
             return {'FINISHED'}
 
@@ -168,9 +171,17 @@ class ElementCURE:
             ae = self.active_element
             if ae:
                 ae.radio = True
-                ae.collection[-1].__check_duplicate_name__()
 
             self.cache_clear()
+            return {'FINISHED'}
+
+    class CUT(ElementPoll):
+        bl_idname = 'gesture.element_cut'
+        bl_label = '剪切手势项'
+
+        __cut__ = None  # 剪切的数据
+
+        def execute(self, context):
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):

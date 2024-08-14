@@ -1,9 +1,9 @@
-from bpy.props import BoolProperty
 from functools import cache
+
+from bpy.props import BoolProperty, StringProperty
 
 from ..utils.public import (
     PublicSortAndRemovePropertyGroup,
-    PublicUniqueNamePropertyGroup,
     get_gesture_direction_items
 )
 from ..utils.public_cache import PublicCache, cache_update_lock
@@ -87,6 +87,7 @@ class Relationship:
 
     @property
     def element_iteration(self):
+        """反回当前手势的所有项"""
         return PublicCache.__gesture_element_iteration__[self.parent_gesture]
 
     @property
@@ -100,6 +101,10 @@ class Relationship:
     @property
     def parent_gesture_direction_items(self):
         return self.parent.gesture_direction_items
+
+    @property
+    def element_child_iteration(self):
+        return PublicCache.__element_child_iteration__[self]
 
 
 class RadioSelect:
@@ -128,10 +133,10 @@ class RadioSelect:
         return self.parent_gesture.element_iteration
 
 
-class ElementRelationship(PublicUniqueNamePropertyGroup,
-                          RadioSelect,
+class ElementRelationship(RadioSelect,
                           PublicSortAndRemovePropertyGroup,
                           Relationship):
+    name: StringProperty(name="名称")
 
     def _get_index(self) -> int:
         return self.parent.index_element
@@ -161,7 +166,8 @@ class ElementRelationship(PublicUniqueNamePropertyGroup,
         """是显示警告的UI"""
         if self.is_selected_structure:  # 选择结构
             # 是一个可用的选择结构
-            return not self.__selected_structure_is_validity__
+            if self.enabled:
+                return not self.__selected_structure_is_validity__
         elif self.is_operator:
             return not (self.__operator_id_name_is_validity__ and self.__operator_properties_is_validity__)
         return False

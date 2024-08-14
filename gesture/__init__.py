@@ -45,6 +45,7 @@ classes_list = (
     ElementCURE.ADD,
     ElementCURE.SORT,
     ElementCURE.COPY,
+    ElementCURE.CUT,
     ElementCURE.MOVE,
     ElementCURE.REMOVE,
     ElementCURE.ScriptEdit,

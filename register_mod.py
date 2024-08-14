@@ -35,7 +35,6 @@ def init_register():
         if not prop.init_addon:
             prop.init_addon = True
             Import.restore()
-        prop.is_move_element = False
     except Exception as e:
         import traceback
         traceback.print_stack()

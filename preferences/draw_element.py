@@ -10,27 +10,29 @@ class DrawElement:
         act = pref.active_element
         prop = pref.draw_property
         if act:
-            if not prop.element_show_left_side:
+            from ..element.element_cure import ElementCURE
+            mi = ElementCURE.MOVE.move_item
+            if mi is not None:
+                column = layout.column(align=True)
+                column.label(text=f"移动手势中")
+                column.separator()
+                column.label(text=f"移动手势: {mi.name}")
+                if mi.is_root:
+                    column.label(text=f"手势项为根级")
+
+                row = column.row(align=True)
+                mr = row.row(align=True)
+                mr.enabled = not mi.is_root  # 不是根级的
+                mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='移动到根级').cancel_move = False
+                row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='取消移动').cancel_move = True
+
+            elif not prop.element_show_left_side:
                 act.draw_alert(layout)
                 act.draw_item_property(layout)
             if get_debug():
                 act.draw_debug(layout)
         else:
             layout.label(text='请 选择或添加 一个手势元素')
-
-    @staticmethod
-    def draw_element_cure(layout: 'bpy.types.UILayout', cls) -> None:
-        column = layout.column(align=True)
-        column.operator(
-            cls.COPY.bl_idname,
-            icon='COPYDOWN',
-            text=''
-        )
-        column.operator(
-            cls.REMOVE.bl_idname,
-            icon='REMOVE',
-            text=''
-        )
 
     @staticmethod
     def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
