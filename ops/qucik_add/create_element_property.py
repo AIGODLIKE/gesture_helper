@@ -263,7 +263,7 @@ class Create(Draw):
             if vm == "SET_VALUE":
                 ae.operator_bl_idname = f"wm.context_set_int(data_path='{self.__data_path__}', value={self.int_value})"
             else:
-                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode={self.value_mode})"
+                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode='{self.value_mode}')"
                 ae.operator_bl_idname = bl
 
     def create_float(self):
@@ -274,7 +274,7 @@ class Create(Draw):
             if vm == "SET_VALUE":
                 ae.operator_bl_idname = f"wm.context_set_float(data_path='{self.__data_path__}', value={self.float_value})"
             else:
-                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode={self.value_mode})"
+                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode='{self.value_mode}')"
                 ae.operator_bl_idname = bl
 
     def create_string(self):
