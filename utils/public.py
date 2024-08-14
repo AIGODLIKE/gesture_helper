@@ -109,6 +109,7 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_gesture(self):
+        """反回活动的手势"""
         try:
             index = getattr(self.pref, "index_gesture", None)
             if index is not None:
@@ -118,6 +119,7 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_element(self):
+        """反回活动的元素"""
         act_ges = self.active_gesture
         if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
@@ -126,6 +128,8 @@ class PublicProperty(PublicCacheFunc):
 
     @classmethod
     def update_state(cls):
+        """更新临时快捷键的状态
+        操作符"""
         pref = get_pref()
         ag = pref.active_gesture
         ae = pref.active_element
@@ -148,6 +152,7 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def __is_move_element__(self) -> bool:
+        """反回是在移动元素模式的布尔值"""
         return self.__element_move_item__ is not None
 
     @property
@@ -155,6 +160,29 @@ class PublicProperty(PublicCacheFunc):
         """反回移动的element项"""
         from ..element.element_cure import ElementCURE
         return ElementCURE.MOVE.move_item
+
+    @property
+    def __is_cut_element__(self) -> bool:
+        """反回是在剪切元素模式的布尔值"""
+        return self.__element_cut_item__ is not None
+
+    @property
+    def __element_cut_item__(self) -> "Element":
+        """反回剪切的element项"""
+        from ..element.element_cure import ElementCURE
+        return ElementCURE.CUT.__cut_data__
+
+    @staticmethod
+    def __get_icon__(key) -> int:
+        """获取icon"""
+        from .icons import Icons
+        return Icons.get(key).icon_id
+
+    @property
+    def ___dict_data___(self) -> dict:
+        """反回当前项的数据"""
+        from . import PropertyGetUtils
+        return PropertyGetUtils.props_data(self)
 
 
 class PublicOperator(Operator):

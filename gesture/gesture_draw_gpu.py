@@ -107,7 +107,7 @@ class GestureGpuDraw(DrawDebug):
             cls = bpy.context.space_data.rna_type.bl_rna
             sub_class = {}
             debug_class = {}
-            for identifier in {'WINDOW', }:  # 'UI', 'TOOLS','HEADER',
+            for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
                 try:
                     sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
                     debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,

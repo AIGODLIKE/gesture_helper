@@ -14,19 +14,13 @@ class ElementCURE:
 
     @cache_update_lock
     def copy(self):
-        from ..utils import PropertyGetUtils, PropertySetUtils
-        copy_data = PropertyGetUtils.props_data(self.active_element)
-
-        parent = self.parent
-        PropertySetUtils.set_prop(parent, 'element', {'0': copy_data})
+        """复制元素"""
+        from ..utils import PropertySetUtils
+        PropertySetUtils.set_prop(self.parent, 'element', {'0': self.active_element.___dict_data___})
 
     @property
     def is_movable(self) -> bool:
         """是可以移动到的项目"""
-        pe = self.parent_element
-        # if pe:
-        #     if not pe.is_movable:
-        #         return False
 
         move_from = ElementCURE.MOVE.move_item
         if move_from.parent_element == self:
@@ -40,6 +34,11 @@ class ElementCURE:
         move_element = is_ok and move_from != self and self != self.parent_element
         movable = (self.is_child_gesture or self.is_selected_structure) and move_element
         return bool(movable)
+
+    @property
+    def is_can_be_cut(self) -> bool:
+        """是可剪切的"""
+        return self.is_child_gesture or self.is_selected_structure
 
     class ElementPoll(PublicProperty, PublicOperator, PublicCacheFunc):
 
@@ -139,7 +138,6 @@ class ElementCURE:
                 self.cache_clear()
                 if ae:
                     ae.radio = True
-                    ae.__check_duplicate_name__()
 
                 self.cache_clear()
                 ElementCURE.MOVE.move_item = None
@@ -179,9 +177,62 @@ class ElementCURE:
         bl_idname = 'gesture.element_cut'
         bl_label = '剪切手势项'
 
-        __cut__ = None  # 剪切的数据
+        __cut_data__ = None  # 剪切的数据
+
+        cancel_cut: BoolProperty(default=False, options={'SKIP_SAVE'})
+
+        @cache_update_lock
+        def cut(self):
+            from ..utils import PropertySetUtils
+            cut = ElementCURE.CUT.__cut_data__
+
+            # 移动中
+            cut_to = getattr(bpy.context, 'cue_element', None)
+            if cut_to:
+                PropertySetUtils.set_prop(cut_to, 'element', {'0': cut})
+            else:
+                PropertySetUtils.set_prop(self.active_gesture, 'element', {'0': cut})
+            self.cache_clear()
+
+        @classmethod
+        def poll(cls, context):
+            if cls.__cut_data__ is not None:
+                return True
+            return super().poll(context)
+
+        def invoke(self, context, event):
+            if self.cancel_cut:
+                return context.window_manager.invoke_confirm(
+                    self,
+                    event,
+                    title="确认取消剪切?",
+                    message="剪切的内容将会丢失",
+                )
+            return self.execute(context)
 
         def execute(self, context):
+            cut = ElementCURE.CUT.__cut_data__
+            if self.cancel_cut:
+                self.cache_clear()
+                ElementCURE.CUT.__cut_data__ = None
+                return {'FINISHED'}
+            elif cut:
+                self.cut()
+                ae = self.active_element
+                self.cache_clear()
+                if ae:
+                    self.cache_clear()
+                    ae.radio = True
+                self.cache_clear()
+                ElementCURE.CUT.__cut_data__ = None
+                return {'FINISHED'}
+
+            # 选择一个移动项
+            ae = self.pref.active_element
+            ElementCURE.CUT.__cut_data__ = ae.___dict_data___
+            ae.remove()
+            print(ae, self.active_element, ElementCURE.CUT.__cut_data__)
+            self.cache_clear()
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):

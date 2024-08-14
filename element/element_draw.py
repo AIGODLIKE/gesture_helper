@@ -4,7 +4,6 @@ import bpy
 
 from . import ElementCURE
 from ..ops.set_direction import SetDirection
-from ..utils.icons import Icons
 from ..utils.public import get_pref
 from ..utils.public_ui import icon_two
 
@@ -15,6 +14,8 @@ class ElementDraw:
         draw = pref.draw_property
 
         layout.context_pointer_set('move_element', self)
+        layout.context_pointer_set('cue_element', self)
+
         column = layout.column(align=True)
 
         split = column.split(factor=draw.element_split_factor)
@@ -27,13 +28,16 @@ class ElementDraw:
                    icon=icon_two(self.radio, 'RESTRICT_SELECT'),
                    emboss=False)
 
-        from .element_cure import ElementCURE
-        if ElementCURE.MOVE.move_item is not None:
+        if pref.__is_move_element__:
+            from .element_cure import ElementCURE
             r = right.row()
-            r.enabled = self.is_movable
-            r.active = self.is_movable
+            r.active = r.enabled = self.is_movable
             r.operator(ElementCURE.MOVE.bl_idname, text="", icon="UV_SYNC_SELECT", emboss=False)
-
+        elif pref.__is_cut_element__:
+            from .element_cure import ElementCURE
+            r = right.row()
+            r.active = r.enabled = self.is_can_be_cut
+            r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
         self.draw_item_child(column)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout'):
@@ -46,10 +50,10 @@ class ElementDraw:
         elif self.is_child_gesture:
             row.label(text='', icon='CON_CHILDOF')
         elif self.is_selected_structure:
-            row.label(text='', icon_value=Icons.get(self.selected_type).icon_id)
+            row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
 
         if self.is_child_gesture or self.is_operator:
-            row.label(text='', icon_value=Icons.get(self.direction).icon_id)
+            row.label(text='', icon_value=pref.__get_icon__(self.direction))
         else:
             row.separator()
             row.separator()
@@ -77,7 +81,7 @@ class ElementDraw:
     def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression
-            icon = Icons.get(self.selected_type).icon_id
+            icon = self.pref.__get_icon__(self.selected_type)
 
             layout.prop(self, 'name')
 
@@ -129,7 +133,7 @@ class ElementDraw:
             row = layout.row(align=True)
             column = row.column()
             column.prop(self, 'name')
-            column.label(text='子手势', icon_value=Icons.get(self.direction).icon_id)
+            column.label(text='子手势', icon_value=self.pref.__get_icon__(self.direction))
             SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):

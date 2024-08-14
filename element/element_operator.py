@@ -19,9 +19,11 @@ class OperatorProperty:
             properties = eval(ps)  # 高威
             if properties:
                 self["operator_properties"] = str(properties)
-        except Exception as _:
+        except Exception as e:
+            print(e.args)
             import traceback
             traceback.print_stack()
+            traceback.print_exc()
 
     @cache_update_lock
     def update_operator(self) -> None:

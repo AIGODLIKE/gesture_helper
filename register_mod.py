@@ -26,7 +26,7 @@ def init_register():
 
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
-    gesture_keymap.GestureKeymap.key_init()
+    gesture_keymap.GestureKeymap.key_init()  # TODO 启动时显示UI的时候会导致键位丢失
     texture.Texture.register()
 
     pref = get_pref()

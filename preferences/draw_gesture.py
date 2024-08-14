@@ -3,7 +3,6 @@ import bpy
 from .draw_element import DrawElement
 from ..ops import export_import
 from ..utils.public import get_pref
-from ..utils.public_ui import icon_two
 
 
 class GestureDraw:
@@ -30,30 +29,6 @@ class GestureDraw:
         column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
         column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
         column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
-
-    @staticmethod
-    def draw_element_cure(layout: bpy.types.UILayout) -> None:
-        from ..element import ElementCURE
-        pref = get_pref()
-        draw_property = pref.draw_property
-
-        column = layout.column(align=True)
-        column.enabled = ElementCURE.MOVE.move_item is None
-
-        cr = column.column(align=True)
-        cr.operator(ElementCURE.COPY.bl_idname, icon='COPYDOWN', text='')
-        cr.operator(ElementCURE.REMOVE.bl_idname, icon='REMOVE', text='')
-
-        column.separator()
-
-        sc = column.column(align=True)
-        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_DESC').is_next = False
-        sc.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='')
-        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_ASC').is_next = True
-
-        column.separator()
-        icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
-        column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
     @staticmethod
     def draw_gesture_key(layout) -> None:
@@ -92,6 +67,7 @@ class GestureDraw:
     @staticmethod
     def draw_element(layout: bpy.types.UILayout) -> None:
         from ..ui.ui_list import ElementUIList
+
         pref = get_pref()
         ag = pref.active_gesture
         if ag:
@@ -111,7 +87,7 @@ class GestureDraw:
             )
             DrawElement.draw_property(sub_column)
 
-            GestureDraw.draw_element_cure(row)
+            DrawElement.draw_element_cure(row)
         else:
             layout.label(text='请添加或选择一个手势')
 
