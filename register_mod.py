@@ -12,12 +12,6 @@ module_list = (
 )
 
 
-def update_state():
-    from .utils.public import get_pref
-    pref = get_pref()
-    pref.update_state()
-
-
 def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
@@ -26,10 +20,11 @@ def init_register():
 
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
-    gesture_keymap.GestureKeymap.key_init()  # TODO 启动时显示UI的时候会导致键位丢失
+    gesture_keymap.GestureKeymap.key_init()
     texture.Texture.register()
 
     pref = get_pref()
+    pref.update_state()
     try:
         prop = pref.other_property
         if not prop.init_addon:
@@ -58,7 +53,6 @@ def register():
 
     GestureQuickAddKeymap.register()
 
-    bpy.app.timers.register(update_state, first_interval=3)
     bpy.app.timers.register(init_register, first_interval=0.001)
 
 
@@ -69,8 +63,6 @@ def unregister():
     from .ops.qucik_add.keymap import GestureQuickAddKeymap
     from .utils import icons, is_blender_close, texture
 
-    if bpy.app.timers.is_registered(update_state):
-        bpy.app.timers.unregister(update_state)
     if bpy.app.timers.is_registered(init_register):
         bpy.app.timers.unregister(init_register)
     GestureQuickAddKeymap.unregister()

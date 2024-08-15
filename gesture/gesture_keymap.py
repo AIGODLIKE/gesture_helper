@@ -60,6 +60,7 @@ class KeymapProperty:
 
 
 class GestureKeymap(KeymapProperty):
+
     @property
     def temp_kmi_data(self) -> dict:
         return PropertyGetUtils.kmi_props(self.temp_kmi)
@@ -77,9 +78,11 @@ class GestureKeymap(KeymapProperty):
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
+            print(f"from_temp_key_update_data\n{data}\n{self.key}")
             self.key = data
 
     def to_temp_kmi(self) -> None:
+        print('To Temp Kmi', self.name, self.key)
         PropertySetUtils.set_property_data(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
@@ -122,12 +125,14 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_init(cls) -> None:
+        """加载所有快捷键"""
         from ..utils.public import get_pref
         for g in get_pref().gesture:
             g.key_load()
 
     @classmethod
     def key_remove(cls) -> None:
+        """删除所有快捷键"""
         from ..utils.public import get_pref
 
         for i in list(GestureKeymap.__key_data__.keys()):
