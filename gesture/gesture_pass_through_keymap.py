@@ -21,9 +21,12 @@ class GesturePassThroughKeymap:
         "SCULPT_GREASE_PENCIL": "Grease Pencil Sculpt Mode",
         "PAINT_GREASE_PENCIL": "Grease Pencil Paint Mode",
         "WEIGHT_GREASE_PENCIL": "Grease Pencil Weight Paint",
+
     }
 
     area_map = {
+        "VIEW_3D": "3D View",
+
         "IMAGE_EDITOR": "Image Paint",
         "NODE_EDITOR": "Node Editor",
         "DOPESHEET_EDITOR": "Dopesheet",
@@ -127,58 +130,65 @@ class GesturePassThroughKeymap:
 
         mk = self.area_map.get(area_type)
 
-        key = None
+        keys = []
         if area_type == "VIEW_3D":
-            key = self.object_mode_map.get(context.mode)
+            keys.append(self.object_mode_map.get(context.mode))
         elif area_type == "SEQUENCE_EDITOR":
             sequence = self.sequence_map.get(view_type)
             if sequence is not None:
-                key = sequence
+                keys.append(sequence)
             if view_type == "SEQUENCER_PREVIEW":
-                key = self.sequencer_preview_map.get(region_type)
+                keys.append(self.sequencer_preview_map.get(region_type))
         elif area_type == "CLIP_EDITOR":
             if mode == "TRACKING":
                 t = self.tracking_map.get(view)
                 if t is not None:
-                    key = t
+                    keys.append(t)
             elif mode == "MASK":
-                key = "Clip Editor"
-        elif mk is not None:
-            key = mk
+                keys.append("Clip Editor")
+
+        if mk is not None:
+            keys.append(mk)
         else:
             for k in keymaps.keys():
                 if k.lower() == context.mode.lower():
-                    key = k
+                    keys.append(k)
 
-        if key in keymaps.keys():
-            from ..ops.gesture import GestureOperator
-            k = keymaps[key]
-            match_origin_key = []
-            for item in k.keymap_items:
-                et = item.type == event.type
-                if item.idname in self.pass_through_idname and et:
-                    if (
-                            bool(item.shift) == event.shift and
-                            bool(item.ctrl) == event.ctrl and
-                            bool(item.alt) == event.alt
-                    ):
-                        match_origin_key.append(item)
-            print(f"event", event.type, event.shift, event.ctrl, event.alt)
-            print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-            print(f"\tOrigin Key\t{[i.idname for i in match_origin_key]}")
+        print(keys)
+        for key in keys:
+            if key in keymaps.keys():
+                from ..ops.gesture import GestureOperator
+                k = keymaps[key]
+                match_origin_key = []
+                for item in k.keymap_items:
+                    et = item.type == event.type
+                    if item.idname in self.pass_through_idname and et:
+                        if (
+                                bool(item.shift) == event.shift and
+                                bool(item.ctrl) == event.ctrl and
+                                bool(item.alt) == event.alt
+                        ):
+                            match_origin_key.append(item)
+                print(f"event", event.type, event.shift, event.ctrl, event.alt)
+                print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                print(f"\tOrigin Key\t{[i.idname for i in match_origin_key]}")
 
-            ml = len(match_origin_key)
-            if ml == 1:
-                try_operator_pass_through_right(match_origin_key[0])
-            elif key == "Object Mode":
-                if ml > 1 and match_origin_key[0].idname == "object.delete":
-                    # 3D视图有两个删除事件
-                    try_operator_pass_through_right(match_origin_key[0])
-            elif key == "Outliner":  # 为大纲视图单独处理事件
-                for m in match_origin_key:
-                    ok = try_operator_pass_through_right(m)
+                ml = len(match_origin_key)
+                if ml == 1:
+                    ok = try_operator_pass_through_right(match_origin_key[0])
                     if ok:
                         return
+                elif key == "Object Mode":
+                    if ml > 1 and match_origin_key[0].idname == "object.delete":
+                        # 3D视图有两个删除事件
+                        ok = try_operator_pass_through_right(match_origin_key[0])
+                        if ok:
+                            return
+                elif key == "Outliner":  # 为大纲视图单独处理事件
+                    for m in match_origin_key:
+                        ok = try_operator_pass_through_right(m)
+                        if ok:
+                            return
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set:
