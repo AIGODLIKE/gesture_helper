@@ -150,7 +150,13 @@ class OperatorProperty:
         try:
             ast.literal_eval(self.operator_properties)
             return True
-        except Exception as _:
+        except Exception as e:
+            from ..utils.public import get_debug
+            if get_debug("operator"):
+                print(e.args)
+                import traceback
+                traceback.print_stack()
+                traceback.print_exc()
             return False
 
 
