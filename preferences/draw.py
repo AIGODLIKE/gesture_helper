@@ -48,14 +48,13 @@ class PreferencesDraw(GestureDraw):
         column = row.column(align=True)
 
         preferences.BackupsProperty.draw_backups(column)
-
         preferences.DebugProperty.draw_debug(column)
 
         col = row.box().column(align=True)
         col.label(text='手势')
         preferences.GestureProperty.draw_gesture_property(col)
         preferences.DrawProperty.draw_text_property(col)
-        preferences.DrawProperty.draw_color_property(col)
+        preferences.DrawProperty.draw_coor_property(col)
 
     @staticmethod
     def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':

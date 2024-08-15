@@ -137,7 +137,6 @@ class GestureKeymap(KeymapProperty):
 
         for i in list(GestureKeymap.__key_data__.keys()):
             i.key_unload()
-
         for g in get_pref().gesture:
             g.key_unload()
 
@@ -158,12 +157,12 @@ class GestureKeymap(KeymapProperty):
     @property
     def __key_str__(self) -> str:
         """反回快捷键显示的字符"""
-        from ..utils.translate import translate_event_value
+        from ..src.translate import __translate_string__
         keymap = self.key
         if keymap:
             return "".join(
                 [
-                    k.title()[0] if isinstance(v, int) else translate_event_value(v)
+                    k.title()[0] if isinstance(v, int) else __translate_string__(v)
                     for k, v in keymap.items()
                     if k == 'type' or (k in ('ctrl', 'shift', 'alt') and v == 1)
                 ]

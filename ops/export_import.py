@@ -147,7 +147,7 @@ class Import(PublicFileOperator):
         column = layout.column(align=True)
 
         for k, v in self.preset_items.items():
-            ops = column.operator(self.bl_idname, text=k)
+            ops = column.operator(self.bl_idname, text=self._tp_(k))
             ops.filepath = v
             ops.run_execute = True
             ops.preset_show = False
@@ -157,13 +157,11 @@ class Import(PublicFileOperator):
         try:
             data = self.read_json()
             restore = data['gesture']
-            # if get_debug('key'):
-            #     print('restore', restore)
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
-            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 版本:{ver}")
+            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 导出数据插件版本:{ver}")
         except Exception as e:
             self.report({'ERROR'}, f"导入错误: {e.args}")
             import traceback
