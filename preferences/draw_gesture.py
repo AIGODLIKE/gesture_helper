@@ -16,10 +16,12 @@ class GestureDraw:
 
         column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
         column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
+        column.label(text=f"{column.operator_context}")
 
-        rm = column.column(align=True)
-        rm.operator_context = "INVOKE_DEFAULT" if pref.draw_property.gesture_remove_tips else "EXEC_DEFAULT"
+        column.operator_context = "INVOKE_DEFAULT" if pref.draw_property.gesture_remove_tips else "EXEC_DEFAULT"
         column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
+        column.operator_context = "INVOKE_DEFAULT"
+        column.label(text=f"{column.operator_context}")
 
         column.separator()
 
@@ -34,6 +36,7 @@ class GestureDraw:
         column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
         column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
         column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
+        column.label(text=f"{column.operator_context}")
 
     @staticmethod
     def draw_gesture_key(layout) -> None:
