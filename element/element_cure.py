@@ -87,6 +87,7 @@ class ElementCURE:
                 if self.active_element:
                     self.active_element.show_child = True
                 add.radio = True
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):
@@ -104,6 +105,7 @@ class ElementCURE:
         def execute(self, _):
             self.pref.active_element.remove()
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class MOVE(ElementPoll):
@@ -153,6 +155,7 @@ class ElementCURE:
 
             ElementCURE.MOVE.move_item = self.active_element
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class SORT(ElementPoll):
@@ -164,6 +167,7 @@ class ElementCURE:
         def execute(self, _):
             self.active_element.sort(self.is_next)
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class COPY(ElementPoll):
@@ -179,6 +183,7 @@ class ElementCURE:
                 ae.radio = True
 
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class CUT(ElementPoll):
@@ -233,6 +238,7 @@ class ElementCURE:
                     ae.radio = True
                 self.cache_clear()
                 ElementCURE.CUT.__cut_data__ = None
+                bpy.ops.wm.save_userpref()
                 return {'FINISHED'}
 
             # 选择一个移动项
@@ -304,6 +310,7 @@ class ElementCURE:
             bpy.data.texts.remove(text)
             self.remove_save_key(context)
             bpy.ops.wm.window_close()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
 

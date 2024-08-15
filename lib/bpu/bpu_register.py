@@ -17,8 +17,6 @@ class BpuRegister:
         return sub
 
     def register_draw(self):
-        # if get_debug():
-        #     print(f"register_draw\t{id(self)}\t{id(self.__draw_class__)}")
         i = id(self)
         if i not in self.__draw_class__:
             sub_class = {}

@@ -1,7 +1,8 @@
 class PollData:
     POLL_ACTIVE_OBJECT_TYPE = {
-        'prefix': 'C.object and C.object.type == ',
+        'prefix': 'C.object and C.object.type',
         'suffix': '',
+        'notation': '==',
         'name': '活动项物体类型',
         'items': [
             {'name': 'Mesh', 'item': 'MESH', },
@@ -23,8 +24,9 @@ class PollData:
     }
 
     POLL_MODE_TYPE = {
-        'prefix': 'C.mode == ',
+        'prefix': 'C.mode',
         'suffix': '',
+        'notation': '==',
         'name': '物体模式',
         'items': [
             {'name': 'Mesh Edit', 'item': 'EDIT_MESH'},
@@ -48,15 +50,11 @@ class PollData:
             {'name': 'Object', 'item': 'OBJECT'},
             None,
 
-            {'name': 'Grease Pencil Paint',
-             'item': 'PAINT_GPENCIL'},
+            {'name': 'Grease Pencil Paint', 'item': 'PAINT_GPENCIL'},
             {'name': 'Grease Pencil Edit', 'item': 'EDIT_GPENCIL'},
-            {'name': 'Grease Pencil Sculpt',
-             'item': 'SCULPT_GPENCIL'},
-            {'name': 'Grease Pencil Weight Paint',
-             'item': 'WEIGHT_GPENCIL'},
-            {'name': 'Grease Pencil Vertex Paint',
-             'item': 'VERTEX_GPENCIL'},
+            {'name': 'Grease Pencil Sculpt', 'item': 'SCULPT_GPENCIL'},
+            {'name': 'Grease Pencil Weight Paint', 'item': 'WEIGHT_GPENCIL'},
+            {'name': 'Grease Pencil Vertex Paint', 'item': 'VERTEX_GPENCIL'},
             {'name': 'Curves Sculpt', 'item': 'SCULPT_CURVES'},
         ],
     }
@@ -64,16 +62,13 @@ class PollData:
     # 'prefix': '', 'suffix': '',
     # 'item': 'is_select_vert', 'name': '选中了顶点',
     POLL_MESH_SELECT_MODE = {
-        'prefix': 'tool.mesh_select_mode[:] == ',
-        'suffix': '',
+        'prefix': 'tool.mesh_select_mode[:]',
+        'notation': '==',
         'name': '网格选择模式',
         'items': [
-            {'prefix': 'tool.mesh_select_mode[0] == ',
-             'item': True, 'name': '顶点', },
-            {'prefix': 'tool.mesh_select_mode[1] == ',
-             'item': True, 'name': '边', },
-            {'prefix': 'tool.mesh_select_mode[2] == ',
-             'item': True, 'name': '面', },
+            {'prefix': 'tool.mesh_select_mode[0]', 'item': True, 'name': '顶点', },
+            {'prefix': 'tool.mesh_select_mode[1]', 'item': True, 'name': '边', },
+            {'prefix': 'tool.mesh_select_mode[2]', 'item': True, 'name': '面', },
             None,
             {'item': [True, False, False], 'name': '仅顶点', },
             {'item': [False, True, False], 'name': '仅边', },
@@ -86,8 +81,8 @@ class PollData:
         ],
     }
     POLL_REGIONS_TYPE = {
-        'prefix': 'C.region.type == ',
-        'suffix': '',
+        'prefix': 'C.region.type',
+        'notation': '==',
         'name': '区域类型',
         'items': [
             {'item': 'WINDOW', 'name': 'Window', },
@@ -107,8 +102,9 @@ class PollData:
         ],
     }
     POLL_SPACE_TYPE = {
-        'prefix': 'C.space_data.type == ',
+        'prefix': 'C.space_data.type',
         'suffix': '',
+        'notation': '==',
         'name': '空间类型',
         'items': [
             {'name': 'Empty', 'item': 'EMPTY', },
@@ -135,19 +131,22 @@ class PollData:
     POLL_OTHER = {
         'prefix': '',
         'suffix': '',
-        'name': ''
-                '其它',
+        'notation': '==',
+        'name': '其它',
         'items': [
-            {'item': ' and ',
+            {'item': 'and',
              'name': 'and',
+             'notation': '',
              'parentheses': False,
              'not_str': True},
-            {'item': ' or ',
+            {'item': 'or',
              'name': 'or',
+             'notation': '',
              'parentheses': False,
              'not_str': True},
-            {'item': ' not ',
+            {'item': 'not',
              'name': 'not',
+             'notation': '',
              'parentheses': False,
              'not_str': True},
             None,
@@ -157,12 +156,25 @@ class PollData:
              'not_str': True},
         ],
     }
+    POLL_RENDER = {
+        'prefix': 'C.scene.render.engine',
+        'suffix': '',
+        'notation': '==',
+        'name': '渲染引擎',
+        'items': [
+            {'name': 'EEVEE', 'notation': 'in', 'item': '("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE")', 'not_str': True},
+            {'name': 'CYCLE', 'item': '"CYCLES"', 'not_str': True},
+            {'name': '工作台', 'item': '"BLENDER_WORKBENCH"', 'not_str': True},
+        ]
+    }
 
-    POLL_ALL_LIST = [POLL_MODE_TYPE,
-                     POLL_ACTIVE_OBJECT_TYPE,
-                     POLL_MESH_SELECT_MODE,
-                     None,
-                     POLL_SPACE_TYPE,
-                     POLL_REGIONS_TYPE,
-                     POLL_OTHER
-                     ]
+    POLL_ALL_LIST = [
+        POLL_RENDER,
+        POLL_MODE_TYPE,
+        POLL_ACTIVE_OBJECT_TYPE,
+        POLL_MESH_SELECT_MODE,
+        None,
+        POLL_SPACE_TYPE,
+        POLL_REGIONS_TYPE,
+        POLL_OTHER
+    ]

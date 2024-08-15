@@ -33,10 +33,11 @@ class ElementPoll:
             self.__try_call_poll_bool__
             return True
         except Exception as e:
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            if get_debug("poll"):
+                print(e.args)
+                import traceback
+                traceback.print_stack()
+                traceback.print_exc()
             return False
 
     @property

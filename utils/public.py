@@ -36,6 +36,8 @@ def get_debug(key=None):
             return prop.debug_export_import
         elif kl == "poll":
             return prop.debug_poll
+        elif kl == "operator":
+            return prop.debug_operator
     return prop.debug_mode
 
 

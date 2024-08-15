@@ -68,7 +68,6 @@ def register():
                             t[file[:-5]] = data
                 except Exception as e:
                     print("加载语言文件失败", e.args)
-    print(__translate__["zh_CN"])
 
 
 def unregister():

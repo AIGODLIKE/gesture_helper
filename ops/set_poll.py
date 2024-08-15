@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import StringProperty, BoolProperty, IntProperty
+from bpy.props import StringProperty, BoolProperty
 
 from ..utils.poll_data import PollData
 from ..utils.public import PublicOperator, PublicProperty
@@ -9,17 +9,19 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
     bl_label = '设置条件表达式'
     bl_idname = 'gesture.set_poll_expression'
 
-    is_popup_menu: BoolProperty(default=True, **{'options': {'HIDDEN', 'SKIP_SAVE', }})
-    width: IntProperty(default=1000)
-
     is_not: BoolProperty(name='取反', description='可以理解成取反')
-    is_set_item_poll: BoolProperty(name='是设置一个项的poll',
-                                   )
 
     poll_string: StringProperty(
         name='条件',
         default='True',
+        options={'HIDDEN', 'SKIP_SAVE'}
     )
+    ___notation___ = {
+        '==': '!=',
+        "is": 'not is',
+        "in": 'not in',
+    }
+    __notation__ = {**___notation___, **{v: k for k, v in ___notation___}}
 
     @property
     def element(self):
@@ -94,42 +96,44 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
                 self.draw_item(layout, item, data)
 
     def draw_item(self, layout: 'bpy.types.UILayout', item, data):
-        op = layout.operator(self.bl_idname,
-                             text=item['name']
-                             )
-        is_parentheses = item.get('parentheses', True)
 
-        prefix = item.get('prefix', data['prefix'])
-        suffix = item.get('suffix', data['suffix'])
-        is_not = 'not ' if self.is_not else ''
+        is_parentheses = item.get('parentheses', data.get('parentheses', False))  # 是有小括号
+        prefix = item.get('prefix', data.get('prefix', ''))  # 前缀
+        suffix = item.get('suffix', data.get('suffix', ''))  # 后缀
+        name = item.get('name', 'unknown')  # 名称
+        notation = self.__get_notation__(item.get('notation', data.get('notation')))  # 符号
 
-        d = item['item']
-        ite = f'"{d}"' if (isinstance(d, str) and (
-            not item.get('not_str'))) else str(d)
+        info = item.get('item')
+        is_not_str = item.get('not_str', data.get("not_str", False))
+        string = f'"{info}"' if (isinstance(info, str) and (not is_not_str)) else str(info)
 
-        poll_string = is_not + prefix + ite + suffix
+        poll_string = f"{prefix} {notation} {string} {suffix}"
         if is_parentheses:
-            poll_string = '(' + poll_string + ')'
+            poll_string = f'({poll_string})'
 
-        op.is_not = self.is_not
-        op.is_popup_menu = False
+        layout.operator_context = "EXEC_DEFAULT"
+        op = layout.operator(self.bl_idname, text=self._ts_(name))
         op.poll_string = poll_string
-        op.is_set_item_poll = self.is_set_item_poll
 
     def invoke(self, context, _):
-        if self.is_popup_menu:
-            data = {'operator': self}
-            if self.width != -1:
-                data['width'] = self.width
-            return context.window_manager.invoke_props_dialog(**data)
-        else:
-            return self.execute(context)
+        data = {'operator': self, 'width': 1000}
+        return context.window_manager.invoke_props_dialog(**data)
 
     def execute(self, _):
-        if not self.is_popup_menu:
-            act = self.element
-            if act.poll_string == 'True':
-                act.poll_string = self.poll_string
-            else:
-                act.poll_string += self.poll_string
+        act = self.element
+        print(self.bl_idname)
+        print(act.poll_string)
+        print(self.poll_string)
+        print()
+        if act.poll_string == 'True':
+            act.poll_string = self.poll_string
+        else:
+            act.poll_string += self.poll_string
         return {'FINISHED'}
+
+    def __get_notation__(self, notation: str) -> str:
+        if self.is_not:
+            if notation in self.__notation__:
+                return self.__notation__[notation]
+            return notation
+        return notation

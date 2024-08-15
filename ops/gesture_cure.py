@@ -1,3 +1,4 @@
+import bpy
 from bpy.props import BoolProperty
 
 
@@ -19,6 +20,7 @@ class GestureCURE:
             add = self.pref.gesture.add()
             self.cache_clear()
             add.name = 'Gesture'
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class REMOVE(GesturePoll):
@@ -34,10 +36,15 @@ class GestureCURE:
             )
 
         def execute(self, _):
-            act = self.pref.active_gesture
+            pref = self.pref
+            act = pref.active_gesture
             act.key_unload()
             act.remove()
+            act = pref.active_gesture
+            if act:
+                act.to_temp_kmi()
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class SORT(GesturePoll):
@@ -49,6 +56,7 @@ class GestureCURE:
         def execute(self, _):
             self.pref.active_gesture.sort(self.is_next)
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class COPY(GesturePoll):
@@ -60,4 +68,5 @@ class GestureCURE:
             self.cache_clear()
             self.pref.gesture[-1].__check_duplicate_name__()
             self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {'FINISHED'}

@@ -136,10 +136,12 @@ class OperatorProperty:
             fun.get_rna_type()
             return fun is not None
         except Exception as e:
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from ..utils.public import get_debug
+            if get_debug("operator"):
+                print(e.args)
+                import traceback
+                traceback.print_stack()
+                traceback.print_exc()
             return False
 
     @property
