@@ -115,14 +115,21 @@ class ElementDraw:
             SetDirection.draw_direction(row.column())
 
             if is_operator:
+                is_change = self.properties != self.operator_tmp_kmi_properties
                 row = layout.row(align=True)
                 row.prop(self, 'operator_context')
+                row.alert = is_change
                 row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
                 row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
                 row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
-                layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
                 if self.other_property.auto_update_element_operator_properties:
                     self.from_tmp_kmi_operator_update_properties()
+                if is_change:
+                    layout.alert = True
+                    layout.label(text='属性已改变,请同步修改 或打开自动更新按钮', icon='ERROR')
+                    layout.alert = False
+                layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
+
             else:
                 if preview_script:
                     script_box = layout.box()
