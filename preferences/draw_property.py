@@ -19,9 +19,9 @@ class DrawProperty(PropertyGroup):
     element_remove_tips: BoolProperty(name='手势项删除提示', default=True, description="如果开启\n在删除时会弹出提示")
 
     text_gpu_draw_size: IntProperty(name='文字大小', description='Gpu绘制的文字大小', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=10, min=5, max=120)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=7, min=5, max=120)
-    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=1, min=1, max=20)
+    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=7, min=5, max=120)
+    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=20, min=5, max=120)
+    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=3, min=1, max=20)
 
     background_operator_color: FloatVectorProperty(name='操作符颜色', **public_color,
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])

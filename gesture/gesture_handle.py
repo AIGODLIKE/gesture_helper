@@ -20,7 +20,7 @@ class GestureHandle:
         """检查回到之前的手势"""
         point, index, distance = self.find_closest_point
         points_kd_tree = self.trajectory_tree
-        if (distance < 10) and (index + 1 != len(points_kd_tree.child_element)):
+        if (distance < self.gesture_property.return_distance) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
 

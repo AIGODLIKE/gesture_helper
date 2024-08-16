@@ -16,6 +16,7 @@ class GestureProperty(PropertyGroup):
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(120))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
+    return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(10))
 
     show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
 
@@ -29,3 +30,4 @@ class GestureProperty(PropertyGroup):
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')
+        col.prop(g, 'return_distance')
