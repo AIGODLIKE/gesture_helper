@@ -13,7 +13,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
     poll_string: StringProperty(
         name='条件',
-        default='True',
+        default='',
         options={'HIDDEN', 'SKIP_SAVE'}
     )
     ___notation___ = {
@@ -119,16 +119,18 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         data = {'operator': self, 'width': 1000}
         return context.window_manager.invoke_props_dialog(**data)
 
-    def execute(self, _):
+    def execute(self, context):
         act = self.element
-        print(self.bl_idname)
-        print(act.poll_string)
-        print(self.poll_string)
-        print()
-        if act.poll_string == 'True':
-            act.poll_string = self.poll_string
+        if act.poll_string == '':
+            ...
         else:
+            print(self.bl_idname)
+            print(context)
+            print(act.poll_string)
+            print(self.poll_string)
             act.poll_string += self.poll_string
+            print("after", act.poll_string)
+            print()
         return {'FINISHED'}
 
     def __get_notation__(self, notation: str) -> str:
