@@ -76,5 +76,7 @@ class CreateElementOperator(PublicOperator, PublicProperty):
                 ae.name = on
             print(ae.operator_bl_idname)
         self.cache_clear()
-        act.radio = True
+        if act:
+            act.radio = True
+            self.cache_clear()
         return {"FINISHED"}

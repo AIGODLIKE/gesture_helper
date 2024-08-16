@@ -203,6 +203,9 @@ class Export(PublicFileOperator):
     is_auto_backups: BoolProperty(name="是自动备份", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="是关闭插件备份", default=False, options={"SKIP_SAVE"})
 
+    def __init__(self):
+        self.__is_invoke__ = None
+
     @property
     def file_string(self):
         string = datetime.fromtimestamp(time.time())
@@ -222,6 +225,8 @@ class Export(PublicFileOperator):
     def file_path(self):
         folder_path = self.filepath
 
+        if self.__is_invoke__ and folder_path.endswith('.json'):
+            return os.path.abspath(folder_path)
         if self.is_auto_backups or self.is_close_backups:
             folder_path = get_backups_folder(not self.is_close_backups)
         name = 'Gesture'
@@ -269,6 +274,10 @@ class Export(PublicFileOperator):
             self.pref,
             'index_gesture',
         )
+
+    def invoke(self, context, event):
+        self.__is_invoke__ = True
+        return super().invoke(context, event)
 
     def execute(self, _):
         if len(self.pref.gesture) == 0:
