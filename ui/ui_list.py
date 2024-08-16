@@ -17,7 +17,7 @@ class GestureUIList(UIList, PublicProperty):
         row = column.row(align=True)
 
         prop = self.draw_property
-        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.element_show_enabled_button, "HIDE"))
+        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.gesture_show_enabled_button, "HIDE"))
         row.prop(prop, 'gesture_show_keymap', icon="BLANK1")
         row.prop(prop, 'gesture_show_description', icon="INFO")
 
