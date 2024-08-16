@@ -346,7 +346,6 @@ class Create(Draw):
         ae = self.active_element
         if ae and self.button_prop:
             ae.name = self.__prop_name__
-        act.radio = True
 
     @property
     def __prop_name__(self) -> str:

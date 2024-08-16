@@ -49,7 +49,8 @@ def get_gesture_direction_items(iteration):
         if item.is_selected_structure:  # 是选择结构
             if item.__selected_structure_is_validity__:  # 是可用的选择结构
                 # 是True
-                if item.poll_bool and (not last_selected_structure or item.is_selected_if):
+                poll = (item.is_selected_else or item.poll_bool)
+                if poll and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_direction_items(item.element)
                     direction.update(child)
                     last_selected_structure = item

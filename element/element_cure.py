@@ -75,6 +75,7 @@ class ElementCURE:
             add.cache_clear()
 
             if self.active_element:
+                add.cache_clear()
                 self.active_element.radio = True  # 还是保持默认选择是当前
 
             add.element_type = self.element_type
@@ -86,6 +87,7 @@ class ElementCURE:
             if self.pref.add_element_property.add_active_radio or self.add_active_radio:
                 if self.active_element:
                     self.active_element.show_child = True
+                add.cache_clear()
                 add.radio = True
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}

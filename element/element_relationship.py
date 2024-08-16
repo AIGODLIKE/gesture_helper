@@ -111,20 +111,27 @@ class RadioSelect:
 
     @cache_update_lock
     def update_radio(self):
-        for (index, element) in enumerate(self.parent_gesture.element):
-            if self.root_parent == element:
-                self.parent_gesture.index_element = index
+        try:
+            for (index, element) in enumerate(self.parent_gesture.element):
+                if self.root_parent == element:
+                    self.parent_gesture.index_element = index
 
-        if not self.is_root:  # 设置子级手势的索引
-            for index, e in enumerate(self.collection):
-                if e == self:
-                    self.parent.index_element = index
+            if not self.is_root:  # 设置子级手势的索引
+                for index, e in enumerate(self.collection):
+                    if e == self:
+                        self.parent.index_element = index
 
-        for item in self.radio_iteration:
-            is_select = item == self
-            item['radio'] = is_select
-            if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
-                self.to_operator_tmp_kmi()
+            for item in self.radio_iteration:
+                is_select = item == self
+                item['radio'] = is_select
+                if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
+                    self.to_operator_tmp_kmi()
+        except Exception as e:
+            self.cache_clear()
+            print(e.args)
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
 
     radio: BoolProperty(name='单选', update=lambda self, context: self.update_radio())
 

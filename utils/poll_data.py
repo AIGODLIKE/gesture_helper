@@ -13,7 +13,7 @@ class PollData:
             {'name': 'Text', 'item': 'FONT', },
             {'name': 'Point Cloud', 'item': 'POINTCLOUD', },
             {'name': 'Volume', 'item': 'VOLUME', },
-            {'name': 'Grease Pencil', 'item': 'GPENCIL', },
+            {'name': 'Grease Pencil', 'notation': 'in', 'item': '("GPENCIL","GREASEPENCIL")', "not_str": True},
             {'name': 'Armature', 'item': 'ARMATURE', },
             {'name': 'Lattice', 'item': 'LATTICE', },
             {'name': 'Empty', 'item': 'EMPTY', },
