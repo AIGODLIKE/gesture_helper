@@ -15,8 +15,8 @@ class GestureProperty(PropertyGroup):
     timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(300, 'TIME'))
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(120))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
-    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(50))
-    return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(10))
+    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(80))
+    return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(30))
 
     show_gesture_keymaps: BoolProperty(name='显示手势项快捷键')
 

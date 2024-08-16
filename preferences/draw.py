@@ -32,7 +32,7 @@ class PreferencesDraw(GestureDraw):
         row.prop(pref, 'enabled', text="")
 
         row.prop(pref, 'show_page', expand=True)
-        row.operator(GesturePreview.bl_idname, icon="RNA_ADD")
+        row.operator(GesturePreview.bl_idname, icon="RNA_ADD", text=pref.__ts__(GesturePreview.bl_label))
 
     @staticmethod
     def draw_ui_property(layout):
