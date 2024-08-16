@@ -45,7 +45,7 @@ class GestureDraw:
             column.active = active.is_enable
             active.draw_key(column)
         else:
-            layout.label(text='Not Select Gesture')
+            layout.label(text=pref.__ts__('Not Select Gesture'))
 
     @staticmethod
     def draw_gesture_item(layout: bpy.types.UILayout) -> None:

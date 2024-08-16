@@ -147,7 +147,7 @@ class Import(PublicFileOperator):
         column = layout.column(align=True)
 
         for k, v in self.preset_items.items():
-            ops = column.operator(self.bl_idname, text=self._tp_(k))
+            ops = column.operator(self.bl_idname, text=self.__tp__(k))
             ops.filepath = v
             ops.run_execute = True
             ops.preset_show = False
