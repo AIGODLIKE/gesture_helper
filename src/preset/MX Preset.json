@@ -1,5 +1,5 @@
 {
-  "time": 1723793718.1453135,
+  "time": 1723799110.729333,
   "blender_version": [
     4,
     3,
@@ -725,7 +725,7 @@
               "direction": "5",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'WIREFRAME'}",
               "operator_type": "OPERATOR"
             },
             "6": {
@@ -735,7 +735,7 @@
               "direction": "1",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'RENDERED'}",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}",
               "operator_type": "OPERATOR"
             },
             "7": {
@@ -745,7 +745,7 @@
               "direction": "3",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'MATERIAL'}",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'RENDERED'}",
               "operator_type": "OPERATOR"
             },
             "8": {
