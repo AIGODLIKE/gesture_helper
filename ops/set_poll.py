@@ -121,16 +121,10 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
     def execute(self, context):
         act = self.element
-        if act.poll_string == '':
-            ...
+        if act.poll_string == 'True':
+            act.poll_string = self.poll_string
         else:
-            print(self.bl_idname)
-            print(context)
-            print(act.poll_string)
-            print(self.poll_string)
             act.poll_string += self.poll_string
-            print("after", act.poll_string)
-            print()
         return {'FINISHED'}
 
     def __get_notation__(self, notation: str) -> str:
