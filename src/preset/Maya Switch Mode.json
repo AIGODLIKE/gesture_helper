@@ -1,19 +1,20 @@
 {
-  "time": 1702020220.4601157,
+  "time": 1723793857.0134027,
   "blender_version": [
     4,
-    1,
+    3,
     0
   ],
   "addon_version": [
     1,
-    0
+    0,
+    4
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
   "gesture": {
-    "0": {
-      "name": "\u6a21\u5f0f - Maya - Right",
+    "3": {
+      "name": "\u6a21\u5f0f - Maya",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Window\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\"]",
@@ -37,50 +38,50 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'select_mode': {'VERT'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "gesture.switch_mode",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'select_mode': {'VERT'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u8fb9",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{'select_mode': {'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "gesture.switch_mode",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'select_mode': {'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u9762",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{'select_mode': {'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "gesture.switch_mode",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'select_mode': {'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u9876\u70b9 \u9762",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
-                  "operator_properties": "{'select_mode': {'VERT', 'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "gesture.switch_mode",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'select_mode': {'VERT', 'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "4": {
                   "name": "\u591a\u91cd",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
-                  "operator_properties": "{'select_mode': {'VERT', 'FACE', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "gesture.switch_mode",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'select_mode': {'VERT', 'FACE', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_type": "OPERATOR"
                 },
                 "5": {
                   "name": "\u5176\u5b83\u6a21\u5f0f",
@@ -93,30 +94,30 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
-                      "operator_properties": "{'mode': 'VERTEX_PAINT'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "object.mode_set",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'mode': 'VERTEX_PAINT'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u6743\u91cd\u7ed8\u5236",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
-                      "operator_properties": "{'mode': 'WEIGHT_PAINT', 'toggle': True}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "object.mode_set",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'mode': 'WEIGHT_PAINT', 'toggle': True}",
+                      "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "\u7eb9\u7406\u7ed8\u5236",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'mode': 'TEXTURE_PAINT', 'toggle': True}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "object.mode_set",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'mode': 'TEXTURE_PAINT', 'toggle': True}",
+                      "operator_type": "OPERATOR"
                     },
                     "3": {
                       "name": "\u6709\u7c92\u5b50",
@@ -130,10 +131,10 @@
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
-                          "operator_properties": "{'mode': 'PARTICLE_EDIT', 'toggle': True}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "object.mode_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'mode': 'PARTICLE_EDIT', 'toggle': True}",
+                          "operator_type": "OPERATOR"
                         }
                       }
                     }
@@ -144,10 +145,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{'mode': 'SCULPT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'SCULPT'}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -163,10 +164,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u7f16\u8f91\u66f2\u7ebf\u6a21\u5f0f",
@@ -180,20 +181,20 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
-                      "operator_properties": "{}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "curve.subdivide",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u5207\u6362\u65b9\u5411",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "curve.switch_direction",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "\u8bbe\u7f6e\u6837\u6761\u7c7b\u578b",
@@ -206,30 +207,30 @@
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
-                          "operator_properties": "{'type': 'POLY'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.spline_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'POLY'}",
+                          "operator_type": "OPERATOR"
                         },
                         "1": {
                           "name": "\u8d1d\u585e\u5c14",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
-                          "operator_properties": "{'type': 'BEZIER'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.spline_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'BEZIER'}",
+                          "operator_type": "OPERATOR"
                         },
                         "2": {
                           "name": "NURBS",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "8",
-                          "operator_properties": "{'type': 'NURBS'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.spline_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'NURBS'}",
+                          "operator_type": "OPERATOR"
                         }
                       }
                     },
@@ -238,10 +239,10 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "curve.decimate",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
                     },
                     "4": {
                       "name": "\u5e73\u6ed1\u63a7\u5236\u70b9",
@@ -254,40 +255,40 @@
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "4",
-                          "operator_properties": "{}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.smooth",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
                         },
                         "1": {
                           "name": "\u5e73\u6ed1\u66f2\u7ebf\u503e\u659c",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "5",
-                          "operator_properties": "{}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.smooth_tilt",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
                         },
                         "2": {
                           "name": "\u5e73\u6ed1\u66f2\u7ebf\u534a\u5f84",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "3",
-                          "operator_properties": "{}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.smooth_radius",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
                         },
                         "3": {
                           "name": "\u5e73\u6ed1\u66f2\u7ebf\u6743\u91cd",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
-                          "operator_properties": "{}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.smooth_weight",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
                         }
                       }
                     },
@@ -302,50 +303,50 @@
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
-                          "operator_properties": "{'type': 'FREE_ALIGN'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.handle_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_type": "OPERATOR"
                         },
                         "1": {
                           "name": "\u77e2\u91cf",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "5",
-                          "operator_properties": "{'type': 'FREE_ALIGN'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.handle_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_type": "OPERATOR"
                         },
                         "2": {
                           "name": "\u5bf9\u9f50",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
-                          "operator_properties": "{'type': 'FREE_ALIGN'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.handle_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_type": "OPERATOR"
                         },
                         "3": {
                           "name": "\u81ea\u7531",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "4",
-                          "operator_properties": "{'type': 'FREE_ALIGN'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.handle_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_type": "OPERATOR"
                         },
                         "4": {
                           "name": "\u5207\u6362 \u81ea\u7531/\u5bf9\u9f50",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "8",
-                          "operator_properties": "{'type': 'FREE_ALIGN'}",
-                          "operator_context": "INVOKE_DEFAULT",
                           "operator_bl_idname": "curve.handle_type_set",
-                          "element": {}
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'type': 'FREE_ALIGN'}",
+                          "operator_type": "OPERATOR"
                         }
                       }
                     }
@@ -365,10 +366,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -384,20 +385,20 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u66f2\u7ebf\u96d5\u523b",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{'mode': 'SCULPT_CURVES'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'SCULPT_CURVES'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u6d3b\u52a8\u662f\u66f2\u7ebf\u6bdb\u53d1 or \u66f2\u7ebf\u96d5\u523b",
@@ -411,20 +412,20 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
-                      "operator_properties": "{'domain': 'POINT'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "curves.set_selection_domain",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'domain': 'POINT'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u66f2\u7ebf\u6a21\u5f0f",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'domain': 'CURVE'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "curves.set_selection_domain",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'domain': 'CURVE'}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 }
@@ -442,10 +443,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u662f\u7f16\u8f91\u878d\u7403",
@@ -459,10 +460,10 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
-                      "operator_properties": "{}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "mball.duplicate_metaelems",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 }
@@ -480,10 +481,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u7f16\u8f91\u6587\u672c\u6a21\u5f0f",
@@ -497,20 +498,20 @@
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
-                      "operator_properties": "{'case': 'UPPER'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "font.case_set",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'case': 'UPPER'}",
+                      "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "\u5c0f\u5199",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
-                      "operator_properties": "{'case': 'LOWER'}",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_bl_idname": "font.case_set",
-                      "element": {}
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'case': 'LOWER'}",
+                      "operator_type": "OPERATOR"
                     }
                   }
                 }
@@ -528,50 +529,50 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT_GPENCIL'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT_GPENCIL'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u96d5\u523bGP",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
-                  "operator_properties": "{'mode': 'SCULPT_GPENCIL'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'SCULPT_GPENCIL'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u7ed8\u5236GP",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{'mode': 'PAINT_GPENCIL'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'PAINT_GPENCIL'}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "\u6743\u91cd\u7ed8\u5236GP",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
-                  "operator_properties": "{'mode': 'WEIGHT_GPENCIL'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'WEIGHT_GPENCIL'}",
+                  "operator_type": "OPERATOR"
                 },
                 "4": {
                   "name": "\u9876\u70b9\u7ed8\u5236GP",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
-                  "operator_properties": "{'mode': 'VERTEX_GPENCIL'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'VERTEX_GPENCIL'}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -587,20 +588,20 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u59ff\u6001\u6a21\u5f0f",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -616,20 +617,20 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
-                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "\u5747\u5300\u5206\u5e03",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "lattice.make_regular",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
                 }
               }
             },
@@ -638,16 +639,14 @@
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
-              "poll_string": "(C.object and C.object.type == \"EMPTY\")",
-              "element": {}
+              "poll_string": "(C.object and C.object.type == \"EMPTY\")"
             },
             "10": {
               "name": "\u5176\u5b83\u7269\u4f53",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELSE",
-              "poll_string": "True",
-              "element": {}
+              "poll_string": "True"
             },
             "11": {
               "name": "\u5982\u679c\u53ef\u4ee5\u8fdb\u5165\u7f16\u8f91\u6a21\u5f0f",
@@ -661,10 +660,10 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
-                  "operator_properties": "{'mode': 'OBJECT', 'toggle': True}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "object.mode_set",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'OBJECT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
                 }
               }
             }
@@ -682,80 +681,80 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
-              "operator_properties": "{}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.save_userpref",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u63d2\u4ef6",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'value': 'ADDONS', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'ADDONS', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u952e\u4f4d\u6620\u5c04",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{'value': 'KEYMAP', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'KEYMAP', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "3": {
               "name": "\u754c\u9762",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
-              "operator_properties": "{'value': 'INTERFACE', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'INTERFACE', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "4": {
               "name": "\u89c6\u56fe",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
-              "operator_properties": "{'value': 'VIEWPORT', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'VIEWPORT', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "5": {
               "name": "\u52a8\u753b",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
-              "operator_properties": "{'value': 'ANIMATION', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'ANIMATION', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "6": {
               "name": "\u89c6\u56fe\u5207\u6362",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "5",
-              "operator_properties": "{'value': 'NAVIGATION', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'NAVIGATION', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             },
             "7": {
               "name": "\u8f93\u5165",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
-              "operator_properties": "{'value': 'INPUT', 'data_path': 'preferences.active_section'}",
-              "operator_context": "EXEC_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "EXEC_DEFAULT",
+              "operator_properties": "{'value': 'INPUT', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
             }
           }
         }

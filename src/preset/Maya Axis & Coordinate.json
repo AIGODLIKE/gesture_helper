@@ -1,19 +1,20 @@
 {
-  "time": 1702020255.5275922,
+  "time": 1723793825.9564834,
   "blender_version": [
     4,
-    1,
+    3,
     0
   ],
   "addon_version": [
     1,
-    0
+    0,
+    4
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
   "gesture": {
-    "2": {
-      "name": "\u8f74&\u5750\u6807 - Maya - Right Ctrl Shift",
+    "0": {
+      "name": "\u8f74&\u5750\u6807 - Maya",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Window\"]",
@@ -29,30 +30,30 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_data_origin'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_data_origin'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u4ec5\u4f4d\u7f6e",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_pivot_point_align'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_pivot_point_align'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u4ec5\u7236\u7ea7",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_skip_children'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_skip_children'}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -61,30 +62,30 @@
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "5",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GLOBAL'}",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_bl_idname": "wm.context_set_enum",
-          "element": {}
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GLOBAL'}",
+          "operator_type": "OPERATOR"
         },
         "2": {
           "name": "\u5c40\u90e8",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "4",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'LOCAL'}",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_bl_idname": "wm.context_set_enum",
-          "element": {}
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'LOCAL'}",
+          "operator_type": "OPERATOR"
         },
         "3": {
           "name": "\u6e38\u6807",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "2",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_bl_idname": "wm.context_set_enum",
-          "element": {}
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
+          "operator_type": "OPERATOR"
         },
         "4": {
           "name": "\u8f74",
@@ -97,40 +98,40 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "5",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'VIEW'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'VIEW'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u6cd5\u5411",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'NORMAL'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'NORMAL'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u4e07\u5411",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GIMBAL'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GIMBAL'}",
+              "operator_type": "OPERATOR"
             },
             "3": {
               "name": "\u7236\u7ea7",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'PARENT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'PARENT'}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -145,30 +146,30 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u7ebf\u6846",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "\u663e\u793a\u6e38\u6807",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_toggle",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
+              "operator_type": "OPERATOR"
             }
           }
         },
@@ -190,40 +191,40 @@
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "wm.context_toggle",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
+                  "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Y",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "wm.context_toggle",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
+                  "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "\u81ea\u52a8\u5408\u5e76\u9876\u70b9",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
-                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "wm.context_toggle",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
+                  "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "Z",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_bl_idname": "wm.context_toggle",
-                  "element": {}
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
+                  "operator_type": "OPERATOR"
                 }
               }
             }
@@ -240,50 +241,50 @@
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'MEDIAN_POINT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'MEDIAN_POINT'}",
+              "operator_type": "OPERATOR"
             },
             "1": {
               "name": "\u5404\u81ea\u8f74\u5fc3\u70b9",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'INDIVIDUAL_ORIGINS'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'INDIVIDUAL_ORIGINS'}",
+              "operator_type": "OPERATOR"
             },
             "2": {
               "name": "3D\u6e38\u6807",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'CURSOR'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'CURSOR'}",
+              "operator_type": "OPERATOR"
             },
             "3": {
               "name": "\u8fb9\u754c\u6846\u4e2d\u5fc3",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
-              "operator_properties": "{}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{}",
+              "operator_type": "OPERATOR"
             },
             "4": {
               "name": "\u6d3b\u52a8\u5143\u7d20",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'ACTIVE_ELEMENT'}",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_bl_idname": "wm.context_set_enum",
-              "element": {}
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'ACTIVE_ELEMENT'}",
+              "operator_type": "OPERATOR"
             }
           }
         }

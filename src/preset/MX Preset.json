@@ -1,0 +1,786 @@
+{
+  "time": 1723793718.1453135,
+  "blender_version": [
+    4,
+    3,
+    0
+  ],
+  "addon_version": [
+    1,
+    0,
+    4
+  ],
+  "author": "\u5c0f\u840c\u65b0",
+  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "gesture": {
+    "0": {
+      "name": "\u5408\u5e76",
+      "enabled": true,
+      "key_string": "{\"type\": \"M\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Mesh\"]",
+      "element": {
+        "0": {
+          "name": "\u6309\u95f4\u8ddd\u5408\u5e76",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "4",
+          "operator_bl_idname": "mesh.remove_doubles",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{}",
+          "operator_type": "OPERATOR"
+        },
+        "1": {
+          "name": "\u5230\u4e2d\u5fc3",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "3",
+          "operator_bl_idname": "mesh.merge",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'type': 'CENTER'}",
+          "operator_type": "OPERATOR"
+        },
+        "2": {
+          "name": "\u5230\u6e38\u6807",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "4",
+          "operator_bl_idname": "mesh.merge",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'type': 'CURSOR'}",
+          "operator_type": "OPERATOR"
+        },
+        "3": {
+          "name": "\u584c\u9677",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "6",
+          "operator_bl_idname": "mesh.merge",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'type': 'COLLAPSE'}",
+          "operator_type": "OPERATOR"
+        },
+        "4": {
+          "name": "\u5230\u9996\u9009\u70b9",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "5",
+          "operator_bl_idname": "mesh.merge",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'type': 'FIRST'}",
+          "operator_type": "OPERATOR"
+        },
+        "5": {
+          "name": "\u5230\u9996\u9009\u70b9",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "1",
+          "operator_bl_idname": "mesh.merge",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'type': 'LAST'}",
+          "operator_type": "OPERATOR"
+        },
+        "6": {
+          "name": "\u6e05\u7406\u83dc\u5355",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "2",
+          "operator_bl_idname": "wm.call_menu",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'name': 'VIEW3D_MT_edit_mesh_clean'}",
+          "operator_type": "OPERATOR"
+        },
+        "7": {
+          "name": "\u5220\u9664\u83dc\u5355",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "8",
+          "operator_bl_idname": "wm.call_menu",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{}",
+          "operator_type": "OPERATOR"
+        }
+      },
+      "description": "\u6309M\u5408\u5e76\u9876\u70b9"
+    },
+    "1": {
+      "name": "\u5220\u9664",
+      "enabled": true,
+      "key_string": "{\"type\": \"X\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Mesh\", \"Curve\", \"Armature\", \"Object Mode\", \"Curves\", \"Metaball\", \"Lattice\", \"Font\", \"3D View\"]",
+      "element": {
+        "0": {
+          "name": "\u662f3D\u89c6\u56fe",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "(C.space_data.type == \"VIEW_3D\")",
+          "element": {
+            "0": {
+              "name": "\u662f\u7f16\u8f91\u7f51\u683c",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "(C.mode == \"EDIT_MESH\")",
+              "element": {
+                "0": {
+                  "name": "\u878d\u5e76",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "direction": "3",
+                  "element": {
+                    "0": {
+                      "name": "\u878d\u5e76\u9876\u70b9",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "4",
+                      "operator_bl_idname": "mesh.dissolve_verts",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u878d\u5e76\u8fb9",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "3",
+                      "operator_bl_idname": "mesh.dissolve_edges",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "\u878d\u5e76\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.dissolve_faces",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                },
+                "1": {
+                  "name": "\u9762\u6e05\u7406",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "direction": "8",
+                  "element": {
+                    "0": {
+                      "name": "\u5e73\u6574\u8868\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_bl_idname": "mesh.face_make_planar",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u62c6\u5206\u975e\u5e73\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_bl_idname": "mesh.vert_connect_nonplanar",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "\u62c6\u5206\u51f9\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "7",
+                      "operator_bl_idname": "mesh.vert_connect_concave",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "3": {
+                      "name": "\u586b\u5145\u6d1e\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.fill_holes",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                },
+                "2": {
+                  "name": "\u6e05\u7406",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "\u5220\u9664\u677e\u6563\u5143\u7d20",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "7",
+                      "operator_bl_idname": "mesh.delete_loose",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u7cbe\u7b80\u51e0\u4f55\u4f53",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "3",
+                      "operator_bl_idname": "mesh.decimate",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "\u7b80\u5e76\u878d\u5e76",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_bl_idname": "mesh.dissolve_degenerate",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "3": {
+                      "name": "\u6709\u9650\u878d\u5e76",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.dissolve_limited",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "4": {
+                      "name": "\u6309\u95f4\u8ddd\u5408\u5e76",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_bl_idname": "mesh.remove_doubles",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                },
+                "3": {
+                  "name": "\u9876\u70b9",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_bl_idname": "mesh.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'VERT'}",
+                  "operator_type": "OPERATOR"
+                },
+                "4": {
+                  "name": "\u8fb9",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "3",
+                  "operator_bl_idname": "mesh.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'EDGE'}",
+                  "operator_type": "OPERATOR"
+                },
+                "5": {
+                  "name": "\u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "7",
+                  "operator_bl_idname": "mesh.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'FACE'}",
+                  "operator_type": "OPERATOR"
+                },
+                "6": {
+                  "name": "\u4ec5\u8fb9\u548c\u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "6",
+                  "operator_bl_idname": "mesh.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'EDGE_FACE'}",
+                  "operator_type": "OPERATOR"
+                },
+                "7": {
+                  "name": "\u4ec5\u9762",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "4",
+                  "operator_bl_idname": "mesh.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'ONLY_FACE'}",
+                  "operator_type": "OPERATOR"
+                },
+                "8": {
+                  "name": "\u5220\u9664",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "direction": "2",
+                  "element": {
+                    "0": {
+                      "name": "\u5faa\u73af\u8fb9",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.delete_edgeloop",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u584c\u9677 \u8fb9&\u9762",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_bl_idname": "mesh.edge_collapse",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            },
+            "1": {
+              "name": "\u662f\u66f2\u7ebf\u7f16\u8f91",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.mode == \"EDIT_CURVE\")",
+              "element": {
+                "0": {
+                  "name": "\u5220\u9664\u9876\u70b9",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_bl_idname": "curve.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'VERT'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u5220\u9664\u6bb5\u6570",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_bl_idname": "curve.delete",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'type': 'SEGMENT'}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "\u878d\u5e76\u9876\u70b9(\u66f2\u7ebf)",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "7",
+                  "operator_bl_idname": "curve.dissolve_verts",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "2": {
+              "name": "\u662f\u9aa8\u67b6\u7f16\u8f91",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.mode == \"EDIT_ARMATURE\")",
+              "element": {
+                "0": {
+                  "name": "\u5220\u9664\u9aa8\u67b6",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_bl_idname": "armature.delete",
+                  "operator_context": "EXEC_DEFAULT",
+                  "operator_properties": "{'confirm': True}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u878d\u5e76\u9aa8\u9abc",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_bl_idname": "armature.dissolve",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "3": {
+              "name": "\u662f\u7269\u4f53\u6a21\u5f0f",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "(C.mode == \"OBJECT\")",
+              "element": {
+                "0": {
+                  "name": "\u5220\u9664\u7269\u4f53",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_bl_idname": "object.delete",
+                  "operator_context": "EXEC_DEFAULT",
+                  "operator_properties": "{'use_global': False, 'confirm': True}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u5168\u5c40\u5220\u9664",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "1",
+                  "operator_bl_idname": "object.delete",
+                  "operator_context": "EXEC_DEFAULT",
+                  "operator_properties": "{'use_global': True, 'confirm': True}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "\u662f\u7f51\u683c\u7c7b\u578b",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "(C.object and C.object.type == \"MESH\")",
+                  "element": {
+                    "0": {
+                      "name": "\u6e05\u9664\u9876\u70b9\u7ec4\u6743\u91cd",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "6",
+                      "operator_bl_idname": "object.vertex_group_clean",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'group_select_mode': 'ALL'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u9650\u5236\u603b\u9876\u70b9\u7ec4",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "8",
+                      "operator_bl_idname": "object.vertex_group_limit_total",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'group_select_mode': 'ALL'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "\u5220\u9664\u672a\u4f7f\u7528\u7684\u6750\u8d28\u69fd",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "7",
+                      "operator_bl_idname": "object.material_slot_remove_unused",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "\u6309X\u5220\u9664"
+    },
+    "2": {
+      "name": "\u89c6\u56fe",
+      "enabled": true,
+      "key_string": "{\"type\": \"Z\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Window\", \"3D View\", \"Node Editor\"]",
+      "element": {
+        "0": {
+          "name": "3D\u89c6\u56fe",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "C.space_data.type == \"VIEW_3D\" ",
+          "element": {
+            "0": {
+              "name": "\u53e0\u52a0\u5c42",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "2",
+              "element": {
+                "0": {
+                  "name": "\u9762\u671d\u5411",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "2",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u8721\u7b14",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\") ",
+                  "element": {
+                    "0": {
+                      "name": "GP\u9762\u677f",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_bl_idname": "wm.call_panel",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'name': 'VIEW3D_PT_overlay_grease_pencil_options'}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                },
+                "2": {
+                  "name": "\u5176\u5b83",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "ELSE",
+                  "poll_string": "None",
+                  "element": {
+                    "0": {
+                      "name": "\u53e0\u52a0\u5c42\u9762\u677f",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "1",
+                      "operator_bl_idname": "wm.call_panel",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'name': 'VIEW3D_PT_overlay'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "\u5207\u6362\u900f\u89c6\u6a21\u5f0f",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "direction": "3",
+                      "operator_bl_idname": "view3d.toggle_xray",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "\u7ebf\u6846",
+                      "element_type": "CHILD_GESTURE",
+                      "enabled": true,
+                      "direction": "8",
+                      "element": {
+                        "0": {
+                          "name": "\u7ebf\u6846\u663e\u793a",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "7",
+                          "operator_bl_idname": "wm.context_toggle",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "\u7ebf\u6846\u9608\u503c",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "6",
+                          "operator_bl_idname": "gesture.modal_mouse_operator",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'data_path': 'space_data.overlay.wireframe_threshold', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL'}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "2": {
+                          "name": "\u7ebf\u6846\u4e0d\u900f\u660e\u5ea6",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "direction": "8",
+                          "operator_bl_idname": "gesture.modal_mouse_operator",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'data_path': 'space_data.overlay.wireframe_opacity', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL'}",
+                          "operator_type": "OPERATOR"
+                        }
+                      }
+                    }
+                  }
+                },
+                "3": {
+                  "name": "\u663e\u793a\u53e0\u52a0\u5c42",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.overlay.show_overlays'}",
+                  "operator_type": "OPERATOR"
+                },
+                "4": {
+                  "name": "\u5207\u6362\u900f\u89c6\u6a21\u5f0f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "4",
+                  "operator_bl_idname": "view3d.toggle_xray",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "1": {
+              "name": "\u64cd\u63a7\u5668",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "4",
+              "element": {
+                "0": {
+                  "name": "\u663e\u793a\u64cd\u63a7\u5668",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "4",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.show_gizmo'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u53ef\u9009\u9879 & \u53ef\u89c1\u6027 \u9762\u677f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "3",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'name': 'VIEW3D_PT_object_type_visibility'}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "\u63a7\u5236\u5668\u9762\u677f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "5",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'name': 'VIEW3D_PT_gizmo_display'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "2": {
+              "name": "\u7740\u8272\u5668",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "direction": "8",
+              "element": {
+                "0": {
+                  "name": "\u7740\u8272\u5668\u9762\u677f",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "8",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'name': 'VIEW3D_PT_shading'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "3": {
+              "name": "\u7f51\u683c\u7f16\u8f91",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "C.mode == \"EDIT_MESH\" ",
+              "element": {
+                "0": {
+                  "name": "\u7f51\u683c\u7f16\u8f91\u53e0\u52a0\u5c42",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_edit_mesh'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "4": {
+              "name": "\u9aa8\u67b6",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "C.object and C.object.type == \"ARMATURE\" ",
+              "element": {
+                "0": {
+                  "name": "\u9aa8\u9abc\u53e0\u52a0\u5c42",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_bones'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "5": {
+              "name": "\u7ebf\u6846",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "5",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}",
+              "operator_type": "OPERATOR"
+            },
+            "6": {
+              "name": "\u5b9e\u4f53",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "1",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'RENDERED'}",
+              "operator_type": "OPERATOR"
+            },
+            "7": {
+              "name": "\u6e32\u67d3",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "3",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'MATERIAL'}",
+              "operator_type": "OPERATOR"
+            },
+            "8": {
+              "name": "\u6750\u8d28\u9884\u89c8",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "7",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'MATERIAL'}",
+              "operator_type": "OPERATOR"
+            }
+          }
+        },
+        "1": {
+          "name": "\u8282\u70b9\u7f16\u8f91\u5668",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "ELIF",
+          "poll_string": "C.space_data.type == \"NODE_EDITOR\" ",
+          "element": {
+            "0": {
+              "name": "\u8282\u70b9\u53e0\u52a0\u5c42",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "1",
+              "operator_bl_idname": "wm.call_panel",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'name': 'NODE_PT_overlay'}",
+              "operator_type": "OPERATOR"
+            }
+          }
+        }
+      },
+      "description": "\u6309Z\u5207\u6362\u89c6\u56fe"
+    }
+  }
+}
