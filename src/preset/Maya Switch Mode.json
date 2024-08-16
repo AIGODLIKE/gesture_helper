@@ -1,5 +1,5 @@
 {
-  "time": 1723793857.0134027,
+  "time": 1723794231.417301,
   "blender_version": [
     4,
     3,
@@ -13,7 +13,7 @@
   "author": "\u5c0f\u840c\u65b0",
   "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
   "gesture": {
-    "3": {
+    "0": {
       "name": "\u6a21\u5f0f - Maya",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
@@ -522,7 +522,7 @@
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
-              "poll_string": "(C.object and C.object.type == \"GPENCIL\")",
+              "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\")",
               "element": {
                 "0": {
                   "name": "\u7f16\u8f91GP",
