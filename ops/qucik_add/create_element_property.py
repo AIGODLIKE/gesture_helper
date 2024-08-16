@@ -337,9 +337,20 @@ class Create(Draw):
             self.create_enum()
 
         ae = self.active_element
+        if ae and self.button_prop:
+            ae.name = self.__prop_name__
+
+    @property
+    def __prop_name__(self) -> str:
+        """属性名称"""
         bp = self.button_prop
-        if ae and bp:
-            ae.name = pgettext(bp.name, bp.translation_context)
+        if bp.type == "ENUM":
+            if self.enum_mode == "SET":
+                value = self.enum_value_a
+                for item in bp.enum_items:
+                    if item.identifier == value:
+                        return pgettext(item.name, bp.translation_context)
+        return pgettext(bp.name, bp.translation_context)
 
 
 class CreateElementProperty(Create):
