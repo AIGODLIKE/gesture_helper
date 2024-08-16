@@ -1,7 +1,7 @@
 import bpy
 from mathutils import Euler, Vector, Matrix
 
-from ...utils.public import PublicOperator, PublicProperty
+from ...utils.public import PublicOperator, PublicProperty, get_pref
 
 
 def __from_rna_get_bl_ops_idname__(bl_rna) -> str:
@@ -27,7 +27,14 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         :param context:
         :return:
         """
-        bpy.ops.gesture.element_add(add_active_radio=True, element_type="OPERATOR")
+        pref = get_pref()
+        act = pref.active_element
+        add = pref.add_element_property
+        bpy.ops.gesture.element_add(
+            add_active_radio=True,
+            element_type="OPERATOR",
+            relationship=add.relationship,
+        )
 
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
@@ -68,4 +75,5 @@ class CreateElementOperator(PublicOperator, PublicProperty):
             if on:
                 ae.name = on
             print(ae.operator_bl_idname)
+        act.radio = True
         return {"FINISHED"}

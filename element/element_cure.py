@@ -62,7 +62,7 @@ class ElementCURE:
                 # 如果没有同级则快进到根
                 if pe:
                     return pe.element
-            elif r == 'CHILD' and ae:
+            elif r == 'CHILD' and ae and ae.is_have_add_child:
                 return ae.element
             return self.active_gesture.element
 

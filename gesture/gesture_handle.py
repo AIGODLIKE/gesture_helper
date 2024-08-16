@@ -56,5 +56,6 @@ class GestureHandle:
             if self.is_access_child_gesture:
                 self.trajectory_tree.append(self.direction_element, emp)
                 self.gesture_direction_cache_clear()
-            self.check_return_previous()
+            if self.is_draw_gesture:
+                self.check_return_previous()
         self.tag_redraw()

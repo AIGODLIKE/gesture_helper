@@ -323,7 +323,14 @@ class Create(Draw):
         COLLECTION:Collection.
         :return:
         """
-        bpy.ops.gesture.element_add(add_active_radio=True, element_type="OPERATOR")
+        pref = get_pref()
+        act = pref.active_element
+        add = pref.add_element_property
+        bpy.ops.gesture.element_add(
+            add_active_radio=True,
+            element_type="OPERATOR",
+            relationship=add.relationship,
+        )
         pt = self.property_type
         if pt == "BOOLEAN":
             self.create_boolean()
@@ -339,6 +346,7 @@ class Create(Draw):
         ae = self.active_element
         if ae and self.button_prop:
             ae.name = self.__prop_name__
+        act.radio = True
 
     @property
     def __prop_name__(self) -> str:
