@@ -32,8 +32,6 @@ class GestureProperty(PublicProperty):
 
     enabled: BoolProperty(
         default=True,
-        name='启用此手势',
-        description="""启用禁用此手势,主要是keymap的更新""",
         update=lambda self, context: self.key_update()
     )
 

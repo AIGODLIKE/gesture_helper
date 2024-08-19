@@ -8,6 +8,7 @@
 
 import json
 import traceback
+from gettext import pgettext
 
 import bpy
 from bpy.props import StringProperty
@@ -110,7 +111,8 @@ class GestureKeymap(KeymapProperty):
     def key_unload(self) -> None:
         if self in GestureKeymap.__key_data__:  # 如果禁用了会出现没有快捷键的情况
             for keymap, kmi in GestureKeymap.__key_data__[self]:
-                keymap.keymap_items.remove(kmi)
+                if kmi in keymap.keymap_items.values():
+                    keymap.keymap_items.remove(kmi)
             GestureKeymap.__key_data__.pop(self)
 
     @cache_update_lock
@@ -168,4 +170,4 @@ class GestureKeymap(KeymapProperty):
                 ]
             )
         else:
-            return "无快捷键"
+            return pgettext("Not key")

@@ -1,5 +1,7 @@
 # 绘制手势
 # 预览绘制
+from gettext import pgettext
+
 import bpy
 
 from . import ElementCURE
@@ -86,7 +88,7 @@ class ElementDraw:
             layout.prop(self, 'name')
 
             row = layout.row()
-            row.label(text='选择结构', icon_value=icon)
+            row.label(text='Select structure', icon_value=icon)
             row.operator(SetPollExpression.bl_idname)
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
@@ -108,7 +110,8 @@ class ElementDraw:
             else:
                 col.operator(ElementCURE.ScriptEdit.bl_idname)
                 rr = col.row(align=True)
-                rr.label(text=f"脚本字数:{len(self.operator_script)}")
+
+                rr.label(text=f'"{pgettext("Script word count")}:{len(self.operator_script)}"')
                 rr.separator_spacer()
                 rr.prop(self, 'preview_operator_script', icon_only=True, icon=icon_two(preview_script, style="HIDE"),
                         emboss=False)
@@ -126,7 +129,8 @@ class ElementDraw:
                     self.from_tmp_kmi_operator_update_properties()
                 if is_change:
                     layout.alert = True
-                    layout.label(text='属性已改变,请同步修改 或打开自动更新按钮', icon='ERROR')
+                    layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
+                                 icon='ERROR')
                     layout.alert = False
                 layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
 
@@ -140,7 +144,7 @@ class ElementDraw:
             row = layout.row(align=True)
             column = row.column()
             column.prop(self, 'name')
-            column.label(text='子手势', icon_value=self.pref.__get_icon__(self.direction))
+            column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
             SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
@@ -172,26 +176,26 @@ class ElementDraw:
         alert_list = []
         if self.is_selected_structure:
             if not self.__poll_bool_is_validity__:
-                alert_list.append(f'条件错误: {self.poll_string}')
+                alert_list.append(f'{pgettext("Condition error")}: {self.poll_string}')
             if not get_available_selected_structure(self):
-                alert_list.append(f'选择结构错误')
-                alert_list.append(f'上一个元素可能不是选择结构')
-                alert_list.append(f'或者上一个结构的表达式错误')
+                alert_list.append('Wrong choice of structure')
+                alert_list.append('Previous element may not be a selection structure')
+                alert_list.append('Or an expression error in the previous structure')
                 if self.is_selected_elif:
-                    alert_list.append(f'elif 的上一个选择结构需要是if 或 elif')
+                    alert_list.append('The previous selection structure of elif needs to be either if or elif.')
                 elif self.is_selected_else:
-                    alert_list.append(f'else 的上一个选择结构需要是if 或 elif')
+                    alert_list.append('The previous selection structure of else needs to be an if or elif.')
                 else:
-                    alert_list.append(f'我也不知道是那里错了 :>')
+                    alert_list.append("'I don't know what's wrong there either :>'")
         elif self.is_operator:
             if not self.__operator_id_name_is_validity__:
-                alert_list.append(f'操作符错误')
-                alert_list.append(f'未找到操作符: {self.operator_bl_idname}')
+                alert_list.append(f'Operator Error')
+                alert_list.append(f'{pgettext("Not find operator")}: {self.operator_bl_idname}')
             if not self.__operator_properties_is_validity__:
-                alert_list.append(f'操作符属性错误: {self.operator_properties}')
+                alert_list.append(f'{pgettext("Operator property error")}: {self.operator_properties}')
         if alert_list:
             col = layout.box().column(align=True)
             col.alert = True
-            col.label(text='警告', icon='ERROR')
+            col.label(text='Warning', icon='ERROR')
             for alert in alert_list:
                 col.label(text=alert)

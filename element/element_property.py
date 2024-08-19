@@ -7,17 +7,18 @@ from ..utils.public_cache import PublicCacheFunc, cache_update_lock
 
 class ElementAddProperty:
     relationship: EnumProperty(
-        name='关系',
+        name='Relationship',
         default='SAME',
         items=ENUM_RELATIONSHIP,
     )
     element_type: EnumProperty(
-        name='类型',
+        name='Type',
         default='CHILD_GESTURE',
         items=ENUM_ELEMENT_TYPE,
     )
 
-    add_active_radio: BoolProperty(name="添加元素时是否设置为活动项", default=False)
+    add_active_radio: BoolProperty(name="Whether or not to set it as an active item when adding an element",
+                                   default=False)
 
     @staticmethod
     @cache_update_lock
@@ -25,7 +26,7 @@ class ElementAddProperty:
         PublicCacheFunc.cache_clear()
 
     selected_type: EnumProperty(
-        name='选择结构类型',
+        name='Select structure type',
         items=ENUM_SELECTED_TYPE,
         update=lambda self, context: ElementAddProperty.update_selected_type()
     )
@@ -72,7 +73,7 @@ class ElementAddProperty:
 # 显示的属性,不用Blender那些,使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):
     direction: EnumProperty(
-        name='方向',
+        name='Direction',
         items=ENUM_GESTURE_DIRECTION,
         default='8'
     )
@@ -84,7 +85,7 @@ class ElementDirectionProperty(ElementAddProperty):
 
 class ElementProperty(ElementDirectionProperty):
     collection: CollectionProperty
-    enabled: BoolProperty(name='启用', default=True, update=lambda self, context: self.cache_clear())
+    enabled: BoolProperty(name='Enabled', default=True, update=lambda self, context: self.cache_clear())
 
-    show_child: BoolProperty(name='显示子级', default=False)
+    show_child: BoolProperty(name='Show child', default=False)
     level: IntProperty(name="Element Relationship Level", default=0)

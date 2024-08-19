@@ -26,8 +26,8 @@ class Element(ElementCURE,
               PublicProperty,
 
               PropertyGroup):
-    element: CollectionProperty(name='子级元素', type=Element)
-    index_element: IntProperty(name='索引')
+    element: CollectionProperty(name='Child element', type=Element)
+    index_element: IntProperty(name='Index')
 
     @cache_update_lock
     def __init_element__(self):

@@ -47,10 +47,10 @@ class ElementCURE:
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
-        bl_label = '添加手势项'
+        bl_label = 'Add gesture item'
         bl_idname = 'gesture.element_add'
 
-        add_active_radio: BoolProperty(name="添加元素时是否设置为活动项", default=False,
+        add_active_radio: BoolProperty(name="Whether or not to set it as an active item when adding an element", default=False,
                                        options={'HIDDEN', 'SKIP_SAVE'})
 
         @property
@@ -93,7 +93,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):
-        bl_label = '删除手势项'
+        bl_label = 'Remove gesture item'
         bl_idname = 'gesture.element_remove'
 
         def invoke(self, context, event):
@@ -112,7 +112,7 @@ class ElementCURE:
 
     class MOVE(ElementPoll):
         bl_idname = 'gesture.element_move'
-        bl_label = '移动手势项'
+        bl_label = 'Move gesture item'
         move_item = None
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -161,7 +161,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class SORT(ElementPoll):
-        bl_label = '排序手势项'
+        bl_label = 'Sort gesture item'
         bl_idname = 'gesture.element_sort'
 
         is_next: BoolProperty()
@@ -174,7 +174,7 @@ class ElementCURE:
 
     class COPY(ElementPoll):
         bl_idname = 'gesture.element_copy'
-        bl_label = '复制手势项'
+        bl_label = 'Copy gesture item'
 
         def execute(self, _):
             self.active_element.copy()
@@ -190,7 +190,7 @@ class ElementCURE:
 
     class CUT(ElementPoll):
         bl_idname = 'gesture.element_cut'
-        bl_label = '剪切手势项'
+        bl_label = 'Cut gesture item'
 
         __cut_data__ = None  # 剪切的数据
 
@@ -252,8 +252,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):
-        bl_label = '编辑脚本'
         bl_idname = 'gesture.element_operator_script_edit'
+        bl_label = 'Edit script'
 
         # 获取脚本数据块
         def get_text_data(self) -> bpy.types.Text:
@@ -279,7 +279,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptSave(ElementPoll):
-        bl_label = '保存脚本'
+        bl_label = 'Save script'
         bl_idname = 'gesture.element_operator_script_save'
 
         @classmethod

@@ -1,3 +1,5 @@
+from gettext import pgettext
+
 import bpy
 import gpu
 
@@ -176,7 +178,7 @@ class GestureGpuDraw(DrawDebug):
                 for d in draw_items:
                     d.draw_gpu_item(self)
                 if not len(draw_items):
-                    self.draw_text((0, 0), '暂无手势,请添加')
+                    self.draw_text((0, 0), pgettext('No gestures, please add'))
 
     def gpu_draw_direction_element(self):
         element = self.direction_element

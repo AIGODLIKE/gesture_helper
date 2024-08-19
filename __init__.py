@@ -2,7 +2,7 @@ from . import register_mod
 
 bl_info = {
     "name": "Gesture Helper",
-    "description": "手势助手,可以快速的使用手势运行blender 操作符或是更改属性",
+    "description": "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties.",
     "author": "AIGODLIKE Community(小萌新)",
     "version": (2, 0, 0),
     "blender": (3, 0, 0),

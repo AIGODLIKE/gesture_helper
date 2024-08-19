@@ -133,7 +133,7 @@ class RadioSelect:
             traceback.print_exc()
             traceback.print_stack()
 
-    radio: BoolProperty(name='单选', update=lambda self, context: self.update_radio())
+    radio: BoolProperty(name='Radio', update=lambda self, context: self.update_radio())
 
     @property
     def radio_iteration(self):
