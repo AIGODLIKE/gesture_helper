@@ -70,7 +70,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
                 print()
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         else:
-            ...
+            self.report({'INFO'}, self.direction_element.name)
         return {'FINISHED'}
 
     def cancel(self, context):

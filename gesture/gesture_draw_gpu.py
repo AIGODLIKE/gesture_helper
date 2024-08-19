@@ -158,6 +158,7 @@ class GestureGpuDraw(DrawDebug):
         region = bpy.context.region
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
+            self.gpu_draw_direction_element()
             if self.is_draw_gesture:
                 self.gpu_draw_trajectory_gesture_line()
             else:
@@ -176,3 +177,10 @@ class GestureGpuDraw(DrawDebug):
                     d.draw_gpu_item(self)
                 if not len(draw_items):
                     self.draw_text((0, 0), '暂无手势,请添加')
+
+    def gpu_draw_direction_element(self):
+        element = self.direction_element
+        if element and not self.is_draw_gesture:
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.__mouse_position__)
+                self.draw_text((0, 0), text=element.name)
