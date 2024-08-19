@@ -39,7 +39,7 @@ class DrawProperty(PropertyGroup):
     trajectory_mouse_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color,
                                                 default=[0.100000, 0.900000, 1.000000, 1.000000])
     trajectory_gesture_color: FloatVectorProperty(name='手势轨迹颜色', **public_color,
-                                                  default=[0.899829, 0.149425, 0.110640, 1.000000])
+                                                  default=[0.689335, 0.275156, 0.793810, 1.000000])
 
     @staticmethod
     def draw_text_property(layout: bpy.types.UILayout):
