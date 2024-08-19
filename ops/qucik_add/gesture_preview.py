@@ -11,7 +11,7 @@ from ...utils.public import PublicOperator
 
 class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOperator):
     bl_idname = "gesture.preview"
-    bl_label = "Gesture Preview"
+    bl_label = "Gesture preview"
     is_preview_mode = False
 
     gesture: StringProperty()

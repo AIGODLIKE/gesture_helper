@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 
 import bpy
 from bpy.app.translations import pgettext
@@ -14,14 +15,13 @@ def ___translate_id___() -> str:
     return language
 
 
-def ___all_translate_dict___() -> dict:
+def ___keymap_translate_dict___() -> dict:
     """获取所有翻译字典"""
-    res = dict()
     ti = ___translate_id___()
     if ti in __translate__:
-        for i in __translate__[ti].values():
-            res.update(i)
-    return res
+        if "keymap" in __translate__[ti]:
+            return __translate__[ti]["keymap"]
+    return dict()
 
 
 def ___preset_translate_dict___() -> dict:
@@ -43,17 +43,17 @@ def __preset_translate__(name: str) -> str:
 
 def __translate_string__(string: str) -> str:
     """翻译"""
-    at = ___all_translate_dict___()
+    at = ___keymap_translate_dict___()
     if string in at:
         return at[string]
     return pgettext(string)
 
 
-def register():
+def __load_json__():
+    """加载翻译数据"""
     global __translate__
-    folder = os.path.dirname(__file__)
 
-    for root, dirs, files in os.walk(folder):
+    for root, dirs, files in os.walk(os.path.dirname(__file__)):
         for file in files:
             if file.endswith('.json'):
                 try:
@@ -70,6 +70,42 @@ def register():
                     print("加载语言文件失败", e.args)
 
 
+__language_list__ = []
+
+
+def get_language_list() -> list:
+    """
+    Traceback (most recent call last):
+  File "<blender_console>", line 1, in <module>
+TypeError: bpy_struct: item.attr = val: enum "a" not found in ('DEFAULT', 'en_US', 'es', 'ja_JP', 'sk_SK', 'vi_VN', 'zh_HANS', 'ar_EG', 'de_DE', 'fr_FR', 'it_IT', 'ko_KR', 'pt_BR', 'pt_PT', 'ru_RU', 'uk_UA', 'zh_TW', 'ab', 'ca_AD', 'cs_CZ', 'eo', 'eu_EU', 'fa_IR', 'ha', 'he_IL', 'hi_IN', 'hr_HR', 'hu_HU', 'id_ID', 'ky_KG', 'nl_NL', 'pl_PL', 'sr_RS', 'sr_RS@latin', 'sv_SE', 'th_TH', 'tr_TR')
+    """
+    try:
+        bpy.context.preferences.view.language = ""
+    except TypeError as e:
+        matches = re.findall(r'\(([^()]*)\)', e.args[-1])
+        text = f"({matches[-1]})"
+        return eval(text)
+
+
+def register():
+    global __translate__
+    __load_json__()
+    from .helper import TranslationHelper
+    all_language = get_language_list()
+    for language, translate_dict in __translate__.items():
+        if "text" in translate_dict:
+            if language not in all_language:
+                if language == "zh_CN":
+                    language = "zh_HANS"
+                elif language == "zh_HANS":
+                    language = "zh_CN"
+            ti = TranslationHelper(f"Gesture_{language}", translate_dict["text"], lang=language)
+            ti.register()
+            __language_list__.append(ti)
+
+
 def unregister():
     global __translate__
     __translate__.clear()
+    for language in __language_list__:
+        language.unregister()
