@@ -107,7 +107,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 
 
 class Import(PublicFileOperator):
-    bl_label = '导入手势'
+    bl_label = 'Import gesture'
     bl_idname = 'gesture.gesture_import'
     preset = {}
 
@@ -143,7 +143,7 @@ class Import(PublicFileOperator):
         layout = self.layout
         row = layout.row()
 
-        row.label(text='导入预设')
+        row.label(text='Import preset')
         column = layout.column(align=True)
 
         for k, v in self.preset_items.items():
@@ -195,7 +195,7 @@ class Import(PublicFileOperator):
 
 
 class Export(PublicFileOperator):
-    bl_label = '导出手势'
+    bl_label = 'Export gesture'
     bl_idname = 'gesture.export'
 
     author: StringProperty(name='作者', default='小萌新')
