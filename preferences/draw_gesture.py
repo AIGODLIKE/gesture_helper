@@ -119,3 +119,12 @@ class GestureDraw:
         else:
             GestureDraw.draw_gesture_item(split)
         GestureDraw.draw_element(split)
+
+    @staticmethod
+    def draw_gesture(layout: bpy.types.UILayout):
+        pref = get_pref()
+        act = pref.active_gesture
+        if act:  # 绘制属性在左侧
+            GestureDraw.draw_gesture_item(layout)
+        else:
+            layout.box().label(text='请 选择或添加 一个手势元素')

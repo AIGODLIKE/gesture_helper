@@ -42,11 +42,12 @@ class PreferencesDraw(GestureDraw):
         :return:
         """
         from .. import preferences
+        pref = get_pref()
 
         row = layout.row()
         row.use_property_split = True
         column = row.column(align=True)
-
+        column.prop(pref.draw_property, "panel_name")
         preferences.BackupsProperty.draw_backups(column)
         preferences.DebugProperty.draw_debug(column)
 

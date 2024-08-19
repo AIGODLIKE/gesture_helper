@@ -17,6 +17,7 @@ def init_register():
     from .utils.public import get_pref
     from .gesture import gesture_keymap
     from .utils import public_cache, texture
+    from .ui.panel import register as register_panel
 
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
@@ -25,6 +26,7 @@ def init_register():
 
     pref = get_pref()
     pref.update_state()
+    register_panel()
     try:
         prop = pref.other_property
         if not prop.init_addon:
