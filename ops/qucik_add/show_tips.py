@@ -1,6 +1,6 @@
 import gpu.matrix
 
-from ...lib.bpu import BpuLayout
+from ...src.lib.bpu import BpuLayout
 
 
 class GestureShowTips(BpuLayout):

@@ -74,7 +74,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         layout = self.layout
         col = layout.column()
         sp = col.split(factor=0.05, align=True)
-        sp.label(text='条件:')
+        sp.label(text='Prerequisite:')
         sp.prop(self.element, 'poll_string', text='')
         self.draw_logical_operator(col)
 

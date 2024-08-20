@@ -1,6 +1,6 @@
 import bpy
 
-from ...utils.public import tag_redraw
+from ....utils.public import tag_redraw
 
 
 class BpuRegister:

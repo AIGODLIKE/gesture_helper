@@ -7,7 +7,7 @@ from mathutils import Vector
 
 from .bpu_debug import BpuDebug
 from .bpu_prop_layout import BpuPropLayout
-from ...utils.public_gpu import PublicGpu
+from ....utils.public_gpu import PublicGpu
 
 
 def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[int], list[int], list[int]]:

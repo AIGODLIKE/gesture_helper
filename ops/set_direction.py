@@ -7,7 +7,7 @@ from ..utils.public import get_pref
 
 class SetDirection(Operator):
     bl_idname = 'gesture.set_direction'
-    bl_label = '设置方向'
+    bl_label = 'Set direction'
 
     direction: StringProperty()
 

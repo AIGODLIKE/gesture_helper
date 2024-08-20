@@ -4,7 +4,7 @@ from bpy.types import Operator
 
 class RestoreKey(Operator):
     bl_idname = 'gesture.restore_key'
-    bl_label = '重置快捷键'
+    bl_label = 'Restore key'
 
     item_id: IntProperty(
         name="Item Identifier",

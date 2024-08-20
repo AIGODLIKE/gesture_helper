@@ -14,7 +14,7 @@ class GestureCURE:
 
     class ADD(PublicOperator, PublicProperty):
         bl_idname = 'gesture.gesture_add'
-        bl_label = '添加手势'
+        bl_label = 'Add gesture'
 
         def execute(self, _):
             add = self.pref.gesture.add()
@@ -25,7 +25,7 @@ class GestureCURE:
 
     class REMOVE(GesturePoll):
         bl_idname = 'gesture.gesture_remove'
-        bl_label = '删除手势'
+        bl_label = 'Remove gesture'
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
@@ -33,7 +33,7 @@ class GestureCURE:
                 self,
                 event,
                 context,
-                title="确认删除手势?",
+                title="Confirm deletion gesture?",
                 message=f"{self.active_gesture.name}",
             )
 
@@ -51,7 +51,7 @@ class GestureCURE:
 
     class SORT(GesturePoll):
         bl_idname = 'gesture.gesture_sort'
-        bl_label = '排序手势'
+        bl_label = 'Sort gesture'
 
         is_next: BoolProperty()
 

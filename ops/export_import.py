@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import BoolProperty, StringProperty
 
 from ..gesture import GestureKeymap
@@ -161,9 +162,14 @@ class Import(PublicFileOperator):
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
-            self.report({'INFO'}, f"导入成功! 导入{len(restore)}条数据 作者:{auth} 注释:{des} 导出数据插件版本:{ver}")
+            self.report(
+                {'INFO'},
+                pgettext(
+                    "Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s")
+                % (len(restore), {auth}, {des}, {ver})
+            )
         except Exception as e:
-            self.report({'ERROR'}, f"导入错误: {e.args}")
+            self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
             import traceback
             traceback.print_stack()
             traceback.print_exc()
@@ -198,10 +204,10 @@ class Export(PublicFileOperator):
     bl_label = 'Export gesture'
     bl_idname = 'gesture.export'
 
-    author: StringProperty(name='作者', default='小萌新')
-    description: StringProperty(name='描述', default='这是一个描述')
-    is_auto_backups: BoolProperty(name="是自动备份", default=False, options={"SKIP_SAVE"})
-    is_close_backups: BoolProperty(name="是关闭插件备份", default=False, options={"SKIP_SAVE"})
+    author: StringProperty(name='Author', default='小萌新')
+    description: StringProperty(name='Description', default='This is a description')
+    is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
+    is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
     def __init__(self):
         self.__is_invoke__ = None
@@ -262,7 +268,7 @@ class Export(PublicFileOperator):
         layout.separator()
 
         row = layout.row()
-        row.label(text='导出')
+        row.label(text='Export')
         row.prop(self, 'selected_all', emboss=True)
 
         column = layout.column()
@@ -283,10 +289,10 @@ class Export(PublicFileOperator):
         if len(self.pref.gesture) == 0:
             ...
         elif not len(self.export_data['gesture']):
-            self.report({'WARNING'}, "未选择导出项")
+            self.report({'WARNING'}, "Export item not selected")
         else:
             self.write_json_file()
-            self.report({'INFO'}, f"导出完成!\t{self.file_path}")
+            self.report({'INFO'}, pgettext("Export finished! %s") % self.file_path)
         return {'FINISHED'}
 
     def write_json_file(self):
