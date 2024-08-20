@@ -1,6 +1,6 @@
 import bpy
 from bl_operators.wm import operator_value_undo_return
-from bpy.app.translations import pgettext_rpt as rpt_
+from bpy.app.translations import pgettext
 from bpy.props import StringProperty, FloatProperty, EnumProperty
 from bpy.types import Operator
 from mathutils import Vector
@@ -62,7 +62,7 @@ class ModalMouseOperator(Operator, StoreValue):
                 if len(sp) > 1:
                     a, b = sp[:-1], sp[-1]
                     prop = try_call_eval(f"bpy.context.{'.'.join(a)}").rna_type.properties[b]
-                    name = rpt_(prop.name)
+                    name = pgettext(prop.name)
                     if prop.type == 'INT':
                         return f"{name} %d"
                     elif prop.type == 'FLOAT':
@@ -103,8 +103,8 @@ class ModalMouseOperator(Operator, StoreValue):
                     if self.___value___ is not None:
                         header_text = header_text % value
                     else:
-                        header_text = (self.__header_text__ % delta) + rpt_(" (delta)")
-                except Exception as _:
+                        header_text = (self.__header_text__ % delta) + pgettext(" (delta)")
+                except Exception:
                     header_text = f"header_text Text Error:{header_text} {value}"
                 context.area.header_text_set(header_text)
 

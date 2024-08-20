@@ -150,6 +150,12 @@ class PublicProperty(PublicCacheFunc):
             traceback.print_exc()
 
     @staticmethod
+    def __tn__(text):
+        """翻译名称"""
+        from ..src.translate import __name_translate__
+        return __name_translate__(text)
+
+    @staticmethod
     def __tp__(text):
         """翻译预设"""
         from ..src.translate import __preset_translate__

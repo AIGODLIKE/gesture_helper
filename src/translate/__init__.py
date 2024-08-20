@@ -15,44 +15,35 @@ def ___translate_id___() -> str:
     return language
 
 
-def ___keymap_translate_dict___() -> dict:
-    """获取所有翻译字典"""
+def ___translate_dict__(key: str) -> dict:
     ti = ___translate_id___()
     if ti in __translate__:
-        if "keymap" in __translate__[ti]:
-            return __translate__[ti]["keymap"]
-    return dict()
-
-
-def ___preset_translate_dict___() -> dict:
-    """获取名称的翻译字典"""
-    ti = ___translate_id___()
-    if ti in __translate__:
-        if "preset" in __translate__[ti]:
-            return __translate__[ti]["preset"]
+        if key in __translate__[ti]:
+            return __translate__[ti][key]
     return dict()
 
 
 def __preset_translate__(name: str) -> str:
+    """翻译预设"""
+    preset = ___translate_dict__("preset")
+    return preset[name] if (name in preset) else name
+
+
+def __name_translate__(name: str) -> str:
     """翻译名称"""
-    name_dict = ___preset_translate_dict___()
-    if name in name_dict:
-        return name_dict[name]
-    return name
+    name_dict = ___translate_dict__("name")
+    return name_dict[name] if (name in name_dict) else name
 
 
-def __translate_string__(string: str) -> str:
-    """翻译"""
-    at = ___keymap_translate_dict___()
-    if string in at:
-        return at[string]
-    return pgettext(string)
+def __keymap_translate__(string: str) -> str:
+    """翻译快捷键"""
+    keymap = ___translate_dict__("keymap")
+    return keymap[string] if (string in keymap) else pgettext(string)
 
 
 def __load_json__():
     """加载翻译数据"""
     global __translate__
-
     for root, dirs, files in os.walk(os.path.dirname(__file__)):
         for file in files:
             if file.endswith('.json'):

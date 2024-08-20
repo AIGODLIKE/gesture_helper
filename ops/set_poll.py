@@ -112,7 +112,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
             poll_string = f'({poll_string})'
 
         layout.operator_context = "EXEC_DEFAULT"
-        op = layout.operator(self.bl_idname, text=self.__ts__(name))
+        op = layout.operator(self.bl_idname, text=self.__tn__(name))
         op.poll_string = poll_string
 
     def invoke(self, context, _):

@@ -1,7 +1,6 @@
-from gettext import pgettext
-
 import bpy
 import gpu
+from bpy.app.translations import pgettext
 
 from ..utils.public_gpu import PublicGpu
 

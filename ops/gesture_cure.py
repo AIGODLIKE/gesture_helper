@@ -28,9 +28,11 @@ class GestureCURE:
         bl_label = '删除手势'
 
         def invoke(self, context, event):
-            return context.window_manager.invoke_confirm(
+            from ..utils.adapter import operator_invoke_confirm
+            return operator_invoke_confirm(
                 self,
                 event,
+                context,
                 title="确认删除手势?",
                 message=f"{self.active_gesture.name}",
             )

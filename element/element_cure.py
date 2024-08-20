@@ -97,9 +97,11 @@ class ElementCURE:
         bl_idname = 'gesture.element_remove'
 
         def invoke(self, context, event):
-            return context.window_manager.invoke_confirm(
+            from ..utils.adapter import operator_invoke_confirm
+            return operator_invoke_confirm(
                 self,
                 event,
+                context,
                 title="确认删除元素?",
                 message=f"{self.active_element.name}",
             )
@@ -217,9 +219,11 @@ class ElementCURE:
 
         def invoke(self, context, event):
             if self.cancel_cut:
-                return context.window_manager.invoke_confirm(
+                from ..utils.adapter import operator_invoke_confirm
+                return operator_invoke_confirm(
                     self,
                     event,
+                    context,
                     title="确认取消剪切?",
                     message="剪切的内容将会丢失",
                 )
