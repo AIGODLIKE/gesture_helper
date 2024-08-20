@@ -69,16 +69,20 @@ class GesturePassThroughKeymap:
         'wm.call_menu',
         'wm.call_panel',
         'wm.call_menu_pie',
+        'wm.context_toggle',
         'buttons.context_menu',  # 属性菜单
 
         'object.delete',  # 删除
         'outliner.operation',  # 大纲
-        'object.move_to_collection',  # 合并
+        'object.move_to_collection',  # 集合
 
         'nla.tracks_add',
         'nla.actionclip_add',
 
         # 选择
+        'view3d.localview',
+        'view3d.select_circle',
+        'view3d.select_box',
         'object.select_all',
         'mesh.select_all',
         'outliner.select_all',
@@ -108,7 +112,29 @@ class GesturePassThroughKeymap:
         'nla.select_all',
         'sequencer.select_all',
         'clip.select_all',
-        'clip.graph_select_all_markers'
+        'clip.graph_select_all_markers',
+        'object.select_hierarchy',
+
+        'wm.tool_set_by_id',  # w切换工具
+
+        'view3d.edit_mesh_extrude_move_normal',
+        'mesh.rip_move',
+        'mesh.edge_face_add',
+        'mesh.separate',
+        'mesh.vert_connect_path',
+        'mesh.split',
+        'mesh.inset',
+        'mesh.knife_tool',
+        'mesh.select_linked_pick',
+        'mesh.hide',
+
+        'anim.keyframe_insert',
+        'anim.keyframe_insert_menu',
+        'object.hide_view_set',
+
+        'transform.translate',
+        'transform.rotate',
+        'transform.resize',
     )
     __event__ = None
 
@@ -132,6 +158,7 @@ class GesturePassThroughKeymap:
 
         keys = []
         if area_type == "VIEW_3D":
+            keys.append("3D View Generic")
             keys.append(self.object_mode_map.get(context.mode))
         elif area_type == "SEQUENCE_EDITOR":
             sequence = self.sequence_map.get(view_type)
@@ -154,7 +181,9 @@ class GesturePassThroughKeymap:
                 if k.lower() == context.mode.lower():
                     keys.append(k)
 
+        keys.append("Window")
         print(keys)
+        print(f"event", event.type, event.shift, event.ctrl, event.alt)
         for key in keys:
             if key in keymaps.keys():
                 from ..ops.gesture import GestureOperator
@@ -169,26 +198,31 @@ class GesturePassThroughKeymap:
                                 bool(item.alt) == event.alt
                         ):
                             match_origin_key.append(item)
-                print(f"event", event.type, event.shift, event.ctrl, event.alt)
-                print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                print(f"\tOrigin Key\t{[i.idname for i in match_origin_key]}")
+                            # print("match", item.idname, key, item.ctrl, item.alt, item.shift)
 
                 ml = len(match_origin_key)
                 if ml == 1:
                     ok = try_operator_pass_through_right(match_origin_key[0])
+                    print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                    print(f"Origin Key\t{[i.idname for i in match_origin_key]}", ok)
                     if ok:
                         return
-                elif key == "Object Mode":
-                    if ml > 1 and match_origin_key[0].idname == "object.delete":
-                        # 3D视图有两个删除事件
-                        ok = try_operator_pass_through_right(match_origin_key[0])
+                elif key in ("Object Mode", "Mesh"):
+                    #         "object.delete",
+                    #         "object.select_all",
+                    #         "mesh.select_all",
+                    for m in match_origin_key:
+                        ok = try_operator_pass_through_right(m)
                         if ok:
                             return
+                    print("Emm\t", key, [i.idname for i in match_origin_key])
                 elif key == "Outliner":  # 为大纲视图单独处理事件
                     for m in match_origin_key:
                         ok = try_operator_pass_through_right(m)
                         if ok:
                             return
+                else:
+                    print(f"else\t{key}\t{[i.idname for i in match_origin_key]}")
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set:
@@ -225,4 +259,8 @@ def try_operator_pass_through_right(kmi) -> bool:
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
         print(f"try_operator_pass_through_right Error\t{e.args}")
+        print(prop)
+        import traceback
+        traceback.print_exc()
+        traceback.print_stack()
         return False

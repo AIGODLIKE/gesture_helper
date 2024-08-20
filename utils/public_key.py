@@ -73,11 +73,13 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
                 'OBJECT_OT_duplicate',
                 'MESH_OT_loopcut',
                 'MESH_OT_rip_edge',
+                'MESH_OT_rip',
                 'MESH_OT_duplicate',
                 'MESH_OT_offset_edge_loops',
                 'MESH_OT_extrude_faces_indiv',
             ]:  # 一些奇怪的操作符属性,不太好解析也用不上
                 ...
+                del_key.append(item)
             else:
                 print('emm 未知属性,', typ, dictionary[item])
                 del_key.append(item)
