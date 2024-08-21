@@ -23,7 +23,7 @@ class Gesture(
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
-    description: StringProperty(default="这是一个手势...", name="注释")
+    description: StringProperty(default="This is a gesture...", name="Description")
 
     def draw_item(self, layout):
         prop = self.draw_property

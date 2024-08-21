@@ -94,7 +94,7 @@ class GestureDraw:
 
             DrawElement.draw_element_cure(row)
         else:
-            layout.label(text='请添加或选择一个手势')
+            layout.label(text='Please add or select a gesture')
 
     @staticmethod
     def draw_ui_gesture(layout):
@@ -115,7 +115,7 @@ class GestureDraw:
             if act:
                 act.draw_item_property(box)
             else:
-                box.label(text='请 选择或添加 一个手势元素')
+                box.label(text='Please select or add a gesture element')
         else:
             GestureDraw.draw_gesture_item(split)
         GestureDraw.draw_element(split)
@@ -127,4 +127,4 @@ class GestureDraw:
         if act:  # 绘制属性在左侧
             GestureDraw.draw_gesture_item(layout)
         else:
-            layout.box().label(text='请 选择或添加 一个手势元素')
+            layout.box().label(text='Please select or add a gesture element')

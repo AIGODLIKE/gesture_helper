@@ -8,29 +8,29 @@ from bpy.types import PropertyGroup
 class BackupsProperty(PropertyGroup):
     from ..utils.public import ADDON_FOLDER
     auto_backups: BoolProperty(
-        name='启用自动备份',
-        description='在每次注销插件时自动保存数据,避免误操作导致数据丢失, 自动保存的路径在插件路径的 "auto_backups" 文件夹',
+        name='Enable auto backups',
+        description='Automatically save the data every time you log out of the plugin to avoid data loss due to misuse, the path of the autosave is in the “auto_backups” folder of the plugin path.',
         default=True,
     )
     enabled_backups_to_specified_path: BoolProperty(
-        name='指定备份路径',
-        description='备份到指定路径',
+        name='Specify the backup path',
+        description='Backup files are saved to a specified path',
         default=False,
     )
     backups_path: StringProperty(
-        name='备份路径',
-        description='备份配置到指定路径',
+        name='Backup path',
+        description='Backup Configuration to a Specified Path',
         subtype='DIR_PATH',
         default=os.path.join(ADDON_FOLDER, 'auto_backups')
     )
     backups_file_mode: EnumProperty(
-        name="备份模式",
+        name="Backup mode",
         default="ONLY_ONE",
         items=[
-            ("ADDON_UNREGISTER", "插件注销时",
-             "每次插件注销时都会自动备份一次(在关闭插件或关闭Blender时会触发),如果频繁开关Blender将会有很多备份文件"),
-            ("ADDON_UNREGISTER_DAY", "插件注销时(每天保留一份)", "每天仅保留一份"),
-            ("ONLY_ONE", "仅保留一份", "仅保留一份")
+            ("ADDON_UNREGISTER", "When the plugin logs out",
+             "Every time the plugin logout will be automatically backed up once (will be triggered when you close the plugin or close Blender), if you frequently switch on and off Blender will have a lot of backup files"),
+            ("ADDON_UNREGISTER_DAY", "When the plugin is logged out (one copy per day is retained)", "Keep only one copy per day"),
+            ("ONLY_ONE", "Keep only one copy", "Keep only one copy")
         ]
     )
 

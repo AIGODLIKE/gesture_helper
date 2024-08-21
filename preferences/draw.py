@@ -52,7 +52,7 @@ class PreferencesDraw(GestureDraw):
         preferences.DebugProperty.draw_debug(column)
 
         col = row.box().column(align=True)
-        col.label(text='手势')
+        col.label(text='Gesture')
         preferences.GestureProperty.draw_gesture_property(col)
         preferences.DrawProperty.draw_text_property(col)
         preferences.DrawProperty.draw_color_property(col)
@@ -63,6 +63,6 @@ class PreferencesDraw(GestureDraw):
         layout.alert = True
         from ..ops.switch_ui import SwitchGestureWindow
         return layout.operator(SwitchGestureWindow.bl_idname,
-                               text='退出',
+                               text='Exit',
                                icon='PANEL_CLOSE'
                                )

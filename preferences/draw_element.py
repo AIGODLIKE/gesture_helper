@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext
 
 from ..utils.public import get_pref, get_debug
 from ..utils.public_ui import icon_two
@@ -54,7 +55,7 @@ class DrawElement:
             if get_debug():
                 act.draw_debug(layout)
         else:
-            layout.label(text='请 选择或添加 一个手势元素')
+            layout.label(text='Please select or add a gesture element')
 
     @staticmethod
     def draw_move_element(layout: 'bpy.types.UILayout'):
@@ -62,17 +63,17 @@ class DrawElement:
         mi = ElementCURE.MOVE.move_item
 
         column = layout.column(align=True)
-        column.label(text=f"移动手势中")
+        column.label(text="In mobile gestures")
         column.separator()
-        column.label(text=f"移动手势: {mi.name}")
+        column.label(text=pgettext("Move gesture: %s") % mi.name)
         if mi.is_root:
-            column.label(text=f"手势项为根级")
+            column.label(text="The gesture term is the root level")
 
         row = column.row(align=True)
         mr = row.row(align=True)
         mr.enabled = not mi.is_root  # 不是根级的
-        mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='移动到根级').cancel_move = False
-        row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='取消移动').cancel_move = True
+        mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='Moving to the root level').cancel_move = False
+        row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='Cancel move').cancel_move = True
 
     @staticmethod
     def draw_cut_element(layout: 'bpy.types.UILayout'):
@@ -80,7 +81,7 @@ class DrawElement:
         pref = get_pref()
 
         column = layout.column(align=True)
-        column.label(text=f"剪切手势中")
+        column.label(text="In the cut gesture")
         column.separator()
 
         row = column.row(align=True)
@@ -88,9 +89,9 @@ class DrawElement:
         mr.operator(
             ElementCURE.CUT.bl_idname,
             icon_value=pref.__get_icon__("CUT"),
-            text='粘贴到根级'
+            text='Paste to root level'
         ).cancel_cut = False
-        row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='取消粘贴').cancel_cut = True
+        row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel paste').cancel_cut = True
 
     @staticmethod
     def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
@@ -109,7 +110,7 @@ class DrawElement:
             split = layout.split(factor=.4)
 
         row = split.row(align=True)
-        row.label(text='元素关系:')
+        row.label(text='Elemental Relationship:')
         row.prop(add, 'relationship', expand=True)
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
@@ -119,7 +120,7 @@ class DrawElement:
         if add_child:
             element_row = sub_row.row(align=True)
             element_row.separator()
-            element_row.label(text='添加项:')
+            element_row.label(text='Add item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i != 'SELECTED_STRUCTURE':
                     ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
@@ -132,4 +133,4 @@ class DrawElement:
                 ops.selected_type = i
                 ops.relationship = relationship
         else:
-            sub_row.row(align=True).label(text="无法为 '操作符' 添加子级")
+            sub_row.row(align=True).label(text="Cannot add child to 'operator'")

@@ -7,45 +7,45 @@ from ..utils.public import get_pref
 
 class DrawProperty(PropertyGroup):
     from ..utils import public_color
-    gesture_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
-    gesture_show_keymap: BoolProperty(name='显示快捷键', default=True)
-    gesture_show_description: BoolProperty(name='显示注释', default=True)
-    gesture_keymap_split_factor: FloatProperty(name='快捷键拆分系数', default=0.2, max=0.95, min=0.01, step=0.01)
-    gesture_remove_tips: BoolProperty(name='手势删除提示', default=True, description="如果开启\n在删除时会弹出提示")
+    gesture_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
+    gesture_show_keymap: BoolProperty(name='Show keymap', default=True)
+    gesture_show_description: BoolProperty(name='Show description', default=True)
+    gesture_keymap_split_factor: FloatProperty(name='Keymap split factor', default=0.2, max=0.95, min=0.01, step=0.01)
+    gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    element_split_factor: FloatProperty(name='拆分系数', default=0.2, max=0.95, min=0.01)
-    element_show_enabled_button: BoolProperty(name='显示 启用/禁用 按钮', default=True)
-    element_show_left_side: BoolProperty(name='显示在左侧', default=False)
-    element_remove_tips: BoolProperty(name='手势项删除提示', default=True, description="如果开启\n在删除时会弹出提示")
+    element_split_factor: FloatProperty(name='Split factor', default=0.2, max=0.95, min=0.01)
+    element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
+    element_show_left_side: BoolProperty(name='Show in left side', default=False)
+    element_remove_tips: BoolProperty(name='Element remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    text_gpu_draw_size: IntProperty(name='文字大小', description='Gpu绘制的文字大小', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='圆角大小', description='Gpu绘制的圆角大小', default=7, min=5, max=120)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu绘制的Margin大小', default=20, min=5, max=120)
-    line_width: IntProperty(name='线宽', description='Gpu绘制的线宽大小', default=3, min=1, max=20)
+    text_gpu_draw_size: IntProperty(name='Font size', description='Gpu draw text size', default=20, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Radius size', description='Gpu draw radius size', default=7, min=5, max=120)
+    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu draw margin size', default=20, min=5, max=120)
+    line_width: IntProperty(name='Line width', description='Gpu draw width size', default=3, min=1, max=20)
 
-    background_operator_color: FloatVectorProperty(name='操作符颜色', **public_color,
+    background_operator_color: FloatVectorProperty(name='Operator color', **public_color,
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])
-    background_operator_active_color: FloatVectorProperty(name='操作符活动颜色', **public_color,
+    background_operator_active_color: FloatVectorProperty(name='Operator active color', **public_color,
                                                           default=[0.331309, 0.347597, 0.445060, 1.000000])
 
-    background_child_color: FloatVectorProperty(name='子级颜色', **public_color,
+    background_child_color: FloatVectorProperty(name='Child color', **public_color,
                                                 default=[0.431968, 0.222035, 0.650622, 1.000000])
-    background_child_active_color: FloatVectorProperty(name='子级活动颜色', **public_color,
+    background_child_active_color: FloatVectorProperty(name='Child active color', **public_color,
                                                        default=[0.689335, 0.275156, 0.793810, 1.000000])
 
-    text_default_color: FloatVectorProperty(name='文字默认颜色', **public_color, default=(.8, .8, .8, 1))
-    text_active_color: FloatVectorProperty(name='文字活动颜色', **public_color, default=(1, 1, 1, 1))
+    text_default_color: FloatVectorProperty(name='Text default color', **public_color, default=(.8, .8, .8, 1))
+    text_active_color: FloatVectorProperty(name='Text active color', **public_color, default=(1, 1, 1, 1))
 
-    trajectory_mouse_color: FloatVectorProperty(name='鼠标轨迹颜色', **public_color,
+    trajectory_mouse_color: FloatVectorProperty(name='Mouse track color', **public_color,
                                                 default=[0.100000, 0.900000, 1.000000, 1.000000])
-    trajectory_gesture_color: FloatVectorProperty(name='手势轨迹颜色', **public_color,
+    trajectory_gesture_color: FloatVectorProperty(name='Gesture track color', **public_color,
                                                   default=[0.689335, 0.275156, 0.793810, 1.000000])
     
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
         update_panel()
 
-    panel_name: StringProperty(name='面板名称', default='Gesture', update=__update_panel_name__)
+    panel_name: StringProperty(name='Panel name', default='Gesture', update=__update_panel_name__)
 
     @staticmethod
     def draw_text_property(layout: bpy.types.UILayout):

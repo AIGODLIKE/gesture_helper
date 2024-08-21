@@ -7,11 +7,11 @@ from ..utils.public import get_pref
 
 
 class DebugProperty(PropertyGroup):
-    debug_mode: BoolProperty(name='Debug模式', default=isDebug)
-    debug_key: BoolProperty(name='Debug快捷键', default=isDebug)
-    debug_draw_gpu_mode: BoolProperty(name='Debug绘制Gpu模式', default=isDebug)
-    debug_export_import: BoolProperty(name='Debug导入导出', default=isDebug)
-    debug_operator: BoolProperty(name='Debug操作符', default=False)
+    debug_mode: BoolProperty(name='Debug mode', default=isDebug)
+    debug_key: BoolProperty(name='Debug key', default=isDebug)
+    debug_draw_gpu_mode: BoolProperty(name='Debug draw gpu mode', default=isDebug)
+    debug_export_import: BoolProperty(name='Debug export import', default=isDebug)
+    debug_operator: BoolProperty(name='Debug operator', default=False)
     debug_poll: BoolProperty(name='Debug Poll', default=False)
 
     @staticmethod

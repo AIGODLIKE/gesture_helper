@@ -8,7 +8,7 @@ class SwitchMode(Operator):
     bl_label = 'Switch mode'
     type: EnumProperty(items=[
         ('SWITCH_OBJECT_MODE', 'Switch object mode', ''),
-        ('SWITCH_OBJECT_EDIT_MODE', '切换物体编辑模式', ''),
+        ('SWITCH_OBJECT_EDIT_MODE', 'Switch object edit mode', ''),
     ])
     select_mode: EnumProperty(items=[
         ('VERT', 'VERT', ''),

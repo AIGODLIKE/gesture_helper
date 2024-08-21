@@ -5,11 +5,10 @@ from ..utils.public import PublicOperator
 
 
 class SwitchGestureWindow(PublicOperator):
-    bl_label = '弹出手势窗口'
+    bl_label = 'Popup gesture window'
     bl_idname = 'wm.popup_gesture_window'
-    bl_description = '弹出手势窗口'
 
-    popup_window: BoolProperty(default=False, name='弹出窗口',
+    popup_window: BoolProperty(default=False, name='Popup window',
                                options={'SKIP_SAVE'})
     window_fullscreen_toggle: BoolProperty()
 

@@ -3,7 +3,7 @@ class PollData:
         'prefix': 'C.object and C.object.type',
         'suffix': '',
         'notation': '==',
-        'name': '活动项物体类型',
+        'name': 'Active object type',
         'items': [
             {'name': 'Mesh', 'item': 'MESH', },
             {'name': 'Curve', 'item': 'CURVE', },
@@ -27,7 +27,7 @@ class PollData:
         'prefix': 'C.mode',
         'suffix': '',
         'notation': '==',
-        'name': '物体模式',
+        'name': 'Object mode',
         'items': [
             {'name': 'Mesh Edit', 'item': 'EDIT_MESH'},
             {'name': 'Text Edit', 'item': 'EDIT_TEXT'},
@@ -63,26 +63,26 @@ class PollData:
     POLL_MESH_SELECT_MODE = {
         'prefix': 'tool.mesh_select_mode[:]',
         'notation': '==',
-        'name': '网格选择模式',
+        'name': 'Mesh select mode',
         'items': [
-            {'prefix': 'tool.mesh_select_mode[0]', 'item': True, 'name': '顶点', },
-            {'prefix': 'tool.mesh_select_mode[1]', 'item': True, 'name': '边', },
-            {'prefix': 'tool.mesh_select_mode[2]', 'item': True, 'name': '面', },
+            {'prefix': 'tool.mesh_select_mode[0]', 'item': True, 'name': 'Vertex', },
+            {'prefix': 'tool.mesh_select_mode[1]', 'item': True, 'name': 'Edge', },
+            {'prefix': 'tool.mesh_select_mode[2]', 'item': True, 'name': 'Face', },
             None,
-            {'item': [True, False, False], 'name': '仅顶点', },
-            {'item': [False, True, False], 'name': '仅边', },
-            {'item': [False, False, True], 'name': '仅面', },
+            {'item': [True, False, False], 'name': 'Only vertex', },
+            {'item': [False, True, False], 'name': 'Only edge', },
+            {'item': [False, False, True], 'name': 'Only face', },
             None,
-            {'item': [True, False, True], 'name': '仅 顶点&面', },
-            {'item': [False, True, True], 'name': '仅 边&面', },
-            {'item': [True, True, False], 'name': '仅 顶点&边', },
-            {'item': [True, True, True], 'name': '顶点&边&面', },
+            {'item': [True, False, True], 'name': 'Only Vertex & Face', },
+            {'item': [False, True, True], 'name': 'Only Edge & Face', },
+            {'item': [True, True, False], 'name': 'Only Vertex & Edge', },
+            {'item': [True, True, True], 'name': 'Vertex & Edge & Face', },
         ],
     }
     POLL_REGIONS_TYPE = {
         'prefix': 'C.region.type',
         'notation': '==',
-        'name': '区域类型',
+        'name': 'Region type',
         'items': [
             {'item': 'WINDOW', 'name': 'Window', },
             {'item': 'HEADER', 'name': 'Header', },
@@ -103,7 +103,7 @@ class PollData:
     POLL_SPACE_TYPE = {
         'prefix': 'C.space_data.type',
         'notation': '==',
-        'name': '空间类型',
+        'name': 'Space type',
         'items': [
             {'name': '3D Viewport', 'item': 'VIEW_3D', },
             {'name': 'UV/Image Editor', 'item': 'IMAGE_EDITOR', },
@@ -126,17 +126,17 @@ class PollData:
             {'name': 'Python Console', 'item': 'CONSOLE', },
             None,
             {'name': 'Node Editor', 'item': 'NODE_EDITOR', },
-            {'name': '几何节点', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "GeometryNodeTree"', },
-            {'name': '合成节点', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "CompositorNodeTree"', },
-            {'name': '着色器节点', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "ShaderNodeTree"', },
-            {'name': '纹理节点', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "TextureNodeTree"', },
+            {'name': 'Geometry Node', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "GeometryNodeTree"', },
+            {'name': 'Compositor Node', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "CompositorNodeTree"', },
+            {'name': 'Shader Node', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "ShaderNodeTree"', },
+            {'name': 'Texture Node', 'item': 'NODE_EDITOR', 'suffix': 'and C.space_data.tree_type == "TextureNodeTree"', },
         ],
     }
     POLL_OTHER = {
         'prefix': '',
         'suffix': '',
         'notation': '==',
-        'name': '其它',
+        'name': 'Other',
         'items': [
             {'item': 'and',
              'name': 'and',
@@ -155,7 +155,7 @@ class PollData:
              'not_str': True},
             None,
             {'item': 'len(C.objects)',
-             'name': '选择了物体的',
+             'name': 'Is selected object',
              'parentheses': False,
              'not_str': True},
         ],
@@ -164,11 +164,11 @@ class PollData:
         'prefix': 'C.scene.render.engine',
         'suffix': '',
         'notation': '==',
-        'name': '渲染引擎',
+        'name': 'Render engine',
         'items': [
             {'name': 'EEVEE', 'notation': 'in', 'item': '("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE")', 'not_str': True},
             {'name': 'CYCLE', 'item': '"CYCLES"', 'not_str': True},
-            {'name': '工作台', 'item': '"BLENDER_WORKBENCH"', 'not_str': True},
+            {'name': 'Workbench', 'item': '"BLENDER_WORKBENCH"', 'not_str': True},
         ]
     }
 

@@ -37,27 +37,27 @@ ENUM_GESTURE_DIRECTION = [
     ('8', '右下', ''),
 ]
 ENUM_ELEMENT_TYPE = [
-    ('SELECTED_STRUCTURE', '选择结构', ''),
-    ('CHILD_GESTURE', '子手势', ''),
-    ('OPERATOR', '操作符', ''),
+    ('SELECTED_STRUCTURE', 'Sel Structure', 'Select structure'),
+    ('CHILD_GESTURE', 'Child', 'Child gesture'),
+    ('OPERATOR', 'Op', 'Operator'),
 ]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
-    ('ROOT', '根级', ''),
-    ('SAME', '同级', ''),
-    ('CHILD', '子级', '')
+    ('ROOT', 'Root', 'Add to root'),
+    ('SAME', 'Same', 'Add to same'),
+    ('CHILD', 'child', 'Add to child')
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)
 
 ENUM_OPERATOR_TYPE = [
-    ('OPERATOR', '操作符', '输入Blender自带的操作符bl_idname'),
-    ('SCRIPT', '脚本', '使用自定义脚本运行操作符'),
+    ('OPERATOR', 'Operator', 'Enter Blender own operator bl_idname'),
+    ('SCRIPT', 'Script', 'Use custom script to run'),
 ]
 
 CREATE_ELEMENT_VALUE_MODE_ENUM = [
-    ("SET_VALUE", "设置值", "直接将属性设置为指定值"),
-    ("MOUSE_CHANGES_HORIZONTAL", "鼠标互动更改(水平方向)", "水平方向修改值"),
-    ("MOUSE_CHANGES_VERTICAL", "鼠标互动更改(垂直方向)", "垂直方向修改值"),
-    ("MOUSE_CHANGES_ARBITRARY", "鼠标互动更改(任意方向)", "任意方向修改值"),
+    ("SET_VALUE", "Set value", "Setting an attribute to a specified value"),
+    ("MOUSE_CHANGES_HORIZONTAL", "Mouse interaction change (horizontal)", "Horizontal modifier"),
+    ("MOUSE_CHANGES_VERTICAL", "Mouse interaction change (vertical)", "Vertical modifier"),
+    ("MOUSE_CHANGES_ARBITRARY", "Mouse interaction change (any direction)", "Modify value in any direction"),
 ]

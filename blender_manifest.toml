@@ -1,4 +1,4 @@
-schema_version = "1.0.3"
+schema_version = "1.0.0"
 
 blender_version_min = "4.2.0"
 id = "gesture_helper"

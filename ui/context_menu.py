@@ -27,22 +27,27 @@ class ContextMenu(bpy.types.Menu):
         layout = self.layout
 
         if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
-            layout.label(text="添加手势", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
-            layout.label(text="动态枚举属性无法添加!!")
+            layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
+            layout.label(text="Dynamic enumeration properties cannot be added!!")
         elif (show_operator or show_property) and show:
             button_prop = getattr(context, "button_prop", None)
             layout.context_pointer_set('show_gesture_add_menu', self)
-            layout.label(text="添加手势", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
+            layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
 
             if show_property:
-                layout.operator(CreateElementProperty.bl_idname,
-                                text=f"添加属性 {pgettext(button_prop.name, '*')}")
+                layout.operator(
+                    CreateElementProperty.bl_idname,
+                    text=pgettext("Add property %s") % pgettext(button_prop.name, '*')
+                )
 
             if show_operator:
                 button_operator = getattr(context, "button_operator", None)
                 br = button_operator.bl_rna
                 text = pgettext(br.name, br.translation_context)
-                layout.operator(CreateElementOperator.bl_idname, text=f'添加操作符 {text} 到手势')
+                layout.operator(
+                    CreateElementOperator.bl_idname,
+                    text=pgettext("Add operator %s to gesture") % text
+                )
 
 
 def register():

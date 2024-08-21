@@ -28,7 +28,7 @@ class GesturePreferences(PublicProperty,
 
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
-    index_gesture: IntProperty(name='手势索引', update=lambda self, context: self.active_gesture.to_temp_kmi())
+    index_gesture: IntProperty(name='Gesture index', update=lambda self, context: self.active_gesture.to_temp_kmi())
 
     draw_property: PointerProperty(type=DrawProperty)
     debug_property: PointerProperty(type=DebugProperty)
@@ -38,10 +38,10 @@ class GesturePreferences(PublicProperty,
     add_element_property: PointerProperty(type=AddElementProperty)
 
     enabled: BoolProperty(
-        name='启用手势',
-        description="""启用禁用整个系统,主要是keymap""",
+        name='Enable gesture',
+        description="""Enable gesture system""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
-    show_page: EnumProperty(name='显示面板', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
+    show_page: EnumProperty(name='Show panel', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
 
     def get_gesture_data(self, get_all: bool = False) -> {}:
         from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
@@ -51,11 +51,9 @@ class GesturePreferences(PublicProperty,
             res = {}
             if 'element_type' in filter_dict:
                 et = filter_dict['element_type']
-
                 ot = filter_dict.get("operator_type", None)
                 if et == "OPERATOR" and f"OPERATOR_{ot}" in EXPORT_PROPERTY_ITEM:
                     et = f"OPERATOR_{ot}"
-
                 for i in EXPORT_PROPERTY_ITEM[et]:
                     if i in filter_dict:
                         res[i] = filter_dict[i]
@@ -82,8 +80,7 @@ class GesturePreferences(PublicProperty,
         return self.show_page == 'PROPERTY'
 
     def draw(self, _):
-        layout = self.layout
-        self.preferences_draw(layout)
+        self.preferences_draw(self.layout)
 
 
 classes_list = (
