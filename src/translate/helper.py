@@ -17,6 +17,9 @@ class TranslationHelper:
             bpy.app.translations.register(self.name, self.translations_dict)
         except ValueError as e:
             print(e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
 
     def unregister(self):
         bpy.app.translations.unregister(self.name)
