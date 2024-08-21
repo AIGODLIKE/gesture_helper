@@ -60,7 +60,6 @@ def __load_json__():
                 except Exception as e:
                     print("加载语言文件失败", e.args)
 
-
 __language_list__ = []
 
 

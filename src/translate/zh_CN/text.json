@@ -172,7 +172,8 @@
   "Render engine": "渲染引擎",
   "Workbench": "工作台",
   "This is a gesture...": "这是一个手势...",
-  "": "",
-  "": "",
-  "": ""
+  "Confirm to delete the element?": "确认删除元素?",
+  "Confirm to cancel the cut?": "确认取消剪切?",
+  "Cut content will be lost": "剪切的内容将会丢失",
+  "Save Script Data %s Ctrl + S": "保存脚本数据 %s Ctrl + S"
 }

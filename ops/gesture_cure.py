@@ -63,7 +63,7 @@ class GestureCURE:
 
     class COPY(GesturePoll):
         bl_idname = 'gesture.gesture_copy'
-        bl_label = '复制手势'
+        bl_label = 'Copy gesture'
 
         def execute(self, _):
             self.active_gesture.copy()

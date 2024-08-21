@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
 from .element_property import ElementDirectionProperty
@@ -50,7 +51,8 @@ class ElementCURE:
         bl_label = 'Add gesture item'
         bl_idname = 'gesture.element_add'
 
-        add_active_radio: BoolProperty(name="Whether or not to set it as an active item when adding an element", default=False,
+        add_active_radio: BoolProperty(name="Whether or not to set it as an active item when adding an element",
+                                       default=False,
                                        options={'HIDDEN', 'SKIP_SAVE'})
 
         @property
@@ -102,7 +104,7 @@ class ElementCURE:
                 self,
                 event,
                 context,
-                title="确认删除元素?",
+                title="Confirm to delete the element?",
                 message=f"{self.active_element.name}",
             )
 
@@ -224,8 +226,8 @@ class ElementCURE:
                     self,
                     event,
                     context,
-                    title="确认取消剪切?",
-                    message="剪切的内容将会丢失",
+                    title="Confirm to cancel the cut?",
+                    message="Cut content will be lost",
                 )
             return self.execute(context)
 
@@ -343,7 +345,7 @@ def draw_save_script_button(self, context):
     if getattr(text, "gesture_element_hash", False) == str(hash(active)):
         row = layout.row()
         row.alert = True
-        row.operator(ElementCURE.ScriptSave.bl_idname, text=f"保存脚本数据 {active.name} Ctrl + S")
+        row.operator(ElementCURE.ScriptSave.bl_idname, text=pgettext("Save Script Data %s Ctrl + S") % active.name)
 
 
 def get_text_window(context: bpy.types.Context, text: bpy.types.Text) -> bpy.types.Window:
