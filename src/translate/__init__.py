@@ -58,7 +58,8 @@ def __load_json__():
                                 t = __translate__[language] = dict()
                             t[file[:-5]] = data
                 except Exception as e:
-                    print("加载语言文件失败", e.args)
+                    print("加载语言文件失败", e.args, file)
+
 
 __language_list__ = []
 

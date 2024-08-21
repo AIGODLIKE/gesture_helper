@@ -122,6 +122,7 @@
   "Operator color": "操作符颜色",
   "Operator active color": "操作符活动颜色",
   "Child color": "子级颜色",
+  "Child": "子级",
   "Child active color": "子级活动颜色",
   "Text default color": "文字默认颜色",
   "Text active color": "文字活动颜色女",
@@ -178,5 +179,6 @@
   "Save Script Data %s Ctrl + S": "保存脚本数据 %s Ctrl + S",
   "Gesture Timeout(ms)": "手势超时(ms)",
   "Gesture Radius": "手势半径",
-  "Show gesture keymap": "显示手势项快捷键"
+  "Show gesture keymap": "显示手势项快捷键",
+  "Return Previous Gesture Distance": "返回上一个手势的距离"
 }
