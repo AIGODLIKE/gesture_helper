@@ -27,14 +27,14 @@ def from_each_as_title(enum):
 
 
 ENUM_GESTURE_DIRECTION = [
-    ('5', '左', ''),
-    ('1', '右', ''),
-    ('3', '上', ''),
-    ('7', '下', ''),
-    ('4', '左上', ''),
-    ('2', '右上', ''),
-    ('6', '左下', ''),
-    ('8', '右下', ''),
+    ('5', 'Left', ''),
+    ('1', 'Right', ''),
+    ('3', 'Up', ''),
+    ('7', 'Down', ''),
+    ('4', 'Left Top', ''),
+    ('2', 'Right Top', ''),
+    ('6', 'Left Down', ''),
+    ('8', 'Right Down', ''),
 ]
 ENUM_ELEMENT_TYPE = [
     ('SELECTED_STRUCTURE', 'Sel Structure', 'Select structure'),

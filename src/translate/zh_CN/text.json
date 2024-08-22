@@ -201,5 +201,13 @@
   "Exec Region Win": "执行区域窗口",
   "Exec Region Channels": "执行区域通道",
   "Exec Region Preview": "执行区域预览",
-  "Exec Area": "执行区域(Area)"
+  "Exec Area": "执行区域(Area)",
+  "Left": "左",
+  "Right": "右",
+  "Top": "上",
+  "Down": "下",
+  "Left Top": "左上",
+  "Right Top": "右上",
+  "Left Down": "左下",
+  "Right Down": "右下"
 }
