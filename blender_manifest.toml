@@ -7,5 +7,5 @@ maintainer = "小萌新"
 name = "Gesture Helper"
 tagline = "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties."
 type = "add-on"
-version = "2.0.0"
+version = "2.0.1"
 tags = ["幻之境", "AIGODLIKE Community"]
