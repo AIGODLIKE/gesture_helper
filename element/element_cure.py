@@ -104,7 +104,7 @@ class ElementCURE:
                 self,
                 event,
                 context,
-                title="Confirm to delete the element?",
+                title="Confirm To Delete The Element?",
                 message=f"{self.active_element.name}",
             )
 
@@ -226,8 +226,8 @@ class ElementCURE:
                     self,
                     event,
                     context,
-                    title="Confirm to cancel the cut?",
-                    message="Cut content will be lost",
+                    title="Confirm To Cancel The Cut?",
+                    message="Cut Content Will Be Lost",
                 )
             return self.execute(context)
 

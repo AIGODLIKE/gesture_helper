@@ -18,7 +18,7 @@ class GestureProperty(PropertyGroup):
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(80))
     return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(30))
 
-    show_gesture_keymaps: BoolProperty(name='Show gesture keymap')
+    show_gesture_keymaps: BoolProperty(name='Show Gesture Keymap')
 
     @staticmethod
     def draw_gesture_property(layout: bpy.types.UILayout):

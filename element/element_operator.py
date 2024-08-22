@@ -50,26 +50,23 @@ class OperatorProperty:
     def update_operator_properties(self) -> None:
         self.to_operator_tmp_kmi()
 
-    operator_bl_idname: StringProperty(name='操作符 bl_idname',
-                                       description='默认为添加猴头\n'
-                                                   '只取后面的标识符'
-                                                   'bpy.ops.mesh.primitive_monkey_add -> mesh.primitive_monkey_add',
+    operator_bl_idname: StringProperty(name='Operator bl_idname',
+                                       description='Default is to add the monkey head \n only take the back identifier \nbpy.ops.mesh.primitive_monkey_add -> mesh.primitive_monkey_add',
                                        update=lambda self, context: self.update_operator())
 
-    operator_context: EnumProperty(name='操作符上下文',
+    operator_context: EnumProperty(name='Operator Context',
                                    items=ENUM_OPERATOR_CONTEXT)
 
-    operator_properties: StringProperty(name='操作符属性',
+    operator_properties: StringProperty(name='Operator Property',
                                         update=lambda self, context: self.update_operator_properties())
 
-    operator_type: EnumProperty(name='操作类型',
-                                description='操作的类型',
+    operator_type: EnumProperty(name='Operator Type',
                                 items=ENUM_OPERATOR_TYPE,
                                 default='OPERATOR'
                                 )
-    operator_script: StringProperty(name='操作脚本', description='操作符的脚本', default='print("Emm")')
+    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
 
-    preview_operator_script: BoolProperty(name='预览脚本', default=True)
+    preview_operator_script: BoolProperty(name='Preview Script', default=True)
 
     def update_operator_properties_sync_from_temp_properties(self, _):
         if self.is_operator:
@@ -82,10 +79,10 @@ class OperatorProperty:
             self['operator_properties_sync_to_properties'] = False
 
     operator_properties_sync_from_temp_properties: BoolProperty(
-        name='从属性更新',
+        name='From Prop Update',
         update=update_operator_properties_sync_from_temp_properties)
     operator_properties_sync_to_properties: BoolProperty(
-        name='更新到属性',
+        name='Update To Prop',
         update=update_operator_properties_sync_to_properties)
 
     # 直接将operator的self传给element,让那个来进行操作

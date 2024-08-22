@@ -222,7 +222,7 @@ class Export(PublicFileOperator):
             elif mode == "ADDON_UNREGISTER_DAY":
                 string = f'Auto Backups {ymd()}'
             elif mode == "ONLY_ONE":
-                string = f'Auto Backups'
+                string = 'Auto Backups'
         if self.is_close_backups:
             string = f'Close Addon Backups {ymd()}'
         return string

@@ -143,7 +143,7 @@ class RadioSelect:
 class ElementRelationship(RadioSelect,
                           PublicSortAndRemovePropertyGroup,
                           Relationship):
-    name: StringProperty(name="名称")
+    name: StringProperty(name="Name")
 
     def _get_index(self) -> int:
         return self.parent.index_element

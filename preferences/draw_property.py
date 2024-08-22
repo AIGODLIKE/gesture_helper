@@ -13,39 +13,39 @@ class DrawProperty(PropertyGroup):
     gesture_keymap_split_factor: FloatProperty(name='Keymap split factor', default=0.2, max=0.95, min=0.01, step=0.01)
     gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    element_split_factor: FloatProperty(name='Split factor', default=0.2, max=0.95, min=0.01)
+    element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     element_show_left_side: BoolProperty(name='Show in left side', default=False)
     element_remove_tips: BoolProperty(name='Element remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    text_gpu_draw_size: IntProperty(name='Font size', description='Gpu draw text size', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Radius size', description='Gpu draw radius size', default=7, min=5, max=120)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu draw margin size', default=20, min=5, max=120)
-    line_width: IntProperty(name='Line width', description='Gpu draw width size', default=3, min=1, max=20)
+    text_gpu_draw_size: IntProperty(name='Font Size', description='Gpu Draw Text Size', default=20, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Radius Size', description='Gpu Draw Radius Size', default=7, min=5, max=120)
+    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu Draw Margin Size', default=20, min=5, max=120)
+    line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
-    background_operator_color: FloatVectorProperty(name='Operator color', **public_color,
+    background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])
-    background_operator_active_color: FloatVectorProperty(name='Operator active color', **public_color,
+    background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
                                                           default=[0.331309, 0.347597, 0.445060, 1.000000])
 
-    background_child_color: FloatVectorProperty(name='Child color', **public_color,
+    background_child_color: FloatVectorProperty(name='Child Color', **public_color,
                                                 default=[0.431968, 0.222035, 0.650622, 1.000000])
-    background_child_active_color: FloatVectorProperty(name='Child active color', **public_color,
+    background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
                                                        default=[0.689335, 0.275156, 0.793810, 1.000000])
 
-    text_default_color: FloatVectorProperty(name='Text default color', **public_color, default=(.8, .8, .8, 1))
-    text_active_color: FloatVectorProperty(name='Text active color', **public_color, default=(1, 1, 1, 1))
+    text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(.8, .8, .8, 1))
+    text_active_color: FloatVectorProperty(name='Text Active Color', **public_color, default=(1, 1, 1, 1))
 
-    trajectory_mouse_color: FloatVectorProperty(name='Mouse track color', **public_color,
+    trajectory_mouse_color: FloatVectorProperty(name='Mouse Track Color', **public_color,
                                                 default=[0.100000, 0.900000, 1.000000, 1.000000])
-    trajectory_gesture_color: FloatVectorProperty(name='Gesture track color', **public_color,
+    trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
                                                   default=[0.689335, 0.275156, 0.793810, 1.000000])
     
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
         update_panel()
 
-    panel_name: StringProperty(name='Panel name', default='Gesture', update=__update_panel_name__)
+    panel_name: StringProperty(name='Panel Name', default='Gesture', update=__update_panel_name__)
 
     @staticmethod
     def draw_text_property(layout: bpy.types.UILayout):

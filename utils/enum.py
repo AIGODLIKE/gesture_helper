@@ -56,8 +56,8 @@ ENUM_OPERATOR_TYPE = [
 ]
 
 CREATE_ELEMENT_VALUE_MODE_ENUM = [
-    ("SET_VALUE", "Set value", "Setting an attribute to a specified value"),
-    ("MOUSE_CHANGES_HORIZONTAL", "Mouse interaction change (horizontal)", "Horizontal modifier"),
-    ("MOUSE_CHANGES_VERTICAL", "Mouse interaction change (vertical)", "Vertical modifier"),
-    ("MOUSE_CHANGES_ARBITRARY", "Mouse interaction change (any direction)", "Modify value in any direction"),
+    ("SET_VALUE", "Set Value", "Setting an attribute to a specified value"),
+    ("MOUSE_CHANGES_HORIZONTAL", "Mouse Interaction Change (Horizontal)", "Horizontal Modifier"),
+    ("MOUSE_CHANGES_VERTICAL", "Mouse Interaction Change (Vertical)", "Vertical Modifier"),
+    ("MOUSE_CHANGES_ARBITRARY", "Mouse Interaction Change (Any Direction)", "Modify Value In Any Direction"),
 ]

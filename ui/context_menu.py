@@ -37,7 +37,7 @@ class ContextMenu(bpy.types.Menu):
             if show_property:
                 layout.operator(
                     CreateElementProperty.bl_idname,
-                    text=pgettext("Add property %s") % pgettext(button_prop.name, '*')
+                    text=pgettext("Add Property %s") % pgettext(button_prop.name, '*')
                 )
 
             if show_operator:
@@ -46,7 +46,7 @@ class ContextMenu(bpy.types.Menu):
                 text = pgettext(br.name, br.translation_context)
                 layout.operator(
                     CreateElementOperator.bl_idname,
-                    text=pgettext("Add operator %s to gesture") % text
+                    text=pgettext("Add Operator %s To Gesture") % text
                 )
 
 

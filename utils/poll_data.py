@@ -3,7 +3,7 @@ class PollData:
         'prefix': 'C.object and C.object.type',
         'suffix': '',
         'notation': '==',
-        'name': 'Active object type',
+        'name': 'Active Object Type',
         'items': [
             {'name': 'Mesh', 'item': 'MESH', },
             {'name': 'Curve', 'item': 'CURVE', },
@@ -27,7 +27,7 @@ class PollData:
         'prefix': 'C.mode',
         'suffix': '',
         'notation': '==',
-        'name': 'Object mode',
+        'name': 'Object Mode',
         'items': [
             {'name': 'Mesh Edit', 'item': 'EDIT_MESH'},
             {'name': 'Text Edit', 'item': 'EDIT_TEXT'},
@@ -63,15 +63,15 @@ class PollData:
     POLL_MESH_SELECT_MODE = {
         'prefix': 'tool.mesh_select_mode[:]',
         'notation': '==',
-        'name': 'Mesh select mode',
+        'name': 'Mesh Select Mode',
         'items': [
             {'prefix': 'tool.mesh_select_mode[0]', 'item': True, 'name': 'Vertex', },
             {'prefix': 'tool.mesh_select_mode[1]', 'item': True, 'name': 'Edge', },
             {'prefix': 'tool.mesh_select_mode[2]', 'item': True, 'name': 'Face', },
             None,
-            {'item': [True, False, False], 'name': 'Only vertex', },
-            {'item': [False, True, False], 'name': 'Only edge', },
-            {'item': [False, False, True], 'name': 'Only face', },
+            {'item': [True, False, False], 'name': 'Only Vertex', },
+            {'item': [False, True, False], 'name': 'Only Edge', },
+            {'item': [False, False, True], 'name': 'Only Face', },
             None,
             {'item': [True, False, True], 'name': 'Only Vertex & Face', },
             {'item': [False, True, True], 'name': 'Only Edge & Face', },
@@ -82,7 +82,7 @@ class PollData:
     POLL_REGIONS_TYPE = {
         'prefix': 'C.region.type',
         'notation': '==',
-        'name': 'Region type',
+        'name': 'Region Type',
         'items': [
             {'item': 'WINDOW', 'name': 'Window', },
             {'item': 'HEADER', 'name': 'Header', },
@@ -103,7 +103,7 @@ class PollData:
     POLL_SPACE_TYPE = {
         'prefix': 'C.space_data.type',
         'notation': '==',
-        'name': 'Space type',
+        'name': 'Space Type',
         'items': [
             {'name': '3D Viewport', 'item': 'VIEW_3D', },
             {'name': 'UV/Image Editor', 'item': 'IMAGE_EDITOR', },
@@ -155,7 +155,7 @@ class PollData:
              'not_str': True},
             None,
             {'item': 'len(C.objects)',
-             'name': 'Is selected object',
+             'name': 'Is Selected Object',
              'parentheses': False,
              'not_str': True},
         ],
