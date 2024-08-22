@@ -2,10 +2,10 @@ schema_version = "1.0.0"
 
 blender_version_min = "4.2.0"
 id = "gesture_helper"
-license = ["UNKNOWN", ]
+license = ["SPDX:GPL-2.0-or-later", ]
 maintainer = "小萌新"
 name = "Gesture Helper"
-tagline = "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties."
+tagline = "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties"
 type = "add-on"
 version = "2.0.1"
-tags = ["幻之境", "AIGODLIKE Community"]
+tags = ["3D View", "User Interface"]
