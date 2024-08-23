@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bpy
 from bpy.props import CollectionProperty, IntProperty
 from bpy.types import PropertyGroup
 
@@ -32,3 +33,8 @@ class Element(ElementCURE,
     @cache_update_lock
     def __init_element__(self):
         getattr(self, f'__init_{self.element_type.lower()}__')()
+
+    @property
+    def name_translate(self) -> str:
+        from ..src.translate import __name_translate__
+        return __name_translate__(self.name)

@@ -204,7 +204,6 @@ class Export(PublicFileOperator):
     bl_label = 'Export gesture'
     bl_idname = 'gesture.export'
 
-    author: StringProperty(name='Author', default='小萌新')
     description: StringProperty(name='Description', default='This is a description')
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
@@ -253,7 +252,7 @@ class Export(PublicFileOperator):
             'blender_version': bpy.app.version,
             'addon_version': ADDON_VERSION,
 
-            'author': self.author,
+            'author': self.pref.draw_property.author,
             'description': self.description,
 
             'gesture': self.pref.get_gesture_data(self.is_auto_backups or self.is_close_backups)
@@ -263,7 +262,7 @@ class Export(PublicFileOperator):
     def draw(self, _):
         layout = self.layout
 
-        layout.prop(self, 'author', emboss=True)
+        layout.prop(self.pref.draw_property, 'author', emboss=True)
         layout.prop(self, 'description', emboss=True)
         layout.separator()
 

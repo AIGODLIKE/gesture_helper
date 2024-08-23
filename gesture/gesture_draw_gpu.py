@@ -150,7 +150,14 @@ class GestureGpuDraw(DrawDebug):
 
     def gpu_draw_trajectory_gesture_point(self):
         """绘制手势的轨迹点"""
-        self.draw_2d_points(self.trajectory_tree.points_list)
+        tree = self.trajectory_tree
+        self.draw_2d_points(tree.points_list)
+
+        for el, pos in zip(tree.child_element, tree.points_list):
+            if el is None:
+                self.draw_text([0, 0], text=str(el))
+            else:
+                ...
 
     def gpu_draw_gesture(self):
         """绘制手势"""

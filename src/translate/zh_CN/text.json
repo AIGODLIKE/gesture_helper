@@ -209,5 +209,14 @@
   "Left Top": "左上",
   "Right Top": "右上",
   "Left Down": "左下",
-  "Right Down": "右下"
+  "Right Down": "右下",
+  "Switch show child": "切换子级显示",
+  "Name Translation": "翻译名称",
+  "Maya Mode": "Maya 模式",
+  "Bézier": "贝赛尔",
+  "Nurbs Curve": "NURBS 曲线",
+  "Nurbs Circle": "NURBS 圆环",
+  "Connect Vertex Pairs": "连接顶点对",
+  "Vertex Edge": "",
+  "": ""
 }

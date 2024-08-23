@@ -15,30 +15,55 @@ def ___translate_id___() -> str:
     return language
 
 
-def ___translate_dict__(key: str) -> dict:
+def ___translate_dict___(key: str) -> dict:
     ti = ___translate_id___()
     if ti in __translate__:
-        if key in __translate__[ti]:
+        if key == "ALL":
+            data = dict()
+            for i in __translate__[ti]:
+                for k, v in __translate__[ti][i].items():
+                    data[k] = v
+            return data
+        elif key in __translate__[ti]:
             return __translate__[ti][key]
     return dict()
 
 
 def __preset_translate__(name: str) -> str:
     """翻译预设"""
-    preset = ___translate_dict__("preset")
+    preset = ___translate_dict___("preset")
     return preset[name] if (name in preset) else name
 
 
 def __name_translate__(name: str) -> str:
     """翻译名称"""
-    name_dict = ___translate_dict__("name")
-    return name_dict[name] if (name in name_dict) else name
+    from ...utils.public import get_pref
+    interface = bpy.context.preferences.view.use_translate_interface
+    name_translate = get_pref().draw_property.enable_name_translation
+    if interface and name_translate:
+        translate_dict = ___translate_dict___("ALL")
+        from bpy.app.translations import pgettext
+        if name in translate_dict:
+            return translate_dict[name]
+        else:
+            pn = pgettext(name)
+            if pn != name:
+                return pn
+            else:
+                for i in bpy.app.translations.contexts:
+                    text = pgettext(name, i)
+                    if name != text:
+                        return text
+    return name
 
 
 def __keymap_translate__(string: str) -> str:
     """翻译快捷键"""
-    keymap = ___translate_dict__("keymap")
-    return keymap[string] if (string in keymap) else pgettext(string)
+    if bpy.context.preferences.view.use_translate_interface:
+        keymap = ___translate_dict___("keymap")
+        return keymap[string] if (string in keymap) else pgettext(string)
+    else:
+        return string
 
 
 def __load_json__():

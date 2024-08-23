@@ -1,40 +1,40 @@
 {
-  "time": 1723794231.417301,
+  "time": 1724401114.788126,
   "blender_version": [
     4,
     3,
     0
   ],
   "addon_version": [
-    1,
+    2,
     0,
-    4
+    1
   ],
   "author": "\u5c0f\u840c\u65b0",
-  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "description": "This is a description",
   "gesture": {
-    "0": {
-      "name": "\u6a21\u5f0f - Maya",
+    "3": {
+      "name": "Maya Switch Mode",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Window\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\"]",
       "element": {
         "0": {
-          "name": "3D\u89c6\u56fe\u65f6",
+          "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "IF",
           "poll_string": "(C.space_data.type == \"VIEW_3D\")",
           "element": {
             "0": {
-              "name": "\u662f\u7f51\u683c",
+              "name": "Mesh",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "IF",
               "poll_string": "(C.object and C.object.type == \"MESH\")",
               "element": {
                 "0": {
-                  "name": "\u9876\u70b9",
+                  "name": "Vertex",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -44,7 +44,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u8fb9",
+                  "name": "Edge",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
@@ -54,7 +54,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u9762",
+                  "name": "Face",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
@@ -64,17 +64,17 @@
                   "operator_type": "OPERATOR"
                 },
                 "3": {
-                  "name": "\u9876\u70b9 \u9762",
+                  "name": "Only Vertex & Edge",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
                   "operator_bl_idname": "gesture.switch_mode",
                   "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'select_mode': {'VERT', 'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
+                  "operator_properties": "{'select_mode': {'VERT', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}",
                   "operator_type": "OPERATOR"
                 },
                 "4": {
-                  "name": "\u591a\u91cd",
+                  "name": "Multiplicity",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
@@ -84,13 +84,13 @@
                   "operator_type": "OPERATOR"
                 },
                 "5": {
-                  "name": "\u5176\u5b83\u6a21\u5f0f",
+                  "name": "Other Mode",
                   "element_type": "CHILD_GESTURE",
                   "enabled": true,
                   "direction": "1",
                   "element": {
                     "0": {
-                      "name": "\u9876\u70b9\u7ed8\u5236",
+                      "name": "Vertex Paint",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
@@ -100,7 +100,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u6743\u91cd\u7ed8\u5236",
+                      "name": "Weight Paint",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -110,7 +110,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u7eb9\u7406\u7ed8\u5236",
+                      "name": "Texture Paint",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -120,14 +120,14 @@
                       "operator_type": "OPERATOR"
                     },
                     "3": {
-                      "name": "\u6709\u7c92\u5b50",
+                      "name": "Particle System",
                       "element_type": "SELECTED_STRUCTURE",
                       "enabled": true,
                       "selected_type": "IF",
                       "poll_string": "bpy.context.object.particle_systems.active",
                       "element": {
                         "0": {
-                          "name": "\u7c92\u5b50\u7f16\u8f91",
+                          "name": "Particle Edit",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
@@ -141,7 +141,7 @@
                   }
                 },
                 "6": {
-                  "name": "\u96d5\u523b\u6a21\u5f0f",
+                  "name": "Sculpt",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
@@ -153,14 +153,14 @@
               }
             },
             "1": {
-              "name": "\u662f\u66f2\u7ebf",
+              "name": "Curve",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"CURVE\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91\u6a21\u5f0f",
+                  "name": "Edit Mode",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -170,14 +170,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u7f16\u8f91\u66f2\u7ebf\u6a21\u5f0f",
+                  "name": "Curve Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_CURVE\")",
                   "element": {
                     "0": {
-                      "name": "\u7ec6\u5206",
+                      "name": "Subdivide",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -187,7 +187,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u5207\u6362\u65b9\u5411",
+                      "name": "Switch Direction",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -197,13 +197,13 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u8bbe\u7f6e\u6837\u6761\u7c7b\u578b",
+                      "name": "Set Spline Type",
                       "element_type": "CHILD_GESTURE",
                       "enabled": true,
                       "direction": "7",
                       "element": {
                         "0": {
-                          "name": "\u591a\u6bb5\u7ebf",
+                          "name": "Poly",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
@@ -213,7 +213,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "1": {
-                          "name": "\u8d1d\u585e\u5c14",
+                          "name": "Bezier",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
@@ -223,7 +223,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "2": {
-                          "name": "NURBS",
+                          "name": "Nurbs",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "8",
@@ -235,7 +235,7 @@
                       }
                     },
                     "3": {
-                      "name": "\u7cbe\u7b80\u66f2\u7ebf",
+                      "name": "Decimate Curve",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -245,13 +245,13 @@
                       "operator_type": "OPERATOR"
                     },
                     "4": {
-                      "name": "\u5e73\u6ed1\u63a7\u5236\u70b9",
+                      "name": "Smooth",
                       "element_type": "CHILD_GESTURE",
                       "enabled": true,
                       "direction": "4",
                       "element": {
                         "0": {
-                          "name": "\u5e73\u6ed1",
+                          "name": "Smooth",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "4",
@@ -261,7 +261,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "1": {
-                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u503e\u659c",
+                          "name": "Smooth Curve Tilt",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "5",
@@ -271,7 +271,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "2": {
-                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u534a\u5f84",
+                          "name": "Smooth Curve Radius",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "3",
@@ -281,7 +281,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "3": {
-                          "name": "\u5e73\u6ed1\u66f2\u7ebf\u6743\u91cd",
+                          "name": "Smooth Curve Weight",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
@@ -293,13 +293,13 @@
                       }
                     },
                     "5": {
-                      "name": "\u8bbe\u7f6e\u63a7\u5236\u67c4\u7c7b\u578b",
+                      "name": "Set Handle Type",
                       "element_type": "CHILD_GESTURE",
                       "enabled": true,
                       "direction": "6",
                       "element": {
                         "0": {
-                          "name": "\u81ea\u52a8",
+                          "name": "Automatic",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
@@ -309,7 +309,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "1": {
-                          "name": "\u77e2\u91cf",
+                          "name": "Vector",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "5",
@@ -319,7 +319,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "2": {
-                          "name": "\u5bf9\u9f50",
+                          "name": "Aligned",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
@@ -329,7 +329,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "3": {
-                          "name": "\u81ea\u7531",
+                          "name": "Free",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "4",
@@ -339,7 +339,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "4": {
-                          "name": "\u5207\u6362 \u81ea\u7531/\u5bf9\u9f50",
+                          "name": "Toggle Free/Align",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "8",
@@ -355,14 +355,14 @@
               }
             },
             "2": {
-              "name": "\u8868(\u66f2)\u9762",
+              "name": "Surface",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"SURFACE\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91 \u8868(\u66f2)\u9762",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -374,14 +374,14 @@
               }
             },
             "3": {
-              "name": "\u662f\u6bdb\u53d1\u66f2\u7ebf",
+              "name": "Curves",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"CURVES\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -391,7 +391,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u66f2\u7ebf\u96d5\u523b",
+                  "name": "Sculpt",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -401,14 +401,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u6d3b\u52a8\u662f\u66f2\u7ebf\u6bdb\u53d1 or \u66f2\u7ebf\u96d5\u523b",
+                  "name": "Curves",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_CURVES\") or (C.mode == \"SCULPT_CURVES\")",
                   "element": {
                     "0": {
-                      "name": "\u63a7\u5236\u70b9\u6a21\u5f0f",
+                      "name": "Point",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
@@ -418,7 +418,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u66f2\u7ebf\u6a21\u5f0f",
+                      "name": "Curve",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -432,14 +432,14 @@
               }
             },
             "4": {
-              "name": "\u662f\u878d\u7403",
+              "name": "Meta",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"META\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91\u878d\u7403",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -449,14 +449,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u662f\u7f16\u8f91\u878d\u7403",
+                  "name": "Metaball Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_METABALL\")",
                   "element": {
                     "0": {
-                      "name": "\u590d\u5236\u878d\u7403\u5143\u7d20",
+                      "name": "Duplicate Metaball Elements",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -470,14 +470,14 @@
               }
             },
             "5": {
-              "name": "\u662f\u6587\u672c",
+              "name": "Font",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"FONT\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91\u6587\u672c",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -487,14 +487,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u7f16\u8f91\u6587\u672c\u6a21\u5f0f",
+                  "name": "Text Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_TEXT\")",
                   "element": {
                     "0": {
-                      "name": "\u5927\u5199",
+                      "name": "Upper",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
@@ -504,7 +504,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u5c0f\u5199",
+                      "name": "Lower",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -518,14 +518,14 @@
               }
             },
             "6": {
-              "name": "\u662fGP",
+              "name": "Grease Pencil",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91GP",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -535,7 +535,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u96d5\u523bGP",
+                  "name": "Sculpt",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
@@ -545,7 +545,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u7ed8\u5236GP",
+                  "name": "Paint",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -555,7 +555,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "3": {
-                  "name": "\u6743\u91cd\u7ed8\u5236GP",
+                  "name": "Weight Paint",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
@@ -565,7 +565,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "4": {
-                  "name": "\u9876\u70b9\u7ed8\u5236GP",
+                  "name": "Vertex Paint",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
@@ -577,14 +577,14 @@
               }
             },
             "7": {
-              "name": "\u662f\u9aa8\u67b6",
+              "name": "Armature",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"ARMATURE\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91\u9aa8\u67b6",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -594,7 +594,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u59ff\u6001\u6a21\u5f0f",
+                  "name": "Pose Mode",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -606,14 +606,14 @@
               }
             },
             "8": {
-              "name": "\u662f\u6676\u683c",
+              "name": "Lattice",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"LATTICE\")",
               "element": {
                 "0": {
-                  "name": "\u7f16\u8f91\u6676\u683c",
+                  "name": "Edit",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -623,7 +623,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u5747\u5300\u5206\u5e03",
+                  "name": "Make Regular",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -635,28 +635,28 @@
               }
             },
             "9": {
-              "name": "\u662f\u7a7a\u7269\u4f53",
+              "name": "Empty",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"EMPTY\")"
             },
             "10": {
-              "name": "\u5176\u5b83\u7269\u4f53",
+              "name": "Other",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELSE",
               "poll_string": "True"
             },
             "11": {
-              "name": "\u5982\u679c\u53ef\u4ee5\u8fdb\u5165\u7f16\u8f91\u6a21\u5f0f",
+              "name": "If have access to edit mode",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "IF",
               "poll_string": "(C.object and C.object.type == \"MESH\") or (C.object and C.object.type == \"CURVE\") or (C.object and C.object.type == \"FONT\") or (C.object and C.object.type == \"GPENCIL\") or (C.object and C.object.type == \"ARMATURE\") or (C.object and C.object.type == \"LATTICE\") or (C.object and C.object.type == \"CURVES\") or (C.object and C.object.type == \"META\") or (C.object and C.object.type == \"SURFACE\")",
               "element": {
                 "0": {
-                  "name": "\u7269\u4f53\u6a21\u5f0f",
+                  "name": "Object Mode",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
@@ -670,14 +670,14 @@
           }
         },
         "1": {
-          "name": "\u504f\u597d\u8bbe\u7f6e\u89c6\u56fe\u65f6",
+          "name": "Preferences",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "ELIF",
           "poll_string": "(C.space_data.type == \"PREFERENCES\")",
           "element": {
             "0": {
-              "name": "\u4fdd\u5b58\u504f\u597d\u8bbe\u7f6e",
+              "name": "Save Preferences",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
@@ -687,7 +687,7 @@
               "operator_type": "OPERATOR"
             },
             "1": {
-              "name": "\u63d2\u4ef6",
+              "name": "Add-ons",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
@@ -697,7 +697,7 @@
               "operator_type": "OPERATOR"
             },
             "2": {
-              "name": "\u952e\u4f4d\u6620\u5c04",
+              "name": "Keymap",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
@@ -707,7 +707,7 @@
               "operator_type": "OPERATOR"
             },
             "3": {
-              "name": "\u754c\u9762",
+              "name": "Interface",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
@@ -717,7 +717,7 @@
               "operator_type": "OPERATOR"
             },
             "4": {
-              "name": "\u89c6\u56fe",
+              "name": "Viewport",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
@@ -727,7 +727,7 @@
               "operator_type": "OPERATOR"
             },
             "5": {
-              "name": "\u52a8\u753b",
+              "name": "Animation",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
@@ -737,7 +737,7 @@
               "operator_type": "OPERATOR"
             },
             "6": {
-              "name": "\u89c6\u56fe\u5207\u6362",
+              "name": "Navigation",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "5",
@@ -747,7 +747,7 @@
               "operator_type": "OPERATOR"
             },
             "7": {
-              "name": "\u8f93\u5165",
+              "name": "Input",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
@@ -759,7 +759,7 @@
           }
         }
       },
-      "description": "\u4f7f\u7528\u53f3\u952e,\u5207\u6362\u6a21\u5f0f,\u5728\u5927\u90e8\u5206\u6a21\u5f0f\u4e0b\u5747\u53ef\u7528"
+      "description": "Use right click to switch mode"
     }
   }
 }

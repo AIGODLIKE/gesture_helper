@@ -51,7 +51,7 @@ class ElementGpuProperty:
 
     @property
     def text(self) -> str:
-        return self.name
+        return self.name_translate
 
     @property
     def is_active_direction(self):

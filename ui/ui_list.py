@@ -25,7 +25,9 @@ class GestureUIList(UIList, PublicProperty):
         row.active = prop.gesture_show_keymap
         row.prop(prop, "gesture_keymap_split_factor")
 
-        column.prop(prop, "gesture_remove_tips", icon="INFO_LARGE")
+        row = column.row(align=True)
+        row.prop(prop, "gesture_remove_tips", icon="INFO_LARGE")
+        row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
 class ElementUIList(UIList, PublicProperty):
@@ -36,6 +38,7 @@ class ElementUIList(UIList, PublicProperty):
         item.draw_item(layout.column(align=True))
 
     def draw_filter(self, context, layout):
+        from ..element.element_cure import ElementCURE
         column = layout.column(align=True)
 
         row = column.row(align=True)
@@ -52,7 +55,10 @@ class ElementUIList(UIList, PublicProperty):
         row.prop(debug, 'debug_key', icon='GHOST_ENABLED')
         row.prop(debug, 'debug_draw_gpu_mode', icon='INFO')
 
-        column.prop(prop, "element_remove_tips", icon="INFO_LARGE")
+        row = column.row(align=True)
+        row.prop(prop, "element_remove_tips", icon="INFO_LARGE")
+        row.operator(ElementCURE.SwitchShowChild.bl_idname)
+        row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
 class ImportPresetUIList(UIList,

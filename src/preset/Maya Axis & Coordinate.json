@@ -1,32 +1,32 @@
 {
-  "time": 1723793825.9564834,
+  "time": 1724401166.7872746,
   "blender_version": [
     4,
     3,
     0
   ],
   "addon_version": [
-    1,
+    2,
     0,
-    4
+    1
   ],
   "author": "\u5c0f\u840c\u65b0",
-  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "description": "This is a description",
   "gesture": {
     "0": {
-      "name": "\u8f74&\u5750\u6807 - Maya",
+      "name": "Maya Axis & Coordinate",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Window\"]",
       "element": {
         "0": {
-          "name": "\u5f71\u54cd\u9009\u9879",
+          "name": "Affect Only",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
           "direction": "3",
           "element": {
             "0": {
-              "name": "\u4ec5\u539f\u70b9",
+              "name": "Origins",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
@@ -36,7 +36,7 @@
               "operator_type": "OPERATOR"
             },
             "1": {
-              "name": "\u4ec5\u4f4d\u7f6e",
+              "name": "Locations",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
@@ -46,7 +46,7 @@
               "operator_type": "OPERATOR"
             },
             "2": {
-              "name": "\u4ec5\u7236\u7ea7",
+              "name": "Parents",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
@@ -58,7 +58,7 @@
           }
         },
         "1": {
-          "name": "\u5168\u5c40",
+          "name": "Global",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "5",
@@ -68,7 +68,7 @@
           "operator_type": "OPERATOR"
         },
         "2": {
-          "name": "\u5c40\u90e8",
+          "name": "Local",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "4",
@@ -78,23 +78,51 @@
           "operator_type": "OPERATOR"
         },
         "3": {
-          "name": "\u6e38\u6807",
-          "element_type": "OPERATOR",
+          "name": "View",
+          "element_type": "CHILD_GESTURE",
           "enabled": true,
-          "direction": "2",
-          "operator_bl_idname": "wm.context_set_enum",
-          "operator_context": "INVOKE_DEFAULT",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
-          "operator_type": "OPERATOR"
+          "direction": "7",
+          "element": {
+            "0": {
+              "name": "Face Orientation",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "7",
+              "operator_bl_idname": "wm.context_toggle",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
+              "operator_type": "OPERATOR"
+            },
+            "1": {
+              "name": "Wireframe",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "6",
+              "operator_bl_idname": "wm.context_toggle",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
+              "operator_type": "OPERATOR"
+            },
+            "2": {
+              "name": "3D Cursor",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "direction": "8",
+              "operator_bl_idname": "wm.context_toggle",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
+              "operator_type": "OPERATOR"
+            }
+          }
         },
         "4": {
-          "name": "\u8f74",
+          "name": "Transform Orientations",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
           "direction": "6",
           "element": {
             "0": {
-              "name": "\u89c6\u56fe",
+              "name": "View",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "5",
@@ -104,7 +132,7 @@
               "operator_type": "OPERATOR"
             },
             "1": {
-              "name": "\u6cd5\u5411",
+              "name": "Normal",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
@@ -114,7 +142,7 @@
               "operator_type": "OPERATOR"
             },
             "2": {
-              "name": "\u4e07\u5411",
+              "name": "Global",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "4",
@@ -124,7 +152,7 @@
               "operator_type": "OPERATOR"
             },
             "3": {
-              "name": "\u7236\u7ea7",
+              "name": "Parent",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "6",
@@ -136,52 +164,14 @@
           }
         },
         "5": {
-          "name": "View",
-          "element_type": "CHILD_GESTURE",
-          "enabled": true,
-          "direction": "7",
-          "element": {
-            "0": {
-              "name": "\u9762\u6cd5\u5411",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "direction": "7",
-              "operator_bl_idname": "wm.context_toggle",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
-              "operator_type": "OPERATOR"
-            },
-            "1": {
-              "name": "\u7ebf\u6846",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "direction": "6",
-              "operator_bl_idname": "wm.context_toggle",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
-              "operator_type": "OPERATOR"
-            },
-            "2": {
-              "name": "\u663e\u793a\u6e38\u6807",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "direction": "8",
-              "operator_bl_idname": "wm.context_toggle",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
-              "operator_type": "OPERATOR"
-            }
-          }
-        },
-        "6": {
-          "name": "\u7f51\u683c\u7f16\u8f91",
+          "name": "Mesh Edit",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "IF",
           "poll_string": "(C.mode == \"EDIT_MESH\")",
           "element": {
             "0": {
-              "name": "\u955c\u50cf",
+              "name": "Mirror",
               "element_type": "CHILD_GESTURE",
               "enabled": true,
               "direction": "1",
@@ -207,7 +197,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u81ea\u52a8\u5408\u5e76\u9876\u70b9",
+                  "name": "Merge by Distance",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -230,14 +220,14 @@
             }
           }
         },
-        "7": {
-          "name": "\u53d8\u6362\u8f74\u5fc3\u70b9",
+        "6": {
+          "name": "Transform Pivot Point",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
           "direction": "1",
           "element": {
             "0": {
-              "name": "\u8d28\u5fc3\u70b9",
+              "name": "Median Point",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
@@ -247,7 +237,7 @@
               "operator_type": "OPERATOR"
             },
             "1": {
-              "name": "\u5404\u81ea\u8f74\u5fc3\u70b9",
+              "name": "Individual Origins",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "2",
@@ -257,7 +247,7 @@
               "operator_type": "OPERATOR"
             },
             "2": {
-              "name": "3D\u6e38\u6807",
+              "name": "3D Cursor",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
@@ -267,7 +257,7 @@
               "operator_type": "OPERATOR"
             },
             "3": {
-              "name": "\u8fb9\u754c\u6846\u4e2d\u5fc3",
+              "name": "Bounding Box Center",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
@@ -277,7 +267,7 @@
               "operator_type": "OPERATOR"
             },
             "4": {
-              "name": "\u6d3b\u52a8\u5143\u7d20",
+              "name": "Active Element",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "8",
@@ -287,9 +277,19 @@
               "operator_type": "OPERATOR"
             }
           }
+        },
+        "7": {
+          "name": "Cursor",
+          "element_type": "OPERATOR",
+          "enabled": true,
+          "direction": "2",
+          "operator_bl_idname": "wm.context_set_enum",
+          "operator_context": "INVOKE_DEFAULT",
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
+          "operator_type": "OPERATOR"
         }
       },
-      "description": "\u5feb\u901f\u8bbe\u7f6e \u8f74\u548c\u5750\u6807"
+      "description": "Quick Setup Axes and Coordinates"
     }
   }
 }

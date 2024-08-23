@@ -321,6 +321,16 @@ class ElementCURE:
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
+    class SwitchShowChild(ElementPoll):
+        bl_idname = 'gesture.element_switch_show_child'
+        bl_label = 'Switch show child'
+
+        def execute(self, context):
+            value = not self.pref.active_element.show_child
+            for i in self.pref.active_gesture.element_iteration:
+                i.show_child = value
+            return {"FINISHED"}
+
 
 def get_text_generic_keymap(context) -> bpy.types.KeyMapItem | None:
     return get_keymap(context, 'Text Generic')

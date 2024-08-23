@@ -47,7 +47,12 @@ class PreferencesDraw(GestureDraw):
         row = layout.row()
         row.use_property_split = True
         column = row.column(align=True)
-        column.prop(pref.draw_property, "panel_name")
+
+        col = column.box().column(align=True)
+        col.prop(pref.draw_property, "panel_name")
+        col.prop(pref.draw_property, "author")
+        col.prop(pref.draw_property, "enable_name_translation")
+
         preferences.BackupsProperty.draw_backups(column)
         preferences.DebugProperty.draw_debug(column)
 

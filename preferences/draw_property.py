@@ -11,12 +11,14 @@ class DrawProperty(PropertyGroup):
     gesture_show_keymap: BoolProperty(name='Show keymap', default=True)
     gesture_show_description: BoolProperty(name='Show description', default=True)
     gesture_keymap_split_factor: FloatProperty(name='Keymap split factor', default=0.2, max=0.95, min=0.01, step=0.01)
-    gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
+    gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True,
+                                      description="If you turn on \n, a pop-up will appear when you delete it.")
 
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     element_show_left_side: BoolProperty(name='Show in left side', default=False)
-    element_remove_tips: BoolProperty(name='Element remove tips', default=True, description="If you turn on \n, a pop-up will appear when you delete it.")
+    element_remove_tips: BoolProperty(name='Element remove tips', default=True,
+                                      description="If you turn on \n, a pop-up will appear when you delete it.")
 
     text_gpu_draw_size: IntProperty(name='Font Size', description='Gpu Draw Text Size', default=20, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Radius Size', description='Gpu Draw Radius Size', default=7, min=5, max=120)
@@ -40,12 +42,14 @@ class DrawProperty(PropertyGroup):
                                                 default=[0.100000, 0.900000, 1.000000, 1.000000])
     trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
                                                   default=[0.689335, 0.275156, 0.793810, 1.000000])
-    
+
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
         update_panel()
 
     panel_name: StringProperty(name='Panel Name', default='Gesture', update=__update_panel_name__)
+    author: StringProperty(name='Author', default='小萌新')
+    enable_name_translation: BoolProperty(name='Name Translation', default=True)
 
     @staticmethod
     def draw_text_property(layout: bpy.types.UILayout):

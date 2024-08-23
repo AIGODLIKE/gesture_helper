@@ -1,26 +1,26 @@
 {
-  "time": 1723799110.729333,
+  "time": 1724401073.893279,
   "blender_version": [
     4,
     3,
     0
   ],
   "addon_version": [
-    1,
+    2,
     0,
-    4
+    1
   ],
   "author": "\u5c0f\u840c\u65b0",
-  "description": "\u8fd9\u662f\u4e00\u4e2a\u63cf\u8ff0",
+  "description": "This is a description",
   "gesture": {
-    "0": {
-      "name": "\u5408\u5e76",
+    "4": {
+      "name": "Merge",
       "enabled": true,
       "key_string": "{\"type\": \"M\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Mesh\"]",
       "element": {
         "0": {
-          "name": "\u6309\u95f4\u8ddd\u5408\u5e76",
+          "name": "By Distance",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "4",
@@ -30,7 +30,7 @@
           "operator_type": "OPERATOR"
         },
         "1": {
-          "name": "\u5230\u4e2d\u5fc3",
+          "name": "At Center",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "3",
@@ -40,7 +40,7 @@
           "operator_type": "OPERATOR"
         },
         "2": {
-          "name": "\u5230\u6e38\u6807",
+          "name": "At Cursor",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "4",
@@ -50,7 +50,7 @@
           "operator_type": "OPERATOR"
         },
         "3": {
-          "name": "\u584c\u9677",
+          "name": "Collapse",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "6",
@@ -60,7 +60,7 @@
           "operator_type": "OPERATOR"
         },
         "4": {
-          "name": "\u5230\u9996\u9009\u70b9",
+          "name": "At First",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "5",
@@ -70,7 +70,7 @@
           "operator_type": "OPERATOR"
         },
         "5": {
-          "name": "\u5230\u9996\u9009\u70b9",
+          "name": "At Last",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "1",
@@ -80,7 +80,7 @@
           "operator_type": "OPERATOR"
         },
         "6": {
-          "name": "\u6e05\u7406\u83dc\u5355",
+          "name": "Clean Up",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "2",
@@ -90,46 +90,46 @@
           "operator_type": "OPERATOR"
         },
         "7": {
-          "name": "\u5220\u9664\u83dc\u5355",
+          "name": "Delete",
           "element_type": "OPERATOR",
           "enabled": true,
           "direction": "8",
           "operator_bl_idname": "wm.call_menu",
           "operator_context": "INVOKE_DEFAULT",
-          "operator_properties": "{}",
+          "operator_properties": "{'name': 'VIEW3D_MT_edit_mesh_delete'}",
           "operator_type": "OPERATOR"
         }
       },
-      "description": "\u6309M\u5408\u5e76\u9876\u70b9"
+      "description": "Press M to Merge"
     },
-    "1": {
-      "name": "\u5220\u9664",
+    "5": {
+      "name": "Delete",
       "enabled": true,
       "key_string": "{\"type\": \"X\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Mesh\", \"Curve\", \"Armature\", \"Object Mode\", \"Curves\", \"Metaball\", \"Lattice\", \"Font\", \"3D View\"]",
       "element": {
         "0": {
-          "name": "\u662f3D\u89c6\u56fe",
+          "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "IF",
           "poll_string": "(C.space_data.type == \"VIEW_3D\")",
           "element": {
             "0": {
-              "name": "\u662f\u7f16\u8f91\u7f51\u683c",
+              "name": "Mesh",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "IF",
               "poll_string": "(C.mode == \"EDIT_MESH\")",
               "element": {
                 "0": {
-                  "name": "\u878d\u5e76",
+                  "name": "Dissolve",
                   "element_type": "CHILD_GESTURE",
                   "enabled": true,
                   "direction": "3",
                   "element": {
                     "0": {
-                      "name": "\u878d\u5e76\u9876\u70b9",
+                      "name": "Dissolve Vertices",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "4",
@@ -139,7 +139,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u878d\u5e76\u8fb9",
+                      "name": "Dissolve Edges",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "3",
@@ -149,7 +149,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u878d\u5e76\u9762",
+                      "name": "Dissolve Faces",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
@@ -161,13 +161,13 @@
                   }
                 },
                 "1": {
-                  "name": "\u9762\u6e05\u7406",
+                  "name": "Face Clear",
                   "element_type": "CHILD_GESTURE",
                   "enabled": true,
                   "direction": "8",
                   "element": {
                     "0": {
-                      "name": "\u5e73\u6574\u8868\u9762",
+                      "name": "Make Planar Faces",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -177,7 +177,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u62c6\u5206\u975e\u5e73\u9762",
+                      "name": "Split Non-Planar Faces",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -187,7 +187,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u62c6\u5206\u51f9\u9762",
+                      "name": "Split Concave Faces",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
@@ -197,7 +197,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "3": {
-                      "name": "\u586b\u5145\u6d1e\u9762",
+                      "name": "Fill Holes",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
@@ -209,13 +209,13 @@
                   }
                 },
                 "2": {
-                  "name": "\u6e05\u7406",
+                  "name": "Clear",
                   "element_type": "CHILD_GESTURE",
                   "enabled": true,
                   "direction": "1",
                   "element": {
                     "0": {
-                      "name": "\u5220\u9664\u677e\u6563\u5143\u7d20",
+                      "name": "Delete Loose",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
@@ -225,7 +225,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u7cbe\u7b80\u51e0\u4f55\u4f53",
+                      "name": "Decimate Geometry",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "3",
@@ -235,7 +235,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u7b80\u5e76\u878d\u5e76",
+                      "name": "Degenerate Dissolve",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -245,7 +245,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "3": {
-                      "name": "\u6709\u9650\u878d\u5e76",
+                      "name": "Limited Dissolve",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
@@ -255,7 +255,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "4": {
-                      "name": "\u6309\u95f4\u8ddd\u5408\u5e76",
+                      "name": "Merge by Distance",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -267,7 +267,7 @@
                   }
                 },
                 "3": {
-                  "name": "\u9876\u70b9",
+                  "name": "Vertices",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -277,7 +277,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "4": {
-                  "name": "\u8fb9",
+                  "name": "Edges",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
@@ -287,7 +287,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "5": {
-                  "name": "\u9762",
+                  "name": "Faces",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
@@ -297,7 +297,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "6": {
-                  "name": "\u4ec5\u8fb9\u548c\u9762",
+                  "name": "Only Edges & Faces",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
@@ -307,7 +307,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "7": {
-                  "name": "\u4ec5\u9762",
+                  "name": "Only Faces",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
@@ -317,13 +317,13 @@
                   "operator_type": "OPERATOR"
                 },
                 "8": {
-                  "name": "\u5220\u9664",
+                  "name": "Delete",
                   "element_type": "CHILD_GESTURE",
                   "enabled": true,
                   "direction": "2",
                   "element": {
                     "0": {
-                      "name": "\u5faa\u73af\u8fb9",
+                      "name": "Edge Loops",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "2",
@@ -333,7 +333,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u584c\u9677 \u8fb9&\u9762",
+                      "name": "Collapse Edges & Faces",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -347,14 +347,14 @@
               }
             },
             "1": {
-              "name": "\u662f\u66f2\u7ebf\u7f16\u8f91",
+              "name": "Curve",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"EDIT_CURVE\")",
               "element": {
                 "0": {
-                  "name": "\u5220\u9664\u9876\u70b9",
+                  "name": "Vertices",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -364,7 +364,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u5220\u9664\u6bb5\u6570",
+                  "name": "Segment",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -374,7 +374,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u878d\u5e76\u9876\u70b9(\u66f2\u7ebf)",
+                  "name": "Dissolve Vertices",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "7",
@@ -386,14 +386,14 @@
               }
             },
             "2": {
-              "name": "\u662f\u9aa8\u67b6\u7f16\u8f91",
+              "name": "Armature",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"EDIT_ARMATURE\")",
               "element": {
                 "0": {
-                  "name": "\u5220\u9664\u9aa8\u67b6",
+                  "name": "Delete",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -403,7 +403,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u878d\u5e76\u9aa8\u9abc",
+                  "name": "Dissolve Bones",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -415,14 +415,14 @@
               }
             },
             "3": {
-              "name": "\u662f\u7269\u4f53\u6a21\u5f0f",
+              "name": "Object",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"OBJECT\")",
               "element": {
                 "0": {
-                  "name": "\u5220\u9664\u7269\u4f53",
+                  "name": "Delete",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -432,7 +432,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u5168\u5c40\u5220\u9664",
+                  "name": "Delete Global",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "1",
@@ -442,14 +442,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u662f\u7f51\u683c\u7c7b\u578b",
+                  "name": "Mesh",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "(C.object and C.object.type == \"MESH\")",
                   "element": {
                     "0": {
-                      "name": "\u6e05\u9664\u9876\u70b9\u7ec4\u6743\u91cd",
+                      "name": "Clean Vertex Group Weights",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "6",
@@ -459,7 +459,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u9650\u5236\u603b\u9876\u70b9\u7ec4",
+                      "name": "Limit Total Vertex Groups",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "8",
@@ -469,7 +469,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u5220\u9664\u672a\u4f7f\u7528\u7684\u6750\u8d28\u69fd",
+                      "name": "Remove Unused Material Slots",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "7",
@@ -485,29 +485,29 @@
           }
         }
       },
-      "description": "\u6309X\u5220\u9664"
+      "description": "Press X to Delete"
     },
-    "2": {
-      "name": "\u89c6\u56fe",
+    "6": {
+      "name": "View",
       "enabled": true,
       "key_string": "{\"type\": \"Z\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Window\", \"3D View\", \"Node Editor\"]",
       "element": {
         "0": {
-          "name": "3D\u89c6\u56fe",
+          "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "IF",
           "poll_string": "C.space_data.type == \"VIEW_3D\" ",
           "element": {
             "0": {
-              "name": "\u53e0\u52a0\u5c42",
+              "name": "Overlays",
               "element_type": "CHILD_GESTURE",
               "enabled": true,
               "direction": "2",
               "element": {
                 "0": {
-                  "name": "\u9762\u671d\u5411",
+                  "name": "Face Orientation",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "2",
@@ -517,14 +517,14 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u8721\u7b14",
+                  "name": "GP",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "IF",
                   "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\") ",
                   "element": {
                     "0": {
-                      "name": "GP\u9762\u677f",
+                      "name": "Grease Pencil",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -536,14 +536,14 @@
                   }
                 },
                 "2": {
-                  "name": "\u5176\u5b83",
+                  "name": "Other",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
                   "selected_type": "ELSE",
                   "poll_string": "None",
                   "element": {
                     "0": {
-                      "name": "\u53e0\u52a0\u5c42\u9762\u677f",
+                      "name": "Overlay",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "1",
@@ -553,7 +553,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u5207\u6362\u900f\u89c6\u6a21\u5f0f",
+                      "name": "Toggle X-Ray",
                       "element_type": "OPERATOR",
                       "enabled": true,
                       "direction": "3",
@@ -563,13 +563,13 @@
                       "operator_type": "OPERATOR"
                     },
                     "2": {
-                      "name": "\u7ebf\u6846",
+                      "name": "Wireframe",
                       "element_type": "CHILD_GESTURE",
                       "enabled": true,
                       "direction": "8",
                       "element": {
                         "0": {
-                          "name": "\u7ebf\u6846\u663e\u793a",
+                          "name": "Wireframe",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "7",
@@ -579,7 +579,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "1": {
-                          "name": "\u7ebf\u6846\u9608\u503c",
+                          "name": "Wireframe Threshold",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "6",
@@ -589,7 +589,7 @@
                           "operator_type": "OPERATOR"
                         },
                         "2": {
-                          "name": "\u7ebf\u6846\u4e0d\u900f\u660e\u5ea6",
+                          "name": "Wireframe Opacity",
                           "element_type": "OPERATOR",
                           "enabled": true,
                           "direction": "8",
@@ -603,7 +603,7 @@
                   }
                 },
                 "3": {
-                  "name": "\u663e\u793a\u53e0\u52a0\u5c42",
+                  "name": "Overlays",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
@@ -613,7 +613,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "4": {
-                  "name": "\u5207\u6362\u900f\u89c6\u6a21\u5f0f",
+                  "name": "Toggle X-Ray",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
@@ -625,13 +625,13 @@
               }
             },
             "1": {
-              "name": "\u64cd\u63a7\u5668",
+              "name": "Gizmo",
               "element_type": "CHILD_GESTURE",
               "enabled": true,
               "direction": "4",
               "element": {
                 "0": {
-                  "name": "\u663e\u793a\u64cd\u63a7\u5668",
+                  "name": "Show Gizmo",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "4",
@@ -641,7 +641,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "\u53ef\u9009\u9879 & \u53ef\u89c1\u6027 \u9762\u677f",
+                  "name": "Selectability & Visibility",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "3",
@@ -651,7 +651,7 @@
                   "operator_type": "OPERATOR"
                 },
                 "2": {
-                  "name": "\u63a7\u5236\u5668\u9762\u677f",
+                  "name": "Gizmo Display",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "5",
@@ -663,13 +663,13 @@
               }
             },
             "2": {
-              "name": "\u7740\u8272\u5668",
+              "name": "Shading",
               "element_type": "CHILD_GESTURE",
               "enabled": true,
               "direction": "8",
               "element": {
                 "0": {
-                  "name": "\u7740\u8272\u5668\u9762\u677f",
+                  "name": "Shanding Panel",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "8",
@@ -681,14 +681,14 @@
               }
             },
             "3": {
-              "name": "\u7f51\u683c\u7f16\u8f91",
+              "name": "Mesh",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "IF",
               "poll_string": "C.mode == \"EDIT_MESH\" ",
               "element": {
                 "0": {
-                  "name": "\u7f51\u683c\u7f16\u8f91\u53e0\u52a0\u5c42",
+                  "name": "Overlay",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
@@ -700,14 +700,14 @@
               }
             },
             "4": {
-              "name": "\u9aa8\u67b6",
+              "name": "Bones",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "C.object and C.object.type == \"ARMATURE\" ",
               "element": {
                 "0": {
-                  "name": "\u9aa8\u9abc\u53e0\u52a0\u5c42",
+                  "name": "Overlay",
                   "element_type": "OPERATOR",
                   "enabled": true,
                   "direction": "6",
@@ -719,7 +719,7 @@
               }
             },
             "5": {
-              "name": "\u7ebf\u6846",
+              "name": "Wireframe",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "5",
@@ -729,7 +729,7 @@
               "operator_type": "OPERATOR"
             },
             "6": {
-              "name": "\u5b9e\u4f53",
+              "name": "Solid",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
@@ -739,7 +739,7 @@
               "operator_type": "OPERATOR"
             },
             "7": {
-              "name": "\u6e32\u67d3",
+              "name": "Rendered",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "3",
@@ -749,7 +749,7 @@
               "operator_type": "OPERATOR"
             },
             "8": {
-              "name": "\u6750\u8d28\u9884\u89c8",
+              "name": "Material",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "7",
@@ -761,14 +761,14 @@
           }
         },
         "1": {
-          "name": "\u8282\u70b9\u7f16\u8f91\u5668",
+          "name": "Node Overlay",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
           "selected_type": "ELIF",
           "poll_string": "C.space_data.type == \"NODE_EDITOR\" ",
           "element": {
             "0": {
-              "name": "\u8282\u70b9\u53e0\u52a0\u5c42",
+              "name": "Overlay",
               "element_type": "OPERATOR",
               "enabled": true,
               "direction": "1",
@@ -780,7 +780,7 @@
           }
         }
       },
-      "description": "\u6309Z\u5207\u6362\u89c6\u56fe"
+      "description": "Press Z to Switch View"
     }
   }
 }

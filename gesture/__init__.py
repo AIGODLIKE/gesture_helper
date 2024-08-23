@@ -25,6 +25,16 @@ class Gesture(
     selected: BoolProperty(default=True)
     description: StringProperty(default="This is a gesture...", name="Description")
 
+    @property
+    def description_translate(self) -> str:
+        from ..src.translate import __name_translate__
+        return __name_translate__(self.description)
+
+    @property
+    def name_translate(self) -> str:
+        from ..src.translate import __name_translate__
+        return __name_translate__(self.name)
+
     def draw_item(self, layout):
         prop = self.draw_property
         if prop.gesture_show_enabled_button:
@@ -34,9 +44,9 @@ class Gesture(
             sp.label(text=self.__key_str__)
             layout = sp.row(align=True)
         layout.separator()
-        layout.prop(self, 'name', text='')
+        layout.label(text=self.name_translate)
         if prop.gesture_show_description:
-            layout.label(text=self.description)
+            layout.label(text=self.description_translate)
 
 
 classes_list = (
@@ -50,6 +60,7 @@ classes_list = (
     ElementCURE.REMOVE,
     ElementCURE.ScriptEdit,
     ElementCURE.ScriptSave,
+    ElementCURE.SwitchShowChild,
 
     Gesture,
 

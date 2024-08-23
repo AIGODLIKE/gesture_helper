@@ -61,7 +61,7 @@ class ElementDraw:
             row.separator()
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
-        layout.prop(self, 'name', text='')
+        layout.label(text=self.name_translate)
 
         if len(self.element):
             layout.prop(self,

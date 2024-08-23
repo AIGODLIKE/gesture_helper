@@ -162,12 +162,14 @@ class GestureKeymap(KeymapProperty):
         from ..src.translate import __keymap_translate__
         keymap = self.key
         if keymap:
-            return "".join(
-                [
-                    k.title()[0] if isinstance(v, int) else __keymap_translate__(v)
-                    for k, v in keymap.items()
-                    if k == 'type' or (k in ('ctrl', 'shift', 'alt') and v == 1)
-                ]
-            )
+            items = [
+                k.title()[0] if isinstance(v, int) else __keymap_translate__(v)
+                for k, v in keymap.items()
+                if k == 'type' or (k in ('ctrl', 'shift', 'alt') and v == 1)
+            ]
+            if bpy.context.preferences.view.use_translate_interface:
+                return "".join(items)
+            else:
+                return " ".join(items)
         else:
             return pgettext("Not key")

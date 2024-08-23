@@ -66,6 +66,7 @@ class GestureDraw:
         )
         ag = pref.active_gesture
         if ag is not None:
+            column.prop(ag, 'name')
             column.prop(ag, 'description')
         GestureDraw.draw_gesture_key(column)
 

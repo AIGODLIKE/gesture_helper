@@ -15,6 +15,9 @@ class GesturePointKDTree:
     def __str__(self):
         return str(self.points_list) + str(self.child_element)
 
+    def items(self) -> dict["Gesture", Vector]:
+        return {element: point for element, point in zip(self.child_element, self.points_list)}
+
     def append(self, element, point: Vector):
         self.points_list.append(point)
         self.child_element.append(element)
