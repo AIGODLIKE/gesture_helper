@@ -1,5 +1,5 @@
 {
-  "time": 1724401134.4525027,
+  "time": 1724401688.6504598,
   "blender_version": [
     4,
     3,
@@ -17,7 +17,7 @@
       "name": "Maya Select",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\"]",
+      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\", \"3D View\"]",
       "element": {
         "0": {
           "name": "Object Mode",

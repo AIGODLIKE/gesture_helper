@@ -1,5 +1,5 @@
 {
-  "time": 1724401114.788126,
+  "time": 1724401655.2917924,
   "blender_version": [
     4,
     3,
@@ -17,7 +17,7 @@
       "name": "Maya Switch Mode",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"Window\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\"]",
+      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\"]",
       "element": {
         "0": {
           "name": "3D View",
