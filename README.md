@@ -3,3 +3,42 @@ Gesture Helper
 
 which allows you to quickly use gestures to run the blender operator or change properties.
 
+![Preview](src/readme/preview.gif)
+
+Install:
+        If it is version 4.2, you can drag the plugin directly into Blender.
+        Conventional methods:
+        ![图片alt](src/readme/install.jpg)
+Simple to use:  
+* Import Preset
+        ![Import Preset](src/readme/import_preset.jpg)
+* Select Preset
+* Preset:
+  * Maya Axis & Coordinate: Quick Setup Axes and Coordinates
+        ![Import Preset](src/readme/preset_c_s_r.gif)
+  * Maya Operator: Active object operator, each mode displays different content
+        ![Import Preset](src/readme/preset_s_r.gif)
+  * Maya Select: Selection gesture
+        ![Import Preset](src/readme/preset_c_r.gif)
+  * Maya Switch Mode: Use right click to switch mode
+        ![Import Preset](src/readme/preset_r.gif)
+  * MX Preset:
+        ![Import Preset](src/readme/preset_mx.gif)
+    * M:Press M to Merge
+    * X:Press X to Delete
+    * Z:Press Z to Switch View
+
+Gesture:
+   Keymaps: Select the area where keymap can be triggered    
+   ![Keymaps](src/readme/keymaps.jpg)
+
+Element:
+    There are three types
+    Child: You can set the direction and expand to child when dragging and dropping gestures.
+    Operator: operator, either by using bl_idname, or by using a custom script
+    Select Structure:Selection structure, requires some logical thinking, can be conditional on the display of sub-levels or operators
+
+Property:
+     Panel Name: N Panel Name
+     Author: Export Data Author
+     Name Translation: Translation of the name
