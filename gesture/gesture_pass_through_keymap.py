@@ -27,7 +27,7 @@ class GesturePassThroughKeymap:
     area_map = {
         "VIEW_3D": "3D View",
 
-        "IMAGE_EDITOR": "Image Paint",
+        "IMAGE_EDITOR": "Image",
         "NODE_EDITOR": "Node Editor",
         "DOPESHEET_EDITOR": "Dopesheet",
         "GRAPH_EDITOR": "Graph Editor",
@@ -63,9 +63,11 @@ class GesturePassThroughKeymap:
         "GRAPH": "Clip Graph Editor",
         "DOPESHEET": "Clip Dopesheet Editor",
     }
-    image_map = {
-        "IMAGE_EDITOR": "Image Editor",
-        "UV_EDITOR": "UV Editor",
+
+    image_ui_mode_map = {
+        "VIEW": "Image",
+        "PAINT": "Image Paint",
+        "MASK": "Mask Editing",  # TODO 使用情况需确定
     }
 
     pass_through_idname = (
@@ -178,8 +180,16 @@ class GesturePassThroughKeymap:
             elif mode == "MASK":
                 keys.append("Clip Editor")
         elif area_type == "IMAGE_EDITOR":
-            keys.append("Image Editor")
-
+            # 图片或是UV
+            ut = context.area.ui_type
+            ui_mode = getattr(context.space_data, "ui_mode", None)
+            if ut == "UV":
+                keys.append("UV Editor")
+            elif ut == "IMAGE_EDITOR":
+                if ui_mode and ui_mode in self.image_ui_mode_map:
+                    keys.append(self.image_ui_mode_map.get(ui_mode))
+            keys.append("Image Generic")
+            print(ut, ui_mode)
         if mk is not None:
             keys.append(mk)
         else:
@@ -188,8 +198,7 @@ class GesturePassThroughKeymap:
                     keys.append(k)
 
         keys.append("Window")
-        print(keys)
-        print(f"event", event.type, event.shift, event.ctrl, event.alt)
+        print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt)
         for key in keys:
             if key in keymaps.keys():
                 from ..ops.gesture import GestureOperator
@@ -210,7 +219,7 @@ class GesturePassThroughKeymap:
                 if ml == 1:
                     ok = try_operator_pass_through_right(match_origin_key[0])
                     print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                    print(f"Origin Key\t{[i.idname for i in match_origin_key]}", ok)
+                    print(f"Origin Key\t{key}\t{[i.idname for i in match_origin_key]}", ok)
                     if ok:
                         return
                 elif key in ("Object Mode", "Mesh"):
