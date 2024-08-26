@@ -13,6 +13,8 @@ class DrawProperty(PropertyGroup):
     gesture_keymap_split_factor: FloatProperty(name='Keymap split factor', default=0.2, max=0.95, min=0.01, step=0.01)
     gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
+    gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size', default=12, min=5,
+                                         max=120)
 
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)

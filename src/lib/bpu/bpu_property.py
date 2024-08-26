@@ -102,6 +102,7 @@ class BpuProperty(BpuColor):
 
     def ___translation_text___(self, text: str) -> str:
         """翻译文本"""
+        return text
         if not self.translate:
             return text
         return pgettext(text, self.___translation_context___)

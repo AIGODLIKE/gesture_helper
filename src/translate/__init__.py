@@ -31,8 +31,10 @@ def ___translate_dict___(key: str) -> dict:
 
 def __preset_translate__(name: str) -> str:
     """翻译预设"""
-    preset = ___translate_dict___("preset")
-    return preset[name] if (name in preset) else name
+    if bpy.context.preferences.view.use_translate_interface:
+        preset = ___translate_dict___("preset")
+        return preset[name] if (name in preset) else name
+    return name
 
 
 def __name_translate__(name: str) -> str:

@@ -1,6 +1,8 @@
+import blf
 import bpy
 import gpu
 from bpy.app.translations import pgettext
+from mathutils import Vector
 
 from ..utils.public_gpu import PublicGpu
 
@@ -140,7 +142,7 @@ class GestureGpuDraw(DrawDebug):
         """绘制轨迹鼠标移动的线"""
         draw = self.draw_property
         color = draw.trajectory_mouse_color
-        self.draw_2d_line(self.trajectory_mouse_move, color, line_width=draw.line_width)
+        self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=draw.line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
         """绘制手势的轨迹线"""
@@ -153,11 +155,27 @@ class GestureGpuDraw(DrawDebug):
         tree = self.trajectory_tree
         self.draw_2d_points(tree.points_list)
 
-        for el, pos in zip(tree.child_element, tree.points_list):
-            if el is None:
-                self.draw_text([0, 0], text=str(el))
-            else:
-                ...
+    def gpu_draw_last_item_name(self):
+        """绘制最后一个元素名称"""
+        tree = self.trajectory_tree
+        size = self.pref.draw_property.gesture_point_name_size
+        for (el, pos) in zip(tree.child_element, tree.points_list):
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(pos)
+                text = self.operator_gesture.name if (el is None) else el.name
+                tn = self.__tn__(text)
+
+                is_last = pos == tree.points_list[-1]
+                font_id = 0
+                blf.size(font_id, size)
+                (w, h) = blf.dimensions(font_id, tn)
+                gpu.matrix.translate(Vector((-(w / 2), 0)))
+                if is_last:
+                    gpu.matrix.translate(Vector((0, -self.pref.gesture_property.threshold)))
+                else:
+                    gpu.matrix.translate(Vector((0, -h)))
+
+                self.draw_text([0, 0], text=tn, size=size)
 
     def gpu_draw_gesture(self):
         """绘制手势"""
@@ -173,6 +191,7 @@ class GestureGpuDraw(DrawDebug):
                 if self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
             self.gpu_draw_trajectory_gesture_point()
+            self.gpu_draw_last_item_name()
         if self.is_draw_gesture:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__last_region_position__)
@@ -187,8 +206,11 @@ class GestureGpuDraw(DrawDebug):
                     self.draw_text((0, 0), pgettext('No gestures, please add'))
 
     def gpu_draw_direction_element(self):
+        """绘制活动方向元素名称"""
         element = self.direction_element
+
         if element and not self.is_draw_gesture:
+            size = self.pref.draw_property.text_gpu_draw_size
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__mouse_position__)
-                self.draw_text((0, 0), text=element.name)
+                self.draw_text((0, 0), text=element.name_translate, size=size)

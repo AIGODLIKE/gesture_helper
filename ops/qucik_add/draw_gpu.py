@@ -1,5 +1,5 @@
-from ...src.lib.bpu import BpuLayout, Quadrant
 from ...ops.qucik_add.show_tips import GestureShowTips
+from ...src.lib.bpu import BpuLayout, Quadrant
 
 
 class DrawGpu:
@@ -10,7 +10,9 @@ class DrawGpu:
 
     def draw_run(self, ops, event) -> set:
         try:
+            from ...src.translate import __name_translate__
             with self.gesture_bpu as bpu:
+                bpu.translate = False
                 bpu.offset_position = ops.offset_position - ops.offset
                 bpu.mouse_position = ops.mouse_position
                 gesture_list = ops.pref.gesture.values()
@@ -21,16 +23,19 @@ class DrawGpu:
                         o.data_path = "window_manager.gesture_index"
                         o.value = g.index
                 else:
-                    bpu.label("暂无手势,请添加", alert=True)
+                    bpu.label(__name_translate__("No gestures, please add"), alert=True)
                 bpu.separator()
-                bpu.label("选择手势")
+                bpu.label(__name_translate__("Select Gesture"))
 
                 if bpu.check_event(event):
                     return {'RUNNING_MODAL'}
             with self.tips as tips:
-                tips.label("在想要添加的操作符或属性上右键,点击添加到手势即可添加")
-                tips.label("在3D视图工具栏选择元素")
-                tips.label("手势编辑模式  空白处点击右键退出")
+                tips.translate = True
+                tips.label(
+                    __name_translate__(
+                        "Right-click on the operator or property you want to add and click Add to Gesture to add it."))
+                tips.label(__name_translate__("Selecting elements in the 3D view toolbar"))
+                tips.label(__name_translate__("Gesture preview mode Blank space Right click to exit"))
                 if tips.check_event(event):
                     return {'FINISHED'}
         except Exception as e:

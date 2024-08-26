@@ -8,7 +8,7 @@ class GestureShowTips(BpuLayout):
     def __init__(self):
         super().__init__()
         self.__background_normal_color__ = [.5, .1, .1, 0.7]
-        self.font_size = 20
+        self.font_size = 18
 
     def __gpu_draw__(self):
         self.__measure__()

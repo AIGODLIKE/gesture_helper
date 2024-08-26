@@ -63,6 +63,10 @@ class GesturePassThroughKeymap:
         "GRAPH": "Clip Graph Editor",
         "DOPESHEET": "Clip Dopesheet Editor",
     }
+    image_map = {
+        "IMAGE_EDITOR": "Image Editor",
+        "UV_EDITOR": "UV Editor",
+    }
 
     pass_through_idname = (
         # 菜单
@@ -173,6 +177,8 @@ class GesturePassThroughKeymap:
                     keys.append(t)
             elif mode == "MASK":
                 keys.append("Clip Editor")
+        elif area_type == "IMAGE_EDITOR":
+            keys.append("Image Editor")
 
         if mk is not None:
             keys.append(mk)
