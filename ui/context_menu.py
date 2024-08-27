@@ -16,6 +16,7 @@ class ContextMenu(bpy.types.Menu):
         menu.context_menu(context)
 
     def context_menu(self, context):
+        from ..src.translate import __name_translate__
         ContextMenu.show_context_menu = True
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
@@ -37,13 +38,13 @@ class ContextMenu(bpy.types.Menu):
             if show_property:
                 layout.operator(
                     CreateElementProperty.bl_idname,
-                    text=pgettext("Add Property %s") % pgettext(button_prop.name, '*')
+                    text=pgettext("Add Property %s") % __name_translate__(button_prop.name)
                 )
 
             if show_operator:
                 button_operator = getattr(context, "button_operator", None)
                 br = button_operator.bl_rna
-                text = pgettext(br.name, br.translation_context)
+                text = __name_translate__(br.name)
                 layout.operator(
                     CreateElementOperator.bl_idname,
                     text=pgettext("Add Operator %s To Gesture") % text

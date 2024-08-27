@@ -1,8 +1,7 @@
 # 绘制手势
 # 预览绘制
-from gettext import pgettext
-
 import bpy
+from bpy.app.translations import pgettext
 
 from . import ElementCURE
 from ..ops.set_direction import SetDirection

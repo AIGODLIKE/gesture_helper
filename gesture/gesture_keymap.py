@@ -8,9 +8,9 @@
 
 import json
 import traceback
-from gettext import pgettext
 
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 

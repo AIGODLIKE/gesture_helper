@@ -12,7 +12,7 @@ def __from_rna_get_bl_ops_idname__(bl_rna) -> str:
 
 
 class CreateElementOperator(PublicOperator, PublicProperty):
-    bl_label = '创建操作元素'
+    bl_label = 'Create Operator Element'
     bl_idname = 'gesture.create_element_operator'
 
     @classmethod

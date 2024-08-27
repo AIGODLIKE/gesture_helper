@@ -6,16 +6,17 @@ from ..utils.public import PublicOperator, PublicProperty
 
 
 class SetPollExpression(PublicProperty, PublicOperator, PollData):
-    bl_label = '设置条件表达式'
+    bl_label = 'Setting Conditional Expressions'
     bl_idname = 'gesture.set_poll_expression'
 
-    is_not: BoolProperty(name='取反', description='可以理解成取反')
+    is_not: BoolProperty(name='Invert', description='It can be interpreted as an inverse')
 
     poll_string: StringProperty(
-        name='条件',
+        name='Prerequisite',
         default='',
         options={'HIDDEN', 'SKIP_SAVE'}
     )
+    clear: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
     ___notation___ = {
         '==': '!=',
         "is": 'not is',
@@ -31,31 +32,30 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         from ..utils.public_ui import draw_extend_ui
         is_draw, lay = draw_extend_ui(layout,
                                       f'draw_logical_operator',
-                                      label='语法解释',
+                                      label='Grammatical explanation',
                                       default_extend=False,
                                       )
         if is_draw:
-            text = '可使用Python逻辑运算符或表达式'
+            text = 'Can use Python logical operators or expressions'
             lay.label(text=text)
-            text = '  and     x and y 布尔"与" - 如果 x 为 False，x and y 返回 x 的值，否则返回 y 的计算值 . '
+            text = "and  x and y Boolean 'and' - if x is False, x and y returns the value of x, otherwise it returns the calculated value of y"
             lay.label(text=text)
-            text = '  or       x or y 布尔"或" - 如果 x 是 True，它返回 x 的值，否则它返回 y 的计算值 .'
+            text = "or   x or y Boolean 'or' - if x is True，return True，else return y"
             lay.label(text=text)
-            text = '  not      not x 布尔"非" - 如果 x 为 True，返回 False  .如果 x 为 False，它返回 True .'
+            text = "not  not x Boolean 'not' - if x is True，return False, if x is False return True"
             lay.label(text=text)
 
             lay.separator()
-            text = '''参数:'''
-            lay.label(text=text)
+            lay.label(text="Parameters:")
 
             texts = {'bpy: bpy': '',
-                     'C: bpy.context': 'blender 上下文',
-                     'D: bpy.data': 'blender数据',
-                     'O: bpy.context.object': '活动物体',
-                     'mode: C.mode': '模式',
-                     'tool: C.tool_settings': '工具设置',
-                     'mesh: bpy.context.object.data': '网格,如果物体不为mesh则为None',
-                     # 'is_select_vert: bool': '是否选择了顶点的布尔值',
+                     'C: bpy.context': 'Blender Context',
+                     'D: bpy.data': 'Blender Data',
+                     'O: bpy.context.object': 'Active Object',
+                     'mode: C.mode': 'Context Mode',
+                     'tool: C.tool_settings': 'Tool Settings',
+                     'mesh: bpy.context.object.data': 'Mesh, None if the object is not a mesh',
+                     # 'is_select_vert: bool': 'Whether or not the boolean value of the vertex is selected',
                      }
             for k, v in texts.items():
                 sp = lay.split(factor=0.2)
@@ -73,9 +73,16 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
     def draw(self, _):
         layout = self.layout
         col = layout.column()
-        sp = col.split(factor=0.05, align=True)
+        is_alert = self.pref.active_element.is_alert
+        cc = col.column(align=True)
+        cc.alert = is_alert
+        sp = cc.split(factor=0.05, align=True)
         sp.label(text='Prerequisite:')
         sp.prop(self.element, 'poll_string', text='')
+        if is_alert:
+            cc.label(text='Invalid expression', icon='ERROR')
+            cc.operator_context = "EXEC_DEFAULT"
+            cc.operator(self.bl_idname, text=self.__tn__("Clear")).clear = True
         self.draw_logical_operator(col)
 
     def draw_list_items(self, layout: 'bpy.types.UILayout'):
@@ -121,6 +128,9 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
     def execute(self, context):
         act = self.element
+        if self.clear:
+            act.poll_string = 'True'
+            return {"FINISHED"}
         if act.poll_string == 'True':
             act.poll_string = self.poll_string
         else:

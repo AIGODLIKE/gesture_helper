@@ -11,12 +11,15 @@ from ...utils.public import get_pref, PublicOperator, PublicProperty
 class Enum:
     enum_mode: EnumProperty(
         items=[
-            ('SET', '直接设置 枚举值', '使用 bpy.ops.wm.context_set_enum 操作符'),
-            ('CYCLE', '循环设置 枚举值 (如果设置值和当前值相同,则切换到上一个值)',
-             '使用 bpy.ops.wm.context_cycle_enum 操作符'),
-            ('TOGGLE', '切换设置 枚举值 (在两个枚举值之间切换)', '使用 bpy.ops.wm.context_toggle_enum 操作符'),
-            ('MENU', '菜单', '使用 bpy.ops.wm.context_menu_enum 操作符 使用菜单显示枚举'),
-            ('PIE', '饼菜单', '使用 bpy.ops.wm.context_pie_enum 操作符 使用饼菜单显示枚举(最多8个项)'),
+            ('SET', 'Direct setting of enumeration values', 'Use bpy.ops.wm.context_set_enum operator'),
+            ('CYCLE',
+             'Cyclic setting of the enumeration value (if the set value is the same as the current value, the enumeration switches to the previous value)',
+             'Use bpy.ops.wm.context_cycle_enum operator'),
+            ('TOGGLE', 'Toggle setting Enumeration values (toggle between two enumeration values)',
+             'Use bpy.ops.wm.context_toggle_enum operator'),
+            ('MENU', 'Menu', 'Using the menu display enumeration with the bpy.ops.wm.context_menu_enum operator'),
+            ('PIE', 'Pie Menu',
+             'Using the bpy.ops.wm.context_pie_enum operator Use the pie menu to display the enumeration (up to 8 items)'),
         ],
         name='枚举模式',
         options={'HIDDEN', 'SKIP_SAVE'})
@@ -54,14 +57,15 @@ class Enum:
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
-    enum_reverse: BoolProperty(default=False, name="反转", description="循环时反转枚举顺序")
-    enum_wrap: BoolProperty(default=True, name="循环", description="循环时如果是最后一个或第一个值时,会自动跳转")
+    enum_reverse: BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
+    enum_wrap: BoolProperty(default=True, name="Cycle",
+                            description="Automatically jumps if it is the last or first value in the loop")
 
 
 class OpsProperty(Enum):
     boolean_mode: EnumProperty(
-        items=[('SET_TRUE', '设置为 True', ''), ('SET_FALSE', '设置为 False', ''), ('SWITCH', '切换', '')],
-        name='布尔模式',
+        items=[('SET_TRUE', 'Set To True', ''), ('SET_FALSE', 'Set To False', ''), ('SWITCH', 'Switch', '')],
+        name='Boolean Mode',
         options={'HIDDEN', 'SKIP_SAVE'},
     )
 
@@ -77,10 +81,10 @@ class OpsProperty(Enum):
         # ("COLLECTION", "Collection", ""),
     ])
 
-    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM, name="值模式")
-    int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="整数值", default=0)
-    float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="浮点值", default=0)
-    string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="字符串")
+    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM, name="Value Mode")
+    int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
+    float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
+    string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")
 
     @property
     def __data_path__(self) -> str:
@@ -134,16 +138,16 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                     self.draw_enum(context, layout)
             else:
                 layout.alert = True
-                layout.label(text="无法获取数据路径")
-                layout.label(text="无法添加")
+                layout.label(text="Unable to get data path")
+                layout.label(text="Unable to add")
 
             layout.separator()
             layout.label(text=text)
             layout.label(text=prop.identifier)
-            layout.label(text=f"{type_translate} 类型")
-            layout.label(text=f"添加属性到手势")
-            layout.label(text=f"添加元素关系:{relationship}")
-            layout.label(text=f"当前值:{value}")
+            layout.label(text=str(type_translate))
+            layout.label(text="Adding Property to Gestures")
+            layout.label(text=pgettext("Add element relationship: %s") % relationship)
+            layout.label(text=pgettext("Current value: %s")  % value)
 
             layout.label(text=f"button_pointer:\t{pointer}")
             layout.label(text=f"button_prop:\t{prop}")
@@ -152,7 +156,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.label(text="设置布尔值")
+        layout.label(text="Set Boolean Value")
         for item in self.rna_type.properties["boolean_mode"].enum_items:  # 绘制添加的布尔模式
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
             ops.boolean_mode = item.identifier
@@ -160,55 +164,55 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             ops.property_type = "BOOLEAN"
 
     def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.label(text="修改整数值")
+        layout.label(text="Modify Int Value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "int_value")
         layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
+        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.int_value = self.int_value
         ops.property_type = "INT"
 
     def draw_float(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.label(text="修改浮点值")
+        layout.label(text="Modify float value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "float_value")
         layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
+        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.float_value = self.float_value
         ops.property_type = "FLOAT"
 
     def draw_string(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.label(text="修改文本")
+        layout.label(text="Modify String")
         layout.separator()
         layout.prop(self, "string_value")
         layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="添加")
+        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
         ops.data_path = self.data_path
         ops.string_value = self.string_value
         ops.property_type = "STRING"
 
     def draw_enum(self, context: bpy.types.Context, layout: bpy.types.UILayout):
-        layout.label(text="修改枚举值")
+        layout.label(text="Modify Enumeration")
 
         layout.separator()
 
-        layout.prop(self, "enum_mode", text="枚举模式", expand=True)
+        layout.prop(self, "enum_mode", text="Enumeration Value", expand=True)
         if self.enum_mode == "TOGGLE":
             row = layout.row(align=True)
             a = row.column(align=True)
-            a.label(text="值A")
+            a.label(text="Value A")
             a.prop(self, "enum_value_a", expand=True)
 
             b = row.column(align=True)
-            b.label(text="值B")
+            b.label(text="Value B")
             b.prop(self, "enum_value_b", expand=True)
         elif self.enum_mode == "SET":
             layout.prop(self, "enum_value_a", expand=True)
@@ -224,11 +228,11 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         is_eq = self.enum_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
         if is_eq:
             cc.alert = True
-            cc.label(text="值A 与 值B 相同")
+            cc.label(text="Value A == Value B")
             cc = cc.column(align=True)
             cc.enabled = False
 
-        ops = cc.operator(CreateElementProperty.bl_idname, text="添加")
+        ops = cc.operator(CreateElementProperty.bl_idname, text="Add")
         ops.data_path = self.data_path
         ops.enum_mode = self.enum_mode
         ops.enum_value_a = self.enum_value_a
@@ -361,7 +365,7 @@ class Create(Draw):
 
 
 class CreateElementProperty(Create):
-    bl_label = '创建属性元素'
+    bl_label = 'Create Property Element'
     bl_idname = 'gesture.create_element_property'
 
     button_pointer = None

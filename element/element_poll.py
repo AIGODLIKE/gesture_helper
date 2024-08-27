@@ -56,7 +56,7 @@ class ElementPoll:
             traceback.print_exc()
             return False
 
-    poll_string: StringProperty(name='条件', description=poll)
+    poll_string: StringProperty(name='Prerequisite', description=poll)
 
     def __init_selected_structure__(self):
         self.poll_string = 'True'
