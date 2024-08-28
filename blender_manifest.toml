@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 
 blender_version_min = "4.2.0"
 id = "gesture_helper"
-license = ["SPDX:GPL-2.0-or-later", ]
+license = ["SPDX:GPL-3.0-or-later", ]
 maintainer = "AIGODLIKE Community(小萌新)"
 name = "Gesture Helper"
 tagline = "Quickly use gestures to run the operator or change properties"
