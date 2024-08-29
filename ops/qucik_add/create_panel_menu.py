@@ -53,7 +53,7 @@ def draw_add(self, context):
 
     layout.separator()
     layout.alert = True
-    text = f"{__name_translate__('Add')} {__name_translate__(self.bl_label)} {__name_translate__(t)}({self.bl_idname})"
+    text = f"{__name_translate__('Adding')} {__name_translate__(self.bl_label)} {__name_translate__(t)}({self.bl_idname})"
     ops = layout.operator(CreatePanelMenu.bl_idname, text=text)
     ops.type = t.upper()
     ops.create_id_name = self.bl_idname

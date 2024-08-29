@@ -1,7 +1,6 @@
 import blf
 import bpy
 import gpu
-from bpy.app.translations import pgettext
 from mathutils import Vector
 
 from ..utils.public_gpu import PublicGpu
@@ -180,6 +179,7 @@ class GestureGpuDraw(DrawDebug):
     def gpu_draw_gesture(self):
         """绘制手势"""
         gp = self.gesture_property
+        from ..src.translate import __name_translate__
 
         region = bpy.context.region
         with gpu.matrix.push_pop():
@@ -203,7 +203,7 @@ class GestureGpuDraw(DrawDebug):
                 for d in draw_items:
                     d.draw_gpu_item(self)
                 if not len(draw_items):
-                    self.draw_text((0, 0), pgettext('No gestures, please add'))
+                    self.draw_text((0, 0), __name_translate__('No gestures, please add'))
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""
