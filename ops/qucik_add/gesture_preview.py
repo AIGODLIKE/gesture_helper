@@ -80,6 +80,9 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
         GesturePreview.is_preview_mode = True
 
         self.__sync_gesture__()
+
+        from .create_panel_menu import register
+        register()
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
@@ -99,6 +102,8 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
 
         res = self.gpu.draw_run(self, event)
         if res:
+            if "FINISHED" in res:
+                self.__exit_modal__()
             return res
         m = self.modal_event(event)
         if m:
@@ -145,3 +150,8 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
 
         wm = bpy.context.window_manager
         wm.event_timer_remove(self.timer)
+
+        from .create_panel_menu import unregister
+        unregister()
+        for area in bpy.context.screen.areas:
+            area.tag_redraw()

@@ -10,6 +10,7 @@ from . import switch_ui
 from .modal_mouse import ModalMouseOperator
 from .qucik_add.create_element_operator import CreateElementOperator
 from .qucik_add.create_element_property import CreateElementProperty
+from .qucik_add.create_panel_menu import CreatePanelMenu
 from .qucik_add.gesture_preview import GesturePreview
 
 operator_list = (
@@ -25,6 +26,7 @@ operator_list = (
 
     CreateElementProperty,
     CreateElementOperator,
+    CreatePanelMenu,
     ModalMouseOperator,
 
     export_import.Export,
