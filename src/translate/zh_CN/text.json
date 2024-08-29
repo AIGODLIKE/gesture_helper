@@ -273,5 +273,7 @@
   "Tool Settings": "工具设置",
   "Mesh, None if the object is not a mesh": "网格,如果物体不为mesh则为None",
   "Whether or not the boolean value of the vertex is selected": "是否选择了顶点的布尔值",
-  "Adding": "添加"
+  "Adding": "添加",
+  "Immediate Implementation": "立即执行",
+  "Immediately executes the operator when the mouse exceeds the threshold value": "当鼠标超过阈值时立即执行运算符"
 }

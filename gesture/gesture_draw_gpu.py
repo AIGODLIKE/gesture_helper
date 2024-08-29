@@ -108,7 +108,7 @@ class GestureGpuDraw(DrawDebug):
             # for cls in self.space_subclasses():
             space = bpy.context.space_data
             if space:
-                cls = space.rna_type.bl_rna
+                cls = space.rna_type
                 sub_class = {}
                 debug_class = {}
                 for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
@@ -117,8 +117,12 @@ class GestureGpuDraw(DrawDebug):
                         debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
                                                                        'POST_PIXEL')
                     except Exception as e:
-                        if self.is_debug:
-                            print(e.args)
+                        print(e.args)
+                        print(space)
+                        import traceback
+                        traceback.print_exc()
+                        traceback.print_stack()
+
                 GestureGpuDraw.__temp_draw_class__[cls] = sub_class
                 GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 

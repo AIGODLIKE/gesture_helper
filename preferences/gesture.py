@@ -18,6 +18,9 @@ class GestureProperty(PropertyGroup):
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(80))
     return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(30))
 
+    immediate_implementation: BoolProperty(name="Immediate Implementation",
+                                           description="Immediately executes the operator when the mouse exceeds the threshold value",
+                                           default=False)
     show_gesture_keymaps: BoolProperty(name='Show Gesture Keymap')
 
     @staticmethod
@@ -30,4 +33,5 @@ class GestureProperty(PropertyGroup):
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')
+        col.prop(g, 'immediate_implementation')
         col.prop(g, 'return_distance')

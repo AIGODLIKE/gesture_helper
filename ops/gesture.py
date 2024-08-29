@@ -39,14 +39,17 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     def modal(self, context, event):
         self.event_trajectory(context)
         self.init_module(event)
-        # if self.is_debug:
-        #     print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
+        if self.is_debug:
+            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
+        if self.try_immediate_implementation():
+            self.__exit_modal__()
+            return {"FINISHED"}
         if self.is_exit:
+            self.__exit_modal__()
             return self.exit(context, event)
         return {'RUNNING_MODAL'}
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
-        self.__exit_modal__()
         ops = self.try_running_operator()
 
         if self.is_debug:
@@ -80,3 +83,11 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         self.unregister_draw()
         wm = bpy.context.window_manager
         wm.event_timer_remove(self.timer)
+
+    def try_immediate_implementation(self):
+        if self.gesture_property.immediate_implementation:
+            de = self.direction_element
+            if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
+                if de.is_operator:
+                    res = self.try_running_operator()
+                    return res

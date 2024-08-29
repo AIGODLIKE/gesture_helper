@@ -63,6 +63,7 @@ class DrawProperty(PropertyGroup):
         col.prop(draw, 'text_gpu_draw_size')
         col.prop(draw, 'text_gpu_draw_radius')
         col.prop(draw, 'text_gpu_draw_margin')
+        col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')
 
     @staticmethod
