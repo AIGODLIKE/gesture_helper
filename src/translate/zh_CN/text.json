@@ -272,5 +272,6 @@
   "Context Mode": "上下文模式",
   "Tool Settings": "工具设置",
   "Mesh, None if the object is not a mesh": "网格,如果物体不为mesh则为None",
-  "Whether or not the boolean value of the vertex is selected": "是否选择了顶点的布尔值"
+  "Whether or not the boolean value of the vertex is selected": "是否选择了顶点的布尔值",
+  "Adding": "添加"
 }
