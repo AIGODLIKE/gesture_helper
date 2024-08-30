@@ -71,7 +71,7 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
         self.offset_position = self.start_mouse_position
 
         self.init_trajectory()
-        self.event_trajectory(context)
+        self.event_trajectory(context, event)
         self.register_draw()
 
         wm = context.window_manager
