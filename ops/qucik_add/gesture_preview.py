@@ -97,7 +97,7 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
         # print(self.bl_idname, button_pointer, button_prop, button_operator)
 
         self.init_module(event)
-        self.event_trajectory(context)
+        self.event_trajectory(context, event)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
 
         res = self.gpu.draw_run(self, event)
