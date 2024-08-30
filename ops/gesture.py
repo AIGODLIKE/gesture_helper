@@ -16,8 +16,11 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
 
+    def __init__(self):
+        super().__init__()
+        self.start_event = None
+
     def invoke(self, context, event):
-        self.__invoke_key__(event)
         self.register_draw()
         self.init_trajectory()
         self.init_invoke(event)
@@ -37,7 +40,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        self.event_trajectory(context)
+        self.event_trajectory(context, event)
         self.init_module(event)
         if self.is_debug:
             print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)

@@ -1,5 +1,7 @@
 import bpy
 
+from ..utils.public_key import get_kmi_operator_properties
+
 
 class GesturePassThroughKeymap:
     object_mode_map = {
@@ -142,16 +144,8 @@ class GesturePassThroughKeymap:
         'transform.rotate',
         'transform.resize',
     )
-    __event__ = None
 
-    def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
-        """尝试透传按键事件
-        :param context:bpy.types.Ccontext
-        :param event:bpy.types.Event
-        :return:None
-        NODE_EDITOR
-        IMAGE_EDITOR
-        """
+    def get_keymaps(self, context):
         area_type = context.area.type
         region_type = context.region.type
         keymaps = context.window_manager.keyconfigs.active.keymaps
@@ -198,7 +192,20 @@ class GesturePassThroughKeymap:
                     keys.append(k)
 
         keys.append("Window")
-        print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt)
+        return keys
+
+    def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
+        """尝试透传按键事件
+        :param context:bpy.types.Ccontext
+        :param event:bpy.types.Event
+        :return:None
+        NODE_EDITOR
+        IMAGE_EDITOR
+        """
+        keys = self.get_keymaps(context)
+        keymaps = context.window_manager.keyconfigs.active.keymaps
+
+        print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
                 from ..ops.gesture import GestureOperator
@@ -213,28 +220,31 @@ class GesturePassThroughKeymap:
                                 bool(item.alt) == event.alt
                         ):
                             match_origin_key.append(item)
-                            # print("match", item.idname, key, item.ctrl, item.alt, item.shift)
-
                 ml = len(match_origin_key)
-                if ml == 1:
-                    ok = try_operator_pass_through_right(match_origin_key[0])
-                    print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                    print(f"Origin Key\t{key}\t{[i.idname for i in match_origin_key]}", ok)
-                    if ok:
+                if ml == 1:  # 只匹配到一个键
+                    kmi = match_origin_key[0]
+                    if self.try_pass_set_cursor3d_location(context, event, kmi):
+                        print("shift右键鼠标单击 设置游标处理")
                         return
-                elif key in ("Object Mode", "Mesh"):
+                    ok = try_operator_pass_through_right(kmi)
+                    if ok:
+                        print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                        print(f"Origin Key\t{key}\t{kmi.idname}", ok)
+                        return
+                elif key in (
+                        "Object Mode",
+                        "Mesh",
+                        "Outliner",  # 为大纲视图单独处理事件
+                ):
+                    # 以下都是有多个操作符的
                     #         "object.delete",
                     #         "object.select_all",
                     #         "mesh.select_all",
-                    for m in match_origin_key:
-                        ok = try_operator_pass_through_right(m)
+                    for kmi in match_origin_key:
+                        ok = try_operator_pass_through_right(kmi)
                         if ok:
-                            return
-                    print("Emm\t", key, [i.idname for i in match_origin_key])
-                elif key == "Outliner":  # 为大纲视图单独处理事件
-                    for m in match_origin_key:
-                        ok = try_operator_pass_through_right(m)
-                        if ok:
+                            print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                            print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                             return
                 else:
                     print(f"else\t{key}\t{[i.idname for i in match_origin_key]}")
@@ -255,12 +265,25 @@ class GesturePassThroughKeymap:
             ]:
                 return {'FINISHED', 'PASS_THROUGH'}
 
-    def __invoke_key__(self, event):
-        self.__event__ = event
+    def try_pass_set_cursor3d_location(self, context: bpy.types.Context, event: bpy.types.Event,
+                                       kmi: bpy.types.KeyMapItem) -> bool:
+        """尝试透传设置3D视图的鼠标位置"""
+        if (
+                event.shift and
+                not event.ctrl and
+                not event.alt and
+                event.type_prev == "RIGHTMOUSE" and
+                self.move_count <= 2 and
+                kmi.idname == "transform.translate"
+        ):
+            if get_kmi_operator_properties(kmi) == {'release_confirm': True, 'cursor_transform': True}:
+                # shift右键鼠标单击
+                if context.area.type == "VIEW_3D":
+                    bpy.ops.view3d.cursor3d('INVOKE_DEFAULT', True)
+                    return True
 
 
-def try_operator_pass_through_right(kmi) -> bool:
-    from ..utils.public_key import get_kmi_operator_properties
+def try_operator_pass_through_right(kmi, operator_context='INVOKE_DEFAULT') -> bool:
     try:
         sp = kmi.idname.split('.')
         prefix, suffix = sp
@@ -268,9 +291,10 @@ def try_operator_pass_through_right(kmi) -> bool:
         prop = get_kmi_operator_properties(kmi)
         if not func.poll():
             return False
-
-        op_re = func('INVOKE_DEFAULT', True, **prop)
+        op_re = func(operator_context, True, **prop)
         print(f"\tcall {kmi.idname}\t{prop}\t{op_re}")
+        import traceback
+        traceback.print_stack()
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
         print(f"try_operator_pass_through_right Error\t{e.args}")

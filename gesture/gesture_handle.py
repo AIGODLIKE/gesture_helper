@@ -34,16 +34,18 @@ class GestureHandle:
     def init_trajectory(self):
         """初始化轨迹信息"""
         self.event_count = 1
+        self.move_count = 1
         self.trajectory_mouse_move = []
         self.trajectory_mouse_move_time = []
         self.trajectory_tree = GesturePointKDTree()
         self.draw_trajectory_mouse_move = False
 
-    def event_trajectory(self, context):
+    def event_trajectory(self, context, event):
         """事件轨迹"""
         self.area = context.area
         self.screen = context.screen
-
+        if event.type != "TIMER":
+            self.move_count += 1
         self.event_count += 1
         emp = self.__mouse_position__
         if self.event_count > 2:
