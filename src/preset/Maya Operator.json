@@ -1,9 +1,9 @@
 {
-  "time": 1724401727.3474405,
+  "time": 1725413784.1897502,
   "blender_version": [
     4,
-    3,
-    0
+    2,
+    1
   ],
   "addon_version": [
     2,
@@ -13,11 +13,11 @@
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
   "gesture": {
-    "1": {
+    "0": {
       "name": "Maya Operator",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Font\", \"Lattice\", \"Grease Pencil\", \"Pose\"]",
+      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Font\", \"Lattice\", \"Pose\"]",
       "element": {
         "0": {
           "name": "Object Mode",
