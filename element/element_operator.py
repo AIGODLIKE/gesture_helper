@@ -33,7 +33,7 @@ class OperatorProperty:
         bpy.ops.transform.translate(value=(0.109431, 2.16517, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'INCREMENT'}, use_snap_project=False, snap_target='CLOSEST', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
         """
         if self.is_operator:
-            value = self.operator_bl_idname.replace(' ', '')
+            value = self.operator_bl_idname
             key = 'operator_bl_idname'
             if value.startswith('bpy.ops.'):
                 self[key] = value = value[8:]

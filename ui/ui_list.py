@@ -26,7 +26,7 @@ class GestureUIList(UIList, PublicProperty):
         row.prop(prop, "gesture_keymap_split_factor")
 
         row = column.row(align=True)
-        row.prop(prop, "gesture_remove_tips", icon="INFO_LARGE" if bpy.app.version >(4,2,0) else "ERROR")
+        row.prop(prop, "gesture_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
@@ -56,7 +56,7 @@ class ElementUIList(UIList, PublicProperty):
         row.prop(debug, 'debug_draw_gpu_mode', icon='INFO')
 
         row = column.row(align=True)
-        row.prop(prop, "element_remove_tips", icon="INFO_LARGE" if bpy.app.version >(4,2,0) else "ERROR")
+        row.prop(prop, "element_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
         row.operator(ElementCURE.SwitchShowChild.bl_idname)
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
