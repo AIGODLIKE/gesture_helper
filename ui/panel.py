@@ -33,8 +33,10 @@ class GestureItemPanel(bpy.types.Panel, PublicProperty):
     bl_options = set()
 
     def draw(self, context):
-        layout = self.layout
+        layout = self.layout.row(align=True)
         layout.enabled = self.pref.enabled
+        if not self.pref.active_gesture:
+            GestureDraw.draw_gesture_cure(layout)
         GestureDraw.draw_gesture(layout)
 
 
