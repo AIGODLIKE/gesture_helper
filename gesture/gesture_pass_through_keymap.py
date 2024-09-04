@@ -1,5 +1,6 @@
 import bpy
 
+from utils.public import get_pref, get_debug
 from ..utils.public_key import get_kmi_operator_properties
 
 
@@ -191,7 +192,7 @@ class GesturePassThroughKeymap:
                 if k.lower() == context.mode.lower():
                     keys.append(k)
 
-        keys.append("Window")
+        # keys.append("Window")
         return keys
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
@@ -293,8 +294,9 @@ def try_operator_pass_through_right(kmi, operator_context='INVOKE_DEFAULT') -> b
             return False
         op_re = func(operator_context, True, **prop)
         print(f"\tcall {kmi.idname}\t{prop}\t{op_re}")
-        import traceback
-        traceback.print_stack()
+        if get_debug():
+            import traceback
+            traceback.print_stack()
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
         print(f"try_operator_pass_through_right Error\t{e.args}")
