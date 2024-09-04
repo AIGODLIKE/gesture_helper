@@ -34,7 +34,8 @@ def draw_line(verts, color, line_width, is_cycle=True):
             colors.append(color)
             pos.append(verts[index + 1])
     shader.bind()
-
+    
+    gpu.state.blend_set("ALPHA")
     batch = batch_for_shader(shader, 'LINES', {"pos": pos, "color": colors})
     batch.draw(shader)
 
