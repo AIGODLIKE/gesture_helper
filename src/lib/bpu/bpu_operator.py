@@ -60,7 +60,7 @@ class BpuOperator:
         try:
             func = self.__operator_func__
             if func:
-                res = func(self.operator_context, True, **self.__operator_properties__.map)
+                func(self.operator_context, True, **self.__operator_properties__.map)
 
                 def g(v):
                     return f'"{v}"' if type(v) is str else v
@@ -69,7 +69,7 @@ class BpuOperator:
                     (f"{key}={g(value)}" for key, value in self.__operator_properties__.items()))
                 print(
                     f'running_operator bpy.ops.{self.__bl_idname__}'
-                    f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})', res
+                    f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
                 )
         except Exception as e:
             print('running_operator ERROR', e)

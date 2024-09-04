@@ -197,7 +197,7 @@ class ElementOperator(OperatorProperty):
             prop = ast.literal_eval(self.operator_properties)
             func = self.operator_func
             if func:
-                res = func(self.operator_context, True, **prop)
+                func(self.operator_context, True, **prop)
 
                 def g(v):
                     return f'"{v}"' if type(v) is str else v
@@ -207,7 +207,6 @@ class ElementOperator(OperatorProperty):
                 print(
                     f'running_operator bpy.ops.{self.operator_bl_idname}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
-                    res
                 )
         except Exception as e:
             print('running_operator ERROR', e)
