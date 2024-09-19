@@ -13,6 +13,7 @@ from .draw import PreferencesDraw
 from .draw_property import DrawProperty
 from .gesture import GestureProperty
 from .other import OtherProperty
+from .. import __package__ as base_package
 from .. import gesture
 from ..element.element_property import ElementAddProperty
 from ..utils.public import PublicProperty
@@ -23,8 +24,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 class GesturePreferences(PublicProperty,
                          AddonPreferences,
                          PreferencesDraw):
-    from ..utils.public import ADDON_NAME
-    bl_idname = ADDON_NAME
+    bl_idname = base_package
 
     # 项配置
     gesture: CollectionProperty(type=gesture.Gesture)
