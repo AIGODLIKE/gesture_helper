@@ -33,7 +33,7 @@ class BpuPropLayout(BpuMeasure):
                     color=color,
                     line_width=self.__normal_line__
                 )
-                from ...utils.texture import Texture
+                from ....utils.texture import Texture
                 self.draw_rounded_rectangle_area(
                     [h / 2, h / 2],
                     color=self.__background_property_haver_color__,
@@ -67,11 +67,11 @@ class BpuPropLayout(BpuMeasure):
 
     def __modify_property_event__(self):
         if self.__property_type__ == "BOOLEAN":
-            from ...utils.public import ADDON_NAME
-            from ...element import Element
+            from .... import __package__ as base_package
+            from ....element import Element
             if type(self.__property_data__) is Element and self.__property_identifier__ == "enabled":
                 import bpy
-                prop = f"preferences.addons['{ADDON_NAME}'].preferences.active_gesture{self.___element_value___(self.__property_data__)}.enabled"
+                prop = f"preferences.addons['{base_package}'].preferences.active_gesture{self.___element_value___(self.__property_data__)}.enabled"
                 bpy.ops.wm.context_set_boolean(data_path=prop, value=not self.__property_value__)
             else:
                 if self.__property_value__:

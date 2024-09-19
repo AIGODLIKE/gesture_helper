@@ -6,19 +6,17 @@ from bpy.props import StringProperty, CollectionProperty
 from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc, cache_update_lock
-from .. import __package__ as __addon_name__
 
-ADDON_NAME = __addon_name__
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
 
 TRANSLATE_ID = "gesture"
 TRANSLATE_KEY = TRANSLATE_ID + "_keymap"
 
-
 @cache
 def get_pref():
-    return bpy.context.preferences.addons.get(ADDON_NAME).preferences
+    from .. import __package__ as base_package
+    return bpy.context.preferences.addons[base_package].preferences
 
 
 def tag_redraw():
