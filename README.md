@@ -2,6 +2,8 @@ Gesture Helper
 
 which allows you to quickly use gestures to run the blender operator or change properties.
 
+https://github.com/user-attachments/assets/40e0eeac-7fd7-4a5b-aa2a-21e6b6053ee6
+
 ![Preview](src/readme/preview.gif)
 
 Install:
