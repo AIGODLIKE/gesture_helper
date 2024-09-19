@@ -12,7 +12,7 @@ class Icons:
         global icons
         icons = bpy.utils.previews.new()
         from ..utils.public import ADDON_FOLDER
-        icon_folder = os.path.join(ADDON_FOLDER, r'src\icon')
+        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon')
         for file in os.listdir(icon_folder):
             name, suffix = file.split('.')
             file_path = os.path.abspath(os.path.join(icon_folder, file))
