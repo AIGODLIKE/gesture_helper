@@ -41,6 +41,15 @@ def get_debug(key=None):
     return prop.debug_mode
 
 
+def by_path_set_value(point, data_path: list[str], value):
+    if len(data_path) == 0 or point is None:
+        print("by_path_set_value set value Error", point, data_path, value)
+    elif len(data_path) == 1:
+        setattr(point, data_path[0], value)
+    else:
+        by_path_set_value(getattr(point, data_path[0]), data_path[1:], value)
+
+
 @cache
 def get_gesture_direction_items(iteration):
     direction = {}

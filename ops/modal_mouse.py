@@ -133,11 +133,13 @@ class ModalMouseOperator(Operator, StoreValue):
 
     def value_delta(self, event):
         delta = self.get_delta(event) * self.input_scale
+        from ..utils.public import by_path_set_value
 
         if type(self.___value___) == int:
-            exec("bpy.context.{:s} = int({:d})".format(self.data_path, round(self.___value___ + delta)))
+            value = int(round(self.___value___ + delta))
         else:
-            exec("bpy.context.{:s} = {:f}".format(self.data_path, self.___value___ + delta))
+            value = self.___value___ + delta
+        by_path_set_value(bpy.context, self.data_path.split("."), value)
         return delta
 
     def get_delta(self, event):
