@@ -1,27 +1,27 @@
 import bpy
 from bpy.props import PointerProperty, BoolProperty, StringProperty, IntProperty
-from bpy_types import PropertyGroup
+from bpy.types import PropertyGroup
 
 
 class TempDrawProperty(PropertyGroup):
     """
-    用于存放展开属性,如果没有可以用add_ui_extend_bool_property
-    自动添加属性"""
+    Automatically adding attributes
 
-    @staticmethod
-    def key():
-        from .utils.public import ADDON_NAME
-        return ADDON_NAME + '_reg_ui_prop'
+    Set bpy.context.window_manager.gesture_helper_reg_ui_prop.add_ui_extend_bool_property string value
+    Will automatically add a boolean value for the input string under the bpy.context.window_manager.gesture_helper_reg_ui_prop property, or if it doesn't exist, will create a new
+    """
+
+    key = "gesture_helper_reg_ui_prop"
 
     @classmethod
     def register_property(cls):
         bpy.utils.register_class(TempDrawProperty)
-        setattr(bpy.types.WindowManager, cls.key(), PointerProperty(type=TempDrawProperty))
+        setattr(bpy.types.WindowManager, cls.key, PointerProperty(type=TempDrawProperty))
 
     @classmethod
     def unregister_property(cls):
         bpy.utils.unregister_class(TempDrawProperty)
-        delattr(bpy.types.WindowManager, cls.key())
+        delattr(bpy.types.WindowManager, cls.key)
 
     @classmethod
     def from_name_get_id(cls, name: str):
@@ -38,7 +38,7 @@ class TempDrawProperty(PropertyGroup):
 
     @classmethod
     def temp_wm_prop(cls):
-        return getattr(bpy.context.window_manager, cls.key(), None)
+        return getattr(bpy.context.window_manager, cls.key, None)
 
     def update_add_ui_extend_bool_property(self, context):
         name = self.add_ui_extend_bool_property
@@ -47,20 +47,20 @@ class TempDrawProperty(PropertyGroup):
             TempDrawProperty,
             name,
             BoolProperty(
-                name=f'{name} 展开布尔属性',
-                description=f'自动生成的布尔属性',
+                name=f'{name} Bool Property',
+                description='Auto-generated Boolean properties name',
                 default=self.default_bool_value,
             )
         )
 
     add_ui_extend_bool_property: StringProperty(
-        name='添加展开属性',
-        description='''更改此属性时会查询此属性类里面有没有此属性
-    如果没有,将会添加,因为在UI里面不能添加属性,所以使用此方法来添加
-    在更新此属性时添加属性''',
+        name='Adding Expanded Properties',
+        description='''When you change this property, you will check if there is any property in this property class.
+    If it doesn't, it will add it, because you can't add properties in the UI, so you use this method to add them.
+    Add the property when updating the property''',
         update=update_add_ui_extend_bool_property,
     )
-    default_bool_value: BoolProperty(name='添加布尔属性的默认值')
+    default_bool_value: BoolProperty(name='Adding default values for Boolean properties')
 
 
 def __get_gesture_index__(self):
