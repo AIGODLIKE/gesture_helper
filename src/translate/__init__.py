@@ -1,3 +1,4 @@
+import ast
 import json
 import os.path
 import re
@@ -102,7 +103,7 @@ TypeError: bpy_struct: item.attr = val: enum "a" not found in ('DEFAULT', 'en_US
     except TypeError as e:
         matches = re.findall(r'\(([^()]*)\)', e.args[-1])
         text = f"({matches[-1]})"
-        return eval(text)
+        return ast.literal_eval(text)
 
 
 def register():
