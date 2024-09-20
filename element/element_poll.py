@@ -3,7 +3,7 @@ from __future__ import annotations
 from bpy.props import StringProperty
 
 from ..utils.public import get_debug
-from ..utils.string_eval import try_call_eval
+from ..utils.secure_call import secure_call_eval
 
 poll: str = """poll表达式
 {'bpy': bpy,
@@ -21,7 +21,7 @@ class ElementPoll:
     def __try_call_poll_bool__(self) -> bool:
         """尝试调用poll bool获取值
         可能会报错"""
-        poll_res = try_call_eval(self.poll_string)
+        poll_res = secure_call_eval(self.poll_string)
         if get_debug("poll"):
             print(f"poll_bool\t{poll_res}\t{self.poll_string}")
         return poll_res

@@ -7,7 +7,7 @@ from bpy.props import StringProperty, EnumProperty, BoolProperty
 from ..utils import PropertySetUtils
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.public_cache import cache_update_lock
-from ..utils.string_eval import try_call_exec
+from ..utils.secure_call import secure_call_eval, secure_call_exec
 
 
 class OperatorProperty:
@@ -16,7 +16,7 @@ class OperatorProperty:
         try:
             ps = f"dict{properties_string}"
             print("__analysis_operator_properties__\n", ps)
-            properties = eval(ps)  # 高威
+            properties = secure_call_eval(ps)  # 高危
             if properties:
                 self["operator_properties"] = str(properties)
         except Exception as e:
@@ -91,7 +91,7 @@ class OperatorProperty:
     def properties(self):
         """获取操作符的属性"""
         try:
-            return ast.literal_eval(self.operator_properties)
+            return secure_call_eval(self.operator_properties)
         except Exception as e:
             print('Properties Error', self.operator_properties, e.args)
             import traceback
@@ -145,7 +145,7 @@ class OperatorProperty:
     def __operator_properties_is_validity__(self) -> bool:
         """反回操作符属性是否有效的布尔值"""
         try:
-            ast.literal_eval(self.operator_properties)
+            secure_call_eval(self.operator_properties)
             return True
         except Exception as e:
             from ..utils.public import get_debug
@@ -194,7 +194,7 @@ class ElementOperator(OperatorProperty):
         """通过bl_idname运行操作符
         """
         try:
-            prop = ast.literal_eval(self.operator_properties)
+            prop = secure_call_eval(self.operator_properties)
             func = self.operator_func
             if func:
                 func(self.operator_context, True, **prop)
@@ -214,7 +214,7 @@ class ElementOperator(OperatorProperty):
     def __running_by_script__(self):
         """运行自定义脚本"""
         try:
-            try_call_exec(self.operator_script)
+            secure_call_exec(self.operator_script)
         except Exception as e:
             print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
             import traceback

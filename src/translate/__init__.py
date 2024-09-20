@@ -7,6 +7,7 @@ import bpy
 from bpy.app.translations import pgettext
 
 __translate__ = {}
+__language_list__ = []
 
 
 def ___translate_id___() -> str:
@@ -89,9 +90,6 @@ def __load_json__():
                     print("加载语言文件失败", e.args, file)
 
 
-__language_list__ = []
-
-
 def get_language_list() -> list:
     """
     Traceback (most recent call last):
@@ -102,8 +100,7 @@ TypeError: bpy_struct: item.attr = val: enum "a" not found in ('DEFAULT', 'en_US
         bpy.context.preferences.view.language = ""
     except TypeError as e:
         matches = re.findall(r'\(([^()]*)\)', e.args[-1])
-        text = f"({matches[-1]})"
-        return ast.literal_eval(text)
+        return ast.literal_eval(f"({matches[-1]})")
 
 
 def register():

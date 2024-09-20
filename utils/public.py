@@ -13,6 +13,7 @@ PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
 TRANSLATE_ID = "gesture"
 TRANSLATE_KEY = TRANSLATE_ID + "_keymap"
 
+
 @cache
 def get_pref():
     from .. import __package__ as base_package
@@ -20,11 +21,13 @@ def get_pref():
 
 
 def tag_redraw():
+    """redraw interface"""
     for area in bpy.context.window.screen.areas:
         area.tag_redraw()
 
 
-def get_debug(key=None):
+def get_debug(key=None) -> bool:
+    """by key get debug"""
     prop = get_pref().debug_property
     if prop.debug_mode and key:
         kl = key.lower()
@@ -39,7 +42,14 @@ def get_debug(key=None):
     return prop.debug_mode
 
 
-def by_path_set_value(point, data_path: list[str], value):
+def by_path_set_value(point, data_path: list[str], value) -> None:
+    """
+    by_path_set_value(bpy, data_path: ['context','scene','render','resolution_x'], 10)
+
+    eq
+
+    bpy.context.scene.render.resolution_x = 10
+    """
     if len(data_path) == 0 or point is None:
         print("by_path_set_value set value Error", point, data_path, value)
     elif len(data_path) == 1:

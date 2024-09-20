@@ -6,14 +6,14 @@ from bpy.types import Operator
 from mathutils import Vector
 
 from ..utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
-from ..utils.string_eval import try_call_eval
+from ..utils.secure_call import secure_call_eval
 
 
 class StoreValue:
     ___value___ = None
 
     def __store__(self):
-        self.___value___ = try_call_eval(f'bpy.context.{self.data_path}')
+        self.___value___ = secure_call_eval(f'bpy.context.{self.data_path}')
 
     def __restore__(self):
         setattr(self, self.data_path, self.___value___)
@@ -61,7 +61,7 @@ class ModalMouseOperator(Operator, StoreValue):
             try:
                 if len(sp) > 1:
                     a, b = sp[:-1], sp[-1]
-                    prop = try_call_eval(f"bpy.context.{'.'.join(a)}").rna_type.properties[b]
+                    prop = secure_call_eval(f"bpy.context.{'.'.join(a)}").rna_type.properties[b]
                     name = pgettext(prop.name)
                     if prop.type == 'INT':
                         return f"{name} %d"
@@ -98,7 +98,7 @@ class ModalMouseOperator(Operator, StoreValue):
             delta = self.value_delta(event)
             header_text = self.__header_text__
             if header_text:
-                value = try_call_eval(f"bpy.context.{self.data_path}")
+                value = secure_call_eval(f"bpy.context.{self.data_path}")
                 try:
                     if self.___value___ is not None:
                         header_text = header_text % value
@@ -157,4 +157,3 @@ class ModalMouseOperator(Operator, StoreValue):
                 return min(x, y)
         else:
             raise ValueError("Invalid value mode: %r" % vm)
-            # active_annotation_layer.annotation_opacity
