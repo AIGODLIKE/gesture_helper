@@ -205,7 +205,7 @@ class GesturePassThroughKeymap:
         keys = self.get_keymaps(context)
         keymaps = context.window_manager.keyconfigs.active.keymaps
 
-        print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
+        # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
                 from ..ops.gesture import GestureOperator
@@ -224,12 +224,12 @@ class GesturePassThroughKeymap:
                 if ml == 1:  # 只匹配到一个键
                     kmi = match_origin_key[0]
                     if self.try_pass_set_cursor3d_location(context, event, kmi):
-                        print("shift右键鼠标单击 设置游标处理")
+                        # print("shift右键鼠标单击 设置游标处理")
                         return
                     ok = try_operator_pass_through_right(kmi)
                     if ok:
-                        print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                        print(f"Origin Key\t{key}\t{kmi.idname}", ok)
+                        # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                        # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                         return
                 elif key in (
                         "Object Mode",
@@ -243,8 +243,8 @@ class GesturePassThroughKeymap:
                     for kmi in match_origin_key:
                         ok = try_operator_pass_through_right(kmi)
                         if ok:
-                            print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                            print(f"Origin Key\t{key}\t{kmi.idname}", ok)
+                            # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                            # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                             return
                 else:
                     print(f"else\t{key}\t{[i.idname for i in match_origin_key]}")
@@ -293,8 +293,8 @@ def try_operator_pass_through_right(kmi, operator_context='INVOKE_DEFAULT') -> b
             return False
         op_re = func(operator_context, True, **prop)
         print(f"\tcall {kmi.idname}\t{prop}\t{op_re}")
-        import traceback
-        traceback.print_stack()
+        # import traceback
+        # traceback.print_stack()
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
         print(f"try_operator_pass_through_right Error\t{e.args}")
