@@ -12,9 +12,11 @@ __secure_call_globals__ = {
     "__builtins__": None,
     'len': len,
     'is_enabled_addon': __check_addon_is_enabled__,
-    'print': print
-    #  'max':max,
-    #  'min':min,
+    'print': print,
+    'dict': dict,
+    'list': list,
+    'max': max,
+    'min': min,
 }
 
 
