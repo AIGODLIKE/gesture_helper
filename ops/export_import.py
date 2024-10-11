@@ -288,15 +288,14 @@ class Export(PublicFileOperator):
         if len(self.pref.gesture) == 0:
             ...
         elif not len(self.export_data['gesture']):
-            self.report({'WARNING'}, "Export item not selected")
+            self.report({'WARNING'}, "Export Item Not Selected")
         else:
             self.write_json_file()
-            self.report({'INFO'}, pgettext("Export finished! %s") % self.file_path)
+            self.report({'INFO'}, pgettext("Export Finished! %s") % self.file_path)
         return {'FINISHED'}
 
     def write_json_file(self):
         with open(self.file_path, 'w') as file:
-            print(f"write_json_file\t{self.file_path}")
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
 
     @staticmethod
@@ -308,7 +307,7 @@ class Export(PublicFileOperator):
         """
         try:
             is_auto_backups = get_pref().backups_property.auto_backups
-            print(f"gesture backups\t{is_blender_close}\t{is_auto_backups}")
+            print(f"Gesture Auto Backups\tis_blender_close:{is_blender_close}\tis_auto_backups:{is_auto_backups}")
             bpy.ops.gesture.export(
                 'EXEC_DEFAULT',
                 description='auto_backups',

@@ -11,4 +11,4 @@ version = "2.0.3"
 tags = ["3D View", "User Interface"]
 
 [permissions]
-files = "Import/export Gesture preset"
+files = "Import/Export Gesture preset"
