@@ -70,6 +70,7 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) 
             angle = math.radians(index * angle_step)  # 将角度转换为弧度
             qa(quadrant[i], angle)
         qa(quadrant[(i + 1) % 4], angle)
+    qa(quadrant[3], angle)
     qa(quadrant[3], 0)
     return tuple(vertex)
 
