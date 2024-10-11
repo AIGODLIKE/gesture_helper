@@ -34,29 +34,28 @@ def draw_line(verts, color, line_width, is_cycle=True):
             colors.append(color)
             pos.append(verts[index + 1])
     shader.bind()
-    
+
     gpu.state.blend_set("ALPHA")
     batch = batch_for_shader(shader, 'LINES', {"pos": pos, "color": colors})
     batch.draw(shader)
 
 
 @cache
-def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
+def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) -> tuple[tuple[float]]:
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
-    rounded_segments = segments * 4  # 圆角的边
     w = int((width - radius) / 2) - radius / 2
     h = int((height - radius) / 2) - radius / 2
     # 角度步长，通常以度为单位
     # 存储顶点坐标的列表
     vertex = []
-    quadrant = {
-        1: (w, h),
-        2: (-w, h),
-        3: (-w, -h),
-        4: (w, -h),
-    }
-    angle_step = 360 / rounded_segments  # 这里选择了8个顶点，可以根据需要调整
+    quadrant = [
+        (w, h),
+        (-w, h),
+        (-w, -h),
+        (w, -h),
+    ]
+    angle_step = 360 / (segments * 4)  # 这里选择了8个顶点，可以根据需要调整
 
     def qa(qq, a):
         x = qq[0] + radius * math.cos(a)
@@ -64,12 +63,14 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10):
         vertex.append((x, y))
 
     # 计算顶点坐标
-    for i in range(rounded_segments):
-        angle = math.radians(i * angle_step)  # 将角度转换为弧度
-        s = i // segments
-        q = quadrant[s + 1]
-        qa(q, angle)
-    vertex.append(vertex[0])
+    for i in range(4):
+        for j in range(segments):
+            index = segments * i + j
+            angle = math.radians(index * angle_step)  # 将角度转换为弧度
+            qa(quadrant[i], angle)
+        qa(quadrant[(i + 1) % 4], angle)
+    qa(quadrant[3], angle)
+    qa(quadrant[3], 0)
     return tuple(vertex)
 
 
@@ -218,20 +219,23 @@ class PublicGpu:
     def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), line_width=2, radius=10, width=200, height=200,
                                      segments=128):
         import gpu
-
+        from .public import get_pref
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         with gpu.matrix.push_pop():
+            margin = get_pref().draw_property.text_gpu_draw_margin
             gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
+            vertex = get_rounded_rectangle_vertex(min(margin, radius), width, height, segments)
             draw_line(vertex, color, line_width=line_width)
 
     @staticmethod
     def draw_rounded_rectangle_area(position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
                                     segments=20):
+        from .public import get_pref
+        margin = get_pref().draw_property.text_gpu_draw_margin
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(radius, width, height, segments)
+            vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
             indices = get_indices_from_vertex(vertex)
             shader = gpu.shader.from_builtin('SMOOTH_COLOR')
             batch = batch_for_shader(shader,

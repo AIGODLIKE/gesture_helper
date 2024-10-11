@@ -83,7 +83,7 @@ class GestureKeymap(KeymapProperty):
             self.key = data
 
     def to_temp_kmi(self) -> None:
-        print('To Temp Kmi', self.name, self.key)
+        print('Gesture -> Temp Kmi', self.name, "\n", self.key)
         PropertySetUtils.set_property_data(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
