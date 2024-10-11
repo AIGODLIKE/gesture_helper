@@ -9,30 +9,30 @@ from mathutils import Euler, Vector
 
 
 @cache
-def from_segments_generator_circle_verts(segments):
+def from_segments_generator_circle_vertex(segments) -> tuple:
     from math import sin, cos, pi
     mul = (1.0 / (segments - 1)) * (pi * 2)
-    verts = [(sin(i * mul), cos(i * mul), 0) for i in range(segments)]
-    return tuple(verts)
+    vertex = [(sin(i * mul), cos(i * mul), 0) for i in range(segments)]
+    return tuple(vertex)
 
 
-def draw_line(verts, color, line_width, is_cycle=True):
+def draw_line(vertex, color, line_width, is_cycle=True) -> None:
     shader = gpu.shader.from_builtin('POLYLINE_SMOOTH_COLOR')
     shader.uniform_float("lineWidth", line_width)
     shader.uniform_float("viewportSize", gpu.state.scissor_get()[2:])
     pos = []
     colors = []
-    vl = len(verts)
-    for index, v in enumerate(verts):
+    vl = len(vertex)
+    for index, v in enumerate(vertex):
         pos.append(v)
         colors.append(color)
         if vl - 1 == index:
             if is_cycle:
-                pos.append(verts[0])
+                pos.append(vertex[0])
                 colors.append(color)
         else:
             colors.append(color)
-            pos.append(verts[index + 1])
+            pos.append(vertex[index + 1])
     shader.bind()
 
     gpu.state.blend_set("ALPHA")
@@ -41,7 +41,7 @@ def draw_line(verts, color, line_width, is_cycle=True):
 
 
 @cache
-def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) -> tuple[tuple[float]]:
+def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) -> tuple:
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
     w = int((width - radius) / 2) - radius / 2
@@ -63,6 +63,7 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) 
         vertex.append((x, y))
 
     # 计算顶点坐标
+    angle = None
     for i in range(4):
         for j in range(segments):
             index = segments * i + j
@@ -198,7 +199,7 @@ class PublicGpu:
             gpu.matrix.translate(position)
             gpu.matrix.scale_uniform(radius)
             gpu.state.line_width_set(line_width)
-            verts = from_segments_generator_circle_verts(segments)
+            verts = from_segments_generator_circle_vertex(segments)
             draw_line(verts, color, line_width)
 
     @staticmethod
