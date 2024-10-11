@@ -311,10 +311,12 @@ class Export(PublicFileOperator):
             print(f"gesture backups\t{is_blender_close}\t{is_auto_backups}")
             bpy.ops.gesture.export(
                 'EXEC_DEFAULT',
-                author='Emm',
                 description='auto_backups',
                 is_auto_backups=is_auto_backups,
                 is_close_backups=not is_blender_close,
             )
         except Exception as e:
             print("try auto backups error", e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
