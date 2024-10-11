@@ -69,7 +69,6 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) 
             angle = math.radians(index * angle_step)  # 将角度转换为弧度
             qa(quadrant[i], angle)
         qa(quadrant[(i + 1) % 4], angle)
-    qa(quadrant[3], angle)
     qa(quadrant[3], 0)
     return tuple(vertex)
 
@@ -225,7 +224,7 @@ class PublicGpu:
         with gpu.matrix.push_pop():
             margin = get_pref().draw_property.text_gpu_draw_margin
             gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(min(margin, radius), width, height, segments)
+            vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
             draw_line(vertex, color, line_width=line_width)
 
     @staticmethod

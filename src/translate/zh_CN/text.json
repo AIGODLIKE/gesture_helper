@@ -112,10 +112,12 @@
   "Split Factor": "拆分系数",
   "Show in left side": "显示在左侧",
   "Element remove tips": "手势项删除提示",
-  "Font Size": "文字大小",
+  "Font Size": "字体大小",
+  "Text": "文字",
   "Gpu Draw Text Size": "Gpu绘制的文字大小",
   "Gpu Draw Radius Size": "Gpu绘制的圆角大小",
   "Radius Size": "圆角大小",
+  "Radius": "圆角",
   "Margin": "间隔",
   "Gpu Draw Margin Size": "Gpu绘制的Margin大小",
   "Gpu Draw Width Size": "Gpu绘制的线宽大小",
@@ -275,5 +277,7 @@
   "Whether or not the boolean value of the vertex is selected": "是否选择了顶点的布尔值",
   "Adding": "添加",
   "Immediate Implementation": "立即执行",
-  "Immediately executes the operator when the mouse exceeds the threshold value": "当鼠标超过阈值时立即执行运算符"
+  "Immediately executes the operator when the mouse exceeds the threshold value": "当鼠标超过阈值时立即执行运算符",
+  "Error, rounded corners are larger than the margins": "错误，圆角比边距大",
+  "The size of the rounded corners is clamped by the margins": "圆角的大小被边距钳制"
 }
