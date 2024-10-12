@@ -207,7 +207,7 @@ class GestureGpuDraw(DrawDebug):
                 for d in draw_items:
                     d.draw_gpu_item(self)
                 if not len(draw_items):
-                    self.draw_text((0, 0), __name_translate__('No gestures, please add'))
+                    self.draw_text((0, 0), __name_translate__('No Gestures, Please Add'))
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""

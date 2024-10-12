@@ -23,7 +23,7 @@ class DrawGpu:
                         o.data_path = "window_manager.gesture_index"
                         o.value = g.index
                 else:
-                    bpu.label(__name_translate__("No gestures, please add"), alert=True)
+                    bpu.label(__name_translate__("No Gestures, Please Add"), alert=True)
                 bpu.separator()
                 bpu.label(__name_translate__("Select Gesture"))
 
