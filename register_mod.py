@@ -16,13 +16,15 @@ def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
     from .gesture import gesture_keymap
-    from .utils import public_cache, texture
+    from .utils import public_cache
     from .ui.panel import register as register_panel
+    from .utils import icons
+    
+    icons.Icons.register()
 
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_remove()
     gesture_keymap.GestureKeymap.key_init()
-    texture.Texture.register()
 
     pref = get_pref()
     pref.update_state()
@@ -42,8 +44,6 @@ def init_register():
 def register():
     from .ops.qucik_add.keymap import GestureQuickAddKeymap
 
-    from .utils import icons
-    icons.Icons.register()
     for module in module_list:
         try:
             module.register()
@@ -63,7 +63,7 @@ def unregister():
     from .gesture import gesture_keymap
 
     from .ops.qucik_add.keymap import GestureQuickAddKeymap
-    from .utils import icons, is_blender_close, texture
+    from .utils import icons, is_blender_close
 
     if bpy.app.timers.is_registered(init_register):
         bpy.app.timers.unregister(init_register)
@@ -75,4 +75,3 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
-    texture.Texture.unregister()
