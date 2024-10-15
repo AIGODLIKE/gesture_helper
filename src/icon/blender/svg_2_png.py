@@ -10,7 +10,7 @@ https://www.modb.pro/db/175191
 
 import cairosvg
 
-size = 128
+size = 64
 to_folder_path = os.path.dirname(__file__)
 form_svg_folder = r"D:\Blender\blender\release\datafiles\icons_svg"
 
@@ -23,6 +23,7 @@ for file_name in os.listdir(form_svg_folder):
         cairosvg.svg2png(
             url=file_path,
             write_to=to_path,
-            parent_width=size,
-            parent_height=size
+            output_width=size,
+            output_height=size,
+            scale=1
         )
