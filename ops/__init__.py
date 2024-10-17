@@ -16,6 +16,7 @@ from .qucik_add.gesture_preview import GesturePreview
 
 operator_list = (
     select_icon.SelectIcon,
+    select_icon.RefreshIcons,
 
     switch_ui.SwitchGestureWindow,
 

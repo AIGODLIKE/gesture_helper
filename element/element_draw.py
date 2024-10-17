@@ -189,7 +189,8 @@ class ElementDraw:
                 elif self.is_selected_else:
                     alert_list.append('The previous selection structure of else needs to be an if or elif.')
                 else:
-                    alert_list.append("'I don't know what's wrong there either :>'")
+                    alert_list.append("I don't know what's wrong there either :>")
+                    alert_list.append("Maybe it's not enabled")
         elif self.is_operator:
             if not self.__operator_id_name_is_validity__:
                 alert_list.append(f'Operator Error')

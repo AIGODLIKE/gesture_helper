@@ -3,12 +3,11 @@ import os
 import bpy.utils.previews
 
 icons = None
-
-icons_map_type = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
-icons_map = icons_map_type.copy()
+icons_map = None
 
 
 def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
+    global icons_map
     for file in os.listdir(icon_folder_path):
         is_png = file.lower().endswith('.png')
         file_path = os.path.abspath(os.path.join(icon_folder_path, file))
@@ -22,15 +21,23 @@ def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
 
 
 def get_all_icons() -> list[str]:
+    global icons_map
     return icons_map['ADDON'] + icons_map['BLENDER'] + icons_map['CUSTOM']
+
+
+def get_blender_icons() -> list[str]:
+    global icons_map
+    return icons_map['BLENDER']
 
 
 class Icons:
 
     @staticmethod
     def register():
-        global icons
+        global icons, icons_map
+        # print("register icons", icons, icons_map_type, icons_map)
         icons = bpy.utils.previews.new()
+        icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         from ..utils.public import ADDON_FOLDER
 
         icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon')
@@ -54,8 +61,10 @@ class Icons:
     @staticmethod
     def unregister() -> None:
         global icons, icons_map
-        icons_map = icons_map_type.copy()
         bpy.utils.previews.remove(icons)
+
+        icons = None
+        icons_map = None
 
     @staticmethod
     def reload_icons() -> None:

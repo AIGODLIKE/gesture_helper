@@ -32,6 +32,7 @@
   "The previous selection structure of elif needs to be either if or elif.": "elif 的上一个选择结构需要是if 或 elif",
   "The previous selection structure of else needs to be an if or elif.": "else 的上一个选择结构需要是if 或 elif",
   "I don't know what's wrong there either :>": "我也不知道是那里错了 :>",
+  "Maybe it's not enabled": "也许没有启用",
   "Operator Error": "操作符错误",
   "Not find operator": "未找到操作符",
   "Operator property error": "操作符属性错误",
@@ -279,5 +280,6 @@
   "Immediate Implementation": "立即执行",
   "Immediately executes the operator when the mouse exceeds the threshold value": "当鼠标超过阈值时立即执行运算符",
   "Error, rounded corners are larger than the margins": "错误，圆角比边距大",
-  "The size of the rounded corners is clamped by the margins": "圆角的大小被边距钳制"
+  "The size of the rounded corners is clamped by the margins": "圆角的大小被边距钳制",
+  "Refresh Icons": "刷新图标"
 }
