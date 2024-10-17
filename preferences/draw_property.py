@@ -20,6 +20,7 @@ class DrawProperty(PropertyGroup):
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     element_show_left_side: BoolProperty(name='Show in left side', default=False)
+    element_show_icon: BoolProperty(name='Show icon', default=True)
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
 

@@ -21,6 +21,10 @@ def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
             from_image_file_path_load_texture(file_path)
 
 
+def get_all_icons() -> list[str]:
+    return icons_map['ADDON'] + icons_map['BLENDER'] + icons_map['CUSTOM']
+
+
 class Icons:
 
     @staticmethod
