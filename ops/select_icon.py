@@ -107,6 +107,7 @@ class SelectIcon(Operator, PublicProperty):
 
             act = get_pref().active_element
             act.icon = self.icon
+            act.enabled_icon = True
 
         return {'FINISHED'}
 
@@ -182,15 +183,23 @@ class SelectIcon(Operator, PublicProperty):
         selected_icon = bpy.context.window_manager.clipboard
         col_idx = 0
         i: int = 0
+
+        def get_icon_args(icon_name) -> dict:
+            ics = bpy.types.UILayout.bl_rna.functions[
+                "prop"].parameters["icon"].enum_items.keys()
+            if icon_name in ics and icons is None:  # 先看看有没有在Blender自带的库里面
+                return {"icon": icon_name}
+
+            icon_value = self.__get_icon__(key=icon_name)
+            return {"icon_value": icon_value}
+
         for i, icon in enumerate(filtered_icons):
-            if icons == None:
-                p = row.operator(
-                    SelectIcon.bl_idname, text="",
-                    icon=icon, emboss=icon == selected_icon)
-            else:
-                p = row.operator(
-                    SelectIcon.bl_idname, text="",
-                    icon_value=self.__get_icon__(key=icon), emboss=icon == selected_icon)
+            p = row.operator(
+                SelectIcon.bl_idname,
+                text="",
+                emboss=icon == selected_icon,
+                **get_icon_args(icon),
+            )
             p.icon = icon
 
             col_idx += 1

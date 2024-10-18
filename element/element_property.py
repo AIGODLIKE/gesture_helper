@@ -72,7 +72,7 @@ class ElementAddProperty:
 
 class ElementIcon:
     icon: StringProperty(name='Show Icon', default='UNKNOWN')
-    enabled_icon: BoolProperty(name='Enabled Icon', default=True)
+    enabled_icon: BoolProperty(name='Enabled Icon', default=False)
 
     @property
     def is_have_icon(self):
@@ -96,8 +96,13 @@ class ElementIcon:
         """是可以显示图标的"""
         return self.enabled_icon and self.icon_is_validity
 
+    @property
+    def is_draw_icon(self):
+        """是绘制图标"""
+        return self.is_have_icon and self.is_show_icon
 
-# 显示的属性,不用Blender那些,使用自已的参数
+
+# 显示的属性, 不用Blender那些, 使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):
     direction: EnumProperty(
         name='Direction',
