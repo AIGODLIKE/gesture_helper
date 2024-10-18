@@ -30,6 +30,10 @@ def get_blender_icons() -> list[str]:
     return icons_map['BLENDER']
 
 
+def check_icon(icon_identifier: str) -> bool:
+    return icon_identifier in get_all_icons()
+
+
 class Icons:
 
     @staticmethod

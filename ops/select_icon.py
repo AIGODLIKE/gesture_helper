@@ -83,13 +83,6 @@ class SelectIcon(Operator, PublicProperty):
     copy_on_select: BoolProperty(
         name="Copy Icon On Click",
         description="Copy icon on click", default=True)
-    close_on_select: BoolProperty(
-        name="Close Popup On Click",
-        description=(
-            "Close the popup on click.\n"
-            "Not supported by some windows (User Preferences, Render)"
-        ),
-        default=False)
 
     @classmethod
     def poll(cls, context):
@@ -106,12 +99,14 @@ class SelectIcon(Operator, PublicProperty):
         return context.window_manager.invoke_props_dialog(self, width=width)
 
     def execute(self, context):
-        self.update_history()
+        from ..utils.icons import check_icon
+        if check_icon(self.icon):
+            self.update_history()
 
-        bpy.context.window_manager.clipboard = self.icon
+            bpy.context.window_manager.clipboard = self.icon
 
-        act = get_pref().active_element
-        act.icon = self.icon
+            act = get_pref().active_element
+            act.icon = self.icon
 
         return {'FINISHED'}
 

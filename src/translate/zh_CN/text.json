@@ -281,5 +281,6 @@
   "Immediately executes the operator when the mouse exceeds the threshold value": "当鼠标超过阈值时立即执行运算符",
   "Error, rounded corners are larger than the margins": "错误，圆角比边距大",
   "The size of the rounded corners is clamped by the margins": "圆角的大小被边距钳制",
-  "Refresh Icons": "刷新图标"
+  "Refresh Icons": "刷新图标",
+  "Addon": "插件"
 }
