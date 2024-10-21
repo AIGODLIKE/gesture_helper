@@ -25,7 +25,7 @@ EXPORT_PROPERTY_EXCLUDE = (
     'preview_operator_script',
 )
 
-EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
+EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description', 'icon', 'enabled_icon']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
