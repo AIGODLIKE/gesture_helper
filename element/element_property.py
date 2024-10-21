@@ -71,7 +71,7 @@ class ElementAddProperty:
 
 
 class ElementIcon:
-    icon: StringProperty(name='Show Icon', default='UNKNOWN')
+    icon: StringProperty(name='Show Icon', default='COLOR_ERROR')
     enabled_icon: BoolProperty(name='Enabled Icon', default=False)
 
     @property

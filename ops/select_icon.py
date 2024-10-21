@@ -54,7 +54,7 @@ class SelectIcon(Operator, PublicProperty):
                 continue
             SelectIcon.filtered_icons.append(icon)
 
-    icon: StringProperty()
+    icon: StringProperty(options={"SKIP_SAVE"})
 
     filter: StringProperty(
         description="Filter",
@@ -185,13 +185,17 @@ class SelectIcon(Operator, PublicProperty):
         i: int = 0
 
         def get_icon_args(icon_name) -> dict:
+            from ..utils.icons import check_icon
             ics = bpy.types.UILayout.bl_rna.functions[
                 "prop"].parameters["icon"].enum_items.keys()
             if icon_name in ics and icons is None:  # 先看看有没有在Blender自带的库里面
                 return {"icon": icon_name}
-
-            icon_value = self.__get_icon__(key=icon_name)
-            return {"icon_value": icon_value}
+            elif check_icon(icon_name):
+                icon_value = self.__get_icon__(key=icon_name)
+                return {"icon_value": icon_value}
+            else:  # Error 此图标不存在
+                ...
+                return {}
 
         for i, icon in enumerate(filtered_icons):
             p = row.operator(

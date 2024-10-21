@@ -145,10 +145,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
             with gpu.matrix.push_pop():
                 if self.is_draw_icon:
-                    gpu.matrix.translate([-icon_size / 1.8, 0])
+                    gpu.matrix.translate([-(icon_size * 0.6), 0])
                     gpu.state.blend_set('ALPHA_PREMULT')
                     gpu.state.depth_test_set('ALWAYS')
-                    self.draw_image([0, -h * 1.3], icon_size, icon_size, texture=Texture.get_texture(self.icon))
-                    gpu.matrix.translate([icon_size, icon_size])
+                    self.draw_image([0, -(h * 1.3)], icon_size, icon_size, texture=Texture.get_texture(self.icon))
+                    gpu.matrix.translate([icon_size * 1.2, icon_size])
 
                 self.draw_text([0, 0], self.text, color=self.text_color, size=self.text_size)

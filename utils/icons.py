@@ -39,7 +39,6 @@ class Icons:
     @staticmethod
     def register():
         global icons, icons_map
-        # print("register icons", icons, icons_map_type, icons_map)
         icons = bpy.utils.previews.new()
         icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         from ..utils.public import ADDON_FOLDER
