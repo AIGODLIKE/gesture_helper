@@ -2,6 +2,7 @@
 https://extensions.blender.org/add-ons/icon-viewer/
 """
 import math
+import os
 
 import bpy
 from bpy.props import StringProperty, BoolProperty
@@ -131,63 +132,72 @@ class SelectIcon(Operator, PublicProperty):
         if HISTORY:
             hi = col.box().row(align=True)
             hi.alignment = 'CENTER'
-            hi.label(text="History")
+            hi.label(text='History')
             self.draw_icons(hi.column(align=True), num_cols, icons=HISTORY)
 
         from ..utils.icons import icons_map
+        from ..utils.public import ADDON_FOLDER
 
-        num = max(10, num_cols)
+        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
+
+        num = max(30, num_cols)
         row = col.box().row()
         row.alignment = 'CENTER'
-        row.label(text="Addon")
-        self.draw_icons(row.column(align=True), num, icons=icons_map.get("ADDON"))
-
-        row = col.box().row()
-        row.alignment = 'CENTER'
-        row.label(text="Custom")
-        self.draw_icons(row.column(align=True), num, icons=icons_map.get("CUSTOM"))
-        row.operator(RefreshIcons.bl_idname, icon="FILE_REFRESH")
+        row.label(text='Addon')
+        self.draw_icons(row.column(align=True), num_cols, icons=icons_map.get('ADDON'))
 
         box = col.box()
-        box.label(text="Blender")
+        row = box.row()
+        row.alignment = 'CENTER'
+        row.label(text='Custom')
+        self.draw_icons(row.column(align=True), num_cols, icons=icons_map.get('CUSTOM'))
+
+        row = box.row()
+        row.separator()
+        row.operator(RefreshIcons.bl_idname, icon='FILE_REFRESH')
+        row.separator()
+        row.operator('wm.url_open', text='Open Custom Folder', icon='FILE_FOLDER').url = icon_folder
+        row.separator()
+
+        box = col.box()
+        box.label(text='Blender')
         self.draw_icons(box.column(align=True), num_cols)
 
     def draw_header(self, layout):
         header = layout.box()
         header = header.row()
         row = header.row(align=True)
-        # row.prop(self, "show_matcap_icons", text="", icon='SHADING_RENDERED')
-        # row.prop(self, "show_brush_icons", text="", icon='BRUSH_DATA')
-        # row.prop(self, "show_colorset_icons", text="", icon='COLOR')
-        row.prop(self, "show_event_icons", text="", icon='HAND')
+        row.prop(self, 'show_event_icons', text='', icon='HAND')
         row.separator()
 
         row.prop(
-            self, "copy_on_select", text="",
+            self, 'copy_on_select', text='',
             icon='COPYDOWN', toggle=True)
         row.separator()
 
-        row.prop(self, "filter", text="", icon='VIEWZOOM')
+        row.prop(self, 'filter', text='', icon='VIEWZOOM')
 
     def draw_icons(self, layout, num_cols=0, icons=None):
         if icons is not None:
-            filtered_icons = reversed(icons)
+            filtered_icons = icons[::-1]
         else:
             filtered_icons = SelectIcon.filtered_icons
 
         column = layout.column(align=True)
         row = column.row(align=True)
         row.alignment = 'CENTER'
-        row.operator_context = "EXEC_DEFAULT"
+        row.operator_context = 'EXEC_DEFAULT'
 
         selected_icon = bpy.context.window_manager.clipboard
         col_idx = 0
         i: int = 0
 
+        ics = bpy.types.UILayout.bl_rna.functions[
+            "prop"].parameters["icon"].enum_items.keys()
+
         def get_icon_args(icon_name) -> dict:
             from ..utils.icons import check_icon
-            ics = bpy.types.UILayout.bl_rna.functions[
-                "prop"].parameters["icon"].enum_items.keys()
+
             if icon_name in ics and icons is None:  # 先看看有没有在Blender自带的库里面
                 return {"icon": icon_name}
             elif check_icon(icon_name):
@@ -198,22 +208,24 @@ class SelectIcon(Operator, PublicProperty):
                 return {}
 
         for i, icon in enumerate(filtered_icons):
+            args = get_icon_args(icon)
             p = row.operator(
                 SelectIcon.bl_idname,
                 text="",
                 emboss=icon == selected_icon,
-                **get_icon_args(icon),
+                **args,
             )
             p.icon = icon
 
             col_idx += 1
             if col_idx > num_cols - 1:
-                if icons:
-                    break
+                # if icons:
+                #     break
                 col_idx = 0
                 if i < len(filtered_icons) - 1:
                     row = column.row(align=True)
                     row.alignment = 'CENTER'
+                    row.operator_context = 'EXEC_DEFAULT'
 
         if col_idx != 0 and not icons and i >= num_cols:
             for _ in range(num_cols - col_idx):
