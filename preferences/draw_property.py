@@ -38,6 +38,10 @@ class DrawProperty(PropertyGroup):
                                                 default=[0.431968, 0.222035, 0.650622, 1.000000])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
                                                        default=[0.689335, 0.275156, 0.793810, 1.000000])
+    background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
+                                              default=[0.063011, 0.171438, 0.456404, 1.000000])
+    background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
+                                               default=[0.088654, 0.088654, 0.088654, 1.000000])
 
     text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(.8, .8, .8, 1))
     text_active_color: FloatVectorProperty(name='Text Active Color', **public_color, default=(1, 1, 1, 1))
@@ -90,6 +94,10 @@ class DrawProperty(PropertyGroup):
         bb = box.column(align=True)
         bb.prop(draw, 'background_child_color')
         bb.prop(draw, 'background_child_active_color')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'background_bool_true')
+        bb.prop(draw, 'background_bool_false')
 
         bb = box.column(align=True)
         bb.prop(draw, 'text_default_color')

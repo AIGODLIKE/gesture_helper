@@ -285,5 +285,8 @@
   "Addon": "插件",
   "Select Icon": "选择图标",
   "Enabled Icon": "启用图标",
-  "Open Custom Folder": "打开自定义文件夹"
+  "Open Custom Folder": "打开自定义文件夹",
+  "Clear History": "清理历史",
+  "Bool True Color": "布尔 True 颜色",
+  "Bool False Color": "布尔 False 颜色"
 }

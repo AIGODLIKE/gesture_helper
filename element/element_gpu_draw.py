@@ -3,7 +3,9 @@ import re
 from functools import cache
 
 import blf
+import bpy
 import gpu
+from bl_operators.wm import context_path_validate
 from mathutils import Vector
 
 from ..utils.public import get_pref
@@ -60,6 +62,29 @@ class ElementGpuProperty:
         return self == self.ops.direction_element and distance_ok
 
     @property
+    def is_draw_property_bool(self) -> bool:
+        is_ops = self.operator_bl_idname == 'wm.context_toggle'
+        is_operator_type = self.operator_type == "OPERATOR"
+        data = self.properties
+        if not self.is_operator or not is_operator_type:
+            # 不是操作符或是脚本运行
+            return False
+        elif not is_ops:
+            return False
+        elif 'data_path' not in data:
+            return False
+        elif self.get_operator_wm_context_toggle_property_bool is Ellipsis:
+            return False
+        return True
+
+    @property
+    def get_operator_wm_context_toggle_property_bool(self) -> [bool]:
+        """获取操作符 wm.context_toggle 的布尔值"""
+        if 'data_path' in self.properties:
+            return context_path_validate(bpy.context, self.properties['data_path'])
+        return False
+
+    @property
     def text_color(self):
         """
         文字颜色
@@ -81,6 +106,11 @@ class ElementGpuProperty:
             elif self.is_child_gesture:
                 return draw.background_child_active_color
         elif self.is_operator:
+            if self.is_draw_property_bool:
+                if self.get_operator_wm_context_toggle_property_bool:
+                    return draw.background_bool_true
+                else:
+                    return draw.background_bool_false
             return draw.background_operator_color
         elif self.is_child_gesture:
             return draw.background_child_color
@@ -140,7 +170,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 y *= 0.7
 
                 gpu.matrix.translate([x, y])
-                # self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1), "line_width": 5})
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
 
             with gpu.matrix.push_pop():

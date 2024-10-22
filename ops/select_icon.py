@@ -8,7 +8,9 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy.types import Operator
 
-from ..utils.public import get_pref, PublicProperty
+from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER
+
+CUSTOM_ICON_FOLDER = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
 
 DPI = 72
 POPUP_PADDING = 10
@@ -109,7 +111,6 @@ class SelectIcon(Operator, PublicProperty):
             act = get_pref().active_element
             act.icon = self.icon
             act.enabled_icon = True
-
         return {'FINISHED'}
 
     def update_history(self):
@@ -123,24 +124,18 @@ class SelectIcon(Operator, PublicProperty):
         col = self.layout
         self.draw_header(col)
 
-        history_num_cols = int(
-            (self.width - POPUP_PADDING) / (ui_scale() * ICON_SIZE))
-        num_cols = min(
-            get_num_cols(len(self.filtered_icons)),
-            history_num_cols)
+        history_num_cols = int((self.width - POPUP_PADDING) / (ui_scale() * ICON_SIZE))
+        num_cols = min(get_num_cols(len(self.filtered_icons)), history_num_cols)
 
         if HISTORY:
             hi = col.box().row(align=True)
             hi.alignment = 'CENTER'
             hi.label(text='History')
             self.draw_icons(hi.column(align=True), num_cols, icons=HISTORY)
+            hi.operator(ClearHistory.bl_idname, icon='PANEL_CLOSE')
 
         from ..utils.icons import icons_map
-        from ..utils.public import ADDON_FOLDER
 
-        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
-
-        num = max(30, num_cols)
         row = col.box().row()
         row.alignment = 'CENTER'
         row.label(text='Addon')
@@ -156,7 +151,7 @@ class SelectIcon(Operator, PublicProperty):
         row.separator()
         row.operator(RefreshIcons.bl_idname, icon='FILE_REFRESH')
         row.separator()
-        row.operator('wm.url_open', text='Open Custom Folder', icon='FILE_FOLDER').url = icon_folder
+        row.operator('wm.url_open', text='Open Custom Folder', icon='FILE_FOLDER').url = CUSTOM_ICON_FOLDER
         row.separator()
 
         box = col.box()
@@ -242,4 +237,13 @@ class RefreshIcons(Operator):
     def execute(self, context):
         from ..utils.icons import Icons
         Icons.reload_icons()
+        return {'FINISHED'}
+
+
+class ClearHistory(Operator):
+    bl_idname = "gesture.clear_icons_history"
+    bl_label = "Clear History"
+
+    def execute(self, context):
+        HISTORY.clear()
         return {'FINISHED'}
