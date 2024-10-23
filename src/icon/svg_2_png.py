@@ -13,7 +13,15 @@ import cairosvg
 size = 128
 to_folder_path = os.path.join(os.path.dirname(__file__), "blender")
 form_svg_folder = r"D:\Blender\blender\release\datafiles\icons_svg"
-
+# ANIM_DATA.png
+# CURVES_DATA.png
+# MATERIAL_DATA.png
+# OBJECT_DATAMODE.png
+# PARTICLE_DATA.png
+# RIGHTARROW_THIN.png
+# SCRIPTPLUGINS.png
+# TEXTURE_DATA.png
+# WORLD_DATA.png
 for file_name in os.listdir(form_svg_folder):
     file_path = os.path.join(form_svg_folder, file_name)
     if os.path.isfile(file_path) and file_name.endswith(".svg"):
