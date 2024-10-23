@@ -288,5 +288,8 @@
   "Open Custom Folder": "打开自定义文件夹",
   "Clear History": "清理历史",
   "Bool True Color": "布尔 True 颜色",
-  "Bool False Color": "布尔 False 颜色"
+  "Bool False Color": "布尔 False 颜色",
+  "Show Icon": "显示图标",
+  "Lower Text": "小写文本",
+  "Upper Text": "大写文本"
 }

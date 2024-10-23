@@ -17,7 +17,7 @@ class DrawProperty(PropertyGroup):
                                          default=12, min=5,
                                          max=120)
 
-    element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
+    element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01, step=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     element_show_left_side: BoolProperty(name='Show in left side', default=False)
     element_show_icon: BoolProperty(name='Show icon', default=True)

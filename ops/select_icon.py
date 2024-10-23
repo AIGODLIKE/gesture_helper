@@ -63,7 +63,7 @@ class SelectIcon(Operator, PublicProperty):
         description="Filter",
         default="",
         update=update_icons,
-        options={'TEXTEDIT_UPDATE'})
+        options={'TEXTEDIT_UPDATE', 'SKIP_SAVE'})
     show_history: BoolProperty(
         name="Show History",
         description="Show history", default=True)
@@ -125,7 +125,7 @@ class SelectIcon(Operator, PublicProperty):
         self.draw_header(col)
 
         history_num_cols = int((self.width - POPUP_PADDING) / (ui_scale() * ICON_SIZE))
-        num_cols = min(get_num_cols(len(self.filtered_icons)), history_num_cols)
+        num_cols = max(min(get_num_cols(len(self.filtered_icons)), history_num_cols), 20)
 
         if HISTORY:
             hi = col.box().row(align=True)
