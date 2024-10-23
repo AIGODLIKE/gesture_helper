@@ -1,5 +1,5 @@
 {
-  "time": 1729654964.2960532,
+  "time": 1729671376.8370023,
   "blender_version": [
     4,
     2,
@@ -920,6 +920,256 @@
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "EXEC_DEFAULT",
               "operator_properties": "{'value': 'INPUT', 'data_path': 'preferences.active_section'}",
+              "operator_type": "OPERATOR"
+            }
+          }
+        },
+        "2": {
+          "name": "Node Editor",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "icon": "COLOR_ERROR",
+          "enabled_icon": false,
+          "selected_type": "ELIF",
+          "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type in (\"TextureNodeTree\",\"ShaderNodeTree\",\"CompositorNodeTree\",\"GeometryNodeTree\")",
+          "element": {
+            "0": {
+              "name": "Geometry Node",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "selected_type": "IF",
+              "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"GeometryNodeTree\"",
+              "element": {
+                "0": {
+                  "name": "Geometry Node",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "icon": "GEOMETRY_SET",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "Tool",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "TOOL_SETTINGS",
+                      "enabled_icon": true,
+                      "direction": "1",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.geometry_nodes_type', 'value': 'TOOL'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "Modifier",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "MODIFIER",
+                      "enabled_icon": true,
+                      "direction": "8",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.geometry_nodes_type', 'value': 'MODIFIER'}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            },
+            "1": {
+              "name": "Compositor Node",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "selected_type": "ELIF",
+              "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"CompositorNodeTree\"",
+              "element": {
+                "0": {
+                  "name": "Use Nodes",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "NODETREE",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'scene.use_nodes'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "2": {
+              "name": "Shader Node",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "selected_type": "ELIF",
+              "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"ShaderNodeTree\"",
+              "element": {
+                "0": {
+                  "name": "Shading",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "icon": "SHADING_RENDERED",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "Object",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "OBJECT_DATA",
+                      "enabled_icon": true,
+                      "direction": "1",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.shader_type', 'value': 'OBJECT'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "World",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "WORLD",
+                      "enabled_icon": true,
+                      "direction": "2",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.shader_type', 'value': 'WORLD'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Line Style",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "LINE_DATA",
+                      "enabled_icon": true,
+                      "direction": "8",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.shader_type', 'value': 'LINESTYLE'}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            },
+            "3": {
+              "name": "Texture Node",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "selected_type": "ELIF",
+              "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"TextureNodeTree\"",
+              "element": {
+                "0": {
+                  "name": "Texture Node",
+                  "element_type": "CHILD_GESTURE",
+                  "enabled": true,
+                  "icon": "NODE_TEXTURE",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "Brush",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "BRUSH_DATA",
+                      "enabled_icon": true,
+                      "direction": "1",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.texture_type', 'value': 'BRUSH'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "World",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "WORLD",
+                      "enabled_icon": true,
+                      "direction": "2",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.texture_type', 'value': 'WORLD'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Line Style",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "LINE_DATA",
+                      "enabled_icon": true,
+                      "direction": "8",
+                      "operator_bl_idname": "wm.context_set_enum",
+                      "operator_context": "INVOKE_DEFAULT",
+                      "operator_properties": "{'data_path': 'space_data.texture_type', 'value': 'LINESTYLE'}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            },
+            "4": {
+              "name": "Else",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "selected_type": "ELSE",
+              "poll_string": "True"
+            },
+            "5": {
+              "name": "Geometry Node",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "icon": "GEOMETRY_NODES",
+              "enabled_icon": true,
+              "direction": "6",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'area.ui_type', 'value': 'GeometryNodeTree'}",
+              "operator_type": "OPERATOR"
+            },
+            "6": {
+              "name": "Shader Node",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "icon": "MATSHADERBALL",
+              "enabled_icon": true,
+              "direction": "5",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'area.ui_type', 'value': 'ShaderNodeTree'}",
+              "operator_type": "OPERATOR"
+            },
+            "7": {
+              "name": "Compositor Node",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "icon": "NODE_COMPOSITING",
+              "enabled_icon": true,
+              "direction": "3",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'area.ui_type', 'value': 'CompositorNodeTree'}",
+              "operator_type": "OPERATOR"
+            },
+            "8": {
+              "name": "Texture Node",
+              "element_type": "OPERATOR",
+              "enabled": true,
+              "icon": "NODE_TEXTURE",
+              "enabled_icon": true,
+              "direction": "7",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_context": "INVOKE_DEFAULT",
+              "operator_properties": "{'data_path': 'area.ui_type', 'value': 'TextureNodeTree'}",
               "operator_type": "OPERATOR"
             }
           }
