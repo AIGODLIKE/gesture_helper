@@ -165,6 +165,8 @@ class GestureGpuDraw(DrawDebug):
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
+                if not self.operator_gesture:
+                    return
                 text = self.operator_gesture.name if (el is None) else el.name
                 tn = self.__tn__(text)
 

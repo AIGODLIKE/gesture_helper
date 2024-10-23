@@ -44,7 +44,6 @@ class Enum:
                 items = []
         else:
             items = []
-
         it = [(item.identifier, item.name, item.description, item.icon, index)
               for (index, item) in enumerate(items)]
         if it:
@@ -147,7 +146,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             layout.label(text=str(type_translate))
             layout.label(text="Adding Property to Gestures")
             layout.label(text=pgettext("Add element relationship: %s") % relationship)
-            layout.label(text=pgettext("Current value: %s")  % value)
+            layout.label(text=pgettext("Current value: %s") % value)
 
             layout.label(text=f"button_pointer:\t{pointer}")
             layout.label(text=f"button_prop:\t{prop}")
@@ -378,7 +377,6 @@ class CreateElementProperty(Create):
         return button_pointer and button_prop
 
     def invoke(self, context, event) -> set[str]:
-        print(f"\n{self.bl_idname}\tinvoke", self)
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
