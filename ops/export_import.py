@@ -99,7 +99,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
         for i in pref.gesture:
             i.selected = value
 
-    selected_all: BoolProperty(name='选择所有', get=__get_all__, set=__set_all__)
+    selected_all: BoolProperty(name='Select all', get=__get_all__, set=__set_all__)
 
     def invoke(self, context, _):
         if self.run_execute:
