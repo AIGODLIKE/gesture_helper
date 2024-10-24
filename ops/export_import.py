@@ -25,12 +25,14 @@ EXPORT_PROPERTY_EXCLUDE = (
     'preview_operator_script',
 )
 
+EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
-    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
+    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
     'OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'direction',
         'operator_bl_idname',
         'operator_context',
@@ -40,11 +42,13 @@ EXPORT_PROPERTY_ITEM = {
     ],
     'OPERATOR_SCRIPT': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'operator_type',
         'operator_script',
     ],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'direction',
         'operator_bl_idname',
         'operator_context',
@@ -54,9 +58,10 @@ EXPORT_PROPERTY_ITEM = {
 }
 
 
-def ymd():
+def ymd() -> str:
+    """提取 '年-月-日'"""
     now = datetime.now()
-    # 提取年、月、日
+
     year = now.year
     month = now.month
     day = now.day
@@ -94,7 +99,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
         for i in pref.gesture:
             i.selected = value
 
-    selected_all: BoolProperty(name='选择所有', get=__get_all__, set=__set_all__)
+    selected_all: BoolProperty(name='Select all', get=__get_all__, set=__set_all__)
 
     def invoke(self, context, _):
         if self.run_execute:
@@ -162,12 +167,11 @@ class Import(PublicFileOperator):
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
-            self.report(
-                {'INFO'},
-                pgettext(
-                    "Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s")
-                % (len(restore), {auth}, {des}, {ver})
-            )
+
+            text = pgettext(
+                r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s") % (
+                       len(restore), {auth}, {des}, {ver})
+            self.report({'INFO'}, text)
         except Exception as e:
             self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
             import traceback
@@ -214,10 +218,10 @@ class Export(PublicFileOperator):
     @property
     def file_string(self):
         string = datetime.fromtimestamp(time.time())
-        mode = self.pref.backups_property
+        mode = self.pref.backups_property.backups_file_mode
         if self.is_auto_backups:
             if mode == "ADDON_UNREGISTER":
-                string = f'Auto Backups {self.date}'
+                string = f'Auto Backups {string}'
             elif mode == "ADDON_UNREGISTER_DAY":
                 string = f'Auto Backups {ymd()}'
             elif mode == "ONLY_ONE":
@@ -229,20 +233,23 @@ class Export(PublicFileOperator):
     @property
     def file_path(self):
         folder_path = self.filepath
+        name = 'Gesture'
 
         if self.__is_invoke__ and folder_path.endswith('.json'):
             return os.path.abspath(folder_path)
-        if self.is_auto_backups or self.is_close_backups:
+
+        elif self.is_auto_backups or self.is_close_backups:
             folder_path = get_backups_folder(not self.is_close_backups)
-        name = 'Gesture'
+            return os.path.abspath(os.path.join(folder_path, f'{name} {self.file_string}.json'.replace(':', ' ')))
+
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        if os.path.isfile(folder_path):
+        if os.path.isfile(folder_path) and not self.is_auto_backups:
+            # 选择了一个文件覆盖
             name = os.path.basename(folder_path)
             folder_path = os.path.dirname(folder_path)
-        new_name = name if name.endswith('.json') else f'{name} {self.file_string}.json'.replace(':', ' ')
-        return os.path.abspath(os.path.join(folder_path, new_name))
+        return os.path.abspath(os.path.join(folder_path, name))
 
     @property
     def export_data(self):
@@ -286,17 +293,16 @@ class Export(PublicFileOperator):
 
     def execute(self, _):
         if len(self.pref.gesture) == 0:
-            ...
+            return {'CANCELLED'}
         elif not len(self.export_data['gesture']):
-            self.report({'WARNING'}, "Export item not selected")
+            self.report({'WARNING'}, "Export Item Not Selected")
         else:
             self.write_json_file()
-            self.report({'INFO'}, pgettext("Export finished! %s") % self.file_path)
+            self.report({'INFO'}, pgettext("Export Finished! %s") % self.file_path)
         return {'FINISHED'}
 
     def write_json_file(self):
         with open(self.file_path, 'w') as file:
-            print(f"write_json_file\t{self.file_path}")
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
 
     @staticmethod
@@ -308,13 +314,16 @@ class Export(PublicFileOperator):
         """
         try:
             is_auto_backups = get_pref().backups_property.auto_backups
-            print(f"gesture backups\t{is_blender_close}\t{is_auto_backups}")
+            print(f"Gesture Auto Backups\tis_blender_close:{is_blender_close}\tis_auto_backups:{is_auto_backups}")
             bpy.ops.gesture.export(
                 'EXEC_DEFAULT',
-                author='Emm',
+                filepath='',
                 description='auto_backups',
                 is_auto_backups=is_auto_backups,
                 is_close_backups=not is_blender_close,
             )
         except Exception as e:
             print("try auto backups error", e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()

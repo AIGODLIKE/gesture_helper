@@ -7,8 +7,8 @@ maintainer = "AIGODLIKE Community(小萌新)"
 name = "Gesture Helper"
 tagline = "Quickly use gestures to run the operator or change properties"
 type = "add-on"
-version = "2.0.3"
+version = "2.0.4"
 tags = ["3D View", "User Interface"]
 
 [permissions]
-files = "Import/export Gesture preset"
+files = "Import/Export Gesture preset"

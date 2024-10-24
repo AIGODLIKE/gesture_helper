@@ -49,6 +49,10 @@ class ElementUIList(UIList, PublicProperty):
         icon = icon_two(prop.element_show_left_side, 'ALIGN')
         row.prop(prop, 'element_show_left_side', icon=icon)
 
+        row = column.row(align=True)
+        icon = icon_two(prop.element_show_icon, 'HIDE')
+        row.prop(prop, 'element_show_icon', icon=icon)
+
         debug = self.debug_property
         row = column.row(align=True)
         row.prop(debug, 'debug_mode', icon='GHOST_ENABLED')

@@ -13,17 +13,19 @@ class DrawProperty(PropertyGroup):
     gesture_keymap_split_factor: FloatProperty(name='Keymap split factor', default=0.2, max=0.95, min=0.01, step=0.01)
     gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
-    gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size', default=12, min=5,
+    gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size',
+                                         default=12, min=5,
                                          max=120)
 
-    element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01)
+    element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01, step=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     element_show_left_side: BoolProperty(name='Show in left side', default=False)
+    element_show_icon: BoolProperty(name='Show icon', default=True)
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    text_gpu_draw_size: IntProperty(name='Font Size', description='Gpu Draw Text Size', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Radius Size', description='Gpu Draw Radius Size', default=7, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=20, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Radius', description='Gpu Draw Radius Size', default=7, min=5, max=120)
     text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu Draw Margin Size', default=20, min=5, max=120)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
@@ -31,11 +33,14 @@ class DrawProperty(PropertyGroup):
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
                                                           default=[0.331309, 0.347597, 0.445060, 1.000000])
-
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
                                                 default=[0.431968, 0.222035, 0.650622, 1.000000])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
                                                        default=[0.689335, 0.275156, 0.793810, 1.000000])
+    background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
+                                              default=[0.063011, 0.171438, 0.456404, 1.000000])
+    background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
+                                               default=[0.088654, 0.088654, 0.088654, 1.000000])
 
     text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(.8, .8, .8, 1))
     text_active_color: FloatVectorProperty(name='Text Active Color', **public_color, default=(1, 1, 1, 1))
@@ -59,12 +64,21 @@ class DrawProperty(PropertyGroup):
         pref = get_pref()
         draw = pref.draw_property
 
+        radius_is_alert = draw.text_gpu_draw_radius > draw.text_gpu_draw_margin
+
         col = layout.box().column(align=True)
         col.prop(draw, 'text_gpu_draw_size')
-        col.prop(draw, 'text_gpu_draw_radius')
+        cr = col.row(align=True)
+        cr.alert = radius_is_alert
+        cr.prop(draw, 'text_gpu_draw_radius')
         col.prop(draw, 'text_gpu_draw_margin')
         col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')
+        if radius_is_alert:
+            cb = col.box()
+            cb.alert = True
+            cb.label(text="Error, rounded corners are larger than the margins")
+            cb.label(text="The size of the rounded corners is clamped by the margins")
 
     @staticmethod
     def draw_color_property(layout: bpy.types.UILayout):
@@ -79,6 +93,10 @@ class DrawProperty(PropertyGroup):
         bb = box.column(align=True)
         bb.prop(draw, 'background_child_color')
         bb.prop(draw, 'background_child_active_color')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'background_bool_true')
+        bb.prop(draw, 'background_bool_false')
 
         bb = box.column(align=True)
         bb.prop(draw, 'text_default_color')

@@ -165,6 +165,8 @@ class GestureGpuDraw(DrawDebug):
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
+                if not self.operator_gesture:
+                    return
                 text = self.operator_gesture.name if (el is None) else el.name
                 tn = self.__tn__(text)
 
@@ -207,7 +209,7 @@ class GestureGpuDraw(DrawDebug):
                 for d in draw_items:
                     d.draw_gpu_item(self)
                 if not len(draw_items):
-                    self.draw_text((0, 0), __name_translate__('No gestures, please add'))
+                    self.draw_text((0, 0), __name_translate__('No Gestures, Please Add'))
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""

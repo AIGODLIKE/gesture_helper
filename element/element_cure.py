@@ -206,7 +206,7 @@ class ElementCURE:
             cut = ElementCURE.CUT.__cut_data__
 
             # 移动中
-            cut_to = getattr(bpy.context, 'cue_element', None)
+            cut_to = getattr(bpy.context, 'cut_element', None)
             if cut_to:
                 PropertySetUtils.set_prop(cut_to, 'element', {'0': cut})
             else:

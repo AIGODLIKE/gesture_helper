@@ -15,7 +15,7 @@ class ElementDraw:
         draw = pref.draw_property
 
         layout.context_pointer_set('move_element', self)
-        layout.context_pointer_set('cue_element', self)
+        layout.context_pointer_set('cut_element', self)
 
         column = layout.column(align=True)
 
@@ -60,7 +60,7 @@ class ElementDraw:
             row.separator()
 
     def draw_item_right(self, layout: 'bpy.types.UILayout'):
-        layout.label(text=self.name_translate)
+        layout.label(text=self.name_translate, translate=False)
 
         if len(self.element):
             layout.prop(self,
@@ -70,6 +70,7 @@ class ElementDraw:
                         emboss=False)
         else:
             layout.prop(self, 'radio', text='', icon='NONE', emboss=False)
+        self.draw_icon(layout)
 
     def draw_item_child(self, layout):
         if self.show_child and len(self.element):
@@ -98,7 +99,9 @@ class ElementDraw:
             row = layout.row(align=True)
             col = row.column(align=True)
             col.prop(self, 'name')
+            self.draw_edit_icon(col)
             col.prop(self, 'operator_type')
+
             if is_operator:
                 c = col.column(align=True)
                 c.alert = not self.__operator_id_name_is_validity__
@@ -143,6 +146,7 @@ class ElementDraw:
             row = layout.row(align=True)
             column = row.column()
             column.prop(self, 'name')
+            self.draw_edit_icon(column)
             column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
             SetDirection.draw_direction(row.column())
 
@@ -185,7 +189,8 @@ class ElementDraw:
                 elif self.is_selected_else:
                     alert_list.append('The previous selection structure of else needs to be an if or elif.')
                 else:
-                    alert_list.append("'I don't know what's wrong there either :>'")
+                    alert_list.append("I don't know what's wrong there either :>")
+                    alert_list.append("Maybe it's not enabled")
         elif self.is_operator:
             if not self.__operator_id_name_is_validity__:
                 alert_list.append(f'Operator Error')
@@ -198,3 +203,23 @@ class ElementDraw:
             col.label(text='Warning', icon='ERROR')
             for alert in alert_list:
                 col.label(text=alert)
+
+    def draw_icon(self, layout):
+        if self.draw_property.element_show_icon:
+            if self.is_have_icon and self.icon_is_validity and self.is_show_icon:
+                layout.label(text='', icon_value=self.__get_icon__(self.icon))
+            else:
+                layout.label(text='', icon='BLANK1')
+
+    def draw_edit_icon(self, layout):
+        from ..ops.select_icon import SelectIcon
+
+        row = layout.row(align=True)
+
+        row.prop(self, 'enabled_icon')
+        if self.icon_is_validity:
+            row.prop(self, 'icon', text='', icon_value=self.__get_icon__(self.icon))
+        else:
+            row.alert = True
+            row.prop(self, 'icon', text='', icon='ERROR')
+        row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')

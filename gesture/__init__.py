@@ -44,7 +44,7 @@ class Gesture(
             sp.label(text=self.__key_str__)
             layout = sp.row(align=True)
         layout.separator()
-        layout.label(text=self.name_translate)
+        layout.label(text=self.name_translate, translate=False)
         if prop.gesture_show_description:
             layout.label(text=self.description_translate)
 

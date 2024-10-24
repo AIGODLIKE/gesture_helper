@@ -3,6 +3,7 @@ import bpy
 from . import export_import, switch_mode
 from . import gesture
 from . import restore_key
+from . import select_icon
 from . import set_direction
 from . import set_key
 from . import set_poll
@@ -14,6 +15,10 @@ from .qucik_add.create_panel_menu import CreatePanelMenu
 from .qucik_add.gesture_preview import GesturePreview
 
 operator_list = (
+    select_icon.SelectIcon,
+    select_icon.RefreshIcons,
+    select_icon.ClearHistory,
+
     switch_ui.SwitchGestureWindow,
 
     set_poll.SetPollExpression,

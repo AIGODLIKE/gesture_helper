@@ -1,14 +1,14 @@
 {
-  "time": 1724401751.3700972,
+  "time": 1729672379.8335264,
   "blender_version": [
     4,
-    3,
-    0
+    2,
+    3
   ],
   "addon_version": [
     2,
     0,
-    1
+    3
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -23,12 +23,16 @@
           "name": "Affect Only",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
+          "icon": "DECORATE",
+          "enabled_icon": true,
           "direction": "3",
           "element": {
             "0": {
               "name": "Origins",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "OBJECT_ORIGIN",
+              "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -39,6 +43,8 @@
               "name": "Locations",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "POINTCLOUD_POINT",
+              "enabled_icon": true,
               "direction": "4",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -49,6 +55,8 @@
               "name": "Parents",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "ORIENTATION_PARENT",
+              "enabled_icon": true,
               "direction": "2",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -61,6 +69,8 @@
           "name": "Global",
           "element_type": "OPERATOR",
           "enabled": true,
+          "icon": "ORIENTATION_GLOBAL",
+          "enabled_icon": true,
           "direction": "5",
           "operator_bl_idname": "wm.context_set_enum",
           "operator_context": "INVOKE_DEFAULT",
@@ -71,6 +81,8 @@
           "name": "Local",
           "element_type": "OPERATOR",
           "enabled": true,
+          "icon": "ORIENTATION_LOCAL",
+          "enabled_icon": true,
           "direction": "4",
           "operator_bl_idname": "wm.context_set_enum",
           "operator_context": "INVOKE_DEFAULT",
@@ -81,12 +93,16 @@
           "name": "View",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
+          "icon": "RESTRICT_VIEW_ON",
+          "enabled_icon": true,
           "direction": "7",
           "element": {
             "0": {
               "name": "Face Orientation",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "FACE_MAPS",
+              "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -97,6 +113,8 @@
               "name": "Wireframe",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "MOD_WIREFRAME",
+              "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -107,6 +125,8 @@
               "name": "3D Cursor",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "CURSOR",
+              "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "wm.context_toggle",
               "operator_context": "INVOKE_DEFAULT",
@@ -119,12 +139,16 @@
           "name": "Transform Orientations",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
+          "icon": "MOD_DATA_TRANSFER",
+          "enabled_icon": true,
           "direction": "6",
           "element": {
             "0": {
               "name": "View",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "RESTRICT_VIEW_ON",
+              "enabled_icon": true,
               "direction": "5",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -135,6 +159,8 @@
               "name": "Normal",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "NORMALS_FACE",
+              "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -142,9 +168,11 @@
               "operator_type": "OPERATOR"
             },
             "2": {
-              "name": "Global",
+              "name": "Gimbal",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "ORIENTATION_GIMBAL",
+              "enabled_icon": true,
               "direction": "4",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -155,6 +183,8 @@
               "name": "Parent",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "ORIENTATION_PARENT",
+              "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -164,72 +194,19 @@
           }
         },
         "5": {
-          "name": "Mesh Edit",
-          "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "selected_type": "IF",
-          "poll_string": "(C.mode == \"EDIT_MESH\")",
-          "element": {
-            "0": {
-              "name": "Mirror",
-              "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "direction": "1",
-              "element": {
-                "0": {
-                  "name": "X",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "direction": "3",
-                  "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
-                  "operator_type": "OPERATOR"
-                },
-                "1": {
-                  "name": "Y",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "direction": "2",
-                  "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
-                  "operator_type": "OPERATOR"
-                },
-                "2": {
-                  "name": "Merge by Distance",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "direction": "1",
-                  "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
-                  "operator_type": "OPERATOR"
-                },
-                "3": {
-                  "name": "Z",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "direction": "8",
-                  "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            }
-          }
-        },
-        "6": {
           "name": "Transform Pivot Point",
           "element_type": "CHILD_GESTURE",
           "enabled": true,
+          "icon": "TRANSFORM_ORIGINS",
+          "enabled_icon": true,
           "direction": "1",
           "element": {
             "0": {
               "name": "Median Point",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "PIVOT_MEDIAN",
+              "enabled_icon": true,
               "direction": "1",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -240,6 +217,8 @@
               "name": "Individual Origins",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "PIVOT_INDIVIDUAL",
+              "enabled_icon": true,
               "direction": "2",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -250,6 +229,8 @@
               "name": "3D Cursor",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "CURSOR",
+              "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -260,16 +241,20 @@
               "name": "Bounding Box Center",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "PIVOT_BOUNDBOX",
+              "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'BOUNDING_BOX_CENTER'}",
               "operator_type": "OPERATOR"
             },
             "4": {
               "name": "Active Element",
               "element_type": "OPERATOR",
               "enabled": true,
+              "icon": "PIVOT_ACTIVE",
+              "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "wm.context_set_enum",
               "operator_context": "INVOKE_DEFAULT",
@@ -278,15 +263,86 @@
             }
           }
         },
-        "7": {
+        "6": {
           "name": "Cursor",
           "element_type": "OPERATOR",
           "enabled": true,
+          "icon": "CURSOR",
+          "enabled_icon": true,
           "direction": "2",
           "operator_bl_idname": "wm.context_set_enum",
           "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
           "operator_type": "OPERATOR"
+        },
+        "7": {
+          "name": "Mesh Edit",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "icon": "COLOR_ERROR",
+          "enabled_icon": false,
+          "selected_type": "IF",
+          "poll_string": "(C.mode == \"EDIT_MESH\")",
+          "element": {
+            "0": {
+              "name": "Mirror",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "icon": "MOD_MIRROR",
+              "enabled_icon": true,
+              "direction": "1",
+              "element": {
+                "0": {
+                  "name": "X",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "X",
+                  "enabled_icon": false,
+                  "direction": "3",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Y",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "COLOR_ERROR",
+                  "enabled_icon": false,
+                  "direction": "2",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "Merge by Distance",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "AUTOMERGE_OFF",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
+                  "operator_type": "OPERATOR"
+                },
+                "3": {
+                  "name": "Z",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "COLOR_ERROR",
+                  "enabled_icon": false,
+                  "direction": "8",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            }
+          }
         }
       },
       "description": "Quick Setup Axes and Coordinates"

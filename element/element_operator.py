@@ -1,5 +1,3 @@
-import ast
-
 import bpy
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty, BoolProperty
@@ -210,6 +208,7 @@ class ElementOperator(OperatorProperty):
                 )
         except Exception as e:
             print('running_operator ERROR', e)
+            self.report({'ERROR'}, f"Error: {e.args}")
 
     def __running_by_script__(self):
         """运行自定义脚本"""

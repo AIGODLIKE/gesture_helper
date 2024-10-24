@@ -3,11 +3,14 @@ import re
 from functools import cache
 
 import blf
+import bpy
 import gpu
+from bl_operators.wm import context_path_validate
 from mathutils import Vector
 
 from ..utils.public import get_pref
 from ..utils.public_gpu import PublicGpu
+from ..utils.texture import Texture
 
 pattern = re.compile(r'[\u4e00-\u9fa5]')
 
@@ -59,6 +62,29 @@ class ElementGpuProperty:
         return self == self.ops.direction_element and distance_ok
 
     @property
+    def is_draw_property_bool(self) -> bool:
+        is_ops = self.operator_bl_idname == 'wm.context_toggle'
+        is_operator_type = self.operator_type == "OPERATOR"
+        data = self.properties
+        if not self.is_operator or not is_operator_type:
+            # 不是操作符或是脚本运行
+            return False
+        elif not is_ops:
+            return False
+        elif 'data_path' not in data:
+            return False
+        elif self.get_operator_wm_context_toggle_property_bool is Ellipsis:
+            return False
+        return True
+
+    @property
+    def get_operator_wm_context_toggle_property_bool(self) -> [bool]:
+        """获取操作符 wm.context_toggle 的布尔值"""
+        if 'data_path' in self.properties:
+            return context_path_validate(bpy.context, self.properties['data_path'])
+        return False
+
+    @property
     def text_color(self):
         """
         文字颜色
@@ -80,6 +106,11 @@ class ElementGpuProperty:
             elif self.is_child_gesture:
                 return draw.background_child_active_color
         elif self.is_operator:
+            if self.is_draw_property_bool:
+                if self.get_operator_wm_context_toggle_property_bool:
+                    return draw.background_bool_true
+                else:
+                    return draw.background_bool_false
             return draw.background_operator_color
         elif self.is_child_gesture:
             return draw.background_child_color
@@ -99,6 +130,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             hw = w / 2
             direction = self.direction
             offset = [0, 0]
+            icon_size = h * 1.3
 
             if direction == '1':
                 offset = (0, hh)
@@ -120,6 +152,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             margin = self.text_margin  # px
             width = w + margin * 2
             height = h + margin * 2
+
+            if self.is_draw_icon:
+                width += icon_size
+
             hh = height / 2
             rounded_rectangle = {
                 "radius": self.text_radius if (hh > self.text_radius) else height,
@@ -134,6 +170,14 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 y *= 0.7
 
                 gpu.matrix.translate([x, y])
-                # self.draw_rounded_rectangle_frame(**{**rounded_rectangle, "color": (0.3, 0.3, 0.4, 1), "line_width": 5})
                 self.draw_rounded_rectangle_area(**rounded_rectangle)
-            self.draw_text((0, 0), self.text, color=self.text_color, size=self.text_size)
+
+            with gpu.matrix.push_pop():
+                if self.is_draw_icon:
+                    gpu.matrix.translate([-(icon_size * 0.6), 0])
+                    gpu.state.blend_set('ALPHA_PREMULT')
+                    gpu.state.depth_test_set('ALWAYS')
+                    self.draw_image([0, -(h * 1.3)], icon_size, icon_size, texture=Texture.get_texture(self.icon))
+                    gpu.matrix.translate([icon_size * 1.2, icon_size])
+
+                self.draw_text([0, 0], self.text, color=self.text_color, size=self.text_size)

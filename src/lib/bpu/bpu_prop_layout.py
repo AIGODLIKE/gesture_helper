@@ -40,7 +40,7 @@ class BpuPropLayout(BpuMeasure):
                     width=h,
                     height=h,
                 )
-                self.draw_image([0, 0], h, h, Texture.get("TICK"))
+                self.draw_image([0, 0], h, h, Texture.get_texture("TICK"))
         else:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__margin_vector__)

@@ -4,32 +4,34 @@ import bpy
 import gpu
 
 
+def from_image_file_path_load_texture(file_path):
+    """可以直接使用图标的像素，但是只有32像素
+    icons = bl_ext.user_default.gesture_helper.utils.icons.icons
+    i = icons.get('uv')
+    buffer = gpu.types.Buffer('FLOAT',len(i.icon_pixels_float),i.icon_pixels_float)
+    gpu.types.GPUTexture(i.icon_size, format='RGB16F', data = buffer)
+    32,32
+    """
+    name, suffix = os.path.basename(file_path).split('.')
+    try:
+        image = bpy.data.images.load(file_path)
+        Texture.texture_list[name] = gpu.texture.from_image(image)
+        bpy.data.images.remove(image)
+
+    except Exception as e:
+        print(e.args)
+        import traceback
+        traceback.print_exc()
+        traceback.print_stack()
+
+
 class Texture:
     texture_list = {}
 
-    @classmethod
-    def register(cls):
-        from ..utils.public import ADDON_FOLDER
-        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon')
-        for file in os.listdir(icon_folder):
-            name, suffix = file.split('.')
-            file_path = os.path.abspath(os.path.join(icon_folder, file))
-            is_png = file.lower().endswith('.png')
-            if is_png and os.path.isfile(file_path):
-                try:
-                    image = bpy.data.images.load(file_path)
-                    cls.texture_list[name] = gpu.texture.from_image(image)
-                    bpy.data.images.remove(image)
-                except Exception as e:
-                    print(e.args)
-                    import traceback
-                    traceback.print_exc()
-                    traceback.print_stack()
+    @staticmethod
+    def clear():
+        Texture.texture_list.clear()
 
-    @classmethod
-    def unregister(cls):
-        cls.texture_list.clear()
-
-    @classmethod
-    def get(cls, key):
-        return cls.texture_list.get(key)
+    @staticmethod
+    def get_texture(key):
+        return Texture.texture_list.get(key)
