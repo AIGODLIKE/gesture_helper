@@ -293,5 +293,9 @@
   "Lower Text": "小写文本",
   "Upper Text": "大写文本",
   "Node Editor": "节点编辑器",
-  "No icons were found": "未找到图标"
+  "No icons were found": "未找到图标",
+  "Only": "仅",
+  "Gizmo Display": "Gizmo显示",
+  "Shading Panel": "着色器面板",
+  "Overlay Panel": "叠加面板"
 }

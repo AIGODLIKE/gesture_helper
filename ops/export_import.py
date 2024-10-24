@@ -25,12 +25,14 @@ EXPORT_PROPERTY_EXCLUDE = (
     'preview_operator_script',
 )
 
-EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description', 'icon', 'enabled_icon']
+EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
+EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
-    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, 'direction'],
+    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
     'OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'direction',
         'operator_bl_idname',
         'operator_context',
@@ -40,11 +42,13 @@ EXPORT_PROPERTY_ITEM = {
     ],
     'OPERATOR_SCRIPT': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'operator_type',
         'operator_script',
     ],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
         'direction',
         'operator_bl_idname',
         'operator_context',
@@ -162,12 +166,11 @@ class Import(PublicFileOperator):
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
-            self.report(
-                {'INFO'},
-                pgettext(
-                    "Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s")
-                % (len(restore), {auth}, {des}, {ver})
-            )
+
+            text = pgettext(
+                r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s") % (
+                       len(restore), {auth}, {des}, {ver})
+            self.report({'INFO'}, text)
         except Exception as e:
             self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
             import traceback
