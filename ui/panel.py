@@ -62,7 +62,7 @@ class GesturePropertyPanel(bpy.types.Panel, PublicProperty):
     bl_region_type = "UI"
     bl_category = "Gesture"
     bl_parent_id = GesturePanel.bl_idname
-    bl_options = set()
+    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         PreferencesDraw.draw_ui_property(self.layout)
