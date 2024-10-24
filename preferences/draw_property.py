@@ -33,7 +33,6 @@ class DrawProperty(PropertyGroup):
                                                    default=[0.019382, 0.019382, 0.019382, 1.000000])
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
                                                           default=[0.331309, 0.347597, 0.445060, 1.000000])
-
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
                                                 default=[0.431968, 0.222035, 0.650622, 1.000000])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
