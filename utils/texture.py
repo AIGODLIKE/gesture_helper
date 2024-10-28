@@ -12,7 +12,7 @@ def from_image_file_path_load_texture(file_path):
     gpu.types.GPUTexture(i.icon_size, format='RGB16F', data = buffer)
     32,32
     """
-    name, suffix = os.path.basename(file_path).split('.')
+    name = os.path.basename(file_path)[:-4]
     try:
         image = bpy.data.images.load(file_path)
         Texture.texture_list[name] = gpu.texture.from_image(image)
