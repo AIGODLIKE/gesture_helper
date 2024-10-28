@@ -114,7 +114,9 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         is_not_str = item.get('not_str', data.get("not_str", False))
         string = f'"{info}"' if (isinstance(info, str) and (not is_not_str)) else str(info)
 
-        poll_string = f"{prefix} {notation} {string} {suffix}"
+        prefix_string = f"{prefix}{' ' if prefix else ''}"
+        suffix_string = f"{' ' if suffix else ''}{suffix}"
+        poll_string = f"{prefix_string}{notation}{' ' if notation else ''}{string}{suffix_string} "
         if is_parentheses:
             poll_string = f'({poll_string})'
 
