@@ -1,7 +1,7 @@
 # 绘制手势
 # 预览绘制
 import bpy
-from bpy.app.translations import pgettext
+from bpy.app.translations import pgettext_iface
 
 from . import ElementCURE
 from ..ops.set_direction import SetDirection
@@ -110,12 +110,12 @@ class ElementDraw:
                 b.alert = not self.__operator_properties_is_validity__
                 b.prop(self, 'operator_properties')
             else:
-                col.operator(ElementCURE.ScriptEdit.bl_idname)
-                rr = col.row(align=True)
-
-                rr.label(text=f'"{pgettext("Script word count")}:{len(self.operator_script)}"')
-                rr.separator_spacer()
-                rr.prop(self, 'preview_operator_script', icon_only=True, icon=icon_two(preview_script, style="HIDE"),
+                c = col.column(align=True)
+                c.operator(ElementCURE.ScriptEdit.bl_idname)
+                rr = c.row(align=True)
+                rr.label(text=f'"{pgettext_iface("Script word count")}:{len(self.operator_script)}"')
+                rr.separator()
+                rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
                         emboss=False)
             SetDirection.draw_direction(row.column())
 
@@ -179,7 +179,7 @@ class ElementDraw:
         alert_list = []
         if self.is_selected_structure:
             if not self.__poll_bool_is_validity__:
-                alert_list.append(f'{pgettext("Condition error")}: {self.poll_string}')
+                alert_list.append(f'{pgettext_iface("Condition error")}: {self.poll_string}')
             if not get_available_selected_structure(self):
                 alert_list.append('Wrong choice of structure')
                 alert_list.append('Previous element may not be a selection structure')
@@ -194,9 +194,9 @@ class ElementDraw:
         elif self.is_operator:
             if not self.__operator_id_name_is_validity__:
                 alert_list.append(f'Operator Error')
-                alert_list.append(f'{pgettext("Not find operator")}: {self.operator_bl_idname}')
+                alert_list.append(f'{pgettext_iface("Not find operator")}: {self.operator_bl_idname}')
             if not self.__operator_properties_is_validity__:
-                alert_list.append(f'{pgettext("Operator property error")}: {self.operator_properties}')
+                alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
         if alert_list:
             col = layout.box().column(align=True)
             col.alert = True
