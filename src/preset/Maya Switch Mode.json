@@ -1,5 +1,5 @@
 {
-  "time": 1730191242.3744903,
+  "time": 1730191742.4656994,
   "blender_version": [
     4,
     2,
@@ -8,7 +8,7 @@
   "addon_version": [
     2,
     0,
-    4
+    5
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -1128,7 +1128,7 @@
           "name": "Image Editor",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "selected_type": "IF",
+          "selected_type": "ELIF",
           "poll_string": "C.space_data.type == \"IMAGE_EDITOR\"",
           "element": {
             "0": {
@@ -1225,7 +1225,7 @@
                               "direction": "5",
                               "operator_bl_idname": "mesh.select_mode",
                               "operator_context": "INVOKE_DEFAULT",
-                              "operator_properties": "{'type': 'FACE'}",
+                              "operator_properties": "{'type': 'VERT'}",
                               "operator_type": "OPERATOR"
                             },
                             "1": {
@@ -1237,7 +1237,7 @@
                               "direction": "6",
                               "operator_bl_idname": "mesh.select_mode",
                               "operator_context": "INVOKE_DEFAULT",
-                              "operator_properties": "{'type': 'FACE'}",
+                              "operator_properties": "{'type': 'EDGE'}",
                               "operator_type": "OPERATOR"
                             },
                             "2": {
@@ -1270,7 +1270,7 @@
                               "direction": "5",
                               "operator_bl_idname": "uv.select_mode",
                               "operator_context": "INVOKE_DEFAULT",
-                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_properties": "{'type': 'VERTEX'}",
                               "operator_type": "OPERATOR"
                             },
                             "1": {
@@ -1282,7 +1282,7 @@
                               "direction": "6",
                               "operator_bl_idname": "uv.select_mode",
                               "operator_context": "INVOKE_DEFAULT",
-                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_properties": "{'type': 'EDGE'}",
                               "operator_type": "OPERATOR"
                             },
                             "2": {
@@ -1294,7 +1294,7 @@
                               "direction": "7",
                               "operator_bl_idname": "uv.select_mode",
                               "operator_context": "INVOKE_DEFAULT",
-                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_properties": "{'type': 'FACE'}",
                               "operator_type": "OPERATOR"
                             },
                             "3": {
