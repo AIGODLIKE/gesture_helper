@@ -1,5 +1,5 @@
 {
-  "time": 1729671376.8370023,
+  "time": 1730191242.3744903,
   "blender_version": [
     4,
     2,
@@ -8,7 +8,7 @@
   "addon_version": [
     2,
     0,
-    3
+    4
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -17,14 +17,12 @@
       "name": "Maya Switch Mode",
       "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Image Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\", \"User Interface\"]",
+      "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\", \"User Interface\", \"UV Editor\", \"Image Paint\"]",
       "element": {
         "0": {
           "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "IF",
           "poll_string": "(C.space_data.type == \"VIEW_3D\")",
           "element": {
@@ -32,8 +30,6 @@
               "name": "Mesh",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "IF",
               "poll_string": "(C.object and C.object.type == \"MESH\")",
               "element": {
@@ -145,8 +141,6 @@
                       "name": "Particle System",
                       "element_type": "SELECTED_STRUCTURE",
                       "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "selected_type": "IF",
                       "poll_string": "bpy.context.object.particle_systems.active",
                       "element": {
@@ -184,8 +178,6 @@
               "name": "Curve",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"CURVE\")",
               "element": {
@@ -205,8 +197,6 @@
                   "name": "Curve Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_CURVE\")",
                   "element": {
@@ -428,8 +418,6 @@
               "name": "Surface",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"SURFACE\")",
               "element": {
@@ -451,8 +439,6 @@
               "name": "Curves",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"CURVES\")",
               "element": {
@@ -484,8 +470,6 @@
                   "name": "Curves",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_CURVES\") or (C.mode == \"SCULPT_CURVES\")",
                   "element": {
@@ -521,8 +505,6 @@
               "name": "Meta",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"META\")",
               "element": {
@@ -542,8 +524,6 @@
                   "name": "Metaball Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_METABALL\")",
                   "element": {
@@ -567,8 +547,6 @@
               "name": "Font",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"FONT\")",
               "element": {
@@ -588,8 +566,6 @@
                   "name": "Text Edit",
                   "element_type": "SELECTED_STRUCTURE",
                   "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "(C.mode == \"EDIT_TEXT\")",
                   "element": {
@@ -637,8 +613,6 @@
               "name": "Grease Pencil",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\")",
               "element": {
@@ -708,8 +682,6 @@
               "name": "Armature",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"ARMATURE\")",
               "element": {
@@ -743,8 +715,6 @@
               "name": "Lattice",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"LATTICE\")",
               "element": {
@@ -778,8 +748,6 @@
               "name": "Empty",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"EMPTY\")"
             },
@@ -787,8 +755,6 @@
               "name": "Other",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELSE",
               "poll_string": "True"
             },
@@ -796,8 +762,6 @@
               "name": "If have access to edit mode",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "IF",
               "poll_string": "(C.object and C.object.type == \"MESH\") or (C.object and C.object.type == \"CURVE\") or (C.object and C.object.type == \"FONT\") or (C.object and C.object.type == \"GPENCIL\") or (C.object and C.object.type == \"ARMATURE\") or (C.object and C.object.type == \"LATTICE\") or (C.object and C.object.type == \"CURVES\") or (C.object and C.object.type == \"META\") or (C.object and C.object.type == \"SURFACE\")",
               "element": {
@@ -821,8 +785,6 @@
           "name": "Preferences",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.space_data.type == \"PREFERENCES\")",
           "element": {
@@ -928,8 +890,6 @@
           "name": "Node Editor",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type in (\"TextureNodeTree\",\"ShaderNodeTree\",\"CompositorNodeTree\",\"GeometryNodeTree\")",
           "element": {
@@ -937,8 +897,6 @@
               "name": "Geometry Node",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "IF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"GeometryNodeTree\"",
               "element": {
@@ -982,8 +940,6 @@
               "name": "Compositor Node",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"CompositorNodeTree\"",
               "element": {
@@ -1005,8 +961,6 @@
               "name": "Shader Node",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"ShaderNodeTree\"",
               "element": {
@@ -1062,8 +1016,6 @@
               "name": "Texture Node",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"TextureNodeTree\"",
               "element": {
@@ -1119,8 +1071,6 @@
               "name": "Else",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELSE",
               "poll_string": "True"
             },
@@ -1171,6 +1121,213 @@
               "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'data_path': 'area.ui_type', 'value': 'TextureNodeTree'}",
               "operator_type": "OPERATOR"
+            }
+          }
+        },
+        "3": {
+          "name": "Image Editor",
+          "element_type": "SELECTED_STRUCTURE",
+          "enabled": true,
+          "selected_type": "IF",
+          "poll_string": "C.space_data.type == \"IMAGE_EDITOR\"",
+          "element": {
+            "0": {
+              "name": "Image",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "IF",
+              "poll_string": "C.area.ui_type == \"IMAGE_EDITOR\"",
+              "element": {
+                "0": {
+                  "name": "View",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "SEQ_PREVIEW",
+                  "enabled_icon": true,
+                  "direction": "5",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.ui_mode', 'value': 'VIEW'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Paint",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "TPAINT_HLT",
+                  "enabled_icon": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.ui_mode', 'value': 'PAINT'}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "Mask",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "MOD_MASK",
+                  "enabled_icon": true,
+                  "direction": "7",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'data_path': 'space_data.ui_mode', 'value': 'MASK'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "1": {
+              "name": "Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "enabled": true,
+              "selected_type": "ELIF",
+              "poll_string": "C.object and C.object.type == \"MESH\" ",
+              "element": {
+                "0": {
+                  "name": "Edit Mode",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "enabled": true,
+                  "selected_type": "IF",
+                  "poll_string": "C.mode == \"EDIT_MESH\"",
+                  "element": {
+                    "0": {
+                      "name": "UV Editor",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "enabled": true,
+                      "selected_type": "IF",
+                      "poll_string": "C.area.ui_type == \"UV\"",
+                      "element": {
+                        "0": {
+                          "name": "UV Sync Selection",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "icon": "UV_SYNC_SELECT",
+                          "enabled_icon": true,
+                          "direction": "1",
+                          "operator_bl_idname": "wm.context_toggle",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{'data_path': 'tool_settings.use_uv_select_sync'}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "UV Sync",
+                          "element_type": "SELECTED_STRUCTURE",
+                          "enabled": true,
+                          "selected_type": "IF",
+                          "poll_string": "tool.use_uv_select_sync",
+                          "element": {
+                            "0": {
+                              "name": "Vert",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "VERTEXSEL",
+                              "enabled_icon": true,
+                              "direction": "5",
+                              "operator_bl_idname": "mesh.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'FACE'}",
+                              "operator_type": "OPERATOR"
+                            },
+                            "1": {
+                              "name": "Edge",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "EDGESEL",
+                              "enabled_icon": true,
+                              "direction": "6",
+                              "operator_bl_idname": "mesh.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'FACE'}",
+                              "operator_type": "OPERATOR"
+                            },
+                            "2": {
+                              "name": "Face",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "FACESEL",
+                              "enabled_icon": true,
+                              "direction": "7",
+                              "operator_bl_idname": "mesh.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'FACE'}",
+                              "operator_type": "OPERATOR"
+                            }
+                          }
+                        },
+                        "2": {
+                          "name": "Else",
+                          "element_type": "SELECTED_STRUCTURE",
+                          "enabled": true,
+                          "selected_type": "ELSE",
+                          "poll_string": "True",
+                          "element": {
+                            "0": {
+                              "name": "Vertex",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "UV_VERTEXSEL",
+                              "enabled_icon": true,
+                              "direction": "5",
+                              "operator_bl_idname": "uv.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_type": "OPERATOR"
+                            },
+                            "1": {
+                              "name": "Edge",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "UV_EDGESEL",
+                              "enabled_icon": true,
+                              "direction": "6",
+                              "operator_bl_idname": "uv.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_type": "OPERATOR"
+                            },
+                            "2": {
+                              "name": "Face",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "UV_FACESEL",
+                              "enabled_icon": true,
+                              "direction": "7",
+                              "operator_bl_idname": "uv.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_type": "OPERATOR"
+                            },
+                            "3": {
+                              "name": "Island",
+                              "element_type": "OPERATOR",
+                              "enabled": true,
+                              "icon": "UV_ISLANDSEL",
+                              "enabled_icon": true,
+                              "direction": "8",
+                              "operator_bl_idname": "uv.select_mode",
+                              "operator_context": "INVOKE_DEFAULT",
+                              "operator_properties": "{'type': 'ISLAND'}",
+                              "operator_type": "OPERATOR"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "1": {
+                  "name": "Edit Mode",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "EDITMODE_HLT",
+                  "enabled_icon": true,
+                  "direction": "2",
+                  "operator_bl_idname": "object.mode_set",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
+                  "operator_type": "OPERATOR"
+                }
+              }
             }
           }
         }
