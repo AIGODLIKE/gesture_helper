@@ -29,7 +29,8 @@ class BackupsProperty(PropertyGroup):
         items=[
             ("ADDON_UNREGISTER", "When the plugin logs out",
              "Every time the plugin logout will be automatically backed up once (will be triggered when you close the plugin or close Blender), if you frequently switch on and off Blender will have a lot of backup files"),
-            ("ADDON_UNREGISTER_DAY", "When the plugin is logged out (one copy per day is retained)", "Keep only one copy per day"),
+            ("ADDON_UNREGISTER_DAY", "When the plugin is logged out (one copy per day is retained)",
+             "Keep only one copy per day"),
             ("ONLY_ONE", "Keep only one copy", "Keep only one copy")
         ]
     )
@@ -37,11 +38,13 @@ class BackupsProperty(PropertyGroup):
     @staticmethod
     def draw_backups(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
+        from ..ops.export_import import get_backups_folder
         pref = get_pref()
         backups = pref.backups_property
         column = layout.column(heading="Auto Backups")
 
         box = column.box()
+        box.operator("wm.url_open", text="Open Backups Folder").url = get_backups_folder(True)
         box.prop(backups, 'auto_backups')
         box.prop(backups, 'backups_file_mode')
         box.prop(backups, 'enabled_backups_to_specified_path')
