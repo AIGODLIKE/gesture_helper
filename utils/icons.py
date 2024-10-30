@@ -64,7 +64,8 @@ class Icons:
     @staticmethod
     def unregister() -> None:
         global icons, icons_map
-        bpy.utils.previews.remove(icons)
+        if icons:
+            bpy.utils.previews.remove(icons)
 
         icons = None
         icons_map = None

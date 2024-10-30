@@ -111,10 +111,9 @@ class GestureKeymap(KeymapProperty):
 
     def key_unload(self) -> None:
         if self in GestureKeymap.__key_data__:  # 如果禁用了会出现没有快捷键的情况
-            for keymap, kmi in GestureKeymap.__key_data__[self]:
+            for keymap, kmi in GestureKeymap.__key_data__.pop(self):
                 if kmi in keymap.keymap_items.values():
                     keymap.keymap_items.remove(kmi)
-            GestureKeymap.__key_data__.pop(self)
 
     @cache_update_lock
     def key_update(self) -> None:
@@ -136,12 +135,9 @@ class GestureKeymap(KeymapProperty):
     @classmethod
     def key_remove(cls) -> None:
         """删除所有快捷键"""
-        from ..utils.public import get_pref
 
         for i in list(GestureKeymap.__key_data__.keys()):
             i.key_unload()
-        for g in get_pref().gesture:
-            g.key_unload()
 
     @classmethod
     def key_restart(cls) -> None:
