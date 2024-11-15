@@ -14,6 +14,7 @@ Install:
 If it is version 4.2, you can drag the plugin directly into Blender.
 
 Conventional methods:
+
 ![install](https://github.com/user-attachments/assets/f6b140ef-1acf-4072-bbae-8747cc23f299)
 
 Simple to use:
