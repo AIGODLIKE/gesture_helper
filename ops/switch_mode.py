@@ -20,7 +20,6 @@ class SwitchMode(Operator):
         if self.type == 'SWITCH_OBJECT_EDIT_MODE':
             bpy.ops.object.mode_set(mode='EDIT')
             for index, i in enumerate(self.select_mode):
-                # {'use_extend': False, 'action': 'TOGGLE', 'use_expand': False, 'type': 'VERT'}
                 if index == 0:
                     bpy.ops.mesh.select_mode(type=i, use_extend=False, action='TOGGLE', use_expand=False)
                 else:

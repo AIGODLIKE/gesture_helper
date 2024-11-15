@@ -249,7 +249,9 @@ class Export(PublicFileOperator):
             # 选择了一个文件覆盖
             name = os.path.basename(folder_path)
             folder_path = os.path.dirname(folder_path)
-        return os.path.abspath(os.path.join(folder_path, name))
+            return os.path.abspath(os.path.join(folder_path, name))
+        else:
+            return os.path.abspath(os.path.join(folder_path, f'Gesture {datetime.now()}.json'.replace(':', ' ')))
 
     @property
     def export_data(self):
