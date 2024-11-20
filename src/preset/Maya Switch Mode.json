@@ -1,14 +1,14 @@
 {
-  "time": 1730191742.4656994,
+  "time": 1732095909.836689,
   "blender_version": [
     4,
-    2,
-    3
+    3,
+    0
   ],
   "addon_version": [
     2,
     0,
-    5
+    7
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -694,7 +694,7 @@
                   "direction": "5",
                   "operator_bl_idname": "object.mode_set",
                   "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'mode': 'EDIT'}",
+                  "operator_properties": "{'mode': 'EDIT', 'toggle': True}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
@@ -706,7 +706,7 @@
                   "direction": "1",
                   "operator_bl_idname": "object.mode_set",
                   "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
+                  "operator_properties": "{'mode': 'POSE', 'toggle': True}",
                   "operator_type": "OPERATOR"
                 }
               }
