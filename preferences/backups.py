@@ -1,8 +1,12 @@
+import json
 import os
 
 import bpy
 from bpy.props import BoolProperty, StringProperty, EnumProperty
 from bpy.types import PropertyGroup
+
+from ..utils import PropertyGetUtils, PropertySetUtils
+from ..utils.public import BACKUPS_FOLDER
 
 
 class BackupsProperty(PropertyGroup):
@@ -50,3 +54,20 @@ class BackupsProperty(PropertyGroup):
         box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
             box.prop(backups, 'backups_path')
+
+
+class BackupsPreferences:
+    __preferences_backups_path__ = os.path.join(BACKUPS_FOLDER, 'preferences')
+
+    def preferences_backups(self):
+        data = PropertyGetUtils.props_data(self, exclude=("gesture", "index_gesture", "name"))
+        print("Gesture Backups Preferences", self.__preferences_backups_path__)
+        with open(self.__preferences_backups_path__, "w") as file:
+            file.write(json.dumps(data, ensure_ascii=True, indent=2))
+
+    def preferences_restore(self):
+        if os.path.exists(self.__preferences_backups_path__):
+            with open(self.__preferences_backups_path__, "r") as file:
+                data = json.loads(file.read())
+                print("Gesture Restore Preferences")
+                PropertySetUtils.set_property_data(self, data)

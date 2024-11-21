@@ -29,6 +29,7 @@ def init_register():
         gesture_keymap.GestureKeymap.key_restart()
 
         pref.update_state()
+        pref.preferences_restore()
 
         prop = getattr(pref, 'other_property', None)
         if prop and not prop.init_addon:
@@ -58,14 +59,19 @@ def register():
 
 def unregister():
     from .utils import icons, is_blender_close
+    from .utils.public import get_pref
     from .ops.export_import import Export
+
     if bpy.app.timers.is_registered(init_register):
         bpy.app.timers.unregister(init_register)
+
     GestureQuickAddKeymap.unregister()
 
+    get_pref().preferences_backups()
     Export.backups(is_blender_close())
 
     gesture_keymap.GestureKeymap.key_all_remove()
+
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()

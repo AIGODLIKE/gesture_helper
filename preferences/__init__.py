@@ -7,7 +7,7 @@ from bpy.props import (
     EnumProperty)
 from bpy.types import AddonPreferences, PropertyGroup
 
-from .backups import BackupsProperty
+from .backups import BackupsProperty, BackupsPreferences
 from .debug import DebugProperty
 from .draw import PreferencesDraw
 from .draw_property import DrawProperty
@@ -23,6 +23,7 @@ AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyG
 
 class GesturePreferences(PublicProperty,
                          AddonPreferences,
+                         BackupsPreferences,
                          PreferencesDraw):
     bl_idname = base_package
 

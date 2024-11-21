@@ -2,3 +2,4 @@
 .vs
 __pycache__
 /backups/*.json
+/backups/preferences

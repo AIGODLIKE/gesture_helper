@@ -69,10 +69,10 @@ def ymd() -> str:
 
 
 def get_backups_folder(user_custom_path: bool = True) -> str:
-    from ..utils.public import ADDON_FOLDER
+    from ..utils.public import BACKUPS_FOLDER
     prop = get_pref().backups_property
 
-    folder_path = os.path.join(ADDON_FOLDER, 'backups')
+    folder_path = BACKUPS_FOLDER
     if prop.enabled_backups_to_specified_path and user_custom_path:
         if os.path.isdir(prop.backups_path):
             folder_path = prop.backups_path

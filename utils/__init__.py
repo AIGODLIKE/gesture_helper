@@ -1,6 +1,8 @@
 import os
 
 import bpy
+from mathutils import Euler, Vector, Matrix
+from bpy.types import bpy_prop_array
 
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 isDebug = os.environ.get('USERNAME') in ("EM1", "emm")
@@ -126,8 +128,6 @@ class PropertyGetUtils:
             dict: 反回字典式数据,
         """
         data = {}
-        # print()
-        # print('props_data,', prop, exclude)
 
         for i in prop.bl_rna.properties:
             try:
@@ -151,6 +151,14 @@ class PropertyGetUtils:
                     elif typ == 'ENUM' and i.is_enum_flag:
                         # 可多选枚举
                         pro = list(pro)
+                    elif isinstance(pro, (Euler, Vector, bpy_prop_array)):
+                        pro = pro[:]
+                    elif isinstance(pro, Matrix):
+                        res = ()
+                        for i in pro:
+                            res += (*tuple(i[:]),)
+                        pro = res
+
                     data[id_name] = pro
             except Exception as e:
                 print(e.args)

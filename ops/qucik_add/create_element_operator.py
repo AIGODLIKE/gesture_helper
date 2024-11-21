@@ -1,4 +1,5 @@
 import bpy
+from bpy.types import bpy_prop_array
 from mathutils import Euler, Vector, Matrix
 
 from ...utils.public import PublicOperator, PublicProperty, get_pref
@@ -44,7 +45,6 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         for prop in dir(button_operator):
             if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type'):
                 value = getattr(button_operator, prop)
-                from bpy.types import bpy_prop_array
 
                 if isinstance(value, (Euler, Vector, bpy_prop_array)):
                     value = value[:]
