@@ -208,7 +208,6 @@ class GesturePassThroughKeymap:
         # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
-                from ..ops.gesture import GestureOperator
                 k = keymaps[key]
                 match_origin_key = []
                 for item in k.keymap_items:
@@ -223,14 +222,15 @@ class GesturePassThroughKeymap:
                 ml = len(match_origin_key)
                 if ml == 1:  # 只匹配到一个键
                     kmi = match_origin_key[0]
-                    if self.try_pass_set_cursor3d_location(context, event, kmi):
-                        # print("shift右键鼠标单击 设置游标处理")
-                        return
-                    ok = try_operator_pass_through_right(kmi)
-                    if ok:
-                        # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                        # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
-                        return
+                    if kmi.active:  # 只有当快捷键启用时才处理
+                        if self.try_pass_set_cursor3d_location(context, event, kmi):
+                            # print("shift右键鼠标单击 设置游标处理")
+                            return
+                        ok = try_operator_pass_through_right(kmi)
+                        if ok:
+                            # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                            # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
+                            return
                 elif key in (
                         "Object Mode",
                         "Mesh",
@@ -241,11 +241,12 @@ class GesturePassThroughKeymap:
                     #         "object.select_all",
                     #         "mesh.select_all",
                     for kmi in match_origin_key:
-                        ok = try_operator_pass_through_right(kmi)
-                        if ok:
-                            # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                            # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
-                            return
+                        if kmi.active:
+                            ok = try_operator_pass_through_right(kmi)
+                            if ok:
+                                # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
+                                # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
+                                return
                 else:
                     print(f"else\t{key}\t{[i.idname for i in match_origin_key]}")
 
