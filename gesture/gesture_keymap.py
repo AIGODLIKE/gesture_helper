@@ -16,15 +16,14 @@ from idprop.types import IDPropertyGroup
 
 from ..utils import PropertyGetUtils, PropertySetUtils
 from ..utils.public import get_debug
-from ..utils.public_cache import cache_update_lock
 from ..utils.public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 default_key = {'type': 'NONE', 'value': 'PRESS'}
 
+__key_data__ = []  # [(keymap:kmi),]
+
 
 class KeymapProperty:
-    __key_data__ = {}  # {self:(keymap:kmi)}
-
     __key__ = 'key'
     __keymaps__ = 'keymaps'
 
@@ -100,44 +99,35 @@ class GestureKeymap(KeymapProperty):
         self.from_temp_key_update_data()
 
     def key_load(self) -> None:
+        global __key_data__
         if self.is_enable:
-            if self in GestureKeymap.__key_data__:  # 还没注销
-                self.key_unload()
-            data = GestureKeymap.__key_data__[self] = []
             if get_debug('key'):
                 print('Add Kmi Data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
-                data.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
+                __key_data__.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
 
-    def key_unload(self) -> None:
-        if self in GestureKeymap.__key_data__:  # 如果禁用了会出现没有快捷键的情况
-            for keymap, kmi in GestureKeymap.__key_data__.pop(self):
-                if kmi in keymap.keymap_items.values():
-                    keymap.keymap_items.remove(kmi)
-
-    @cache_update_lock
+    # @cache_update_lock
     def key_update(self) -> None:
         # 在keymap被改时更新
         # 在key被改时更新
         caller_name = traceback.extract_stack()[-2][2]
-        self.key_unload()
-        self.key_load()
+        self.key_restart()
         if get_debug('key'):
             print("Key Update 被 {} 调用".format(caller_name), self)
 
     @classmethod
-    def key_init(cls) -> None:
+    def key_all_load(cls) -> None:
         """加载所有快捷键"""
         from ..utils.public import get_pref
         for g in get_pref().gesture:
             g.key_load()
 
     @classmethod
-    def key_remove(cls) -> None:
+    def key_all_remove(cls) -> None:
         """删除所有快捷键"""
-
-        for i in list(GestureKeymap.__key_data__.keys()):
-            i.key_unload()
+        while __key_data__:
+            km, kmi = __key_data__.pop()
+            km.keymap_items.remove(kmi)
 
     @classmethod
     def key_clear_legacy(cls):
@@ -157,10 +147,12 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_restart(cls) -> None:
-        cls.key_remove()
-        cls.key_init()
+        """重置键位"""
+        cls.key_all_remove()
+        cls.key_all_load()
 
     def restore_key(self):
+        """重置快捷键"""
         self.key = default_key
         kmi = self.temp_kmi
         kmi.map_type = 'KEYBOARD'

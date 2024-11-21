@@ -26,8 +26,7 @@ def init_register():
         icons.Icons.register()
 
         gesture_keymap.GestureKeymap.key_clear_legacy()
-        gesture_keymap.GestureKeymap.key_remove()
-        gesture_keymap.GestureKeymap.key_init()
+        gesture_keymap.GestureKeymap.key_restart()
 
         pref.update_state()
 
@@ -66,7 +65,7 @@ def unregister():
 
     Export.backups(is_blender_close())
 
-    gesture_keymap.GestureKeymap.key_remove()
+    gesture_keymap.GestureKeymap.key_all_remove()
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()

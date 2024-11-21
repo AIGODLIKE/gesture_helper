@@ -1,6 +1,8 @@
 import bpy
 from bpy.props import BoolProperty
 
+from ..gesture import GestureKeymap
+
 
 class GestureCURE:
     """手势项 增删查改"""
@@ -20,6 +22,7 @@ class GestureCURE:
             add = self.pref.gesture.add()
             self.cache_clear()
             add.name = 'Gesture'
+            GestureKeymap.key_restart()
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
@@ -40,12 +43,12 @@ class GestureCURE:
         def execute(self, _):
             pref = self.pref
             act = pref.active_gesture
-            act.key_unload()
             act.remove()
             act = pref.active_gesture
             if act:
                 act.to_temp_kmi()
             self.cache_clear()
+            GestureKeymap.key_restart()
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
