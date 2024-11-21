@@ -140,6 +140,22 @@ class GestureKeymap(KeymapProperty):
             i.key_unload()
 
     @classmethod
+    def key_clear_legacy(cls):
+        """清理遗留快捷键"""
+        from ..ops.gesture import GestureOperator
+        kcs = bpy.context.window_manager.keyconfigs
+        clear_legacy = {}
+        for kc in [kcs.default, kcs.user, kcs.addon, kcs.active]:
+            for km in kc.keymaps.values():
+                for kmi in list(km.keymap_items.values()):
+                    if kmi.idname == GestureOperator.bl_idname:
+                        clear_legacy[km] = kmi
+        if clear_legacy:
+            for km, kmi in clear_legacy.items():
+                km.keymap_items.remove(kmi)
+            print("Gesture Clear Legacy Keymap count", len(clear_legacy))
+
+    @classmethod
     def key_restart(cls) -> None:
         cls.key_remove()
         cls.key_init()

@@ -25,6 +25,7 @@ def init_register():
     try:
         icons.Icons.register()
 
+        gesture_keymap.GestureKeymap.key_clear_legacy()
         gesture_keymap.GestureKeymap.key_remove()
         gesture_keymap.GestureKeymap.key_init()
 
