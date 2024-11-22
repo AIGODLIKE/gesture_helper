@@ -104,7 +104,7 @@ class GestureKeymap(KeymapProperty):
             if get_debug('key'):
                 print('Add Kmi Data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
-                __key_data__.append(add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name}))
+                add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name})
 
     # @cache_update_lock
     def key_update(self) -> None:
@@ -123,32 +123,27 @@ class GestureKeymap(KeymapProperty):
             g.key_load()
 
     @classmethod
-    def key_all_remove(cls) -> None:
-        """删除所有快捷键"""
-        while __key_data__:
-            km, kmi = __key_data__.pop()
-            km.keymap_items.remove(kmi)
-
-    @classmethod
     def key_clear_legacy(cls):
         """清理遗留快捷键"""
+        # bpy.context.window_manager.keyconfigs['Blender'].keymaps['Window'].keymap_items.find_from_operator(
+        #     "gesture.opeartor")
+        clear_count = 0
         from ..ops.gesture import GestureOperator
         kcs = bpy.context.window_manager.keyconfigs
-        clear_legacy = {}
-        for kc in [kcs.default, kcs.user, kcs.addon, kcs.active]:
+        for kc in [kcs.addon, kcs.default, ]:  # , kcs.user  kcs.active
             for km in kc.keymaps.values():
-                for kmi in list(km.keymap_items.values()):
-                    if kmi.idname == GestureOperator.bl_idname:
-                        clear_legacy[km] = kmi
-        if clear_legacy:
-            for km, kmi in clear_legacy.items():
-                km.keymap_items.remove(kmi)
-            print("Gesture Clear Legacy Keymap count", len(clear_legacy))
+                kmi = km.keymap_items.find_from_operator(GestureOperator.bl_idname)
+                while kmi:
+                    print("KM", km.name, kmi)
+                    km.keymap_items.remove(kmi)
+                    clear_count += 1
+                    kmi = km.keymap_items.find_from_operator(GestureOperator.bl_idname)
+        print("Gesture Clear Legacy Keymap count", clear_count)
 
     @classmethod
     def key_restart(cls) -> None:
         """重置键位"""
-        cls.key_all_remove()
+        cls.key_clear_legacy()
         cls.key_all_load()
 
     def restore_key(self):

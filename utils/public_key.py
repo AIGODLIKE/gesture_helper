@@ -91,7 +91,7 @@ def get_addon_keymap(keymap) -> 'bpy.types.KeyMap':
     find = kk.get(keymap)
     if find:
         return find
-    dk = kf.default.keymaps.get(keymap)
+    dk = kf.active.keymaps.get(keymap)
     if dk:
         return kk.new(dk.name, space_type=dk.space_type, region_type=dk.region_type)
     else:

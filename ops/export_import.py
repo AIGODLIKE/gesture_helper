@@ -161,9 +161,13 @@ class Import(PublicFileOperator):
     @cache_update_lock
     def gesture_import(self):
         try:
+            from ..gesture import gesture_keymap
+            
             data = self.read_json()
             restore = data['gesture']
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)
+            gesture_keymap.GestureKeymap.key_restart()
+
             auth = data['author']
             des = data['description']
             ver = '.'.join((str(i) for i in data['addon_version']))
