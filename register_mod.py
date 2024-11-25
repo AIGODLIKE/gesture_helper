@@ -21,8 +21,6 @@ def init_register():
     from .utils import icons
 
     pref = get_pref()
-    gesture_keymap.GestureKeymap.key_restart()
-
     try:
         icons.Icons.register()
 
@@ -62,9 +60,9 @@ def unregister():
 
     public_cache.PublicCacheFunc.cache_clear()
     GestureQuickAddKeymap.unregister()
-    gesture_keymap.GestureKeymap.key_clear_legacy()
     get_pref().preferences_backups()
     Export.backups(is_blender_close())
+    gesture_keymap.GestureKeymap.key_clear_legacy()
 
     for module in module_list:
         module.unregister()

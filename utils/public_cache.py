@@ -1,7 +1,7 @@
-
 def cache_update_lock(func, cache_clear=False):
     """缓存更新锁"""
     cls = PublicCache
+
     def wap(*args, **kwargs):
         if cls.__is_updatable__:
             cls.__is_updatable__ = False
@@ -10,6 +10,7 @@ def cache_update_lock(func, cache_clear=False):
             if cache_clear:
                 PublicCacheFunc.cache_clear()
             return func_return
+
     return wap
 
 

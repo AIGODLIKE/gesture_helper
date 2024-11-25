@@ -16,6 +16,8 @@ from idprop.types import IDPropertyGroup
 
 from ..utils import PropertyGetUtils, PropertySetUtils
 from ..utils.public import get_debug
+from ..utils.public_cache import cache_update_lock
+from ..utils.public_key import get_kmi_operator_properties
 from ..utils.public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
 default_key = {'type': 'NONE', 'value': 'PRESS'}
@@ -101,12 +103,13 @@ class GestureKeymap(KeymapProperty):
     def key_load(self) -> None:
         global __key_data__
         if self.is_enable:
-            if get_debug('key'):
-                print('Add Kmi Data', self.name, self.add_kmi_data)
             for keymap in self.keymaps:
-                add_addon_kmi(keymap, self.add_kmi_data, {'gesture': self.name})
+                if get_debug("key") or True:
+                    content = {k: v for k, v in self.add_kmi_data.items() if k in ("type", "value")}
+                    print(f"Add Kmi\t{self.name}\t{keymap}\t\t{content}", flush=True)
+                add_addon_kmi(keymap, self.add_kmi_data, {"gesture": self.name})
 
-    # @cache_update_lock
+    @cache_update_lock
     def key_update(self) -> None:
         # 在keymap被改时更新
         # 在key被改时更新
@@ -123,26 +126,38 @@ class GestureKeymap(KeymapProperty):
             g.key_load()
 
     @classmethod
+    def key_all_unload(cls) -> None:
+        """卸载所有快捷键"""
+        for km, kmi in __key_data__:
+            km.keymap_items.remove(kmi)
+        __key_data__.clear()
+
+    @classmethod
     def key_clear_legacy(cls):
         """清理遗留快捷键"""
-        # bpy.context.window_manager.keyconfigs['Blender'].keymaps['Window'].keymap_items.find_from_operator(
-        #     "gesture.opeartor")
+        from ..utils.public_key import find_kmi
+
+        cls.key_all_unload()
+
         clear_count = 0
-        from ..ops.gesture import GestureOperator
-        kcs = bpy.context.window_manager.keyconfigs
-        for kc in [kcs.addon, kcs.default, ]:  # , kcs.user  kcs.active
-            for km in kc.keymaps.values():
-                kmi = km.keymap_items.find_from_operator(GestureOperator.bl_idname)
-                while kmi:
-                    print("KM", km.name, kmi)
-                    km.keymap_items.remove(kmi)
-                    clear_count += 1
-                    kmi = km.keymap_items.find_from_operator(GestureOperator.bl_idname)
-        print("Gesture Clear Legacy Keymap count", clear_count)
+
+        km, kmi = find_kmi()
+        while kmi:
+            print(f"Gesture Remove KMI\t{get_kmi_operator_properties(kmi)}\t{km.name}", flush=True)
+            km.keymap_items.remove(kmi)
+            clear_count += 1
+            if kmi:
+                km, kmi = find_kmi()
+
+        print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
 
     @classmethod
     def key_restart(cls) -> None:
         """重置键位"""
+        print("Gesture Key Restart")
+        import traceback
+        for i in traceback.extract_stack():
+            print(i)
         cls.key_clear_legacy()
         cls.key_all_load()
 

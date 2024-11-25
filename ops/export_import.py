@@ -141,8 +141,9 @@ class Import(PublicFileOperator):
         self.cache_clear()
         self.update_state()
         self.cache_clear()
-        GestureKeymap.key_restart()
         Import.preset = {}
+        GestureKeymap.key_restart()
+        bpy.ops.wm.save_userpref()
         return {'FINISHED'}
 
     def draw(self, _):
@@ -162,7 +163,7 @@ class Import(PublicFileOperator):
     def gesture_import(self):
         try:
             from ..gesture import gesture_keymap
-            
+
             data = self.read_json()
             restore = data['gesture']
             PropertySetUtils.set_prop(self.pref, 'gesture', restore)

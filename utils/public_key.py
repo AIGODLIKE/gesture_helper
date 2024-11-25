@@ -85,17 +85,33 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
     return dictionary
 
 
-def get_addon_keymap(keymap) -> 'bpy.types.KeyMap':
-    kf = bpy.context.window_manager.keyconfigs
-    kk = kf.addon.keymaps
-    find = kk.get(keymap)
+def get_addon_keymap(keymap: str) -> 'bpy.types.KeyMap':
+    kc = bpy.context.window_manager.keyconfigs
+    keymaps = kc.addon.keymaps
+    find = keymaps.get(keymap)
     if find:
         return find
-    dk = kf.active.keymaps.get(keymap)
-    if dk:
-        return kk.new(dk.name, space_type=dk.space_type, region_type=dk.region_type)
+    km = kc.active.keymaps.get(keymap)
+    if km:
+        return keymaps.new(km.name, space_type=km.space_type, region_type=km.region_type)
     else:
-        return kk.new(keymap, space_type='EMPTY', region_type='WINDOW')
+        return keymaps.new(keymap, space_type='EMPTY', region_type='WINDOW')
+
+
+def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
+    from ..ops.gesture import GestureOperator
+    id_name = GestureOperator.bl_idname
+    kcs = bpy.context.window_manager.keyconfigs
+
+    for kc in [kcs.user, kcs.addon, kcs.default, kcs.active]:
+        for km in kc.keymaps.values():
+            kmi_item = km.keymap_items.find_from_operator(id_name)
+            if kmi_item:
+                return km, kmi_item
+            kmi_index = km.keymap_items.find(id_name)
+            if kmi_index != -1:
+                return km, km.keymap_items[kmi_index]
+    return None, None
 
 
 def add_addon_kmi(keymap_name, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.types.KeyMapItem']:
