@@ -2,7 +2,7 @@ import math
 import time
 
 import bpy
-from bpy.props import IntProperty, BoolProperty, StringProperty
+from bpy.props import IntProperty, BoolProperty
 from mathutils import Vector
 
 from ..utils.public import PublicProperty
@@ -28,11 +28,12 @@ class GestureProperty(PublicProperty):
         except IndexError:
             ...
 
-    index_element: IntProperty(name='索引', update=update_index)
+    index_element: IntProperty(name='索引', update=update_index, options={"HIDDEN"})
 
     enabled: BoolProperty(
         default=True,
-        update=lambda self, context: self.key_update()
+        update=lambda self, context: self.key_update(),
+        options={"HIDDEN"}
     )
 
     @property

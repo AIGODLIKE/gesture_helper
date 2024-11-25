@@ -280,6 +280,9 @@ class PublicUniqueNamePropertyGroup:
     def rename(self):
         if self.__is_check_duplicate_name__:
             self.__check_duplicate_name__()
+        update_name = getattr(self, "update_name", None)
+        if update_name:
+            update_name()
 
     name: StringProperty(
         name='名称',

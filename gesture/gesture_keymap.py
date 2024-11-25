@@ -104,7 +104,7 @@ class GestureKeymap(KeymapProperty):
         global __key_data__
         if self.is_enable:
             for keymap in self.keymaps:
-                if get_debug("key") or True:
+                if get_debug("key"):
                     content = {k: v for k, v in self.add_kmi_data.items() if k in ("type", "value")}
                     print(f"Add Kmi\t{self.name}\t{keymap}\t\t{content}", flush=True)
                 add_addon_kmi(keymap, self.add_kmi_data, {"gesture": self.name})
@@ -143,21 +143,24 @@ class GestureKeymap(KeymapProperty):
 
         km, kmi = find_kmi()
         while kmi:
-            print(f"Gesture Remove KMI\t{get_kmi_operator_properties(kmi)}\t{km.name}", flush=True)
+            if get_debug('key'):
+                print(f"Gesture Remove KMI\t{get_kmi_operator_properties(kmi)}\t{km.name}", flush=True)
             km.keymap_items.remove(kmi)
             clear_count += 1
             if kmi:
                 km, kmi = find_kmi()
 
-        print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
+        if get_debug('key'):
+            print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
 
     @classmethod
     def key_restart(cls) -> None:
         """重置键位"""
-        print("Gesture Key Restart")
-        import traceback
-        for i in traceback.extract_stack():
-            print(i)
+        if get_debug('key'):
+            print("Gesture Key Restart")
+            import traceback
+            for i in traceback.extract_stack():
+                print(i)
         cls.key_clear_legacy()
         cls.key_all_load()
 

@@ -20,6 +20,9 @@ class Gesture(
 
     PropertyGroup,
 ):
+    def update_name(self):
+        self.key_restart()
+
     # 使用gpu绘制在界面上
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
