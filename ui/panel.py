@@ -78,11 +78,13 @@ def register():
     pref = get_pref()
     for panel in panel_list:
         panel.bl_category = pref.draw_property.panel_name
-    register_classes()
+    if pref.draw_property.panel_enable:
+        register_classes()
 
 
 def unregister():
-    unregister_classes()
+    if GesturePanel.is_registered:
+        unregister_classes()
 
 
 def update_panel():

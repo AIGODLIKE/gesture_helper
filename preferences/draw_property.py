@@ -54,6 +54,7 @@ class DrawProperty(PropertyGroup):
         from ..ui.panel import update_panel
         update_panel()
 
+    panel_enable: BoolProperty(name='Enabled Panel', default=True, update=__update_panel_name__)
     panel_name: StringProperty(name='Panel Name', default='Gesture', update=__update_panel_name__)
     author: StringProperty(name='Author', default='小萌新')
     enable_name_translation: BoolProperty(name='Name Translation', default=True)

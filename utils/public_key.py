@@ -113,6 +113,9 @@ def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
         kmi_index = km.keymap_items.find(id_name)
         if kmi_index != -1:
             return km, km.keymap_items[kmi_index]
+        for kmi in km.keymap_items:
+            if kmi.idname == id_name:
+                return km, kmi
     return None, None
 
 

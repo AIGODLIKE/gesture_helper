@@ -49,6 +49,7 @@ class PreferencesDraw(GestureDraw):
         column = row.column(align=True)
 
         col = column.box().column(align=True)
+        col.prop(pref.draw_property, "panel_enable")
         col.prop(pref.draw_property, "panel_name")
         col.prop(pref.draw_property, "author")
         col.prop(pref.draw_property, "enable_name_translation")

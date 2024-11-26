@@ -19,9 +19,11 @@ def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
     from .utils import icons
+    from .ui.panel import register as register_panel
 
     pref = get_pref()
     try:
+        register_panel()
         icons.Icons.register()
 
         pref.update_state()
