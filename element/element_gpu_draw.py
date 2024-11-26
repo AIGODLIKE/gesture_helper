@@ -38,15 +38,18 @@ class ElementGpuProperty:
 
     @property
     def text_size(self):
-        return self.draw_property.text_gpu_draw_size
+        scale = bpy.context.preferences.view.ui_scale
+        return self.draw_property.text_gpu_draw_size * scale
 
     @property
     def text_margin(self):
-        return self.draw_property.text_gpu_draw_margin
+        scale = bpy.context.preferences.view.ui_scale
+        return self.draw_property.text_gpu_draw_margin * scale
 
     @property
     def text_radius(self):
-        return self.draw_property.text_gpu_draw_radius
+        scale = bpy.context.preferences.view.ui_scale
+        return self.draw_property.text_gpu_draw_radius * scale
 
     @property
     def text_dimensions(self) -> tuple:
@@ -119,7 +122,9 @@ class ElementGpuProperty:
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     def draw_gpu_item(self, ops):
         self.ops = ops
-        radius = get_pref().gesture_property.radius
+        scale = bpy.context.preferences.view.ui_scale
+
+        radius = get_pref().gesture_property.radius * scale
         position = get_position(self.direction, radius)
 
         with gpu.matrix.push_pop():

@@ -145,13 +145,17 @@ class GestureGpuDraw(DrawDebug):
         """绘制轨迹鼠标移动的线"""
         draw = self.draw_property
         color = draw.trajectory_mouse_color
-        self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=draw.line_width)
+        scale = bpy.context.preferences.view.ui_scale
+        line_width = draw.line_width * scale
+        self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
         """绘制手势的轨迹线"""
         draw = self.draw_property
+        scale = bpy.context.preferences.view.ui_scale
         color = draw.trajectory_gesture_color
-        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=draw.line_width)
+        line_width = draw.line_width * scale
+        self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_point(self):
         """绘制手势的轨迹点"""
@@ -160,8 +164,10 @@ class GestureGpuDraw(DrawDebug):
 
     def gpu_draw_last_item_name(self):
         """绘制最后一个元素名称"""
+        scale = bpy.context.preferences.view.ui_scale
         tree = self.trajectory_tree
-        size = self.pref.draw_property.gesture_point_name_size
+        size = self.pref.draw_property.gesture_point_name_size * scale
+        threshold = self.pref.gesture_property.threshold * scale
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
@@ -176,7 +182,7 @@ class GestureGpuDraw(DrawDebug):
                 (w, h) = blf.dimensions(font_id, tn)
                 gpu.matrix.translate(Vector((-(w / 2), 0)))
                 if is_last:
-                    gpu.matrix.translate(Vector((0, -self.pref.gesture_property.threshold)))
+                    gpu.matrix.translate(Vector((0, -threshold)))
                 else:
                     gpu.matrix.translate(Vector((0, -h)))
 
@@ -185,6 +191,9 @@ class GestureGpuDraw(DrawDebug):
     def gpu_draw_gesture(self):
         """绘制手势"""
         gp = self.gesture_property
+        scale = bpy.context.preferences.view.ui_scale
+
+        threshold = gp.threshold * scale
         from ..src.translate import __name_translate__
 
         region = bpy.context.region
@@ -202,9 +211,9 @@ class GestureGpuDraw(DrawDebug):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__last_region_position__)
                 if self.is_window_region_type:
-                    self.draw_circle((0, 0), gp.threshold, line_width=2, segments=64)
+                    self.draw_circle((0, 0), threshold, line_width=2, segments=64)
                     if self.is_beyond_threshold:
-                        self.draw_arc((0, 0), gp.threshold, self.angle_unsigned, 45, line_width=10, segments=64)
+                        self.draw_arc((0, 0), threshold, self.angle_unsigned, 45, line_width=10, segments=64)
                 draw_items = self.direction_items.values()
                 for d in draw_items:
                     d.draw_gpu_item(self)
@@ -214,9 +223,10 @@ class GestureGpuDraw(DrawDebug):
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""
         element = self.direction_element
+        scale = bpy.context.preferences.view.ui_scale
 
         if element and not self.is_draw_gesture:
-            size = self.pref.draw_property.text_gpu_draw_size
+            size = self.pref.draw_property.text_gpu_draw_size * scale
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__mouse_position__)
                 self.draw_text((0, 0), text=element.name_translate, size=size)

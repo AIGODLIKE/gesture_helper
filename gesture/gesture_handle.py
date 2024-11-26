@@ -1,5 +1,6 @@
 import time
 
+import bpy
 from bpy.props import IntProperty, BoolProperty
 
 from ..gesture.gesture_point_kd_tree import GesturePointKDTree
@@ -20,7 +21,9 @@ class GestureHandle:
         """检查回到之前的手势"""
         point, index, distance = self.find_closest_point
         points_kd_tree = self.trajectory_tree
-        if (distance < self.gesture_property.return_distance) and (index + 1 != len(points_kd_tree.child_element)):
+        scale = bpy.context.preferences.view.ui_scale
+        return_distance = self.gesture_property.return_distance * scale
+        if (distance < return_distance) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
 

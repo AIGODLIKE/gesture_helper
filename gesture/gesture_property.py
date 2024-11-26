@@ -155,13 +155,15 @@ class GestureProperty(PublicProperty):
     @property
     def is_beyond_threshold(self) -> bool:
         """手势距离是否超出阈值"""
-        return self.distance > self.gesture_property.threshold
+        scale = bpy.context.preferences.view.ui_scale
+        return self.distance > (self.gesture_property.threshold * scale)
 
     @property
     def is_beyond_threshold_confirm(self) -> bool:
         """手势距离超出是否超出阈值确定"""
+        scale = bpy.context.preferences.view.ui_scale
         gesture_property = self.gesture_property
-        return self.distance > (gesture_property.threshold_confirm + gesture_property.threshold)
+        return self.distance > ((gesture_property.threshold_confirm + gesture_property.threshold) * scale)
 
     @property
     def is_access_child_gesture(self) -> bool:

@@ -3,6 +3,7 @@ import re
 from functools import cache
 
 import blf
+import bpy
 import gpu
 from gpu_extras.batch import batch_for_shader
 from mathutils import Euler, Vector
@@ -219,12 +220,13 @@ class PublicGpu:
     @staticmethod
     def draw_rounded_rectangle_frame(position, *, color=(0, 0, 0, 1), line_width=2, radius=10, width=200, height=200,
                                      segments=128):
+        scale = bpy.context.preferences.view.ui_scale
         import gpu
         from .public import get_pref
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         with gpu.matrix.push_pop():
-            margin = get_pref().draw_property.text_gpu_draw_margin
+            margin = get_pref().draw_property.text_gpu_draw_margin * scale
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
             draw_line(vertex, color, line_width=line_width)
@@ -232,8 +234,9 @@ class PublicGpu:
     @staticmethod
     def draw_rounded_rectangle_area(position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
                                     segments=20):
+        scale = bpy.context.preferences.view.ui_scale
         from .public import get_pref
-        margin = get_pref().draw_property.text_gpu_draw_margin
+        margin = get_pref().draw_property.text_gpu_draw_margin * scale
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
