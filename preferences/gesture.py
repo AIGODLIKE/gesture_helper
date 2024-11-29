@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, IntProperty
+from bpy.props import BoolProperty, IntProperty, EnumProperty
 from bpy.types import PropertyGroup
 
 
@@ -23,6 +23,14 @@ class GestureProperty(PropertyGroup):
                                            default=False)
     show_gesture_keymaps: BoolProperty(name='Show Gesture Keymap')
 
+    pass_through_keymap_type: EnumProperty(name="Pass Through Keymap Type",
+                                           items=[
+                                               ("REGION", "Region", "from gesture exec region find key"),
+                                               ("KEYMAPS", "Keymaps", "from gesture set keymaps find key")
+                                           ],
+                                           default="REGION"
+                                           )
+
     @staticmethod
     def draw_gesture_property(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
@@ -35,3 +43,4 @@ class GestureProperty(PropertyGroup):
         col.prop(g, 'threshold_confirm')
         col.prop(g, 'immediate_implementation')
         col.prop(g, 'return_distance')
+        col.prop(g, 'pass_through_keymap_type')

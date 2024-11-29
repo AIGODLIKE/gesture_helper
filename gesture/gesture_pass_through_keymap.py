@@ -145,7 +145,8 @@ class GesturePassThroughKeymap:
         'transform.resize',
     )
 
-    def get_keymaps(self, context):
+    def from_region_get_keymaps(self, context):
+
         area_type = context.area.type
         region_type = context.region.type
         keymaps = context.window_manager.keyconfigs.active.keymaps
@@ -194,6 +195,12 @@ class GesturePassThroughKeymap:
         keys.append("Window")
         return keys
 
+    def get_keymaps(self, context):
+        pref = self.pref
+        if pref.gesture_property.pass_through_keymap_type == "REGION":
+            return self.from_region_get_keymaps(context)
+        return self.operator_gesture.keymaps
+
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
         """尝试透传按键事件
         :param context:bpy.types.Ccontext
@@ -212,7 +219,7 @@ class GesturePassThroughKeymap:
                 match_origin_key = []
                 for item in k.keymap_items:
                     et = item.type == event.type
-                    if item.idname in self.pass_through_idname and et:
+                    if item.idname in self.pass_through_idname and et and item.active:
                         if (
                                 bool(item.shift) == event.shift and
                                 bool(item.ctrl) == event.ctrl and
