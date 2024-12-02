@@ -16,7 +16,11 @@ class GesturePanel(bpy.types.Panel, PublicProperty):
         from ..ops.qucik_add.gesture_preview import GesturePreview
         pref = self.pref
         row = self.layout.row(align=True)
-        row.prop(pref, "enabled", icon_only=True)
+        rr = row.row(align=True)
+        rr.operator_context = "EXEC_DEFAULT"
+        rr.prop(pref, 'enabled', text="", emboss=True)
+        rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
+
         row.operator(GesturePreview.bl_idname, icon="RNA_ADD")
 
     def draw(self, context):

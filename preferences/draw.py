@@ -29,7 +29,10 @@ class PreferencesDraw(GestureDraw):
         from ..ops.qucik_add.gesture_preview import GesturePreview
         pref = get_pref()
         row = layout.row(align=True)
-        row.prop(pref, 'enabled', text="")
+        rr = row.row(align=True)
+        rr.operator_context = "EXEC_DEFAULT"
+        rr.prop(pref, 'enabled', text="", emboss=True)
+        rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
         row.operator(GesturePreview.bl_idname, icon="RNA_ADD", text=GesturePreview.bl_label)
