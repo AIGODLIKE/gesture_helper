@@ -17,6 +17,8 @@ __secure_call_globals__ = {
     'list': list,
     'max': max,
     'min': min,
+    'getattr': getattr,
+    'hasattr': hasattr,
 }
 
 

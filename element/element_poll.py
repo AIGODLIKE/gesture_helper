@@ -24,6 +24,7 @@ class ElementPoll:
         poll_res = secure_call_eval(self.poll_string)
         if get_debug("poll"):
             print(f"poll_bool\t{poll_res}\t{self.poll_string}")
+            print()
         return poll_res
 
     @property
@@ -34,11 +35,23 @@ class ElementPoll:
             return True
         except Exception as e:
             if get_debug("poll"):
+                print("poll_bool_is_validity")
+                print(self.poll_string)
                 print(e.args)
                 import traceback
                 traceback.print_stack()
                 traceback.print_exc()
+                print()
             return False
+
+    @property
+    def __poll_exception_info__(self) -> str:
+        """反回poll错误的信息"""
+        try:
+            self.__try_call_poll_bool__
+            return ""
+        except Exception as e:
+            return str(e.args)
 
     @property
     def poll_bool(self) -> bool:

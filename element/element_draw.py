@@ -180,6 +180,7 @@ class ElementDraw:
         if self.is_selected_structure:
             if not self.__poll_bool_is_validity__:
                 alert_list.append(f'{pgettext_iface("Condition error")}: {self.poll_string}')
+                alert_list.append(self.__poll_exception_info__)
             if not get_available_selected_structure(self):
                 alert_list.append('Wrong choice of structure')
                 alert_list.append('Previous element may not be a selection structure')
