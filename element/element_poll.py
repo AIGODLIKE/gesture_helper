@@ -69,7 +69,11 @@ class ElementPoll:
             traceback.print_exc()
             return False
 
-    poll_string: StringProperty(name='Prerequisite', description=poll)
+    def update_poll_string(self, context):
+        from ..utils.public_cache import PublicCache
+        PublicCache.cache_clear_data()
+
+    poll_string: StringProperty(name='Prerequisite', description=poll, update=update_poll_string)
 
     def __init_selected_structure__(self):
         self.poll_string = 'True'
