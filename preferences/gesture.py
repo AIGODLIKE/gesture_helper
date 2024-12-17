@@ -24,8 +24,10 @@ class GestureProperty(PropertyGroup):
     show_gesture_keymaps: BoolProperty(name='Show Gesture Keymap')
 
     pass_through_keymap_type: EnumProperty(name="Pass Through Keymap Type",
+                                           description="How to find shortcut keys when setting gestures that require transparent operators",
                                            items=[
-                                               ("REGION", "Region", "from gesture exec region find key"),
+                                               ("REGION", "Region",
+                                                "It is possible for operator errors to occur when searching for passed operators in the area executed through gesture operations"),
                                                ("KEYMAPS", "Keymaps", "from gesture set keymaps find key")
                                            ],
                                            default="REGION"

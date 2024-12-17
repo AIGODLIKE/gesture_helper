@@ -302,5 +302,15 @@
   "UV Sync": "UV同步",
   "Open Backups Folder": "打开备份文件夹",
   "Gesture Operator": "手势操作",
-  "Enabled Panel": "启用面板"
+  "Enabled Panel": "启用面板",
+  "Import Preferences": "导入偏好设置",
+  "Export Preferences": "导出偏好设置",
+  "Import error, please select preference settings file": "导入错误,请选择偏好设置文件",
+  "Pass Through Keymap Type": "传递快捷键类型",
+  "Region": "区域",
+  "Keymaps": "键位映射",
+  "It is possible for operator errors to occur when searching for passed operators in the area executed through gesture operations": "通过手势操作执行的区域查找传递的操作符,有可能会出现操作符误传递",
+  "By using gesture based key mapping to find transparent operators, there may be no false transparent transmission, but there is a possibility of non transparent transmission": "通过手势设置的键位映射来查找透传操作符,不会出现误透传情况,但有可能会出现无法透传的情况",
+  "How to find shortcut keys when setting gestures that require transparent operators": "设置手势需要透传操作符时查找快捷键的方式",
+  "Export error, please check path %s": "导出错误, 请检查路径 %s"
 }

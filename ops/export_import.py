@@ -7,6 +7,8 @@ from datetime import datetime
 import bpy
 from bpy.app.translations import pgettext
 from bpy.props import BoolProperty, StringProperty
+from bpy.types import Operator
+from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
@@ -194,10 +196,11 @@ class Import(PublicFileOperator):
         """
         try:
             backups_path = get_backups_folder()
-
+            print("try restore", backups_path)
             if os.path.isdir(backups_path):
                 key = f"Gesture Close Addon Backups {ymd()}.json"
                 if key in os.listdir(backups_path):
+                    print("check restore file", backups_path)
                     bpy.ops.gesture.gesture_import(
                         # 'EXEC_DEFAULT',
                         filepath=os.path.join(backups_path, key),
@@ -334,3 +337,40 @@ class Export(PublicFileOperator):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
+
+
+class ExportPreferences(Operator, ExportHelper):
+    bl_idname = "gesture.export_preferences"
+    bl_label = "Export Preferences"
+
+    filename_ext = ".gesture_preferences"
+
+    def execute(self, context):
+        from ..utils.public import get_pref
+        from bpy.app.translations import pgettext_iface
+        try:
+            get_pref().preferences_backups(self.filepath)
+        except Exception as e:
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            print(e.args)
+            self.report({'ERROR'}, pgettext_iface("Export error, please check path %s") % self.filepath)
+        return {"FINISHED"}
+
+
+class ImportPreferences(Operator, ImportHelper):
+    bl_idname = "gesture.import_preferences"
+    bl_label = "Import Preferences"
+
+    def execute(self, context):
+        from ..utils.public import get_pref
+        try:
+            get_pref().preferences_restore(self.filepath)
+        except Exception as e:
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            print(e.args)
+            self.report({'ERROR'}, "Import error, please select preference settings file")
+        return {"FINISHED"}

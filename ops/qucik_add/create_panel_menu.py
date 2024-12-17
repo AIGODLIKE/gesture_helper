@@ -4,7 +4,6 @@ __menu__ = []
 import bpy
 from bpy.props import EnumProperty, StringProperty
 
-from ...src.translate import __name_translate__
 from ...utils.public import PublicOperator, PublicProperty, get_pref
 
 
@@ -42,6 +41,7 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
 
 
 def draw_add(self, context):
+    from bpy.app.translations import pgettext_iface
     t = "unknown"
     layout = self.layout
     if bpy.types.Menu in self.__class__.__bases__:
@@ -53,7 +53,7 @@ def draw_add(self, context):
 
     layout.separator()
     layout.alert = True
-    text = f"{__name_translate__('Adding')} {__name_translate__(self.bl_label)} {__name_translate__(t)}({self.bl_idname})"
+    text = f"{pgettext_iface('Adding')} {pgettext_iface(self.bl_label)} {pgettext_iface(t)}({self.bl_idname})"
     ops = layout.operator(CreatePanelMenu.bl_idname, text=text)
     ops.type = t.upper()
     ops.create_id_name = self.bl_idname

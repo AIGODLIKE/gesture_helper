@@ -36,6 +36,8 @@ operator_list = (
 
     export_import.Export,
     export_import.Import,
+    export_import.ExportPreferences,
+    export_import.ImportPreferences,
 
     restore_key.RestoreKey,
 

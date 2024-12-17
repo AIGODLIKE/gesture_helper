@@ -35,6 +35,7 @@ class PreferencesDraw(GestureDraw):
         rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
+        row.operator_context = "INVOKE_DEFAULT"
         row.operator(GesturePreview.bl_idname, icon="RNA_ADD", text=GesturePreview.bl_label)
 
     @staticmethod
@@ -45,6 +46,7 @@ class PreferencesDraw(GestureDraw):
         :return:
         """
         from .. import preferences
+        from ..ops.export_import import ExportPreferences, ImportPreferences
         pref = get_pref()
 
         row = layout.row()
@@ -56,6 +58,9 @@ class PreferencesDraw(GestureDraw):
         col.prop(pref.draw_property, "panel_name")
         col.prop(pref.draw_property, "author")
         col.prop(pref.draw_property, "enable_name_translation")
+        col.operator_context = "INVOKE_DEFAULT"
+        col.operator(ExportPreferences.bl_idname)
+        col.operator(ImportPreferences.bl_idname)
 
         preferences.BackupsProperty.draw_backups(column)
         preferences.DebugProperty.draw_debug(column)

@@ -31,11 +31,13 @@ class DrawGpu:
                     return {'RUNNING_MODAL'}
             with self.tips as tips:
                 tips.translate = True
-                tips.label(
-                    __name_translate__(
-                        "Right-click on the operator or property you want to add and click Add to Gesture to add it."))
-                tips.label(__name_translate__("Selecting elements in the 3D view toolbar"))
-                tips.label(__name_translate__("Gesture preview mode Blank space Right click to exit"))
+                from bpy.app.translations import pgettext_iface
+                for text in [
+                    "Right-click on the operator or property you want to add and click Add to Gesture to add it.",
+                    "Selecting elements in the 3D view toolbar",
+                    "Gesture preview mode Blank space Right click to exit"
+                ]:
+                    tips.label(pgettext_iface(text))
                 if tips.check_event(event):
                     return {'FINISHED'}
         except Exception as e:

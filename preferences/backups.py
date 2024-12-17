@@ -59,17 +59,20 @@ class BackupsProperty(PropertyGroup):
 class BackupsPreferences:
     __preferences_backups_path__ = os.path.join(BACKUPS_FOLDER, 'preferences')
 
-    def preferences_backups(self):
-        data = PropertyGetUtils.props_data(self, exclude=("gesture", "index_gesture", "name"))
-        print("Gesture Backups Preferences", self.__preferences_backups_path__)
-        with open(self.__preferences_backups_path__, "w") as file:
+    def preferences_backups(self, export_path=None):
+        if not export_path:
+            export_path = self.__preferences_backups_path__
+        data = PropertyGetUtils.props_data(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
+        print("Gesture Backups Preferences", export_path)
+        with open(export_path, "w") as file:
             file.write(json.dumps(data, ensure_ascii=True, indent=2))
 
-    def preferences_restore(self):
-        if os.path.exists(self.__preferences_backups_path__):
-            with open(self.__preferences_backups_path__, "r") as file:
+    def preferences_restore(self, file_path=None):
+        if not file_path:
+            file_path = self.__preferences_backups_path__
+        if os.path.exists(file_path):
+            with open(file_path, "r") as file:
                 from ..utils.public import get_pref
                 data = json.loads(file.read())
-                print("Gesture Restore Preferences", data.keys())
-
+                print("Gesture Restore Preferences")
                 PropertySetUtils.set_property_data(get_pref(), data)
