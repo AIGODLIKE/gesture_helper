@@ -40,7 +40,7 @@ class PropertySetUtils:
             typ = pro.type
             try:
                 if typ == 'POINTER':
-                    PropertySetUtils.set_property_data(prop, value)
+                    PropertySetUtils.set_property_data(pr, value)
                 elif typ == 'COLLECTION':
                     PropertySetUtils.set_collection_data(pr, value)
                 elif typ == 'ENUM' and pro.is_enum_flag:

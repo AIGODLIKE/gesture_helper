@@ -68,6 +68,8 @@ class BackupsPreferences:
     def preferences_restore(self):
         if os.path.exists(self.__preferences_backups_path__):
             with open(self.__preferences_backups_path__, "r") as file:
+                from ..utils.public import get_pref
                 data = json.loads(file.read())
-                print("Gesture Restore Preferences")
-                PropertySetUtils.set_property_data(self, data)
+                print("Gesture Restore Preferences", data.keys())
+
+                PropertySetUtils.set_property_data(get_pref(), data)
