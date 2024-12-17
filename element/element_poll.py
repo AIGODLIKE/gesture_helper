@@ -70,8 +70,8 @@ class ElementPoll:
             return False
 
     def update_poll_string(self, context):
-        from ..utils.public_cache import PublicCache
-        PublicCache.cache_clear_data()
+        from ..utils.public_cache import PublicCacheFunc
+        PublicCacheFunc.cache_clear()
 
     poll_string: StringProperty(name='Prerequisite', description=poll, update=update_poll_string)
 
