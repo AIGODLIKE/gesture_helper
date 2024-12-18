@@ -17,7 +17,7 @@ class DrawGpu:
                 bpu.mouse_position = ops.mouse_position
                 gesture_list = ops.pref.gesture.values()
                 if gesture_list:
-                    for g in gesture_list[::-1]:
+                    for g in reversed(gesture_list):
                         name = f"{g.name}({g.__key_str__})"
                         o = bpu.operator("wm.context_set_int", name, active=g.is_active)
                         o.data_path = "window_manager.gesture_index"

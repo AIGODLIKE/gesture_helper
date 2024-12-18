@@ -17,13 +17,13 @@ class BpuDebug:
             size = 24
             offset = Vector((-500, -200))
             for index, i in enumerate(
-                    (
+                    reversed((
                             f"parent:{self.parent}",
                             str(self.is_haver),
                             str(self.__draw_size__),
                             str(self.offset_position),
                             str(self.mouse_position),
-                    )[::-1]
+                    ))
             ):
                 font_id = self.font_id
                 blf.size(font_id, size)

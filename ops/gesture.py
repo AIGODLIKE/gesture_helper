@@ -20,6 +20,15 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         super().__init__()
         self.start_event = None
 
+    def draw_error(self, __):
+        layout = self.layout
+        for text in [
+            "No gesture found to draw",
+            "Possible errors in keymap",
+            "Please go to the plugin preference settings to restore keymap",
+        ]:
+            layout.label(text=text)
+
     def invoke(self, context, event):
         self.register_draw()
         self.init_trajectory()
@@ -28,6 +37,11 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
 
         print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
               event.value_prev)
+        if self.operator_gesture is None:
+            context.window_manager.popup_menu(self.__class__.draw_error,
+                                              title=pgettext_iface("Error"),
+                                              icon="INFO")
+            return {'CANCELLED'}
         pass_d = self.try_pass_annotations_eraser(context, event)
         if pass_d:
             return pass_d

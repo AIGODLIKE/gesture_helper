@@ -25,7 +25,7 @@
 
 
 # def draw_element_child(self, element, bpu: BpuLayout):
-#     for e in element.values()[::-1]:
+#     for e in reversed(element.values()):
 #         if e.show_child:
 #             self.draw_element_child(e.element, bpu)
 #         bpu.prop(e, "enabled", text=f"{' ' * e.level}{e.name}")
