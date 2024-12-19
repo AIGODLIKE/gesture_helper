@@ -55,6 +55,14 @@ class ElementCURE:
                                        default=False,
                                        options={'HIDDEN', 'SKIP_SAVE'})
 
+        # Some users may experience Gizmo failure in version 4.3 due to attribute updates ,Rewrite Solution
+        from ..utils.enum import ENUM_SELECTED_TYPE
+        from bpy.props import EnumProperty
+        selected_type: EnumProperty(
+            name='Select structure type',
+            items=ENUM_SELECTED_TYPE,
+        )
+
         @property
         def collection(self):
             r = self.relationship
