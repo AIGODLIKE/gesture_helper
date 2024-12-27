@@ -27,11 +27,12 @@ class GestureHandle:
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
 
-    def try_running_operator(self):
+    def try_running_operator(self, ops):
         """尝试运行手势"""
         element = self.direction_element
         if self.is_beyond_threshold_confirm and element and element.is_operator:
-            element.running_operator()
+            if element.running_operator() is not None:
+                ops.report({'ERROR'}, "Operator Run Error,Please check the console")
             return True
 
     def init_trajectory(self):

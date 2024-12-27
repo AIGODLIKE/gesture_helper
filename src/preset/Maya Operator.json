@@ -1,5 +1,5 @@
 {
-  "time": 1729673735.6436841,
+  "time": 1735267892.5495532,
   "blender_version": [
     4,
     2,
@@ -8,7 +8,7 @@
   "addon_version": [
     2,
     0,
-    3
+    8
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -23,8 +23,6 @@
           "name": "Object Mode",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "IF",
           "poll_string": "(C.mode == \"OBJECT\")",
           "element": {
@@ -130,8 +128,6 @@
           "name": "Edit Mode",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_MESH\")",
           "element": {
@@ -209,8 +205,6 @@
               "name": "Select Vertex",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "IF",
               "poll_string": "(tool.mesh_select_mode[0] == True)",
               "element": {
@@ -314,8 +308,6 @@
               "name": "Select Edge",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(tool.mesh_select_mode[1] == True)",
               "element": {
@@ -568,6 +560,52 @@
                           "operator_type": "OPERATOR"
                         }
                       }
+                    },
+                    "3": {
+                      "name": "Clear Edge Crease",
+                      "element_type": "OPERATOR",
+                      "enabled": true,
+                      "icon": "COLOR_ERROR",
+                      "enabled_icon": false,
+                      "direction": "2",
+                      "operator_bl_idname": "transform.edge_crease",
+                      "operator_context": "EXEC_DEFAULT",
+                      "operator_properties": "{'value': -1.0}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "4": {
+                      "name": "Bevel Weight",
+                      "element_type": "CHILD_GESTURE",
+                      "enabled": true,
+                      "icon": "UV_EDGESEL",
+                      "enabled_icon": true,
+                      "direction": "3",
+                      "element": {
+                        "0": {
+                          "name": "Bevel",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "icon": "COLOR_ERROR",
+                          "enabled_icon": false,
+                          "direction": "3",
+                          "operator_bl_idname": "transform.edge_bevelweight",
+                          "operator_context": "INVOKE_DEFAULT",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "Clear Weight",
+                          "element_type": "OPERATOR",
+                          "enabled": true,
+                          "icon": "PANEL_CLOSE",
+                          "enabled_icon": true,
+                          "direction": "2",
+                          "operator_bl_idname": "transform.edge_bevelweight",
+                          "operator_context": "EXEC_DEFAULT",
+                          "operator_properties": "{'value': -1.0}",
+                          "operator_type": "OPERATOR"
+                        }
+                      }
                     }
                   }
                 },
@@ -589,8 +627,6 @@
               "name": "Select Face",
               "element_type": "SELECTED_STRUCTURE",
               "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(tool.mesh_select_mode[2] == True)",
               "element": {
@@ -860,8 +896,6 @@
           "name": "Metaball Edit",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_METABALL\")",
           "element": {
@@ -931,8 +965,6 @@
           "name": "Curve Edit",
           "element_type": "SELECTED_STRUCTURE",
           "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_CURVE\")",
           "element": {

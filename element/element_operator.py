@@ -170,15 +170,15 @@ class ElementOperator(OperatorProperty):
         if self.properties != properties:
             self['operator_properties'] = str(properties)
 
-    def running_operator(self) -> None:
+    def running_operator(self) -> Exception:
         """运行此元素的操作符
         """
         if self.operator_type == "OPERATOR":
-            self.__running_by_bl_idname__()
+            return self.__running_by_bl_idname__()
         elif self.operator_type == "SCRIPT":
-            self.__running_by_script__()
+            return self.__running_by_script__()
         else:
-            Exception(f'{self}操作符类型错误')
+            return Exception(f'{self}操作符类型错误')
 
     @property
     def __operator_name__(self) -> str:
@@ -208,6 +208,7 @@ class ElementOperator(OperatorProperty):
                 )
         except Exception as e:
             print('running_operator ERROR', e)
+            return e
 
     def __running_by_script__(self):
         """运行自定义脚本"""
@@ -218,6 +219,7 @@ class ElementOperator(OperatorProperty):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
+            return e
 
     def operator_tmp_kmi_properties_clear(self):
         """清空临时 keymap item 属性"""

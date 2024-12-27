@@ -34,5 +34,7 @@
   "Face Clear": "面清理",
   "Wireframe Threshold": "线框阈值",
   "Wireframe Opacity": "线框不透明度",
-  "Node Overlay": "节点叠加层"
+  "Node Overlay": "节点叠加层",
+  "Clear Edge Crease": "清理边线折痕",
+  "Clear Weight": "清理权重"
 }

@@ -67,7 +67,7 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
         return {'RUNNING_MODAL'}
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
-        ops = self.try_running_operator()
+        ops = self.try_running_operator(self)
 
         if self.is_debug:
             print('ops', ops)
@@ -106,5 +106,5 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
             de = self.direction_element
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
                 if de.is_operator:
-                    res = self.try_running_operator()
+                    res = self.try_running_operator(self)
                     return res

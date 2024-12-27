@@ -143,6 +143,8 @@ class GesturePassThroughKeymap:
         'transform.translate',
         'transform.rotate',
         'transform.resize',
+
+        'transform.edge_crease',  # Shift+E
     )
 
     def from_region_get_keymaps(self, context):
@@ -212,6 +214,7 @@ class GesturePassThroughKeymap:
         keys = self.get_keymaps(context)
         keymaps = context.window_manager.keyconfigs.active.keymaps
 
+        print("try_pass_through_keymap keys", keys)
         # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
@@ -227,6 +230,7 @@ class GesturePassThroughKeymap:
                         ):
                             match_origin_key.append(item)
                 ml = len(match_origin_key)
+                print("ml", key, ml)
                 if ml == 1:  # 只匹配到一个键
                     kmi = match_origin_key[0]
                     if kmi.active:  # 只有当快捷键启用时才处理

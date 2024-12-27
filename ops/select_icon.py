@@ -174,7 +174,7 @@ class SelectIcon(Operator, PublicProperty):
 
     def draw_icons(self, layout, num_cols=0, icons=None):
         if icons is not None:
-            filtered_icons = reversed(icons)
+            filtered_icons = list(reversed(icons))
         else:
             filtered_icons = SelectIcon.filtered_icons
 
