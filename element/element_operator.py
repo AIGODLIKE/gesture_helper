@@ -219,6 +219,7 @@ class ElementOperator(OperatorProperty):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
+            print("运行错误,")
             return e
 
     def operator_tmp_kmi_properties_clear(self):

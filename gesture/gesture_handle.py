@@ -31,8 +31,10 @@ class GestureHandle:
         """尝试运行手势"""
         element = self.direction_element
         if self.is_beyond_threshold_confirm and element and element.is_operator:
-            if element.running_operator() is not None:
-                ops.report({'ERROR'}, "Operator Run Error,Please check the console")
+            error = element.running_operator()
+            if error is not None:
+                from bpy.app.translations import pgettext_iface
+                ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
             return True
 
     def init_trajectory(self):

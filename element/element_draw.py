@@ -113,7 +113,7 @@ class ElementDraw:
                 c = col.column(align=True)
                 c.operator(ElementCURE.ScriptEdit.bl_idname)
                 rr = c.row(align=True)
-                rr.label(text=f'"{pgettext_iface("Script word count")}:{len(self.operator_script)}"')
+                rr.label(text=f'{pgettext_iface("Script word count")}:{len(self.operator_script)}')
                 rr.separator()
                 rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
                         emboss=False)
