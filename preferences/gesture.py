@@ -13,9 +13,9 @@ class GestureProperty(PropertyGroup):
             self['threshold_confirm'] = self.threshold_confirm + 20
 
     timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(100, 'TIME'))
-    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(100))
+    radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(90))
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
-    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(80))
+    threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(70))
     return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(30))
 
     immediate_implementation: BoolProperty(name="Immediate Implementation",

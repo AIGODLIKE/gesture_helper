@@ -24,8 +24,8 @@ class DrawProperty(PropertyGroup):
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=20, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Radius', description='Gpu Draw Radius Size', default=7, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=16, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=7, min=5, max=120)
     text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu Draw Margin Size', default=10, min=5, max=120)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
