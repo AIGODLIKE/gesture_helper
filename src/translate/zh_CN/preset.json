@@ -36,5 +36,11 @@
   "Wireframe Opacity": "线框不透明度",
   "Node Overlay": "节点叠加层",
   "Clear Edge Crease": "清理边线折痕",
-  "Clear Weight": "清理权重"
+  "Clear Weight": "清理权重",
+  "Clear Bevel Weight": "清理倒角权重",
+  "Mark Sharp Verts": "为顶点标记锐边",
+  "Set Sharpness by Angle": "按角度设置锐边",
+  "Seam Edge": "缝合边",
+  "Clear Crease": "清理折痕",
+  "Clear All Property": "清理所有属性"
 }
