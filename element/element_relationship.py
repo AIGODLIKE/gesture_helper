@@ -176,7 +176,8 @@ class ElementRelationship(RadioSelect,
             if self.enabled:
                 return not self.__selected_structure_is_validity__
         elif self.is_operator:
-            return not (self.__operator_id_name_is_validity__ and self.__operator_properties_is_validity__)
+            if self.operator_type == "OPERATOR":
+                return not (self.__operator_id_name_is_validity__ and self.__operator_properties_is_validity__)
         return False
 
     @property

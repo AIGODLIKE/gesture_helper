@@ -193,11 +193,12 @@ class ElementDraw:
                     alert_list.append("I don't know what's wrong there either :>")
                     alert_list.append("Maybe it's not enabled")
         elif self.is_operator:
-            if not self.__operator_id_name_is_validity__:
-                alert_list.append(f'Operator Error')
-                alert_list.append(f'{pgettext_iface("Not find operator")}: {self.operator_bl_idname}')
-            if not self.__operator_properties_is_validity__:
-                alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
+            if self.operator_type == "OPERATOR":
+                if not self.__operator_id_name_is_validity__:
+                    alert_list.append(f'Operator Error')
+                    alert_list.append(f'{pgettext_iface("Not find operator")}: {self.operator_bl_idname}')
+                if not self.__operator_properties_is_validity__:
+                    alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
         if alert_list:
             col = layout.box().column(align=True)
             col.alert = True

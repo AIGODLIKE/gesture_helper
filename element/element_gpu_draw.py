@@ -109,11 +109,12 @@ class ElementGpuProperty:
             elif self.is_child_gesture:
                 return draw.background_child_active_color
         elif self.is_operator:
-            if self.is_draw_property_bool:
-                if self.get_operator_wm_context_toggle_property_bool:
-                    return draw.background_bool_true
-                else:
-                    return draw.background_bool_false
+            if self.operator_type == "OPERATOR":
+                if self.is_draw_property_bool:
+                    if self.get_operator_wm_context_toggle_property_bool:
+                        return draw.background_bool_true
+                    else:
+                        return draw.background_bool_false
             return draw.background_operator_color
         elif self.is_child_gesture:
             return draw.background_child_color

@@ -47,6 +47,7 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_ICON_ITEM,
         'operator_type',
         'operator_script',
+        'direction'
     ],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,

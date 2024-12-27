@@ -95,6 +95,7 @@ class OperatorProperty:
             import traceback
             traceback.print_stack()
             traceback.print_exc()
+            self.operator_properties = "{}"
             return {}
 
     @property
