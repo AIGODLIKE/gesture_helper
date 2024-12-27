@@ -42,5 +42,7 @@
   "Set Sharpness by Angle": "按角度设置锐边",
   "Seam Edge": "缝合边",
   "Clear Crease": "清理折痕",
-  "Clear All Property": "清理所有属性"
+  "Clear All Property": "清理所有属性",
+  "Set edge properties to quickly add or clean up": "设置边属性,快速添加或清理",
+  "Mesh Edge Property": "网格边属性"
 }
