@@ -87,7 +87,7 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
 
 def get_addon_keymap(keymap: str) -> 'bpy.types.KeyMap':
     kc = bpy.context.window_manager.keyconfigs
-    keymaps = kc.default.keymaps
+    keymaps = kc.addon.keymaps
     find = keymaps.get(keymap)
     if find:
         return find
@@ -106,6 +106,7 @@ def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
     id_name = GestureOperator.bl_idname
     kcs = bpy.context.window_manager.keyconfigs
 
+    print("id_name", id_name)
     for km in kcs.addon.keymaps.values():
         kmi_item = km.keymap_items.find_from_operator(id_name)
         if kmi_item:

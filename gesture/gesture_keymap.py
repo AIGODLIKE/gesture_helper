@@ -152,17 +152,18 @@ class GestureKeymap(KeymapProperty):
 
         if get_debug('key'):
             print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
+        return clear_count
 
     @classmethod
     def key_restart(cls) -> None:
         """重置键位"""
+        count = cls.key_clear_legacy()
+        cls.key_all_load()
         if get_debug('key'):
-            print("Gesture Key Restart")
+            print("Gesture Key Restart", count)
             import traceback
             for i in traceback.extract_stack():
                 print(i)
-        cls.key_clear_legacy()
-        cls.key_all_load()
 
     def restore_key(self):
         """重置快捷键"""
