@@ -87,15 +87,11 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
 
 def get_addon_keymap(keymap: str) -> 'bpy.types.KeyMap':
     kc = bpy.context.window_manager.keyconfigs
-    keymaps = kc.addon.keymaps
-    find = keymaps.get(keymap)
-    if find:
-        return find
     km = kc.default.keymaps.get(keymap)
     if km:
-        return keymaps.new(km.name, space_type=km.space_type, region_type=km.region_type)
+        return kc.addon.keymaps.new(km.name, space_type=km.space_type, region_type=km.region_type)
     else:
-        return keymaps.new(keymap, space_type='EMPTY', region_type='WINDOW')
+        return kc.addon.keymaps.new(keymap, space_type='EMPTY', region_type='WINDOW')
 
 
 def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
