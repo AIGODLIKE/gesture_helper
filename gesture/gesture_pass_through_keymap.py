@@ -71,12 +71,14 @@ class GesturePassThroughKeymap:
         "PAINT": "Image Paint",
         "MASK": "Mask Editing",  # TODO 使用情况需确定
     }
-
-    pass_through_idname = (
+    pass_through_ui_idname = (
         # 菜单
         'wm.call_menu',
         'wm.call_panel',
         'wm.call_menu_pie',
+    )
+    pass_through_idname = (
+        *pass_through_ui_idname,
         'wm.context_toggle',
         'buttons.context_menu',  # 属性菜单
 
@@ -309,15 +311,40 @@ class GesturePassThroughKeymap:
                     return True
 
 
-def try_operator_pass_through_right(kmi, operator_context='INVOKE_DEFAULT') -> bool:
+def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
+    # idname = kmi.idname
+    # if idname in GesturePassThroughKeymap.pass_through_ui_idname:
+    #     prop = get_kmi_operator_properties(kmi)
+    #     if "name" in prop:
+    #         name = prop["name"]
+    #         draw_cls = getattr(bpy.types, name, None)
+    #         # 如果能找到则说明这个是系统的绘制方法
+    #         if draw_cls is None:
+    #             return False
+    #         return draw_cls.poll()
+    #     else:
+    #         return False
+    # getattr(bpy.types, "VIEW3D_MT_edit_mesh_delete", None)
+    # TODO("删除键如果在物体模式下没有这个键位，那么在物体模式下会显示编辑模式的菜单,这个是由MP7引发的问题,MP7有替换删除快捷键")
+
+    prefix, suffix = idname.split('.')
+    func = getattr(getattr(bpy.ops, prefix), suffix)
+    if not func.poll():
+        return False
+    return True
+
+
+def try_operator_pass_through_right(kmi: bpy.types.KeyMapItem, operator_context='INVOKE_DEFAULT') -> bool:
     """尝试穿透操作符,如果穿透了反回Ture"""
     try:
+        if not self.check_kmi_pass_through(kmi):
+            return False
+
         sp = kmi.idname.split('.')
         prefix, suffix = sp
         func = getattr(getattr(bpy.ops, prefix), suffix)
+
         prop = get_kmi_operator_properties(kmi)
-        if not func.poll():
-            return False
         op_re = func(operator_context, True, **prop)
         print(f"\tcall {kmi.idname}\t{prop}\t{op_re}")
         # import traceback
