@@ -212,15 +212,19 @@ class GesturePassThroughKeymap:
         IMAGE_EDITOR
         """
         keys = self.get_keymaps(context)
-        keymaps = context.window_manager.keyconfigs.active.keymaps
+
+        kc = context.window_manager.keyconfigs
+        keymaps = kc.active.keymaps
 
         print("try_pass_through_keymap keys", keys)
+        user_keymaps = kc.user.keymaps
         # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
-                k = keymaps[key]
-                match_origin_key = []
-                for item in k.keymap_items:
+                km = keymaps[key]
+
+                match_kmis = []  # 匹配到的快捷键列表
+                for item in km.keymap_items:
                     et = item.type == event.type
                     if item.idname in self.pass_through_idname and et and item.active:
                         if (
@@ -228,11 +232,21 @@ class GesturePassThroughKeymap:
                                 bool(item.ctrl) == event.ctrl and
                                 bool(item.alt) == event.alt
                         ):
-                            match_origin_key.append(item)
-                ml = len(match_origin_key)
-                print("ml", key, ml)
+                            match_kmis.append(item)
+                ml = len(match_kmis)
+
+                # 搜索查看用户是否自已改了快捷键,如果改了快捷键将会出现在keymaps.user
+                if key in user_keymaps:
+                    for index, match_kmi in enumerate(match_kmis):
+                        for kmi in user_keymaps[key].keymap_items:
+                            props_ok = get_kmi_operator_properties(kmi) == get_kmi_operator_properties(match_kmi)
+                            if kmi.idname == match_kmi.idname and props_ok:
+                                if kmi.is_user_modified:
+                                    # print("找到一个被用户改了的快捷键来替换", kmi)
+                                    match_kmis[index] = kmi
+
                 if ml == 1:  # 只匹配到一个键
-                    kmi = match_origin_key[0]
+                    kmi = match_kmis[0]
                     if kmi.active:  # 只有当快捷键启用时才处理
                         if self.try_pass_set_cursor3d_location(context, event, kmi):
                             # print("shift右键鼠标单击 设置游标处理")
@@ -251,7 +265,7 @@ class GesturePassThroughKeymap:
                     #         "object.delete",
                     #         "object.select_all",
                     #         "mesh.select_all",
-                    for kmi in match_origin_key:
+                    for kmi in match_kmis:
                         if kmi.active:
                             ok = try_operator_pass_through_right(kmi)
                             if ok:
@@ -259,7 +273,7 @@ class GesturePassThroughKeymap:
                                 # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                                 return
                 else:
-                    print(f"else\t{key}\t{[i.idname for i in match_origin_key]}")
+                    print(f"else\t{key}\t{[i.idname for i in match_kmis]}")
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set:
@@ -296,6 +310,7 @@ class GesturePassThroughKeymap:
 
 
 def try_operator_pass_through_right(kmi, operator_context='INVOKE_DEFAULT') -> bool:
+    """尝试穿透操作符,如果穿透了反回Ture"""
     try:
         sp = kmi.idname.split('.')
         prefix, suffix = sp
