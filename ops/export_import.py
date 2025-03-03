@@ -221,8 +221,6 @@ class Export(PublicFileOperator):
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
-    is_invoke: bool
-
     @property
     def file_string(self):
         string = datetime.fromtimestamp(time.time())
