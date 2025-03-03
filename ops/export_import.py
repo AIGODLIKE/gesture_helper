@@ -221,25 +221,30 @@ class Export(PublicFileOperator):
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
+
+    def __init__(self):
+        super().__init__()
+        self.is_invoke = False
+
     @property
     def file_string(self):
         string = datetime.fromtimestamp(time.time())
         mode = self.pref.backups_property.backups_file_mode
         if self.is_auto_backups:
             if mode == "ADDON_UNREGISTER":
-                string = f'Auto Backups {string}'
+                string = f"Auto Backups {string}"
             elif mode == "ADDON_UNREGISTER_DAY":
-                string = f'Auto Backups {ymd()}'
+                string = f"Auto Backups {ymd()}"
             elif mode == "ONLY_ONE":
-                string = 'Auto Backups'
+                string = "Auto Backups"
         if self.is_close_backups:
-            string = f'Close Addon Backups {ymd()}'
+            string = f"Close Addon Backups {ymd()}"
         return string
 
     @property
     def file_path(self):
         folder_path = self.filepath
-        name = 'Gesture'
+        name = "Gesture"
 
         if self.is_invoke and folder_path.endswith('.json'):
             return os.path.abspath(folder_path)
