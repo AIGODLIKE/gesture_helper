@@ -16,10 +16,6 @@ class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePas
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
 
-    def __init__(self):
-        super().__init__()
-        self.start_event = None
-
     def draw_error(self, __):
         layout = self.layout
         for text in [

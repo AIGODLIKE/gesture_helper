@@ -35,8 +35,7 @@ class SelectIcon(Operator, PublicProperty):
     bl_label = 'Select Icon'
     filtered_icons = []
 
-    def __init__(self):
-        self.width = None
+    width: int
 
     def update_icons(self, context):
         SelectIcon.filtered_icons = []

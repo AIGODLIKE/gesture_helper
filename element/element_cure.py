@@ -10,9 +10,6 @@ from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 class ElementCURE:
     """增删查改"""
 
-    def __init__(self):
-        pass
-
     @cache_update_lock
     def copy(self):
         """复制元素"""

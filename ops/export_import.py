@@ -221,8 +221,7 @@ class Export(PublicFileOperator):
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
-    def __init__(self):
-        self.__is_invoke__ = None
+    is_invoke: bool
 
     @property
     def file_string(self):
@@ -244,7 +243,7 @@ class Export(PublicFileOperator):
         folder_path = self.filepath
         name = 'Gesture'
 
-        if self.__is_invoke__ and folder_path.endswith('.json'):
+        if self.is_invoke and folder_path.endswith('.json'):
             return os.path.abspath(folder_path)
 
         elif self.is_auto_backups or self.is_close_backups:
@@ -299,7 +298,7 @@ class Export(PublicFileOperator):
         )
 
     def invoke(self, context, event):
-        self.__is_invoke__ = True
+        self.is_invoke = True
         return super().invoke(context, event)
 
     def execute(self, _):

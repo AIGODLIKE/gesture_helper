@@ -73,9 +73,6 @@ class ModalMouseOperator(Operator, StoreValue):
                 ...
         return "value %"
 
-    def __init__(self):
-        super().__init__()
-
     def invoke(self, context, event):
         self.__store__()
         print("invoke", self.bl_idname, self.___value___, self.data_path)
