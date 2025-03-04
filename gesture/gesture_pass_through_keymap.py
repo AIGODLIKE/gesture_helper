@@ -327,7 +327,7 @@ def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
     # getattr(bpy.types, "VIEW3D_MT_edit_mesh_delete", None)
     # TODO("删除键如果在物体模式下没有这个键位，那么在物体模式下会显示编辑模式的菜单,这个是由MP7引发的问题,MP7有替换删除快捷键")
 
-    prefix, suffix = idname.split('.')
+    prefix, suffix = kmi.idname.split('.')
     func = getattr(getattr(bpy.ops, prefix), suffix)
     if not func.poll():
         return False
@@ -337,7 +337,7 @@ def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
 def try_operator_pass_through_right(kmi: bpy.types.KeyMapItem, operator_context='INVOKE_DEFAULT') -> bool:
     """尝试穿透操作符,如果穿透了反回Ture"""
     try:
-        if not self.check_kmi_pass_through(kmi):
+        if not check_kmi_pass_through(kmi):
             return False
 
         sp = kmi.idname.split('.')
@@ -352,7 +352,6 @@ def try_operator_pass_through_right(kmi: bpy.types.KeyMapItem, operator_context=
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
         print(f"try_operator_pass_through_right Error\t{e.args}")
-        print(prop)
         import traceback
         traceback.print_exc()
         traceback.print_stack()
