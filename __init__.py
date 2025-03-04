@@ -4,7 +4,7 @@ bl_info = {
     "name": "Gesture Helper",
     "description": "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties.",
     "author": "AIGODLIKE Community(小萌新)",
-    "version": (2, 1, 1),
+    "version": (2, 1, 2),
     "blender": (3, 0, 0),
     "location": "Tool Panel",
     "support": "COMMUNITY",
