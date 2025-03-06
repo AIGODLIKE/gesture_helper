@@ -61,20 +61,25 @@ __shield_hazard_type__ = {'Del',
                           }
 
 
-def __check_shield__(eval_string):
+def __check_shield__(eval_string) -> bool:
+    """当出现不允许的语法时反回False"""
     dump_data = ast.dump(ast.parse(eval_string), indent=2)
     is_shield = {i for i in __shield_hazard_type__ if i in dump_data}
     if is_shield:
-        e = Exception(f'input poll_string is invalid\t{is_shield} of {eval_string}')
-        print(e)
-        return e
+        print(f'input poll_string is invalid\t{is_shield} of {eval_string}')
+        return False
+    return True
 
 
 def secure_call_eval(eval_string: str):
-    if __check_shield__(eval_string) is not Exception:
+    if __check_shield__(eval_string):
         return eval(eval_string, __secure_call_globals__, __secure_call_args__())
+    else:
+        return Exception("There is a syntax error, please enter the expression according to the safety standard")
 
 
 def secure_call_exec(eval_string: str):
-    if __check_shield__(eval_string) is not Exception:
+    if __check_shield__(eval_string):
         return exec(eval_string, __secure_call_globals__, __secure_call_args__())
+    else:
+        return Exception("There is a syntax error, please enter the expression according to the safety standard")

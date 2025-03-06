@@ -214,7 +214,12 @@ class ElementOperator(OperatorProperty):
     def __running_by_script__(self):
         """运行自定义脚本"""
         try:
-            secure_call_exec(self.operator_script)
+            res = secure_call_exec(self.operator_script)
+            if res is None:
+                ...
+            elif isinstance(res, str):
+                return res
+
         except Exception as e:
             print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
             import traceback
