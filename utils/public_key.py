@@ -41,6 +41,8 @@ def get_kmi_operator_properties(kmi: 'bpy.types.KeyMapItem') -> dict:
     """获取kmi操作符的属性
     """
     properties = kmi.properties
+    if properties is None:
+        return {}
     prop_keys = dict(properties.items()).keys()
     dictionary = {i: getattr(properties, i, None) for i in prop_keys}
     del_key = []
