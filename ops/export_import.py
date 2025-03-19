@@ -221,9 +221,8 @@ class Export(PublicFileOperator):
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
     is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
-
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.is_invoke = False
 
     @property
