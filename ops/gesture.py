@@ -11,10 +11,13 @@ from ..gesture.gesture_pass_through_keymap import GesturePassThroughKeymap
 from ..utils.public import PublicOperator
 
 
-class GestureOperator(GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, PublicOperator):
+class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, ):
     bl_idname = 'gesture.operator'
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def draw_error(self, __):
         layout = self.layout
