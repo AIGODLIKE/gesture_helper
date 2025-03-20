@@ -18,6 +18,8 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.screen = None
+        self.area = None
 
     def draw_error(self, __):
         layout = self.layout

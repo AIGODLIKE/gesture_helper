@@ -3,7 +3,8 @@ from ...src.lib.bpu import BpuLayout, Quadrant
 
 
 class DrawGpu:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.gesture_bpu = BpuLayout(Quadrant.LIFT)
         self.gesture_bpu.font_size = 20
         self.tips = GestureShowTips()

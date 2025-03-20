@@ -107,7 +107,8 @@ class BpuProperty(BpuColor):
             return text
         return pgettext(text, self.___translation_context___)
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__clear_children__()
         self.active = False
         self.alert = False

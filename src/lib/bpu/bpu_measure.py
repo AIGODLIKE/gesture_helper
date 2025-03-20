@@ -52,8 +52,8 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     separator_size = 5
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__clear_measure__()
 
     def __clear_measure__(self):

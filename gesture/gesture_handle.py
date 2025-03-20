@@ -13,7 +13,8 @@ class GestureHandle:
     event_count: IntProperty(options={"SKIP_SAVE", "HIDDEN"})  # 事件数
     draw_trajectory_mouse_move: BoolProperty(options={"SKIP_SAVE", "HIDDEN"})
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.screen = None
         self.area = None
 

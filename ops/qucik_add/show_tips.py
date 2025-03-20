@@ -5,8 +5,8 @@ from ...src.lib.bpu import BpuLayout
 
 class GestureShowTips(BpuLayout):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__background_normal_color__ = [.5, .1, .1, 0.7]
         self.font_size = 18
 

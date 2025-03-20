@@ -26,8 +26,8 @@ IS_DEBUG_POINT: bool = False  # 绘制线POINT
 
 
 class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def __gpu_draw__(self):
         """gpu绘制主方法"""

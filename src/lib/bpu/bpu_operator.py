@@ -4,7 +4,8 @@ import bpy
 class OperatorProperties:
     __data__ = dict()
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.__data__ = dict()
 
     def __setattr__(self, key, value):

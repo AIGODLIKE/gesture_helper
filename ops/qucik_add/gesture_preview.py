@@ -9,7 +9,7 @@ from ...gesture.gesture_handle import GestureHandle
 from ...utils.public import PublicOperator
 
 
-class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOperator):
+class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty):
     bl_idname = "gesture.preview"
     bl_label = "Gesture preview"
     is_preview_mode = False
@@ -18,8 +18,8 @@ class GesturePreview(GestureHandle, GestureGpuDraw, GestureProperty, PublicOpera
 
     offset = Vector([300, 0])
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.timer = None
         self.points_list = None
         self.mouse_position = None
