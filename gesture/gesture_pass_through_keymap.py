@@ -201,9 +201,10 @@ class GesturePassThroughKeymap:
 
     def get_keymaps(self, context):
         pref = self.pref
+        region_keys = self.from_region_get_keymaps(context)
         if pref.gesture_property.pass_through_keymap_type == "REGION":
-            return self.from_region_get_keymaps(context)
-        return self.operator_gesture.keymaps
+            return region_keys
+        return [key for key in self.operator_gesture.keymaps if key in region_keys]
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
         """尝试透传按键事件
