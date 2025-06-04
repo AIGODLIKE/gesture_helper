@@ -52,7 +52,7 @@ def register():
     GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
 
-    bpy.app.timers.register(init_register, first_interval=0.001, persistent=True)
+    bpy.app.timers.register(init_register, first_interval=0.1, persistent=True)
 
 
 def unregister():
