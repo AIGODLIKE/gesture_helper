@@ -134,7 +134,7 @@ def add_addon_kmi(keymap_name, kmi_data, properties) -> ['bpy.types.KeyMap', 'bp
                 "ctrl",
                 "alt",
                 "oskey",
-                "hyper",
+                # "hyper",
                 "key_modifier",
                 "direction",
                 "repeat",
