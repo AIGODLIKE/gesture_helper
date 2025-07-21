@@ -93,7 +93,7 @@ def get_addon_keymap(keymap: str) -> 'bpy.types.KeyMap':
     keymaps = kc.addon.keymaps.get(keymap)
     if keymaps is not None:
         return keymaps
-    
+
     km = kc.default.keymaps.get(keymap)
     if km:
         return kc.addon.keymaps.new(km.name, space_type=km.space_type, region_type=km.region_type)
@@ -124,6 +124,24 @@ def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
 
 def add_addon_kmi(keymap_name, kmi_data, properties) -> ['bpy.types.KeyMap', 'bpy.types.KeyMapItem']:
     keymap = get_addon_keymap(keymap_name)
+    for key in list(kmi_data.keys()):
+        if key not in (
+                "idname",
+                "type",
+                "value",
+                "any",
+                "shift",
+                "ctrl",
+                "alt",
+                "oskey",
+                "hyper",
+                "key_modifier",
+                "direction",
+                "repeat",
+                "head",
+        ):
+            kmi_data.pop(key)
+
     kmi = keymap.keymap_items.new(**kmi_data)
     simple_set_property(properties, kmi.properties)
     return keymap, kmi

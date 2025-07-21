@@ -46,7 +46,7 @@
   "Import error": "导入错误",
   "Gesture": "手势",
   "Element": "元素",
-  "Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s": "导入成功! 导入%s条数据 作者:%s 注释:%s 导出数据插件版本:%s",
+  "Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s": "导入成功! 导入%s条数据 作者:%s 注释:%s 导出数据插件版本:%s",
   "Author": "作者",
   "Description": "描述",
   "This is a description": "这是一个描述",

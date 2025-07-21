@@ -177,8 +177,8 @@ class Import(PublicFileOperator):
             ver = '.'.join((str(i) for i in data['addon_version']))
 
             text = pgettext(
-                r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data plugin version:%s") % (
-                       len(restore), {auth}, {des}, {ver})
+                r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s") % (
+                       len(restore), auth, des, ver)
             self.report({'INFO'}, text)
         except Exception as e:
             self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
