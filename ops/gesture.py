@@ -3,7 +3,7 @@
 
 import bpy
 from bpy.props import StringProperty
-
+from bpy.app.translations import pgettext_iface
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..gesture.gesture_handle import GestureHandle

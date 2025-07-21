@@ -158,7 +158,7 @@ class PollData:
              'parentheses': False,
              'not_str': True},
             None,
-            {'item': 'len(C.selectable_objects)',
+            {'item': 'len(C.selected_objects)',
              'name': 'Is Selected Object',
              'notation': '',
              'parentheses': False,
