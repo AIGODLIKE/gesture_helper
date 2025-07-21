@@ -285,7 +285,8 @@ class GesturePassThroughKeymap:
         GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
         GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
         """
-        if context.space_data.type in ("VIEW_3D", "NODE_EDITOR") and context.active_annotation_layer:
+        if context.space_data and context.space_data.type in ("VIEW_3D",
+                                                              "NODE_EDITOR") and context.active_annotation_layer:
             if (event.type, event.type_prev) in [
                 ('D', 'RIGHTMOUSE'),
                 ('RIGHTMOUSE', 'D'),
