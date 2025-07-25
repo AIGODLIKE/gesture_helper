@@ -223,7 +223,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         """
         self.__draw_item__()
         if self.__menu_id__ in self.parent_top.__menu_haver__.values():
-            with (((gpu.matrix.push_pop()))):
+            with gpu.matrix.push_pop():
                 if IS_DEBUG_POINT:
                     self.draw_2d_points(Vector((0, 0)), color=(1, 0.5, 0.5, 1), point_size=10)
 
