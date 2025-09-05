@@ -30,15 +30,15 @@ class DrawProperty(bpy.types.PropertyGroup):
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
-                                                   default=[0.074025, 0.074025, 0.074025, 1.000000])
+                                                   default=[0.072510, 0.084055, 0.088653, 1.000000])
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
                                                           default=[0.063012, 0.168268, 0.450780, 1.000000])
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
-                                                default=[0.021219, 0.021219, 0.021219, 1.000000])
+                                                default=[0.088653, 0.088653, 0.088653, 1.000000])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
                                                        default=[0.063012, 0.168268, 0.450780, 1.000000])
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
-                                              default=[0.063011, 0.171438, 0.456404, 1.000000])
+                                              default=[0.063012, 0.168268, 0.450780, 1.000000])
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
                                                default=[0.088654, 0.088654, 0.088654, 1.000000])
 

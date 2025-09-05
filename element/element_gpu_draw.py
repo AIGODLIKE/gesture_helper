@@ -5,9 +5,11 @@ from functools import cache
 import blf
 import bpy
 import gpu
+import numpy as np
 from bl_operators.wm import context_path_validate
 from mathutils import Vector
 
+from ..utils.color import linear_to_srgb
 from ..utils.public import get_pref
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
@@ -168,7 +170,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 "position": (0, 0),
                 "width": width,
                 "height": height,
-                "color": self.background_color
+                "color": linear_to_srgb(np.array(self.background_color, dtype=np.float32)),
             }
             gpu.matrix.translate(offset)
             with gpu.matrix.push_pop():
