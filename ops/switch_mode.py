@@ -1,9 +1,8 @@
 import bpy
 from bpy.props import EnumProperty
-from bpy.types import Operator
 
 
-class SwitchMode(Operator):
+class SwitchMode(bpy.types.Operator):
     bl_idname = 'gesture.switch_mode'
     bl_label = 'Switch mode'
     type: EnumProperty(items=[

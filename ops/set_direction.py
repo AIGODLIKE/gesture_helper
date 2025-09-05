@@ -1,11 +1,11 @@
+import bpy
 from bpy.props import StringProperty
-from bpy.types import Operator
 
 from ..utils.icons import Icons
 from ..utils.public import get_pref
 
 
-class SetDirection(Operator):
+class SetDirection(bpy.types.Operator):
     bl_idname = 'gesture.set_direction'
     bl_label = 'Set direction'
 

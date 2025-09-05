@@ -1,12 +1,11 @@
 import bpy
 from bpy.props import BoolProperty
-from bpy.types import PropertyGroup
 
 from ..utils import isDebug
 from ..utils.public import get_pref
 
 
-class DebugProperty(PropertyGroup):
+class DebugProperty(bpy.types.PropertyGroup):
     debug_mode: BoolProperty(name='Debug mode', default=isDebug)
     debug_key: BoolProperty(name='Debug key', default=isDebug)
     debug_draw_gpu_mode: BoolProperty(name='Debug draw gpu mode', default=isDebug)

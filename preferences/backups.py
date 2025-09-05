@@ -3,13 +3,12 @@ import os
 
 import bpy
 from bpy.props import BoolProperty, StringProperty, EnumProperty
-from bpy.types import PropertyGroup
 
 from ..utils import PropertyGetUtils, PropertySetUtils
 from ..utils.public import BACKUPS_FOLDER
 
 
-class BackupsProperty(PropertyGroup):
+class BackupsProperty(bpy.types.PropertyGroup):
     from ..utils.public import ADDON_FOLDER
     auto_backups: BoolProperty(
         name='Enable auto backups',

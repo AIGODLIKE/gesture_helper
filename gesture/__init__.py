@@ -1,6 +1,5 @@
 import bpy
 from bpy.props import CollectionProperty, BoolProperty, StringProperty
-from bpy.types import PropertyGroup
 
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
@@ -18,7 +17,7 @@ class Gesture(
 
     PublicProperty,
 
-    PropertyGroup,
+    bpy.types.PropertyGroup,
 ):
     def update_name(self):
         self.key_restart()

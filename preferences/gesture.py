@@ -1,12 +1,11 @@
 import bpy
 from bpy.props import BoolProperty, IntProperty, EnumProperty
-from bpy.types import PropertyGroup
 
 
-class GestureProperty(PropertyGroup):
+class GestureProperty(bpy.types.PropertyGroup):
     @staticmethod
     def gen_gesture_prop(default, subtype='PIXEL'):
-        return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 20}
+        return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 10}
 
     def update_threshold_confirm(self, _):
         if self.threshold > self.threshold_confirm:
@@ -14,9 +13,9 @@ class GestureProperty(PropertyGroup):
 
     timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(100, 'TIME'))
     radius: IntProperty(name='Gesture Radius', **gen_gesture_prop(90))
-    threshold: IntProperty(name='Threshold', **gen_gesture_prop(30))
+    threshold: IntProperty(name='Threshold', **gen_gesture_prop(20))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(70))
-    return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(30))
+    return_distance: IntProperty(name='Return Previous Gesture Distance', **gen_gesture_prop(20))
 
     immediate_implementation: BoolProperty(name="Immediate Implementation",
                                            description="Immediately executes the operator when the mouse exceeds the threshold value",

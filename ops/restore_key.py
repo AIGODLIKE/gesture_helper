@@ -1,8 +1,7 @@
 from bpy.props import IntProperty
-from bpy.types import Operator
 
-
-class RestoreKey(Operator):
+import bpy
+class RestoreKey(bpy.types.Operator):
     bl_idname = 'gesture.restore_key'
     bl_label = 'Restore key'
 

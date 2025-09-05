@@ -1,11 +1,10 @@
 import bpy
 from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty, StringProperty
-from bpy.types import PropertyGroup
 
 from ..utils.public import get_pref
 
 
-class DrawProperty(PropertyGroup):
+class DrawProperty(bpy.types.PropertyGroup):
     from ..utils import public_color
     gesture_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
     gesture_show_keymap: BoolProperty(name='Show keymap', default=True)
@@ -14,7 +13,7 @@ class DrawProperty(PropertyGroup):
     gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
     gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size',
-                                         default=15, min=5,
+                                         default=12, min=5,
                                          max=120)
 
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01, step=0.01)
@@ -24,19 +23,20 @@ class DrawProperty(PropertyGroup):
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
 
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=15, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=7, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
+                                      max=120)
     text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu Draw Margin Size', default=10, min=5, max=120)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
-                                                   default=[0.019382, 0.019382, 0.019382, 1.000000])
+                                                   default=[0.074025, 0.074025, 0.074025, 1.000000])
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
-                                                          default=[0.331309, 0.347597, 0.445060, 1.000000])
+                                                          default=[0.063012, 0.168268, 0.450780, 1.000000])
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
-                                                default=[0.431968, 0.222035, 0.650622, 1.000000])
+                                                default=[0.021219, 0.021219, 0.021219, 1.000000])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
-                                                       default=[0.689335, 0.275156, 0.793810, 1.000000])
+                                                       default=[0.063012, 0.168268, 0.450780, 1.000000])
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
                                               default=[0.063011, 0.171438, 0.456404, 1.000000])
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,

@@ -1,11 +1,10 @@
 import bpy
-from bpy.types import UIList
 
 from ..utils.public import PublicProperty
 from ..utils.public_ui import icon_two
 
 
-class GestureUIList(UIList, PublicProperty):
+class GestureUIList(bpy.types.UIList, PublicProperty):
     bl_idname = 'DRAW_UL_gesture_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
@@ -30,7 +29,7 @@ class GestureUIList(UIList, PublicProperty):
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
-class ElementUIList(UIList, PublicProperty):
+class ElementUIList(bpy.types.UIList, PublicProperty):
     bl_idname = 'DRAW_UL_element_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
@@ -65,7 +64,7 @@ class ElementUIList(UIList, PublicProperty):
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
-class ImportPresetUIList(UIList,
+class ImportPresetUIList(bpy.types.UIList,
                          PublicProperty):
     bl_idname = 'DRAW_UL_preset'
 

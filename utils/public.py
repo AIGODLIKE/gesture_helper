@@ -3,7 +3,6 @@ from os.path import dirname, realpath, join, abspath
 
 import bpy
 from bpy.props import StringProperty, CollectionProperty
-from bpy.types import Operator
 
 from .public_cache import PublicCacheFunc, cache_update_lock
 
@@ -218,7 +217,7 @@ class PublicProperty(PublicCacheFunc):
         return PropertyGetUtils.props_data(self)
 
 
-class PublicOperator(Operator):
+class PublicOperator(bpy.types.Operator):
     event: 'bpy.types.Event'
 
     def init_invoke(self, event):

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import bpy
 from bpy.props import CollectionProperty, IntProperty
-from bpy.types import PropertyGroup
 
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
@@ -26,7 +25,7 @@ class Element(ElementCURE,
 
               PublicProperty,
 
-              PropertyGroup):
+              bpy.types.PropertyGroup):
     element: CollectionProperty(name='Child element', type=Element)
     index_element: IntProperty(name='Index')
 

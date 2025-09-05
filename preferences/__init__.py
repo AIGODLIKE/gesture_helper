@@ -1,11 +1,10 @@
-import bpy.utils
+import bpy
 from bpy.props import (
     CollectionProperty,
     IntProperty,
     BoolProperty,
     PointerProperty,
     EnumProperty)
-from bpy.types import AddonPreferences, PropertyGroup
 
 from .backups import BackupsProperty, BackupsPreferences
 from .debug import DebugProperty
@@ -18,11 +17,11 @@ from .. import gesture
 from ..element.element_property import ElementAddProperty
 from ..utils.public import PublicProperty
 
-AddElementProperty = type('Add Element Property', (ElementAddProperty, PropertyGroup), {})
+AddElementProperty = type('Add Element Property', (ElementAddProperty, bpy.types.PropertyGroup), {})
 
 
 class GesturePreferences(PublicProperty,
-                         AddonPreferences,
+                         bpy.types.AddonPreferences,
                          BackupsPreferences,
                          PreferencesDraw):
     bl_idname = base_package

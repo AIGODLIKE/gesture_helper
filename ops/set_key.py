@@ -1,6 +1,5 @@
 import bpy
 from bpy.props import StringProperty
-from bpy.types import Operator
 
 from ..utils.public import PublicOperator, get_pref, PublicProperty
 from ..utils.public_ui import icon_two
@@ -71,7 +70,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
                     self.draw_keymaps(column.box().column(align=True), child)
 
 
-class OperatorTempModifierKey(Operator):
+class OperatorTempModifierKey(bpy.types.Operator):
     bl_idname = 'gesture.temp_kmi'
     bl_label = 'Temp Kmi Key Gesture Helper'
 

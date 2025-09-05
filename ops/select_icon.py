@@ -6,7 +6,6 @@ import os
 
 import bpy
 from bpy.props import StringProperty, BoolProperty
-from bpy.types import Operator
 
 from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER
 
@@ -30,7 +29,7 @@ def get_num_cols(num_icons):
     return round(1.3 * math.sqrt(num_icons))
 
 
-class SelectIcon(Operator, PublicProperty):
+class SelectIcon(bpy.types.Operator, PublicProperty):
     bl_idname = 'gesture.select_icon'
     bl_label = 'Select Icon'
     filtered_icons = []
@@ -229,7 +228,7 @@ class SelectIcon(Operator, PublicProperty):
             row.label(text="No icons were found")
 
 
-class RefreshIcons(Operator):
+class RefreshIcons(bpy.types.Operator):
     bl_idname = "gesture.refresh_icons"
     bl_label = "Refresh Icons"
 
@@ -239,7 +238,7 @@ class RefreshIcons(Operator):
         return {'FINISHED'}
 
 
-class ClearHistory(Operator):
+class ClearHistory(bpy.types.Operator):
     bl_idname = "gesture.clear_icons_history"
     bl_label = "Clear History"
 

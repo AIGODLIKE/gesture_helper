@@ -7,7 +7,6 @@ from datetime import datetime
 import bpy
 from bpy.app.translations import pgettext
 from bpy.props import BoolProperty, StringProperty
-from bpy.types import Operator
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..gesture import GestureKeymap
@@ -341,7 +340,7 @@ class Export(PublicFileOperator):
             traceback.print_exc()
 
 
-class ExportPreferences(Operator, ExportHelper):
+class ExportPreferences(bpy.types.Operator, ExportHelper):
     bl_idname = "gesture.export_preferences"
     bl_label = "Export Preferences"
 
@@ -361,7 +360,7 @@ class ExportPreferences(Operator, ExportHelper):
         return {"FINISHED"}
 
 
-class ImportPreferences(Operator, ImportHelper):
+class ImportPreferences(bpy.types.Operator, ImportHelper):
     bl_idname = "gesture.import_preferences"
     bl_label = "Import Preferences"
 

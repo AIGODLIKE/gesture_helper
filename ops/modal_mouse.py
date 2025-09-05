@@ -2,7 +2,6 @@ import bpy
 from bl_operators.wm import operator_value_undo_return
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, FloatProperty, EnumProperty
-from bpy.types import Operator
 from mathutils import Vector
 
 from ..utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
@@ -19,7 +18,7 @@ class StoreValue:
         setattr(self, self.data_path, self.___value___)
 
 
-class ModalMouseOperator(Operator, StoreValue):
+class ModalMouseOperator(bpy.types.Operator, StoreValue):
     """
     from bl_operators.wm import WM_OT_context_modal_mouse
     scripts/startup/bl_operators/wm.py

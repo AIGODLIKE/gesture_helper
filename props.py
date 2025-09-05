@@ -1,9 +1,8 @@
 import bpy
 from bpy.props import PointerProperty, BoolProperty, StringProperty, IntProperty
-from bpy.types import PropertyGroup
 
 
-class TempDrawProperty(PropertyGroup):
+class TempDrawProperty(bpy.types.PropertyGroup):
     """
     Automatically adding attributes
 
@@ -28,7 +27,7 @@ class TempDrawProperty(PropertyGroup):
         return name.lower().replace(' ', '_').replace(':', '').replace(',', '').replace('(', '').replace(')', '')
 
     @classmethod
-    def temp_prop(cls, name) -> PropertyGroup:
+    def temp_prop(cls, name) -> bpy.types.PropertyGroup:
         prop = cls.temp_wm_prop()
         identity = cls.from_name_get_id(name)
         p = getattr(prop, identity, None)
