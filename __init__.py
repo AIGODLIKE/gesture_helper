@@ -3,8 +3,8 @@ from . import register_mod
 bl_info = {
     "name": "Gesture Helper",
     "description": "Gesture Helper, which allows you to quickly use gestures to run the blender operator or change properties.",
-    "author": "AIGODLIKE Community(小萌新)",
-    "version": (2, 1, 8),
+    "author": "ACGGIT Community(小萌新)",
+    "version": (2, 1, 9),
     "blender": (3, 0, 0),
     "location": "Tool Panel",
     "support": "COMMUNITY",

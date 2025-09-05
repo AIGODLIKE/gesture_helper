@@ -3,11 +3,11 @@ schema_version = "1.0.0"
 blender_version_min = "4.2.0"
 id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later", ]
-maintainer = "AIGODLIKE Community(小萌新)"
+maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
 tagline = "Quickly use gestures to run the operator or change properties"
 type = "add-on"
-version = "2.1.8"
+version = "2.1.9"
 tags = ["3D View", "User Interface"]
 
 [permissions]
