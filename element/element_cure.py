@@ -13,8 +13,8 @@ class ElementCURE:
     @cache_update_lock
     def copy(self):
         """复制元素"""
-        from ..utils import PropertySetUtils
-        PropertySetUtils.set_prop(self.parent, 'element', {'0': self.active_element.___dict_data___})
+        from ..utils.property import set_property
+        set_property(self.parent, 'element', {'0': self.active_element.___dict_data___})
 
     @property
     def is_movable(self) -> bool:
@@ -128,16 +128,16 @@ class ElementCURE:
 
         @cache_update_lock
         def move(self):
-            from ..utils import PropertyGetUtils, PropertySetUtils
+            from ..utils.property import get_property, __set_prop__
             move_to = getattr(bpy.context, 'move_element', None)
             move_from = ElementCURE.MOVE.move_item
 
             if move_from:
-                move_data = PropertyGetUtils.props_data(move_from)
+                move_data = get_property(move_from)
                 if move_to:
-                    PropertySetUtils.set_prop(move_to, 'element', {'0': move_data})
+                    __set_prop__(move_to, 'element', {'0': move_data})
                 else:
-                    PropertySetUtils.set_prop(move_from.parent_gesture, 'element', {'0': move_data})
+                    __set_prop__(move_from.parent_gesture, 'element', {'0': move_data})
                 move_from.remove()
             self.cache_clear()
 
@@ -207,15 +207,15 @@ class ElementCURE:
 
         @cache_update_lock
         def cut(self):
-            from ..utils import PropertySetUtils
+            from ..utils.property import __set_prop__
             cut = ElementCURE.CUT.__cut_data__
 
             # 移动中
             cut_to = getattr(bpy.context, 'cut_element', None)
             if cut_to:
-                PropertySetUtils.set_prop(cut_to, 'element', {'0': cut})
+                __set_prop__(cut_to, 'element', {'0': cut})
             else:
-                PropertySetUtils.set_prop(self.active_gesture, 'element', {'0': cut})
+                __set_prop__(self.active_gesture, 'element', {'0': cut})
             self.cache_clear()
 
         @classmethod

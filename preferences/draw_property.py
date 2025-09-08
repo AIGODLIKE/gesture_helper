@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty, StringProperty
+from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty, StringProperty, IntVectorProperty
 
 from ..utils.public import get_pref
 
@@ -26,7 +26,11 @@ class DrawProperty(bpy.types.PropertyGroup):
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
                                       max=120)
-    text_gpu_draw_margin: IntProperty(name='Margin', description='Gpu Draw Margin Size', default=10, min=5, max=120)
+    text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
+                                            default=(3, 2),
+                                            min=1,
+                                            max=120,
+                                            size=2)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
 
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
@@ -65,14 +69,16 @@ class DrawProperty(bpy.types.PropertyGroup):
         pref = get_pref()
         draw = pref.draw_property
 
-        radius_is_alert = draw.text_gpu_draw_radius > draw.text_gpu_draw_margin
+        radius_is_alert = draw.text_gpu_draw_radius > min(draw.text_gpu_draw_margin)
 
         col = layout.box().column(align=True)
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
         cr.alert = radius_is_alert
         cr.prop(draw, 'text_gpu_draw_radius')
+        col.separator()
         col.prop(draw, 'text_gpu_draw_margin')
+        col.separator()
         col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')
         if radius_is_alert:

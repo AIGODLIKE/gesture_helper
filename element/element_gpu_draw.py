@@ -46,7 +46,7 @@ class ElementGpuProperty:
     @property
     def text_margin(self):
         scale = bpy.context.preferences.view.ui_scale
-        return self.draw_property.text_gpu_draw_margin * scale
+        return [i * scale for i in self.draw_property.text_gpu_draw_margin]
 
     @property
     def text_radius(self):
@@ -138,7 +138,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             hw = w / 2
             direction = self.direction
             offset = [0, 0]
-            icon_size = h * 1.3
+            icon_size = h * 1.1
 
             if direction == '1':
                 offset = (0, hh)
@@ -158,8 +158,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 offset = (0, -hh / 2)
 
             margin = self.text_margin  # px
-            width = w + margin * 2
-            height = h + margin * 2
+            width = w + margin[0] * 2
+            height = h + margin[1] * 2
 
             if self.is_draw_icon:
                 width += icon_size
@@ -183,9 +183,11 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             with gpu.matrix.push_pop():
                 if self.is_draw_icon:
                     gpu.matrix.translate([-(icon_size * 0.6), 0])
-                    gpu.state.blend_set('ALPHA_PREMULT')
+                    gpu.state.blend_set('ALPHA')
                     gpu.state.depth_test_set('ALWAYS')
-                    self.draw_image([0, -(h * 1.3)], icon_size, icon_size, texture=Texture.get_texture(self.icon))
-                    gpu.matrix.translate([icon_size * 1.2, icon_size])
+                    icon_size = 259
+
+                    self.draw_image([0, -(h * 1.3)],  256,256, texture=Texture.get_texture(self.icon))
+                    # gpu.matrix.translate([icon_size, icon_size])
 
                 self.draw_text([0, 0], self.text, color=self.text_color, size=self.text_size)

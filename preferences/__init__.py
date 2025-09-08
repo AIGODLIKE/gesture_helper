@@ -41,11 +41,14 @@ class GesturePreferences(PublicProperty,
         name='Enable gesture',
         description="""Enable gesture system""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
-    show_page: EnumProperty(name='Show panel', items=[('GESTURE', 'Gesture', ''), ('PROPERTY', 'Property', '')])
+    show_page: EnumProperty(name='Show panel',
+                            items=[('GESTURE', 'Gesture', ''),
+                                   ('PROPERTY', 'Property', ''),
+                                   ('DEBUG', 'Debug', '')])
 
     def get_gesture_data(self, get_all: bool = False) -> {}:
         from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
-        from ..utils import PropertyGetUtils
+        from ..utils.property import get_property
 
         def filter_data(filter_dict):
             res = {}
@@ -66,7 +69,7 @@ class GesturePreferences(PublicProperty,
         data = {}
         for index, g in enumerate(self.pref.gesture):
             if g.selected or get_all:
-                origin = PropertyGetUtils.props_data(g, EXPORT_PROPERTY_EXCLUDE)
+                origin = get_property(g, EXPORT_PROPERTY_EXCLUDE)
                 item = filter_data(origin)
                 data[str(index)] = item
         return data

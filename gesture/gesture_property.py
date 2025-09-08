@@ -15,9 +15,9 @@ class GestureProperty(PublicProperty):
     @cache_update_lock
     def copy(self) -> None:
         """复制一个手势"""
-        from ..utils import PropertyGetUtils, PropertySetUtils
-        copy_data = PropertyGetUtils.props_data(self)
-        PropertySetUtils.set_prop(self.pref, 'gesture', {'0': copy_data})
+        from ..utils.property import get_property, __set_prop__
+        copy_data = get_property(self)
+        __set_prop__(self.pref, 'gesture', {'0': copy_data})
 
     def update_index(self, _) -> None:
         """更新索引"""

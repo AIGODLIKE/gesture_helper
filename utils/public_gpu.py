@@ -106,19 +106,18 @@ def contains_chinese(text):
 class PublicGpu:
     @staticmethod
     def draw_image(position, height, width, texture):
-        shader = gpu.shader.from_builtin('IMAGE')
-        gpu.matrix.translate(position)
-        batch = batch_for_shader(
-            shader, 'TRI_FAN',
-            {
-                "pos": ((0, 0), (width, 0), (width, height), (0, height)),
-                "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
-            },
-        )
-        shader.bind()
-        shader.uniform_sampler("image", texture)
-
         with gpu.matrix.push_pop():
+            shader = gpu.shader.from_builtin('IMAGE')
+            gpu.matrix.translate(position)
+            batch = batch_for_shader(
+                shader, 'TRI_FAN',
+                {
+                    "pos": ((0, 0), (width, 0), (width, height), (0, height)),
+                    "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
+                },
+            )
+            shader.bind()
+            shader.uniform_sampler("image", texture)
             batch.draw(shader)
 
     @staticmethod
@@ -226,7 +225,7 @@ class PublicGpu:
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         with gpu.matrix.push_pop():
-            margin = get_pref().draw_property.text_gpu_draw_margin * scale
+            margin = min(get_pref().draw_property.text_gpu_draw_margin) * scale
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
             draw_line(vertex, color, line_width=line_width)
@@ -236,7 +235,7 @@ class PublicGpu:
                                     segments=20):
         scale = bpy.context.preferences.view.ui_scale
         from .public import get_pref
-        margin = get_pref().draw_property.text_gpu_draw_margin * scale
+        margin = min(get_pref().draw_property.text_gpu_draw_margin) * scale
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)

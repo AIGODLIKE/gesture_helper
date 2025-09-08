@@ -35,6 +35,7 @@ ENUM_GESTURE_DIRECTION = [
     ('2', 'Right Top', ''),
     ('6', 'Left Down', ''),
     ('8', 'Right Down', ''),
+    ('9', 'Bottom', ''),
 ]
 ENUM_ELEMENT_TYPE = [
     ('SELECTED_STRUCTURE', 'Sel Structure', 'Select structure'),

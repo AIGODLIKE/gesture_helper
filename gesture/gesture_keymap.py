@@ -14,7 +14,7 @@ from bpy.app.translations import pgettext
 from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
-from ..utils import PropertyGetUtils, PropertySetUtils
+from ..utils.property import set_property, get_kmi_property
 from ..utils.public import get_debug
 from ..utils.public_cache import cache_update_lock
 from ..utils.public_key import get_kmi_operator_properties
@@ -65,7 +65,7 @@ class GestureKeymap(KeymapProperty):
 
     @property
     def temp_kmi_data(self) -> dict:
-        return PropertyGetUtils.kmi_props(self.temp_kmi)
+        return get_kmi_property(self.temp_kmi)
 
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':
@@ -86,7 +86,7 @@ class GestureKeymap(KeymapProperty):
     def to_temp_kmi(self) -> None:
         key = ",".join(list(f"{k.title()}={v}" for k, v in self.key.items()))
         print(f'Gesture -> Kmi {self.name} (%s)' % key)
-        PropertySetUtils.set_property_data(self.temp_kmi, self.key)
+        set_property(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
         layout.context_pointer_set('keymap', get_temp_keymap())

@@ -24,6 +24,11 @@ class PreferencesDraw(GestureDraw):
         # draw_ui_gesture
 
     @staticmethod
+    def draw_ui_debug(layout: 'bpy.types.UILayout'):
+        from .debug import DebugProperty
+        DebugProperty.draw_debug(layout)
+
+    @staticmethod
     def draw_topbar(layout: 'bpy.types.UILayout'):
         """绘制顶部栏"""
         from ..ops.qucik_add.gesture_preview import GesturePreview
@@ -63,7 +68,6 @@ class PreferencesDraw(GestureDraw):
         col.operator(ImportPreferences.bl_idname)
 
         preferences.BackupsProperty.draw_backups(column)
-        preferences.DebugProperty.draw_debug(column)
 
         col = row.box().column(align=True)
         col.label(text='Gesture')

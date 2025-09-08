@@ -1,15 +1,15 @@
 import bpy
 from bpy.props import BoolProperty
 
-from ..utils import isDebug
+from ..debug import IS_DEBUG
 from ..utils.public import get_pref
 
 
 class DebugProperty(bpy.types.PropertyGroup):
-    debug_mode: BoolProperty(name='Debug mode', default=isDebug)
-    debug_key: BoolProperty(name='Debug key', default=isDebug)
-    debug_draw_gpu_mode: BoolProperty(name='Debug draw gpu mode', default=isDebug)
-    debug_export_import: BoolProperty(name='Debug export import', default=isDebug)
+    debug_mode: BoolProperty(name='Debug mode', default=IS_DEBUG)
+    debug_key: BoolProperty(name='Debug key', default=IS_DEBUG)
+    debug_draw_gpu_mode: BoolProperty(name='Debug draw gpu mode', default=IS_DEBUG)
+    debug_export_import: BoolProperty(name='Debug export import', default=IS_DEBUG)
     debug_operator: BoolProperty(name='Debug operator', default=False)
     debug_poll: BoolProperty(name='Debug Poll', default=False)
 

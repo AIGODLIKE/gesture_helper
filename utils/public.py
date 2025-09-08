@@ -213,8 +213,8 @@ class PublicProperty(PublicCacheFunc):
     @property
     def ___dict_data___(self) -> dict:
         """反回当前项的数据"""
-        from . import PropertyGetUtils
-        return PropertyGetUtils.props_data(self)
+        from .property import get_property
+        return get_property(self)
 
 
 class PublicOperator(bpy.types.Operator):

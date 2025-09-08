@@ -2,7 +2,7 @@ import bpy
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
-from ..utils import PropertySetUtils
+from ..utils.property import set_property_to_kmi_properties
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.public_cache import cache_update_lock
 from ..utils.secure_call import secure_call_eval, secure_call_exec
@@ -163,7 +163,7 @@ class ElementOperator(OperatorProperty):
         if not self.is_operator:
             Exception(f'{self}不是操作符')
         self.operator_tmp_kmi_properties_clear()
-        PropertySetUtils.set_operator_property_to(self.operator_tmp_kmi.properties, self.properties)
+        set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """从临时 keymap item 更新到属性"""

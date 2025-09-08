@@ -10,7 +10,7 @@ https://www.modb.pro/db/175191
 
 import cairosvg
 
-size = 128
+size = 256
 to_folder_path = os.path.join(os.path.dirname(__file__), "blender")
 form_svg_folder = r"D:\Blender\blender\release\datafiles\icons_svg"
 # ANIM_DATA.png

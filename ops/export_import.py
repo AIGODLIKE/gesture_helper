@@ -11,9 +11,9 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
-from ..utils import PropertySetUtils
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
+from ..utils.property import __set_prop__
 
 EXPORT_PROPERTY_EXCLUDE = (
     'selected',
@@ -168,7 +168,7 @@ class Import(PublicFileOperator):
 
             data = self.read_json()
             restore = data['gesture']
-            PropertySetUtils.set_prop(self.pref, 'gesture', restore)
+            __set_prop__(self.pref, 'gesture', restore)
             gesture_keymap.GestureKeymap.key_restart()
 
             auth = data['author']

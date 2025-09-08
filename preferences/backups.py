@@ -4,7 +4,7 @@ import os
 import bpy
 from bpy.props import BoolProperty, StringProperty, EnumProperty
 
-from ..utils import PropertyGetUtils, PropertySetUtils
+from ..utils.property import set_property, get_property
 from ..utils.public import BACKUPS_FOLDER
 
 
@@ -61,7 +61,7 @@ class BackupsPreferences:
     def preferences_backups(self, export_path=None):
         if not export_path:
             export_path = self.__preferences_backups_path__
-        data = PropertyGetUtils.props_data(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
+        data = get_property(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
         print("Gesture Backups Preferences", export_path)
         with open(export_path, "w") as file:
             file.write(json.dumps(data, ensure_ascii=True, indent=2))
@@ -74,4 +74,4 @@ class BackupsPreferences:
                 from ..utils.public import get_pref
                 data = json.loads(file.read())
                 print("Gesture Restore Preferences")
-                PropertySetUtils.set_property_data(get_pref(), data)
+                set_property(get_pref(), data)
