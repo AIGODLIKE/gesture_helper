@@ -6,7 +6,7 @@ import blf
 import bpy
 import gpu
 from gpu_extras.batch import batch_for_shader
-from mathutils import Euler, Vector
+from mathutils import Euler
 
 
 @cache
@@ -96,16 +96,12 @@ def get_indices_from_vertex(vertex):
     return indices
 
 
-def contains_chinese(text):
-    if not isinstance(text, str):
-        return False
-    pattern = re.compile(r'[\u4e00-\u9fff]+')
-    return bool(pattern.search(text))
-
 
 class PublicGpu:
     @staticmethod
     def draw_image(position, height, width, texture):
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
         with gpu.matrix.push_pop():
             shader = gpu.shader.from_builtin('IMAGE')
             gpu.matrix.translate(position)
@@ -122,19 +118,23 @@ class PublicGpu:
 
     @staticmethod
     def draw_text(
-            position,
             text="Hello Word",
+            position=[0, 0],
             size=25,
             color=(1, 1, 1, 1),
             font_id=0,
             column=0,
+            auto_offset=False,
     ):
+        from . import including_chinese
         with gpu.matrix.push_pop():
-            if contains_chinese(text):
+            if including_chinese(text) and auto_offset:
                 (width, height) = blf.dimensions(font_id, text)
-                gpu.matrix.translate(Vector([0, -height * .075]))
+                gpu.matrix.translate([0, -height * .075])
 
             x, y = position
+            blf.disable(font_id, blf.CLIPPING)
+            blf.disable(font_id, blf.MONOCHROME)
             blf.size(font_id, size)
             blf.color(font_id, *color)
             blf.position(font_id, x, y - (size * (column + 1)), 1)

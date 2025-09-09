@@ -71,7 +71,7 @@ class DrawDebug(PublicGpu):
         self.draw_rectangle(0, 0, 400, len(data) * 30)
         for index, i in enumerate(data):
             j = index + 1
-            self.draw_text((5, 30 * j), text=i)
+            self.draw_text(text=i, position=(5, 30 * j) )
 
 
 class GestureGpuDraw(DrawDebug):
@@ -186,7 +186,7 @@ class GestureGpuDraw(DrawDebug):
                 else:
                     gpu.matrix.translate(Vector((0, -h)))
 
-                self.draw_text([0, 0], text=tn, size=size)
+                self.draw_text(tn, size=size)
 
     def gpu_draw_gesture(self):
         """绘制手势"""
@@ -220,9 +220,9 @@ class GestureGpuDraw(DrawDebug):
 
                 if not len(self.operator_gesture.element):
                     text = __name_translate__('There are currently no elements for gestures, please add them')
-                    self.draw_text((0, 0), text)
+                    self.draw_text( text)
                 elif not len(draw_items):
-                    self.draw_text((0, 0), __name_translate__('No gestures under current conditions, please add'))
+                    self.draw_text( __name_translate__('No gestures under current conditions, please add'))
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""
@@ -233,4 +233,4 @@ class GestureGpuDraw(DrawDebug):
             size = self.pref.draw_property.text_gpu_draw_size * scale
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__mouse_position__)
-                self.draw_text((0, 0), text=element.name_translate, size=size)
+                self.draw_text(element.name_translate, size=size)

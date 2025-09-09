@@ -74,7 +74,22 @@ class GesturePropertyPanel(bpy.types.Panel, PublicProperty):
         PreferencesDraw.draw_ui_property(layout)
 
 
-panel_list = (GesturePanel, GestureItemPanel, GestureElementPanel, GesturePropertyPanel)
+class GestureDebugPanel(bpy.types.Panel, PublicProperty):
+    bl_label = "Debug"
+    bl_idname = "GESTURE_PT_Debug"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Gesture"
+    bl_parent_id = GesturePanel.bl_idname
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.scale_y = 1.2
+        PreferencesDraw.draw_ui_debug(layout)
+
+
+panel_list = (GesturePanel, GestureItemPanel, GestureElementPanel, GesturePropertyPanel, GestureDebugPanel)
 register_classes, unregister_classes = bpy.utils.register_classes_factory(panel_list)
 
 

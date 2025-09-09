@@ -1,25 +1,20 @@
 import math
-import re
 from functools import cache
+from typing import Sequence
 
 import blf
 import bpy
 import gpu
+import gpu_extras
 import numpy as np
 from bl_operators.wm import context_path_validate
 from mathutils import Vector
 
+from ..utils import including_chinese, has_special_characters
 from ..utils.color import linear_to_srgb
 from ..utils.public import get_pref
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
-
-pattern = re.compile(r'[\u4e00-\u9fa5]')
-
-
-@cache
-def check_china(text):
-    return bool(pattern.findall(text))
 
 
 @cache
@@ -123,71 +118,123 @@ class ElementGpuProperty:
 
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
+
     def draw_gpu_item(self, ops):
+        """
+        布局
+
+        4 3 2
+        5   1
+        6 7 8
+          9
+        """
         self.ops = ops
         scale = bpy.context.preferences.view.ui_scale
 
         radius = get_pref().gesture_property.radius * scale
         position = get_position(self.direction, radius)
+        debug = get_pref().debug_property.debug_draw_gpu_mode
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
+            if debug:
+                gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 0, 1), 1)
 
+            w, h = self.gpu_draw_dimensions
+            # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.gpu_draw_direction_offset)
+                if debug:
+                    self.draw_2d_rectangle(0, 0, w, -h)
+
+                self.gpu_draw_margin()
+                if debug:
+                    gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
+                    self.draw_text(self.direction, color=self.text_color, size=12)
+                    gpu_extras.presets.draw_circle_2d([w, -h], (0, 0, 1, 1), 1)
+
+                self.gpu_draw_icon()
+                self.gpu_draw_text_fix_offset()
+
+    def gpu_draw_text_fix_offset(self):
+        """通过对每种不同的文字偏移实现绘制位置正确"""
+        with gpu.matrix.push_pop():
             w, h = self.text_dimensions
-            hh = h / 2
-            hw = w / 2
-            direction = self.direction
             offset = [0, 0]
-            icon_size = h * 1.1
+            text = self.text
+            special_characters = has_special_characters(text)
+            if including_chinese(text):  # 中文
+                offset = [0, h * 0.158]
+            elif "_" in text and not special_characters:  # 有下划线在文字内
+                offset = [0, h * 0.325]
+            elif has_special_characters(text):  # 特殊字符
+                offset = [0, h * 0.1]
+            else:  # 只有英文
+                offset = [0, h * 0.355]
+            gpu.matrix.translate(offset)
+            self.draw_text(text, position=[0, 0], color=self.text_color, size=self.text_size, auto_offset=False)
 
-            if direction == '1':
-                offset = (0, hh)
-            elif direction == '2':
-                offset = (0, h)
-            elif direction == '3':
-                offset = (-hw, h * 2)
-            elif direction == '4':
-                offset = (-w, h)
-            elif direction == '5':
-                offset = (-w + 0.2, hh)
-            elif direction == '6':
-                offset = (-w, -hh / 2)
-            elif direction == '7':
-                offset = (-hw, -h)
-            elif direction == '8':
-                offset = (0, -hh / 2)
+    def gpu_draw_icon(self):
+        w, h = self.text_dimensions
+        if self.is_draw_icon:
+            self.draw_image([0, -h], h, h, texture=Texture.get_texture(self.icon))
+            gpu.matrix.translate((self.icon_offset_width, 0))
 
-            margin = self.text_margin  # px
-            width = w + margin[0] * 2
-            height = h + margin[1] * 2
+    def gpu_draw_margin(self):
+        w, h = self.gpu_draw_dimensions
+        wm, hm = self.text_margin
+        debug = get_pref().debug_property.debug_draw_gpu_mode
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate((w / 2, -h / 2))
+            if debug:
+                gpu_extras.presets.draw_circle_2d([0, 0], (0, 0, 1, 1), 1)
 
-            if self.is_draw_icon:
-                width += icon_size
+            radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
 
-            hh = height / 2
             rounded_rectangle = {
-                "radius": self.text_radius if (hh > self.text_radius) else height,
+                "radius": radius,
                 "position": (0, 0),
-                "width": width,
-                "height": height,
+                "width": w + wm * 2,
+                "height": h + hm * 2,
                 "color": linear_to_srgb(np.array(self.background_color, dtype=np.float32)),
             }
-            gpu.matrix.translate(offset)
-            with gpu.matrix.push_pop():
-                x, y = hw, -h
-                y *= 0.7
+            self.draw_rounded_rectangle_area(**rounded_rectangle)
 
-                gpu.matrix.translate([x, y])
-                self.draw_rounded_rectangle_area(**rounded_rectangle)
+    icon_interval = .05
 
-            with gpu.matrix.push_pop():
-                if self.is_draw_icon:
-                    gpu.matrix.translate([-(icon_size * 0.6), 0])
-                    gpu.state.blend_set('ALPHA')
-                    gpu.state.depth_test_set('ALWAYS')
-                    icon_size = 259
+    @property
+    def icon_offset_width(self) -> float:
+        w, h = self.text_dimensions
+        return h + h * self.icon_interval
 
-                    self.draw_image([0, -(h * 1.3)],  256,256, texture=Texture.get_texture(self.icon))
-                    # gpu.matrix.translate([icon_size, icon_size])
+    @property
+    def gpu_draw_dimensions(self) -> Sequence[float]:
+        w, h = self.text_dimensions
+        if self.is_draw_icon:
+            w += self.icon_offset_width
+        return Vector((w, h))
 
-                self.draw_text([0, 0], self.text, color=self.text_color, size=self.text_size)
+    @property
+    def gpu_draw_direction_offset(self) -> Sequence[float]:
+        w, h = self.gpu_draw_dimensions
+        hb = h / 2  # bisect
+        wb = w / 2
+        offset = [0, 0]
+        direction = self.direction
+        if direction == '1':
+            offset = (0, hb)
+        elif direction == '2':
+            offset = (0, h)
+        elif direction == '3':
+            offset = (-wb, h * 2)
+        elif direction == '4':
+            offset = (-w, h)
+        elif direction == '5':
+            offset = (-w, hb)
+        elif direction == '6':
+            offset = (-w, 0)
+        elif direction == '7':
+            offset = (-wb, -h)
+        elif direction == '8':
+            offset = (0, 0)
+        return Vector(offset)

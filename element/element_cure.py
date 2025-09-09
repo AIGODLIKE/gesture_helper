@@ -13,8 +13,8 @@ class ElementCURE:
     @cache_update_lock
     def copy(self):
         """复制元素"""
-        from ..utils.property import set_property
-        set_property(self.parent, 'element', {'0': self.active_element.___dict_data___})
+        from ..utils.property import __set_prop__
+        __set_prop__(self.parent, 'element', {'0': self.active_element.___dict_data___})
 
     @property
     def is_movable(self) -> bool:

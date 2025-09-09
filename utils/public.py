@@ -73,7 +73,8 @@ def get_gesture_direction_items(iteration):
                     last_selected_structure = item
             continue  # 不运行后面的
         elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符
-            direction[item.direction] = item
+            if item.enabled:
+                direction[item.direction] = item
         if item.enabled:  # 如果不是选择结构并
             last_selected_structure = None
     return direction

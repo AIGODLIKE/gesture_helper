@@ -14,7 +14,7 @@ class DrawProperty(bpy.types.PropertyGroup):
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
     gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size',
                                          default=12, min=5,
-                                         max=120)
+                                         max=60)
 
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01, step=0.01)
     element_show_enabled_button: BoolProperty(name='Show enable/disable button', default=True)
@@ -25,10 +25,10 @@ class DrawProperty(bpy.types.PropertyGroup):
 
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
-                                      max=120)
+                                      max=60)
     text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
                                             default=(3, 2),
-                                            min=1,
+                                            min=0,
                                             max=120,
                                             size=2)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)

@@ -62,7 +62,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                             f"haver:{self.__menu_haver__}",
                             f"{self.__layout_haver__}",)
                     ):
-                        self.draw_text([0, 50 + -50 * index], text=i, font_id=self.font_id)
+                        self.draw_text(text=i, position=[0, 50 + -50 * index], font_id=self.font_id)
         self.__layout_haver_histories__ = self.__layout_haver__
 
     def __layout__(self) -> None:
