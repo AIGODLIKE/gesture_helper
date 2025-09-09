@@ -101,6 +101,11 @@ class ElementIcon:
         """是绘制图标"""
         return self.is_have_icon and self.is_show_icon
 
+    @property
+    def is_draw_child_icon(self):
+        """是绘制子级的标识图标"""
+        return get_pref().draw_property.element_draw_child_icon and self.is_child_gesture
+
 
 # 显示的属性, 不用Blender那些, 使用自已的参数
 class ElementDirectionProperty(ElementAddProperty):

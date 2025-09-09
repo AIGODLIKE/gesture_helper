@@ -320,5 +320,6 @@
   "Please go to the plugin preference settings to restore keymap": "请到插件偏好设置恢复键位映射",
   "Operator Run Error,Please check the console": "操作符运行错误,请检查控制台",
   "Rounded corner size": "圆角大小",
-  "Mesh Edge": "网格边"
+  "Mesh Edge": "网格边",
+  "Draw child Icon": "绘制子级图标"
 }

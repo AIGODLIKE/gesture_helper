@@ -140,10 +140,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             if debug:
                 gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 0, 1), 1)
 
-            w, h = self.gpu_draw_dimensions
+            w, h = self.draw_dimensions
             # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(self.gpu_draw_direction_offset)
+                gpu.matrix.translate(self.draw_direction_offset)
                 if debug:
                     self.draw_2d_rectangle(0, 0, w, -h)
 
@@ -155,6 +155,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
                 self.gpu_draw_icon()
                 self.gpu_draw_text_fix_offset()
+                self.gpu_draw_child_icon()
 
     def gpu_draw_text_fix_offset(self):
         """通过对每种不同的文字偏移实现绘制位置正确"""
@@ -173,6 +174,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 offset = [0, h * 0.355]
             gpu.matrix.translate(offset)
             self.draw_text(text, position=[0, 0], color=self.text_color, size=self.text_size, auto_offset=False)
+        gpu.matrix.translate((w, 0))
 
     def gpu_draw_icon(self):
         w, h = self.text_dimensions
@@ -180,8 +182,14 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             self.draw_image([0, -h], h, h, texture=Texture.get_texture(self.icon))
             gpu.matrix.translate((self.icon_offset_width, 0))
 
+    def gpu_draw_child_icon(self):
+        w, h = self.text_dimensions
+        if self.is_draw_child_icon:
+            self.draw_image([0, -h], h, h, texture=Texture.get_texture("1"))
+            gpu.matrix.translate((self.icon_offset_width, 0))
+
     def gpu_draw_margin(self):
-        w, h = self.gpu_draw_dimensions
+        w, h = self.draw_dimensions
         wm, hm = self.text_margin
         debug = get_pref().debug_property.debug_draw_gpu_mode
         with gpu.matrix.push_pop():
@@ -208,15 +216,17 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         return h + h * self.icon_interval
 
     @property
-    def gpu_draw_dimensions(self) -> Sequence[float]:
+    def draw_dimensions(self) -> Sequence[float]:
         w, h = self.text_dimensions
         if self.is_draw_icon:
+            w += self.icon_offset_width
+        if self.is_draw_child_icon:
             w += self.icon_offset_width
         return Vector((w, h))
 
     @property
-    def gpu_draw_direction_offset(self) -> Sequence[float]:
-        w, h = self.gpu_draw_dimensions
+    def draw_direction_offset(self) -> Sequence[float]:
+        w, h = self.draw_dimensions
         hb = h / 2  # bisect
         wb = w / 2
         offset = [0, 0]

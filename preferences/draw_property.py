@@ -23,11 +23,12 @@ class DrawProperty(bpy.types.PropertyGroup):
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
 
+    element_draw_child_icon: BoolProperty(name="Draw child Icon", default=True)
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
                                       max=60)
     text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
-                                            default=(3, 2),
+                                            default=(4, 5),
                                             min=0,
                                             max=120,
                                             size=2)
@@ -72,6 +73,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         radius_is_alert = draw.text_gpu_draw_radius > min(draw.text_gpu_draw_margin)
 
         col = layout.box().column(align=True)
+        col.prop(draw, 'element_draw_child_icon')
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
         cr.alert = radius_is_alert
