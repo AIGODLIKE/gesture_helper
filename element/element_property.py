@@ -69,6 +69,16 @@ class ElementAddProperty:
     def is_selected_else(self) -> bool:
         return self.selected_type == 'ELSE'
 
+    @property
+    def parent_is_extension(self) -> bool:  # 父级是扩展项,就是底部的菜单
+        pe = self.parent_element
+        if pe:
+            if pe.parent_is_extension:
+                return True
+            if pe.direction == "9":
+                return True
+        return False
+
 
 class ElementIcon:
     icon: StringProperty(name='Show Icon', default='COLOR_ERROR')

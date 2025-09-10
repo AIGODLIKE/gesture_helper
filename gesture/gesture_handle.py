@@ -46,13 +46,16 @@ class GestureHandle:
         self.trajectory_mouse_move_time = []
         self.trajectory_tree = GesturePointKDTree()
         self.draw_trajectory_mouse_move = False
+        self.last_mouse_mouse_time = time.time()
 
-    def event_trajectory(self, context, event):
+    def trajectory_event_update(self, context, event):
         """事件轨迹"""
         self.area = context.area
         self.screen = context.screen
         if event.type != "TIMER":
             self.move_count += 1
+        if event.type == "MOUSEMOVE":
+            self.last_mouse_mouse_time = time.time()
         self.event_count += 1
         emp = self.__mouse_position__
         if self.event_count > 2:
@@ -63,8 +66,11 @@ class GestureHandle:
             if not len(self.trajectory_tree):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
-                self.trajectory_tree.append(self.direction_element, emp)
-                self.gesture_direction_cache_clear()
+                if not self.last_move_mouse_timeout and self.is_draw_gesture and "9" in self.direction_items and self.direction_element.direction == "7":
+                    ...
+                else:
+                    self.trajectory_tree.append(self.direction_element, emp)
+                    self.gesture_direction_cache_clear()
             if self.is_draw_gesture:
                 self.check_return_previous()
         self.tag_redraw()

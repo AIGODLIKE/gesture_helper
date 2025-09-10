@@ -187,7 +187,7 @@ class GestureProperty(PublicProperty):
         if not operator_time:
             # 没有操作符时间
             return False
-        is_timeout = operator_time > (self.pref.gesture_property.timeout / 1000)
+        is_timeout = (time.time() - operator_time) > (self.pref.gesture_property.timeout / 1000)
         if is_timeout:
             # 是超时
             self.draw_trajectory_mouse_move = True
@@ -213,3 +213,7 @@ class GestureProperty(PublicProperty):
         move_time = self.trajectory_mouse_move_time
         if len(move_time):
             return move_time[-1]
+
+    @property
+    def last_move_mouse_timeout(self) -> bool:  # 最后移动鼠标超时
+        return (time.time() -self.last_mouse_mouse_time) > (self.pref.gesture_property.timeout / 1000)

@@ -71,7 +71,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.offset_position = self.start_mouse_position
 
         self.init_trajectory()
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.register_draw()
 
         wm = context.window_manager
@@ -91,7 +91,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.__sync_gesture__()
 
         self.init_module(event)
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
 
         res = self.gpu.draw_run(self, event)

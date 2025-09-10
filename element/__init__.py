@@ -5,7 +5,7 @@ from bpy.props import CollectionProperty, IntProperty
 
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
-from .element_gpu_draw import ElementGpuDraw
+from .element_gpu_draw import ElementGpuDraw, ElementGpuExtensionItem
 from .element_operator import ElementOperator
 from .element_poll import ElementPoll
 from .element_property import ElementProperty
@@ -18,6 +18,7 @@ from ..utils.public_cache import cache_update_lock
 class Element(ElementCURE,
               ElementDraw,
               ElementGpuDraw,
+              ElementGpuExtensionItem,
               ElementOperator,
               ElementPoll,
               ElementProperty,

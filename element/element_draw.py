@@ -1,6 +1,5 @@
 # 绘制手势
 # 预览绘制
-import bpy
 from bpy.app.translations import pgettext_iface
 
 from . import ElementCURE
@@ -53,7 +52,13 @@ class ElementDraw:
         elif self.is_selected_structure:
             row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
 
-        if self.is_child_gesture or self.is_operator:
+        if self.parent_is_extension:  # 下面的展开项不显示图标
+            if self.is_child_gesture:
+                row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
+            else:
+                row.separator()
+                row.separator()
+        elif self.is_child_gesture or self.is_operator:
             row.label(text='', icon_value=pref.__get_icon__(self.direction))
         else:
             row.separator()
@@ -117,7 +122,9 @@ class ElementDraw:
                 rr.separator()
                 rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
                         emboss=False)
-            SetDirection.draw_direction(row.column())
+
+            if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
+                SetDirection.draw_direction(row.column())
 
             if is_operator:
                 is_change = self.properties != self.operator_tmp_kmi_properties
@@ -148,7 +155,9 @@ class ElementDraw:
             column.prop(self, 'name')
             self.draw_edit_icon(column)
             column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
-            SetDirection.draw_direction(row.column())
+
+            if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
+                SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
         """

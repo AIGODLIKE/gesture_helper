@@ -22,7 +22,7 @@ class GesturePointKDTree:
         self.points_list.append(point)
         self.child_element.append(element)
         self.time_list.append(time.time())
-        
+
         self.kd_tree = KDTree(len(self.points_list))
         for i, point in enumerate(self.points_list):
             self.kd_tree.insert((*point, 0), i)

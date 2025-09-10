@@ -48,14 +48,14 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             return pass_d
 
         wm = context.window_manager
-        self.timer = wm.event_timer_add(1 / 5, window=context.window)
+        self.timer = wm.event_timer_add(1 / 24, window=context.window)
         wm.modal_handler_add(self)
         if self.is_debug:
             print(self.bl_idname, event.type, event.value)
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.init_module(event)
         if self.is_debug:
             print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
@@ -103,6 +103,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         wm.event_timer_remove(self.timer)
 
     def try_immediate_implementation(self):
+        """尝试立即执行操作"""
         if self.gesture_property.immediate_implementation:
             de = self.direction_element
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:

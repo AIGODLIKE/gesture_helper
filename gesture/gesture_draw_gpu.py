@@ -1,3 +1,5 @@
+import time
+
 import blf
 import bpy
 import gpu
@@ -49,6 +51,7 @@ class DrawDebug(PublicGpu):
             data.insert(0, '--')
             data.insert(0, 'event_count:' + str(self.event_count))
             data.insert(0, 'trajectory_mouse_move:' + str(len(self.trajectory_mouse_move)))
+            data.insert(0, 'trajectory_mouse_move_time' + str(self.trajectory_mouse_move_time))
             data.insert(0, 'trajectory_tree:' + str(self.trajectory_tree))
             data.append('--')
             data.append('operator_gesture:' + str(self.operator_gesture))
@@ -68,10 +71,14 @@ class DrawDebug(PublicGpu):
             data.append('direction:' + str(self.direction))
             data.append('find_closest_point:' + str(self.find_closest_point))
             data.append('operator_time:' + str(self.operator_time))
-        self.draw_rectangle(0, 0, 400, len(data) * 30)
+            data.append('last_move_mouse_timeout:' + str(self.last_move_mouse_timeout))
+            data.append('last_mouse_mouse_time:' + str(self.last_mouse_mouse_time))
+            data.append('w:' + str(self.last_mouse_mouse_time - time.time()))
+        text_size = 15
+        self.draw_rectangle(0, 0, 400, len(data) * text_size)
         for index, i in enumerate(data):
             j = index + 1
-            self.draw_text(text=i, position=(5, 30 * j) )
+            self.draw_text(text=i, position=(5, j * text_size), size=text_size)
 
 
 class GestureGpuDraw(DrawDebug):
@@ -214,15 +221,16 @@ class GestureGpuDraw(DrawDebug):
                     self.draw_circle((0, 0), threshold, line_width=2, segments=64)
                     if self.is_beyond_threshold:
                         self.draw_arc((0, 0), threshold, self.angle_unsigned, 45, line_width=10, segments=64)
+
                 draw_items = self.direction_items.values()
-                for d in draw_items:
-                    d.draw_gpu_item(self)
+                for item in draw_items:
+                    item.draw_gpu_item(self)
 
                 if not len(self.operator_gesture.element):
                     text = __name_translate__('There are currently no elements for gestures, please add them')
-                    self.draw_text( text)
+                    self.draw_text(text)
                 elif not len(draw_items):
-                    self.draw_text( __name_translate__('No gestures under current conditions, please add'))
+                    self.draw_text(__name_translate__('No gestures under current conditions, please add'))
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""

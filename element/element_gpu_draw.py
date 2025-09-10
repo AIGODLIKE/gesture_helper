@@ -1,6 +1,5 @@
 import math
 from functools import cache
-from typing import Sequence
 
 import blf
 import bpy
@@ -12,7 +11,7 @@ from mathutils import Vector
 
 from ..utils import including_chinese, has_special_characters
 from ..utils.color import linear_to_srgb
-from ..utils.public import get_pref
+from ..utils.public import get_pref, get_gesture_extension_items
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
 
@@ -119,6 +118,14 @@ class ElementGpuProperty:
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
+    @property
+    def extension_items(self) -> dict['GestureElement']:
+        """
+        扩展项 就是底部
+        :return:
+        """
+        return get_gesture_extension_items(self.element)
+
     def draw_gpu_item(self, ops):
         """
         布局
@@ -129,6 +136,11 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
           9
         """
         self.ops = ops
+
+        direction = self.direction
+        if direction == '9':
+            self.draw_gpu_extension_item(ops)
+            return
         scale = bpy.context.preferences.view.ui_scale
 
         radius = get_pref().gesture_property.radius * scale
@@ -157,11 +169,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.gpu_draw_text_fix_offset()
                 self.gpu_draw_child_icon()
 
-    def gpu_draw_text_fix_offset(self):
+    def gpu_draw_text_fix_offset(self, use_offset=True):
         """通过对每种不同的文字偏移实现绘制位置正确"""
         with gpu.matrix.push_pop():
             w, h = self.text_dimensions
-            offset = [0, 0]
             text = self.text
             special_characters = has_special_characters(text)
             if including_chinese(text):  # 中文
@@ -174,7 +185,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 offset = [0, h * 0.355]
             gpu.matrix.translate(offset)
             self.draw_text(text, position=[0, 0], color=self.text_color, size=self.text_size, auto_offset=False)
-        gpu.matrix.translate((w, 0))
+        if use_offset:
+            gpu.matrix.translate((w, 0))
 
     def gpu_draw_icon(self):
         w, h = self.text_dimensions
@@ -216,7 +228,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         return h + h * self.icon_interval
 
     @property
-    def draw_dimensions(self) -> Sequence[float]:
+    def draw_dimensions(self) -> Vector:
         w, h = self.text_dimensions
         if self.is_draw_icon:
             w += self.icon_offset_width
@@ -225,7 +237,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         return Vector((w, h))
 
     @property
-    def draw_direction_offset(self) -> Sequence[float]:
+    def draw_direction_offset(self) -> Vector:
         w, h = self.draw_dimensions
         hb = h / 2  # bisect
         wb = w / 2
@@ -247,4 +259,44 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             offset = (-wb, -h)
         elif direction == '8':
             offset = (0, 0)
+        elif direction == '9':
+            offset = (0, -h * 3)
         return Vector(offset)
+
+
+class ElementGpuExtensionItem:
+    extension_interval = .05
+
+    @property
+    def extension_dimensions(self) -> Vector:
+        w, h = 0, 0
+        for index, item in enumerate(self.extension_items):
+            wi, hi = item.draw_dimensions
+            if wi > w:
+                w = wi
+            h += hi + hi * self.extension_interval
+        return Vector((w, h))
+
+    def draw_gpu_extension_item(self, ops):
+        # self.ops = ops
+        scale = bpy.context.preferences.view.ui_scale
+        radius = get_pref().gesture_property.radius * scale
+        position = get_position("7", radius)
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate(position)
+            gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
+
+            w, h = self.extension_dimensions
+            # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate(self.draw_direction_offset)
+                gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 1, 1), 1)
+                gpu.matrix.translate((-w / 2, 0))
+                self.draw_2d_rectangle(0, 0, w, -h)
+
+                for item in self.extension_items:
+                    item.ops = ops
+                    item.gpu_draw_text_fix_offset(use_offset=False)
+                    wi, hi = item.draw_dimensions
+                    ho = -(hi + hi * self.extension_interval)
+                    gpu.matrix.translate((0, ho))

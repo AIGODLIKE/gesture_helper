@@ -2,10 +2,7 @@ from functools import cache
 
 from bpy.props import BoolProperty, StringProperty
 
-from ..utils.public import (
-    PublicSortAndRemovePropertyGroup,
-    get_gesture_direction_items
-)
+from ..utils.public import (PublicSortAndRemovePropertyGroup, get_gesture_direction_items)
 from ..utils.public_cache import PublicCache, cache_update_lock
 
 
