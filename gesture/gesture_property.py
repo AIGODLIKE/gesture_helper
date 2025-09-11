@@ -137,6 +137,7 @@ class GestureProperty(PublicProperty):
         items = get_direction(self)
         if not len(items):
             self.gesture_direction_cache_clear()
+            self.gesture_extension_cache_clear()
             return get_direction(self)
         else:
             return items
@@ -157,16 +158,6 @@ class GestureProperty(PublicProperty):
                 return (self.__last_region_position__ - offset_position).magnitude
         return 0
 
-    @property
-    def mouse_is_in_extension_area(self) -> bool:
-        """鼠标是在扩展区域的"""
-        if self.extension_element:
-            item = getattr(self.extension_element, "extension_draw_area", None)
-            if item:
-                x1, y1, x2, y2 = item
-                x, y = self.event.mouse_region_x, self.event.mouse_region_y
-                return x1 < x < x2 and y1 < y < y2
-        return False
 
     @property
     def is_beyond_extension_offset_distance(self) -> bool:

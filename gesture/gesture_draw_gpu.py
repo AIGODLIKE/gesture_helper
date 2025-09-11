@@ -3,7 +3,6 @@ import time
 import blf
 import bpy
 import gpu
-import gpu_extras
 from mathutils import Vector
 
 from ..utils.gpu import get_now_2d_offset_position
@@ -56,9 +55,9 @@ class DrawDebug(PublicGpu):
             data.insert(0, 'trajectory_mouse_move_time' + str(self.trajectory_mouse_move_time))
             data.insert(0, 'trajectory_tree:' + str(self.trajectory_tree))
             data.insert(0, '--')
+            data.insert(0, 'extension_hover:' + str(self.extension_hover))
             data.insert(0, 'extension_element:' + str(self.extension_element))
             data.insert(0, 'extension_offset_distance:' + str(self.extension_offset_distance))
-            data.insert(0, 'mouse_is_in_extension_area:' + str(self.mouse_is_in_extension_area))
             if self.extension_element:
                 data.insert(0, 'extension_offset_start_position:' + str(
                     getattr(self.extension_element, "extension_offset_start_position", None)))
@@ -208,11 +207,20 @@ class GestureGpuDraw(DrawDebug):
 
                 self.draw_text(tn, size=size)
 
+    def extension_rollback(self):
+        extension_hover = self.extension_hover
+        while len(extension_hover):
+            last = extension_hover[-1]
+            if not last.extension_by_child_is_hover and not last.mouse_is_in_extension_area:
+                extension_hover.pop()
+            else:
+                return
+
     def gpu_draw_gesture(self):
         """绘制手势"""
         gp = self.gesture_property
         scale = bpy.context.preferences.view.ui_scale
-
+        self.extension_rollback()
         threshold = gp.threshold * scale
         from ..src.translate import __name_translate__
 

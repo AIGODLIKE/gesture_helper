@@ -90,8 +90,8 @@ def get_gesture_extension_items(iteration):
                 # 是True
                 poll = (item.is_selected_else or item.poll_bool)
                 if poll and (not last_selected_structure or item.is_selected_if):
-                    child = get_gesture_direction_items(item.element)
-                    extension.append(child)
+                    child = get_gesture_extension_items(item.element)
+                    extension.extend(child)
                     last_selected_structure = item
             continue  # 不运行后面的
         elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符

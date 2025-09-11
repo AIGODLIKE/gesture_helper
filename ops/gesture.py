@@ -2,8 +2,9 @@
 # 切换
 
 import bpy
-from bpy.props import StringProperty
 from bpy.app.translations import pgettext_iface
+from bpy.props import StringProperty
+
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..gesture.gesture_handle import GestureHandle
@@ -15,9 +16,11 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     bl_idname = 'gesture.operator'
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
+    extension_hover = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.extension_hover = []
         self.screen = None
         self.area = None
 
@@ -57,8 +60,8 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     def modal(self, context, event):
         self.trajectory_event_update(context, event)
         self.init_module(event)
-        if self.is_debug:
-            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
+        # if self.is_debug:
+        #     print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         if self.try_immediate_implementation():
             self.__exit_modal__()
             return {"FINISHED"}

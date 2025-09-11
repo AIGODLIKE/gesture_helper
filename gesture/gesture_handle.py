@@ -27,6 +27,7 @@ class GestureHandle:
         if (distance < return_distance) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
+            self.gesture_extension_cache_clear()
 
     def try_running_operator(self, ops):
         """尝试运行手势"""
@@ -71,9 +72,11 @@ class GestureHandle:
                     if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
                         self.trajectory_tree.append(self.direction_element, emp)
                         self.gesture_direction_cache_clear()
+                        self.gesture_extension_cache_clear()
                 else:
                     self.trajectory_tree.append(self.direction_element, emp)
                     self.gesture_direction_cache_clear()
+                    self.gesture_extension_cache_clear()
             if self.is_draw_gesture:
                 self.check_return_previous()
         self.tag_redraw()
