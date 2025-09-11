@@ -3,8 +3,10 @@ import time
 import blf
 import bpy
 import gpu
+import gpu_extras
 from mathutils import Vector
 
+from ..utils.gpu import get_now_2d_offset_position
 from ..utils.public_gpu import PublicGpu
 
 
@@ -53,8 +55,19 @@ class DrawDebug(PublicGpu):
             data.insert(0, 'trajectory_mouse_move:' + str(len(self.trajectory_mouse_move)))
             data.insert(0, 'trajectory_mouse_move_time' + str(self.trajectory_mouse_move_time))
             data.insert(0, 'trajectory_tree:' + str(self.trajectory_tree))
+            data.insert(0, '--')
+            data.insert(0, 'extension_element:' + str(self.extension_element))
+            data.insert(0, 'extension_offset_distance:' + str(self.extension_offset_distance))
+            data.insert(0, 'mouse_is_in_extension_area:' + str(self.mouse_is_in_extension_area))
+            if self.extension_element:
+                data.insert(0, 'extension_offset_start_position:' + str(
+                    getattr(self.extension_element, "extension_offset_start_position", None)))
+                data.insert(0,
+                            'extension_draw_area:' + str(getattr(self.extension_element, "extension_draw_area", None)))
+            data.insert(0, '--')
+            data.insert(0, 'direction_items:' + str(self.direction_items))
+            data.insert(0, 'last_element:' + str(self.trajectory_tree.last_element))
             data.append('--')
-            data.append('operator_gesture:' + str(self.operator_gesture))
             data.append('is_draw_gpu:' + str(self.is_draw_gpu))
             data.append('is_draw_gesture:' + str(self.is_draw_gesture))
             data.append('is_window_region_type:' + str(self.is_window_region_type))
@@ -73,7 +86,7 @@ class DrawDebug(PublicGpu):
             data.append('operator_time:' + str(self.operator_time))
             data.append('last_move_mouse_timeout:' + str(self.last_move_mouse_timeout))
             data.append('last_mouse_mouse_time:' + str(self.last_mouse_mouse_time))
-            data.append('w:' + str(self.last_mouse_mouse_time - time.time()))
+            data.append('timeout:' + str(time.time() - self.last_mouse_mouse_time))
         text_size = 15
         self.draw_rectangle(0, 0, 400, len(data) * text_size)
         for index, i in enumerate(data):
@@ -217,6 +230,7 @@ class GestureGpuDraw(DrawDebug):
         if self.is_draw_gesture:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__last_region_position__)
+                self.draw_text(str(get_now_2d_offset_position()), size=10, position=[0, -10], z=10)
                 if self.is_window_region_type:
                     self.draw_circle((0, 0), threshold, line_width=2, segments=64)
                     if self.is_beyond_threshold:
@@ -224,13 +238,19 @@ class GestureGpuDraw(DrawDebug):
 
                 draw_items = self.direction_items.values()
                 for item in draw_items:
-                    item.draw_gpu_item(self)
+                    with gpu.matrix.push_pop():
+                        item.draw_gpu_item(self)
 
                 if not len(self.operator_gesture.element):
                     text = __name_translate__('There are currently no elements for gestures, please add them')
                     self.draw_text(text)
                 elif not len(draw_items):
                     self.draw_text(__name_translate__('No gestures under current conditions, please add'))
+
+        if self.extension_element:
+            item = getattr(self.extension_element, "extension_draw_area", None)
+            if item:
+                x1, y1, x2, y2 = item
 
     def gpu_draw_direction_element(self):
         """绘制活动方向元素名称"""

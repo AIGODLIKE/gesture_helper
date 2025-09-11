@@ -11,6 +11,7 @@ from mathutils import Vector
 
 from ..utils import including_chinese, has_special_characters
 from ..utils.color import linear_to_srgb
+from ..utils.gpu import get_now_2d_offset_position
 from ..utils.public import get_pref, get_gesture_extension_items
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
@@ -284,15 +285,21 @@ class ElementGpuExtensionItem:
         position = get_position("7", radius)
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
+            gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 2)
 
             w, h = self.extension_dimensions
             # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.draw_direction_offset)
                 gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 1, 1), 1)
+                self.extension_offset_start_position = get_now_2d_offset_position()
+                self.draw_text(str(get_now_2d_offset_position()), size=10, position=[100, -10], z=10)
                 gpu.matrix.translate((-w / 2, 0))
-                self.draw_2d_rectangle(0, 0, w, -h)
+
+                x, y = get_now_2d_offset_position()
+                self.extension_draw_area = [x, y - h, x + w, y]
+                col = (1, 0, 0, 1) if ops.mouse_is_in_extension_area else (0, 0, 0, 1)
+                self.draw_2d_rectangle(0, 0, w, -h, color=col)
 
                 for item in self.extension_items:
                     item.ops = ops

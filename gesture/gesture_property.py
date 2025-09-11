@@ -98,14 +98,19 @@ class GestureProperty(PublicProperty):
             return False
         if angle > 337.5:
             return 1
-        return int((angle + 22.5) // 45 + 1)
+        d = int((angle + 22.5) // 45 + 1)
+        if self.is_have_extension_item and self.is_beyond_extension_offset_distance:
+            # 处理鼠标在扩展位置时的手势方向
+            if d in (6, 8):
+                return 7
+        return d
 
     @property
     def distance(self) -> float:
         """当前手势距离"""
         if self.is_draw_gpu:
             return (self.__last_window_position__ - self.__mouse_position__).magnitude
-        return False
+        return 0
 
     @property
     def direction_element(self) -> 'GestureElement':
@@ -115,7 +120,7 @@ class GestureProperty(PublicProperty):
     @property
     def direction_items(self) -> dict[str, 'GestureElement']:
         """
-        方向上的元素 8个，如果有重复的会取后面的
+        方向上的元素 9个，如果有重复的会取后面的
         :return:
         """
 
@@ -135,6 +140,38 @@ class GestureProperty(PublicProperty):
             return get_direction(self)
         else:
             return items
+
+    @property
+    def extension_element(self):
+        items = self.direction_items
+        if "9" in items:
+            return items["9"]
+        return None
+
+    @property
+    def extension_offset_distance(self) -> float:
+        """扩展项偏移距离"""
+        if self.extension_element:
+            offset_position = getattr(self.extension_element, "extension_offset_start_position", None)
+            if offset_position:
+                return (self.__last_region_position__ - offset_position).magnitude
+        return 0
+
+    @property
+    def mouse_is_in_extension_area(self) -> bool:
+        """鼠标是在扩展区域的"""
+        if self.extension_element:
+            item = getattr(self.extension_element, "extension_draw_area", None)
+            if item:
+                x1, y1, x2, y2 = item
+                x, y = self.event.mouse_region_x, self.event.mouse_region_y
+                return x1 < x < x2 and y1 < y < y2
+        return False
+
+    @property
+    def is_beyond_extension_offset_distance(self) -> bool:
+        """手势是超出了扩展偏移距离的"""
+        return self.distance > self.extension_offset_distance
 
     @property
     def is_draw_gpu(self) -> bool:
@@ -216,4 +253,4 @@ class GestureProperty(PublicProperty):
 
     @property
     def last_move_mouse_timeout(self) -> bool:  # 最后移动鼠标超时
-        return (time.time() -self.last_mouse_mouse_time) > (self.pref.gesture_property.timeout / 1000)
+        return (time.time() - self.last_mouse_mouse_time) > (self.pref.gesture_property.timeout / 1000)

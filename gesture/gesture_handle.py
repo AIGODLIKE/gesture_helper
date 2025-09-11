@@ -66,11 +66,18 @@ class GestureHandle:
             if not len(self.trajectory_tree):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
-                if not self.last_move_mouse_timeout and self.is_draw_gesture and "9" in self.direction_items and self.direction_element.direction == "7":
-                    ...
+
+                if self.is_have_extension_item and self.direction_element.direction == "7":
+                    if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
+                        self.trajectory_tree.append(self.direction_element, emp)
+                        self.gesture_direction_cache_clear()
                 else:
                     self.trajectory_tree.append(self.direction_element, emp)
                     self.gesture_direction_cache_clear()
             if self.is_draw_gesture:
                 self.check_return_previous()
         self.tag_redraw()
+
+    @property
+    def is_have_extension_item(self) -> bool:
+        return self.is_draw_gesture and "9" in self.direction_items

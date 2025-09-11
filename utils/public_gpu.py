@@ -124,6 +124,7 @@ class PublicGpu:
             color=(1, 1, 1, 1),
             font_id=0,
             column=0,
+            z = 1,
             auto_offset=False,
     ):
         from . import including_chinese
@@ -137,7 +138,7 @@ class PublicGpu:
             blf.disable(font_id, blf.MONOCHROME)
             blf.size(font_id, size)
             blf.color(font_id, *color)
-            blf.position(font_id, x, y - (size * (column + 1)), 1)
+            blf.position(font_id, x, y - (size * (column + 1)), z)
             blf.draw(font_id, str(text))
 
     @staticmethod
