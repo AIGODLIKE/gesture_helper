@@ -31,13 +31,28 @@ class GestureHandle:
 
     def try_running_operator(self, ops):
         """尝试运行手势"""
+
         element = self.direction_element
-        if self.is_beyond_threshold_confirm and element and element.is_operator:
+        if element and element.is_operator and self.is_beyond_threshold_confirm:
             error = element.running_operator()
             if error is not None:
                 from bpy.app.translations import pgettext_iface
                 ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+            ops.report({'INFO'}, element.name_translate)
             return True
+
+        print("extension_hover", self.extension_element, self.extension_hover)
+        if self.extension_element and len(self.extension_hover):
+            last = self.extension_hover[-1]
+            for item in last.extension_items:
+                if item.extension_by_child_is_hover and item.is_operator:
+                    error = item.running_operator()
+                    if error is not None:
+                        from bpy.app.translations import pgettext_iface
+                        ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+                    ops.report({'INFO'}, item.name_translate)
+                    return True
+        return False
 
     def init_trajectory(self):
         """初始化轨迹信息"""

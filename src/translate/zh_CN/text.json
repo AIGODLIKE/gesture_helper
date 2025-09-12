@@ -321,5 +321,6 @@
   "Operator Run Error,Please check the console": "操作符运行错误,请检查控制台",
   "Rounded corner size": "圆角大小",
   "Mesh Edge": "网格边",
-  "Draw child Icon": "绘制子级图标"
+  "Draw child Icon": "绘制子级图标",
+  "No child level, please add": "无子级,请添加"
 }

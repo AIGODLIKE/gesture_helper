@@ -114,3 +114,4 @@ class PublicCacheFunc(PublicCache):
             cls.gesture_cache_clear()
             cls.element_cache_clear()
             cls.gesture_direction_cache_clear()
+            cls.gesture_extension_cache_clear()

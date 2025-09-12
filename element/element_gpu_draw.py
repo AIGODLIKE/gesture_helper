@@ -94,13 +94,22 @@ class ElementGpuProperty:
         return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
     @property
+    def mouse_is_in_extension_any_area(self) -> bool:
+        if self.ops.extension_element and len(self.ops.extension_hover):
+            for last in self.ops.extension_hover:
+                for item in last.extension_items:
+                    if item.extension_by_child_is_hover or item.mouse_is_in_extension_area:
+                        return True
+        return False
+
+    @property
     def background_color(self):
         """
         背景颜色
         :return:
         """
         draw = self.draw_property
-        if self.is_active_direction and not self.mouse_is_in_extension_area:
+        if self.is_active_direction and not self.mouse_is_in_extension_any_area:
             if self.is_operator:
                 return draw.background_operator_active_color
             elif self.is_child_gesture:
@@ -116,6 +125,13 @@ class ElementGpuProperty:
         if self.is_child_gesture:
             return draw.background_child_color
         return 1, 0, 0, 1
+
+    @property
+    def extension_background_color(self):
+        draw = self.draw_property
+        if self.extension_by_child_is_hover or self in self.ops.extension_hover:
+            return draw.background_child_active_color
+        return draw.background_child_color
 
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
@@ -298,25 +314,28 @@ class ElementGpuExtensionItem:
         self.extension_icon_size = mh
         self.extension_icon_interval = mh * interval
         self.extension_text_width = w
-        w += mh * 2 + self.extension_icon_interval * 2
+        w += mh * 2 + self.extension_icon_interval
         return Vector((w, h))
 
     def draw_gpu_extension_item(self, ops):
         w, h = self.extension_dimensions
+        draw = self.draw_property
         with gpu.matrix.push_pop():
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
 
             x, y = get_now_2d_offset_position()
             self.extension_draw_area = [x, y - h, x + w, y]
-            col = (0.1, 0, 0, 1) if self.mouse_is_in_extension_area else (0, 0, 0, 1)
-            self.draw_2d_rectangle(0, 0, w, -h, color=col)
+            # col = (0.1, 0, 0, 1) if self.mouse_is_in_extension_area else draw.background_child_color
+            # self.draw_2d_rectangle(0, 0, w, -h, color=col)
 
             for item in self.extension_items:
-                wi, hi = item.draw_dimensions
                 item.ops = ops
-                if item.extension_by_child_is_hover or item in ops.extension_hover:
-                    self.draw_2d_rectangle(0, 0, w, -hi, color=(1, 1, 0, 1))
+                wi, hi = item.draw_dimensions
+                ho = -(hi + hi * self.extension_interval)
+
+                color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
+                self.draw_2d_rectangle(0, 0, w, ho, color=color)
                 with gpu.matrix.push_pop():
                     s = self.extension_icon_size
                     if item.is_draw_icon:
@@ -324,7 +343,7 @@ class ElementGpuExtensionItem:
                     gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
                     item.gpu_draw_text_fix_offset(use_offset=False)
                     gpu.matrix.translate((self.extension_text_width, 0))
-                    if item.is_draw_child_icon:
+                    if item.is_child_gesture:
                         self.draw_image([0, -s], s, s, texture=Texture.get_texture("1"))
                     gpu.matrix.translate((self.extension_icon_size, 0))
 
@@ -333,7 +352,6 @@ class ElementGpuExtensionItem:
                     if item.is_child_gesture and (item.extension_by_child_is_hover or item in ops.extension_hover):
                         item.draw_gpu_extension_item(ops)
 
-                ho = -(hi + hi * self.extension_interval)
                 gpu.matrix.translate((0, ho))
 
                 gpu_extras.presets.draw_circle_2d([0, 0], (0, 1, 1, 1), 1)
@@ -341,4 +359,7 @@ class ElementGpuExtensionItem:
                 item.extension_by_child_draw_area = [sx, sy, ex, ey]
 
             if len(self.extension_items) == 0:
-                self.draw_text("无子级,请添加", size=10, position=[0, 0], z=10)
+                self.draw_text(
+                    bpy.app.translations.pgettext_iface("No child level, please add"),
+                    size=self.text_size,
+                    position=[0, 0])

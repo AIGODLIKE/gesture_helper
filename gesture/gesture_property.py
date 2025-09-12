@@ -61,7 +61,7 @@ class GestureProperty(PublicProperty):
         return False
 
     @property
-    def operator_gesture(self) -> 'GestureProperty':
+    def operator_gesture(self) -> 'GestureProperty | None':
         """
         当前操作符执行的手势
         :return:
@@ -157,7 +157,6 @@ class GestureProperty(PublicProperty):
             if offset_position:
                 return (self.__last_region_position__ - offset_position).magnitude
         return 0
-
 
     @property
     def is_beyond_extension_offset_distance(self) -> bool:

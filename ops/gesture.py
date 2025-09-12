@@ -93,8 +93,6 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 self.try_pass_through_keymap(context, event)
                 print()
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
-        else:
-            self.report({'INFO'}, self.direction_element.name_translate)
         return {'FINISHED'}
 
     def cancel(self, context):
