@@ -162,12 +162,12 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             position = get_position("7", radius)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(position)
-                gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 2)
+                draw_debug_point((1, 1, 0, 1), 2)
 
                 gpu.matrix.translate(self.draw_direction_offset)
                 w, h = self.extension_dimensions
 
-                gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 1, 1), 1)
+                draw_debug_point((1, 0, 0, 1))
                 self.extension_offset_start_position = get_now_2d_offset_position()
                 self.draw_text(str(get_now_2d_offset_position()), size=10, position=[100, -10], z=10)
                 gpu.matrix.translate((-w / 2, 0))
@@ -177,12 +177,11 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
         radius = get_pref().gesture_property.radius * scale
         position = get_position(self.direction, radius)
-        debug = get_pref().debug_property.debug_draw_gpu_mode
+        debug = get_pref().debug_property.debug_extension
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            if debug:
-                gpu_extras.presets.draw_circle_2d([0, 0], (1, 0, 0, 1), 1)
+            draw_debug_point()
 
             w, h = self.draw_dimensions
             # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
@@ -235,11 +234,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     def gpu_draw_margin(self):
         w, h = self.draw_dimensions
         wm, hm = self.text_margin
-        debug = get_pref().debug_property.debug_draw_gpu_mode
         with gpu.matrix.push_pop():
             gpu.matrix.translate((w / 2, -h / 2))
-            if debug:
-                gpu_extras.presets.draw_circle_2d([0, 0], (0, 0, 1, 1), 1)
+            draw_debug_point()
 
             radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
 
@@ -347,14 +344,14 @@ class ElementGpuExtensionItem:
                         self.draw_image([0, -s], s, s, texture=Texture.get_texture("1"))
                     gpu.matrix.translate((self.extension_icon_size, 0))
 
-                    gpu_extras.presets.draw_circle_2d([0, 0], (0, 0, 1, 1), 1)
+                    draw_debug_point()
                     ex, ey = get_now_2d_offset_position()
                     if item.is_child_gesture and (item.extension_by_child_is_hover or item in ops.extension_hover):
                         item.draw_gpu_extension_item(ops)
 
                 gpu.matrix.translate((0, ho))
 
-                gpu_extras.presets.draw_circle_2d([0, 0], (0, 1, 1, 1), 1)
+                draw_debug_point()
                 sx, sy = get_now_2d_offset_position()
                 item.extension_by_child_draw_area = [sx, sy, ex, ey]
 
@@ -363,3 +360,8 @@ class ElementGpuExtensionItem:
                     bpy.app.translations.pgettext_iface("No child level, please add"),
                     size=self.text_size,
                     position=[0, 0])
+
+
+def draw_debug_point(color=(0, 1, 1, 1), radius=1):
+    if get_pref().debug_property.debug_extension:
+        gpu_extras.presets.draw_circle_2d([0, 0], color, radius)
