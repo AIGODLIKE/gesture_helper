@@ -105,7 +105,7 @@ class DrawElement:
         add_child = add.is_have_add_child
 
         if bpy.context.region.width < 2000:
-            split = layout.box().column(align=True)
+            split = layout.box().column(align=False)
         else:
             split = layout.split(factor=.4)
 
@@ -121,11 +121,13 @@ class DrawElement:
             element_row = sub_row.row(align=True)
             element_row.separator()
             element_row.label(text='Add item:')
+
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i != 'SELECTED_STRUCTURE':
                     ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
                     ops.element_type = i
                     ops.relationship = relationship
+
             element_row.separator()
             for i, n, d in ENUM_SELECTED_TYPE:
                 ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
