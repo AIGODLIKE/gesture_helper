@@ -34,6 +34,9 @@ class Element(ElementCURE,
     def __init_element__(self):
         getattr(self, f'__init_{self.element_type.lower()}__')()
 
+    def __init_dividing_line__(self):
+        self.name = "------------"
+
     @property
     def name_translate(self) -> str:
         from ..src.translate import __name_translate__
