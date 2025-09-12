@@ -210,11 +210,7 @@ class GestureProperty(PublicProperty):
         """是否绘制手势的布尔值"""
         if self.draw_trajectory_mouse_move:
             return True
-        operator_time = self.operator_time
-        if not operator_time:
-            # 没有操作符时间
-            return False
-        is_timeout = (time.time() - operator_time) > (self.pref.gesture_property.timeout / 1000)
+        is_timeout = self.last_move_mouse_timeout
         if is_timeout:
             # 是超时
             self.draw_trajectory_mouse_move = True

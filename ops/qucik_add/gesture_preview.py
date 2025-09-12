@@ -48,7 +48,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         """是绘制手势的布尔值"""
         if self.draw_trajectory_mouse_move:
             return True
-        return self.operator_time is not None
+        return self.last_move_mouse_timeout
 
     def __sync_gesture__(self):
         """同步手势名称"""

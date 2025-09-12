@@ -82,7 +82,6 @@ class DrawDebug(PublicGpu):
             data.append('distance:' + str(self.distance))
             data.append('direction:' + str(self.direction))
             data.append('find_closest_point:' + str(self.find_closest_point))
-            data.append('operator_time:' + str(self.operator_time))
             data.append('last_move_mouse_timeout:' + str(self.last_move_mouse_timeout))
             data.append('last_mouse_mouse_time:' + str(self.last_mouse_mouse_time))
             data.append('timeout:' + str(time.time() - self.last_mouse_mouse_time))
