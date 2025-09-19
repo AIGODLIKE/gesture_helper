@@ -13,7 +13,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     gesture_remove_tips: BoolProperty(name='Gesture remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
     gesture_point_name_size: IntProperty(name='Gesture Point Name Size', description='Gpu Draw Point Name Size',
-                                         default=12, min=5,
+                                         default=15, min=5,
                                          max=60)
 
     element_split_factor: FloatProperty(name='Split Factor', default=0.2, max=0.95, min=0.01, step=0.01)
@@ -22,6 +22,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     element_show_icon: BoolProperty(name='Show icon', default=True)
     element_remove_tips: BoolProperty(name='Element remove tips', default=True,
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
+    element_extension_item_offset: FloatProperty(name='Extension Offset', default=4, max=10, min=3, step=.5)
 
     element_draw_child_icon: BoolProperty(name="Draw child Icon", default=True)
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
@@ -74,6 +75,7 @@ class DrawProperty(bpy.types.PropertyGroup):
 
         col = layout.box().column(align=True)
         col.prop(draw, 'element_draw_child_icon')
+        col.prop(draw, 'element_extension_item_offset')
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
         cr.alert = radius_is_alert

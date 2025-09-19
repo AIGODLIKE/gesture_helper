@@ -4,9 +4,9 @@ from functools import cache
 import blf
 import bpy
 import gpu
-import gpu_extras
 import numpy as np
 from bl_operators.wm import context_path_validate
+from gpu_extras.presets import draw_circle_2d
 from mathutils import Vector
 
 from ..utils import including_chinese, has_special_characters
@@ -158,7 +158,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         direction = self.direction
         if direction == '9':
             scale = bpy.context.preferences.view.ui_scale
-            radius = get_pref().gesture_property.radius * scale
+            pref = get_pref()
+            radius = pref.gesture_property.radius * scale
             position = get_position("7", radius)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(position)
@@ -192,9 +193,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
                 self.gpu_draw_margin()
                 if debug:
-                    gpu_extras.presets.draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
+                    draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
                     self.draw_text(self.direction, color=self.text_color, size=12)
-                    gpu_extras.presets.draw_circle_2d([w, -h], (0, 0, 1, 1), 1)
+                    draw_circle_2d([w, -h], (0, 0, 1, 1), 1)
 
                 self.gpu_draw_icon()
                 self.gpu_draw_text_fix_offset()
@@ -289,7 +290,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         elif direction == '8':
             offset = (0, 0)
         elif direction == '9':
-            offset = (0, -h * 3)
+            offset = (0, -h * get_pref().draw_property.element_extension_item_offset)
         return Vector(offset)
 
 
@@ -320,11 +321,8 @@ class ElementGpuExtensionItem:
         with gpu.matrix.push_pop():
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
-
-            x, y = get_now_2d_offset_position()
-            self.extension_draw_area = [x, y - h, x + w, y]
-            # col = (0.1, 0, 0, 1) if self.mouse_is_in_extension_area else draw.background_child_color
-            # self.draw_2d_rectangle(0, 0, w, -h, color=col)
+            draw_debug_point()
+            self.draw_gpu_extension_margin()
 
             for item in self.extension_items:
                 item.ops = ops
@@ -345,9 +343,11 @@ class ElementGpuExtensionItem:
                     gpu.matrix.translate((self.extension_icon_size, 0))
 
                     draw_debug_point()
-                    ex, ey = get_now_2d_offset_position()
                     if item.is_child_gesture and (item.extension_by_child_is_hover or item in ops.extension_hover):
+                        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+                        gpu.matrix.translate((margin_x * 1.9, 0))
                         item.draw_gpu_extension_item(ops)
+                    ex, ey = get_now_2d_offset_position()
 
                 gpu.matrix.translate((0, ho))
 
@@ -360,8 +360,31 @@ class ElementGpuExtensionItem:
                     bpy.app.translations.pgettext_iface("No child level, please add"),
                     size=self.text_size,
                     position=[0, 0])
+        self.draw_text(f"ma {self.mouse_is_in_extension_area}")
+
+    def draw_gpu_extension_margin(self):
+        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+
+        gpu.state.blend_set('ALPHA')
+        gpu.state.depth_test_set('ALWAYS')
+        w, h = self.extension_dimensions
+        x, y = get_now_2d_offset_position()
+
+        self.extension_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_x]
+        # col = (0.1, 0, 0, 1) if self.mouse_is_in_extension_area else draw.background_child_color
+
+        if len(self.extension_items) == 0:
+            return
+        rounded_rectangle = {
+            "radius": self.text_radius,
+            "position": (w / 2, -h / 2),
+            "width": w + margin_x * 2,
+            "height": h + margin_y * 2,
+            "color": linear_to_srgb(np.array((1, 0, 0, 1), dtype=np.float32)),
+        }
+        self.draw_rounded_rectangle_area(**rounded_rectangle)
 
 
 def draw_debug_point(color=(0, 1, 1, 1), radius=1):
     if get_pref().debug_property.debug_extension:
-        gpu_extras.presets.draw_circle_2d([0, 0], color, radius)
+        draw_circle_2d([0, 0], color, radius)
