@@ -201,7 +201,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.gpu_draw_text_fix_offset()
                 self.gpu_draw_child_icon()
 
-    def gpu_draw_text_fix_offset(self, use_offset=True):
+    def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
         """通过对每种不同的文字偏移实现绘制位置正确"""
         with gpu.matrix.push_pop():
             w, h = self.text_dimensions
@@ -215,7 +215,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 offset = [0, h * 0.1]
             else:  # 只有英文
                 offset = [0, h * 0.355]
-            gpu.matrix.translate(offset)
+            if fix_offset:
+                gpu.matrix.translate(offset)
             self.draw_text(text, position=[0, 0], color=self.text_color, size=self.text_size, auto_offset=False)
         if use_offset:
             gpu.matrix.translate((w, 0))
@@ -336,7 +337,7 @@ class ElementGpuExtensionItem:
                     if item.is_draw_icon:
                         self.draw_image([0, -s], s, s, texture=Texture.get_texture(item.icon))
                     gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
-                    item.gpu_draw_text_fix_offset(use_offset=False)
+                    item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
                     gpu.matrix.translate((self.extension_text_width, 0))
                     if item.is_child_gesture:
                         self.draw_image([0, -s], s, s, texture=Texture.get_texture("1"))
