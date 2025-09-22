@@ -102,6 +102,25 @@ class ElementAddProperty:
             return x1 < x < x2 and y1 < y < y2
         return False
 
+    @property
+    def mouse_is_in_extension_outside_area(self) -> bool:
+        """鼠标是在扩展区域外的
+        当前扩展的子级绘制区域
+        """
+        item = getattr(self, "extension_draw_area", None)
+        if item:
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            outside_offset = 200
+
+            yl = y1 - outside_offset < y < y1
+            yu = y2 < y < y2 + outside_offset
+
+            y_ok = yl or yu
+            x_ok = x1 < x < x2
+            return x_ok and y_ok
+        return False
+
 
 class ElementIcon:
     icon: StringProperty(name='Show Icon', default='COLOR_ERROR')

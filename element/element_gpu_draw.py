@@ -96,9 +96,9 @@ class ElementGpuProperty:
     @property
     def mouse_is_in_extension_any_area(self) -> bool:
         if self.ops.extension_element and len(self.ops.extension_hover):
-            for last in self.ops.extension_hover:
+            for (index, last) in enumerate(self.ops.extension_hover):
                 for item in last.extension_items:
-                    if item.extension_by_child_is_hover or item.mouse_is_in_extension_area:
+                    if item.extension_by_child_is_hover or item.mouse_is_in_extension_area or (index != 0 and item.mouse_is_in_extension_outside_area):
                         return True
         return False
 
@@ -361,7 +361,11 @@ class ElementGpuExtensionItem:
                     bpy.app.translations.pgettext_iface("No child level, please add"),
                     size=self.text_size,
                     position=[0, 0])
-        self.draw_text(f"ma {self.mouse_is_in_extension_area}")
+
+            self.draw_text(f"in_extension_area {self.mouse_is_in_extension_area}", size=12, position=(0, 0))
+            self.draw_text(f"ww {self.mouse_is_in_extension_area}", size=12, position=(0, -10))
+            self.draw_text(f"mouse_is_in_extension_outside_area {self.mouse_is_in_extension_outside_area}", size=12,
+                           position=(0, -20))
 
     def draw_gpu_extension_margin(self):
         margin_x, margin_y = self.draw_property.text_gpu_draw_margin
