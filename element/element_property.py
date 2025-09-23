@@ -103,23 +103,37 @@ class ElementAddProperty:
         return False
 
     @property
-    def mouse_is_in_extension_outside_area(self) -> bool:
+    def mouse_is_in_extension_vertical_outside_area(self) -> bool:
         """鼠标是在扩展区域外的
         当前扩展的子级绘制区域
         """
-        item = getattr(self, "extension_draw_area", None)
-        if item:
+        if item := getattr(self, "extension_draw_area", None):
+            w, h = self.extension_dimensions
             x1, y1, x2, y2 = item
             x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
-            outside_offset = 200
 
-            yl = y1 - outside_offset < y < y1
-            yu = y2 < y < y2 + outside_offset
+            yl = y1 - h < y < y1
+            yu = y2 < y < y2 + h
 
             y_ok = yl or yu
             x_ok = x1 < x < x2
             return x_ok and y_ok
         return False
+    @property
+    def mouse_is_in_extension_right_outside_area(self) -> bool:
+        if item := getattr(self, "extension_draw_area", None):
+            w, h = self.extension_dimensions
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+
+            yl = y1 - h < y < y1
+            yu = y2 < y < y2 + h
+
+            y_ok = yl or yu
+            x_ok = x1 < x < x2
+            return x_ok and y_ok
+        return False
+
 
 
 class ElementIcon:
