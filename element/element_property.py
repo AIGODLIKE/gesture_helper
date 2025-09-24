@@ -119,21 +119,27 @@ class ElementAddProperty:
             x_ok = x1 < x < x2
             return x_ok and y_ok
         return False
+
     @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
-        if item := getattr(self, "extension_draw_area", None):
-            w, h = self.extension_dimensions
-            x1, y1, x2, y2 = item
-            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+        """
+        鼠标在区域外部并且是最后一个
+        """
+        if extension_hover := getattr(self.ops, "extension_hover", None):
+            is_last = len(extension_hover) > 1 and extension_hover[-1] == self
+            print("is_last")
+            if is_last:
+                if item := getattr(self, "extension_draw_area", None):
+                    print("is_last extension_draw_area")
+                    w, h = self.extension_dimensions
+                    x1, y1, x2, y2 = item
+                    x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
 
-            yl = y1 - h < y < y1
-            yu = y2 < y < y2 + h
-
-            y_ok = yl or yu
-            x_ok = x1 < x < x2
-            return x_ok and y_ok
+                    y_ok = y1 - h < y < y2 + h
+                    x_ok = x2 < x < x2 + w
+                    print("x_ok", x_ok, y_ok)
+                    return x_ok and y_ok
         return False
-
 
 
 class ElementIcon:

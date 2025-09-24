@@ -210,9 +210,11 @@ class GestureGpuDraw(DrawDebug):
         extension_hover = self.extension_hover
         while len(extension_hover):
             last = extension_hover[-1]
-            el = len(extension_hover)
+            hover_len = len(extension_hover)
             if not last.extension_by_child_is_hover and not last.mouse_is_in_extension_area:
-                if last.mouse_is_in_extension_vertical_outside_area and el > 1:
+                is_vertical_outside = last.mouse_is_in_extension_vertical_outside_area
+                is_right_outside = last.mouse_is_in_extension_right_outside_area
+                if (is_vertical_outside or is_right_outside) and hover_len > 1:
                     return
                 extension_hover.pop()
             else:

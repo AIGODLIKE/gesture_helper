@@ -98,7 +98,12 @@ class ElementGpuProperty:
         if self.ops.extension_element and len(self.ops.extension_hover):
             for (index, last) in enumerate(self.ops.extension_hover):
                 for item in last.extension_items:
-                    if item.extension_by_child_is_hover or item.mouse_is_in_extension_area or (index != 0 and item.mouse_is_in_extension_vertical_outside_area):
+                    if (
+                            item.extension_by_child_is_hover or
+                            item.mouse_is_in_extension_area or
+                            item.mouse_is_in_extension_vertical_outside_area or
+                            item.mouse_is_in_extension_right_outside_area
+                    ):
                         return True
         return False
 
@@ -363,8 +368,9 @@ class ElementGpuExtensionItem:
                     position=[0, 0])
 
             self.draw_text(f"in_extension_area {self.mouse_is_in_extension_area}", size=12, position=(0, 0))
-            self.draw_text(f"ww {self.mouse_is_in_extension_area}", size=12, position=(0, -10))
-            self.draw_text(f"mouse_is_in_extension_outside_area {self.mouse_is_in_extension_outside_area}", size=12,
+            self.draw_text(f"vertical_outside {self.mouse_is_in_extension_vertical_outside_area}", size=12,
+                           position=(0, -10))
+            self.draw_text(f"right_outside {self.mouse_is_in_extension_right_outside_area}", size=12,
                            position=(0, -20))
 
     def draw_gpu_extension_margin(self):

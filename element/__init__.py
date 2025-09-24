@@ -5,6 +5,7 @@ from bpy.props import CollectionProperty, IntProperty
 
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
+from .element_extension import ElementExtension
 from .element_gpu_draw import ElementGpuDraw, ElementGpuExtensionItem
 from .element_operator import ElementOperator
 from .element_poll import ElementPoll
@@ -23,6 +24,7 @@ class Element(ElementCURE,
               ElementPoll,
               ElementProperty,
               ElementRelationship,
+              ElementExtension,
 
               PublicProperty,
 
