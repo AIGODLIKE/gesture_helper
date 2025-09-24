@@ -148,6 +148,7 @@ class DrawElement:
         relationship = add.relationship
         active = pref.active_element
         is_alert = False
+
         if relationship == "ROOT":
             is_alert = True
         elif relationship == "SAME":
@@ -155,7 +156,7 @@ class DrawElement:
                 ...
             else:
                 is_alert = True
-        elif relationship == "CHILD":
+        elif relationship == "CHILD" and active:
             is_e = active.is_child_gesture and (active.direction == "9" or active.parent_is_extension)
             if is_e or active.is_selected_structure:
                 ...

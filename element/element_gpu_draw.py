@@ -226,11 +226,20 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((w, 0))
 
-    def gpu_draw_icon(self):
+    def gpu_draw_icon(self, use_offset=True):
         w, h = self.text_dimensions
+        if self.is_draw_property_bool and getattr(self, "extension_icon_size", None):
+            h = self.extension_icon_size
         if self.is_draw_icon:
-            self.draw_image([0, -h], h, h, texture=Texture.get_texture(self.icon))
-            gpu.matrix.translate((self.icon_offset_width, 0))
+            icon = self.icon
+            if self.is_draw_property_bool:
+                if self.get_operator_wm_context_toggle_property_bool:
+                    icon = "CHECKBOX_HLT"
+                else:
+                    icon = "CHECKBOX_DEHLT"
+            self.draw_image([0, -h], h, h, texture=Texture.get_texture(icon))
+            if use_offset:
+                gpu.matrix.translate((self.icon_offset_width, 0))
 
     def gpu_draw_child_icon(self):
         w, h = self.text_dimensions
@@ -340,7 +349,7 @@ class ElementGpuExtensionItem:
                 with gpu.matrix.push_pop():
                     s = self.extension_icon_size
                     if item.is_draw_icon:
-                        self.draw_image([0, -s], s, s, texture=Texture.get_texture(item.icon))
+                        item.gpu_draw_icon(False)
                     gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
                     item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
                     gpu.matrix.translate((self.extension_text_width, 0))

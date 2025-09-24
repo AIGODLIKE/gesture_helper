@@ -217,20 +217,21 @@ class ElementDraw:
 
     def draw_icon(self, layout):
         if self.draw_property.element_show_icon:
-            if self.is_have_icon and self.icon_is_validity and self.is_show_icon:
+            if self.is_draw_icon and not self.is_draw_property_bool:
                 layout.label(text='', icon_value=self.__get_icon__(self.icon))
             else:
                 layout.label(text='', icon='BLANK1')
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
-
-        row = layout.row(align=True)
-
-        row.prop(self, 'enabled_icon')
-        if self.icon_is_validity:
-            row.prop(self, 'icon', text='', icon_value=self.__get_icon__(self.icon))
+        if self.is_draw_property_bool:
+            layout.prop(self, 'enabled_property_toggle_icon')
         else:
-            row.alert = True
-            row.prop(self, 'icon', text='', icon='ERROR')
-        row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
+            row = layout.row(align=True)
+            row.prop(self, 'enabled_icon')
+            if self.icon_is_validity:
+                row.prop(self, 'icon', text='', icon_value=self.__get_icon__(self.icon))
+            else:
+                row.alert = True
+                row.prop(self, 'icon', text='', icon='ERROR')
+            row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')

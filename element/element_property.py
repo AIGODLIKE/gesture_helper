@@ -127,17 +127,14 @@ class ElementAddProperty:
         """
         if extension_hover := getattr(self.ops, "extension_hover", None):
             is_last = len(extension_hover) > 1 and extension_hover[-1] == self
-            print("is_last")
             if is_last:
                 if item := getattr(self, "extension_draw_area", None):
-                    print("is_last extension_draw_area")
                     w, h = self.extension_dimensions
                     x1, y1, x2, y2 = item
                     x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
 
                     y_ok = y1 - h < y < y2 + h
                     x_ok = x2 < x < x2 + w
-                    print("x_ok", x_ok, y_ok)
                     return x_ok and y_ok
         return False
 
@@ -145,6 +142,10 @@ class ElementAddProperty:
 class ElementIcon:
     icon: StringProperty(name='Show Icon', default='COLOR_ERROR')
     enabled_icon: BoolProperty(name='Enabled Icon', default=False)
+    enabled_property_toggle_icon: BoolProperty(
+        name='Property Icon',
+        description="Toggle property operator icon",
+        default=True)
 
     @property
     def is_have_icon(self):
@@ -171,6 +172,8 @@ class ElementIcon:
     @property
     def is_draw_icon(self):
         """是绘制图标"""
+        if self.is_draw_property_bool:
+            return True
         return self.is_have_icon and self.is_show_icon
 
     @property
