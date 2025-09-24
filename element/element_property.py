@@ -44,6 +44,10 @@ class ElementAddProperty:
         return self.element_type == 'OPERATOR'
 
     @property
+    def is_dividing_line(self) -> bool:
+        return self.element_type == 'DIVIDING_LINE'
+
+    @property
     def is_child_relationship(self) -> bool:
         return self.relationship == 'CHILD'
 

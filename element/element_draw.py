@@ -51,7 +51,9 @@ class ElementDraw:
             row.label(text='', icon='CON_CHILDOF')
         elif self.is_selected_structure:
             row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
-
+        elif self.is_dividing_line:
+            row.label(text='', icon_value=pref.__get_icon__("REMOVE"))
+            
         if self.parent_is_extension:  # 下面的展开项不显示图标
             if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
