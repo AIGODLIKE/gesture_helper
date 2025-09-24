@@ -185,6 +185,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         position = get_position(self.direction, radius)
         debug = get_pref().debug_property.debug_extension
 
+        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             draw_debug_point()
@@ -202,9 +204,14 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                     self.draw_text(self.direction, color=self.text_color, size=12)
                     draw_circle_2d([w, -h], (0, 0, 1, 1), 1)
 
+                x, y = get_now_2d_offset_position()
                 self.gpu_draw_icon()
                 self.gpu_draw_text_fix_offset()
                 self.gpu_draw_child_icon()
+
+                self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
+                self.draw_text(f"element.mouse_is_in_area {self.mouse_is_in_area} {margin_x, margin_y}", size=12,
+                               position=(0, -10))
 
     def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
         """通过对每种不同的文字偏移实现绘制位置正确"""
@@ -241,11 +248,12 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             if use_offset:
                 gpu.matrix.translate((self.icon_offset_width, 0))
 
-    def gpu_draw_child_icon(self):
+    def gpu_draw_child_icon(self, use_offset=True):
         w, h = self.text_dimensions
         if self.is_draw_child_icon:
             self.draw_image([0, -h], h, h, texture=Texture.get_texture("1"))
-            gpu.matrix.translate((self.icon_offset_width, 0))
+            if use_offset:
+                gpu.matrix.translate((self.icon_offset_width, 0))
 
     def gpu_draw_margin(self):
         w, h = self.draw_dimensions

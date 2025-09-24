@@ -56,7 +56,8 @@ EXPORT_PROPERTY_ITEM = {
         'operator_context',
         'operator_properties',
         'operator_type',
-    ]
+    ],
+    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
 }
 
 

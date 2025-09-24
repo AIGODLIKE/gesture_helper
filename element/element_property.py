@@ -91,12 +91,19 @@ class ElementAddProperty:
         return False
 
     @property
+    def mouse_is_in_area(self) -> bool:
+        if item := getattr(self, "item_draw_area", None):
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            return x1 < x < x2 and y1 < y < y2
+        return False
+
+    @property
     def mouse_is_in_extension_area(self) -> bool:
         """鼠标是在扩展区域的
         当前扩展的子级绘制区域
         """
-        item = getattr(self, "extension_draw_area", None)
-        if item:
+        if item := getattr(self, "extension_draw_area", None):
             x1, y1, x2, y2 = item
             x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
             return x1 < x < x2 and y1 < y < y2
