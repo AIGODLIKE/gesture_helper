@@ -169,6 +169,7 @@ class PublicProperty(PublicCacheFunc):
             for element in act_ges.element_iteration:
                 if element.radio:
                     return element
+        return None
 
     @classmethod
     def update_state(cls):

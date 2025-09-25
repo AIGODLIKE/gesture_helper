@@ -132,6 +132,17 @@ class ElementAddProperty:
         return False
 
     @property
+    def mouse_is_in_extension_vertical_area(self) -> bool:
+        """鼠标是在扩展垂直区域
+        """
+        if item := getattr(self, "extension_draw_area", None):
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            x_ok = x1 < x < x2
+            return x_ok
+        return False
+
+    @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
         """
         鼠标在区域外部并且是最后一个

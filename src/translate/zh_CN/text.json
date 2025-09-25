@@ -325,5 +325,6 @@
   "Rounded corner size": "圆角大小",
   "Mesh Edge": "网格边",
   "Draw child Icon": "绘制子级图标",
-  "No child level, please add": "无子级,请添加"
+  "No child level, please add": "无子级,请添加",
+  "Div": "分隔"
 }

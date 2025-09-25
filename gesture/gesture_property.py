@@ -102,7 +102,9 @@ class GestureProperty(PublicProperty):
         if self.is_have_extension_item and self.is_beyond_extension_offset_distance:
             # 处理鼠标在扩展位置时的手势方向
             if d in (6, 8):
-                return 7
+                bottom = self.direction_items.get("9", None)
+                if bottom and bottom.mouse_is_in_extension_vertical_area or len(self.extension_hover) > 1:
+                    return 7
         return d
 
     @property
