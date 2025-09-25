@@ -111,3 +111,25 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 if de.is_operator:
                     res = self.try_running_operator(self)
                     return res
+
+    @property
+    def mouse_is_in_extension_any_area(self) -> bool:
+        if self.extension_element and len(self.extension_hover):
+            for (index, last) in enumerate(self.extension_hover):
+                if (
+                        last.extension_by_child_is_hover or
+                        last.mouse_is_in_extension_area or
+                        last.mouse_is_in_extension_vertical_outside_area or
+                        last.mouse_is_in_extension_right_outside_area
+                ):
+                    return True
+
+                for item in last.extension_items:
+                    if (
+                            item.extension_by_child_is_hover or
+                            item.mouse_is_in_extension_area or
+                            item.mouse_is_in_extension_vertical_outside_area or
+                            item.mouse_is_in_extension_right_outside_area
+                    ):
+                        return True
+        return False

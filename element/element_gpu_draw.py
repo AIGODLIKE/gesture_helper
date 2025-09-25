@@ -94,27 +94,13 @@ class ElementGpuProperty:
         return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
     @property
-    def mouse_is_in_extension_any_area(self) -> bool:
-        if self.ops.extension_element and len(self.ops.extension_hover):
-            for (index, last) in enumerate(self.ops.extension_hover):
-                for item in last.extension_items:
-                    if (
-                            item.extension_by_child_is_hover or
-                            item.mouse_is_in_extension_area or
-                            item.mouse_is_in_extension_vertical_outside_area or
-                            item.mouse_is_in_extension_right_outside_area
-                    ):
-                        return True
-        return False
-
-    @property
     def background_color(self):
         """
         背景颜色
         :return:
         """
         draw = self.draw_property
-        if self.is_active_direction and not self.mouse_is_in_extension_any_area:
+        if self.is_active_direction and not self.ops.mouse_is_in_extension_any_area:
             if self.is_operator:
                 return draw.background_operator_active_color
             elif self.is_child_gesture:
@@ -378,7 +364,6 @@ class ElementGpuExtensionItem:
                 else:
                     if item.extension_by_child_is_hover:
                         color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
-                        hs = hi / 2
                         dh = hi + hi * self.extension_interval
                         rounded_rectangle = {
                             "radius": self.text_radius,
@@ -431,7 +416,6 @@ class ElementGpuExtensionItem:
         gpu.state.depth_test_set('ALWAYS')
         w, h = self.extension_dimensions
         x, y = get_now_2d_offset_position()
-
         self.extension_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_x]
 
         if len(self.extension_items) == 0:
