@@ -1,5 +1,5 @@
 {
-  "time": 1758785678.1972675,
+  "time": 1758788577.609851,
   "blender_version": [
     4,
     5,
@@ -383,7 +383,7 @@
                   "direction": "9",
                   "element": {
                     "0": {
-                      "name": "\u4ece\u5f62\u72b6\u6df7\u5408",
+                      "name": "Blend from Shape",
                       "element_type": "OPERATOR",
                       "direction": "1",
                       "operator_bl_idname": "mesh.blend_from_shape",
@@ -391,7 +391,7 @@
                       "operator_type": "OPERATOR"
                     },
                     "1": {
-                      "name": "\u5f62\u53d8\u4f20\u5bfc",
+                      "name": "Propagate to Shapes",
                       "element_type": "OPERATOR",
                       "direction": "2",
                       "operator_bl_idname": "mesh.shape_propagate_to_all",
@@ -1061,10 +1061,34 @@
                   "element_type": "DIVIDING_LINE"
                 },
                 "3": {
-                  "name": "\u5149\u6ed1",
+                  "name": "Smooth",
                   "element_type": "OPERATOR",
-                  "direction": "3",
+                  "direction": "4",
                   "operator_bl_idname": "curve.smooth",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "4": {
+                  "name": "Smooth Curve Tilt",
+                  "element_type": "OPERATOR",
+                  "direction": "5",
+                  "operator_bl_idname": "curve.smooth_tilt",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "5": {
+                  "name": "Smooth Curve Radius",
+                  "element_type": "OPERATOR",
+                  "direction": "6",
+                  "operator_bl_idname": "curve.smooth_radius",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "6": {
+                  "name": "Smooth Curve Weight",
+                  "element_type": "OPERATOR",
+                  "direction": "7",
+                  "operator_bl_idname": "curve.smooth_weight",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
