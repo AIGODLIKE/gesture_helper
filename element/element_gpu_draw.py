@@ -374,7 +374,14 @@ class ElementGpuExtensionItem:
                 else:
                     if item.extension_by_child_is_hover:
                         color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
-                        self.draw_2d_rectangle(0, 0, w, -hi, color=color)
+                        rounded_rectangle = {
+                            "radius": self.text_radius,
+                            "position": (w / 2, -hi / 2),
+                            "width": w,
+                            "height": hi,
+                            "color": color,
+                        }
+                        self.draw_rounded_rectangle_area(**rounded_rectangle)
 
                     with gpu.matrix.push_pop():
                         s = self.extension_icon_size
@@ -398,7 +405,7 @@ class ElementGpuExtensionItem:
                                           -(self.extension_icon_size + self.extension_icon_interval)
                                           ))
 
-                draw_debug_point()
+                    draw_debug_point()
                 sx, sy = get_now_2d_offset_position()
                 item.extension_by_child_draw_area = [sx, sy, ex, ey]
 
