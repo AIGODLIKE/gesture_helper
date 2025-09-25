@@ -1,117 +1,98 @@
 {
-  "time": 1729739212.5739872,
+  "time": 1758794851.5798821,
   "blender_version": [
     4,
-    2,
+    5,
     3
   ],
   "addon_version": [
     2,
-    0,
-    3
+    1,
+    9
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
   "gesture": {
     "0": {
       "name": "Merge",
-      "enabled": true,
       "key_string": "{\"type\": \"M\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Mesh\"]",
       "element": {
         "0": {
           "name": "By Distance",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "CON_DISTLIMIT",
           "enabled_icon": true,
           "direction": "4",
           "operator_bl_idname": "mesh.remove_doubles",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{}",
           "operator_type": "OPERATOR"
         },
         "1": {
           "name": "At Center",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "SNAP_FACE_CENTER",
           "enabled_icon": true,
           "direction": "3",
           "operator_bl_idname": "mesh.merge",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'type': 'CENTER'}",
           "operator_type": "OPERATOR"
         },
         "2": {
           "name": "At Cursor",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "PIVOT_CURSOR",
           "enabled_icon": true,
           "direction": "4",
           "operator_bl_idname": "mesh.merge",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'type': 'CURSOR'}",
           "operator_type": "OPERATOR"
         },
         "3": {
           "name": "Collapse",
           "element_type": "OPERATOR",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "direction": "6",
           "operator_bl_idname": "mesh.merge",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'type': 'COLLAPSE'}",
           "operator_type": "OPERATOR"
         },
         "4": {
           "name": "At First",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "TRIA_LEFT",
           "enabled_icon": true,
           "direction": "5",
           "operator_bl_idname": "mesh.merge",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'type': 'FIRST'}",
           "operator_type": "OPERATOR"
         },
         "5": {
           "name": "At Last",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "TRIA_RIGHT",
           "enabled_icon": true,
           "direction": "1",
           "operator_bl_idname": "mesh.merge",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'type': 'LAST'}",
           "operator_type": "OPERATOR"
         },
         "6": {
           "name": "Clean Up",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "KEY_BACKSPACE",
           "enabled_icon": true,
           "direction": "2",
           "operator_bl_idname": "wm.call_menu",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'name': 'VIEW3D_MT_edit_mesh_clean'}",
           "operator_type": "OPERATOR"
         },
         "7": {
           "name": "Delete",
           "element_type": "OPERATOR",
-          "enabled": true,
           "icon": "TRASH",
           "enabled_icon": true,
           "direction": "8",
           "operator_bl_idname": "wm.call_menu",
-          "operator_context": "INVOKE_DEFAULT",
           "operator_properties": "{'name': 'VIEW3D_MT_edit_mesh_delete'}",
           "operator_type": "OPERATOR"
         }
@@ -120,57 +101,43 @@
     },
     "1": {
       "name": "Delete",
-      "enabled": true,
       "key_string": "{\"type\": \"X\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Mesh\", \"Curve\", \"Armature\", \"Object Mode\", \"Curves\", \"Metaball\", \"Lattice\", \"Font\", \"3D View\"]",
       "element": {
         "0": {
           "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "IF",
           "poll_string": "(C.space_data.type == \"VIEW_3D\")",
           "element": {
             "0": {
               "name": "Mesh",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "IF",
               "poll_string": "(C.mode == \"EDIT_MESH\")",
               "element": {
                 "0": {
                   "name": "Only",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "4",
                   "element": {
                     "0": {
                       "name": "Only Edges & Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "UV_FACESEL",
                       "enabled_icon": true,
                       "direction": "4",
                       "operator_bl_idname": "mesh.delete",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{'type': 'EDGE_FACE'}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Only Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "FACESEL",
                       "enabled_icon": true,
                       "direction": "5",
                       "operator_bl_idname": "mesh.delete",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{'type': 'ONLY_FACE'}",
                       "operator_type": "OPERATOR"
                     }
@@ -179,7 +146,6 @@
                 "1": {
                   "name": "Dissolve",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "MOD_EXPLODE",
                   "enabled_icon": true,
                   "direction": "3",
@@ -187,36 +153,30 @@
                     "0": {
                       "name": "Dissolve Vertices",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "VERTEXSEL",
                       "enabled_icon": true,
                       "direction": "4",
                       "operator_bl_idname": "mesh.dissolve_verts",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Dissolve Edges",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "EDGESEL",
                       "enabled_icon": true,
                       "direction": "3",
                       "operator_bl_idname": "mesh.dissolve_edges",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "Dissolve Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "FACESEL",
                       "enabled_icon": true,
                       "direction": "2",
                       "operator_bl_idname": "mesh.dissolve_faces",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
@@ -225,7 +185,6 @@
                 "2": {
                   "name": "Delete",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "TRASH",
                   "enabled_icon": true,
                   "direction": "2",
@@ -233,24 +192,18 @@
                     "0": {
                       "name": "Edge Loops",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "UV_EDGESEL",
                       "enabled_icon": true,
                       "direction": "2",
                       "operator_bl_idname": "mesh.delete_edgeloop",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Collapse Edges & Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "1",
                       "operator_bl_idname": "mesh.edge_collapse",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
@@ -259,7 +212,6 @@
                 "3": {
                   "name": "Clear",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "TRACKING_CLEAR_FORWARDS",
                   "enabled_icon": true,
                   "direction": "1",
@@ -267,60 +219,46 @@
                     "0": {
                       "name": "Decimate Geometry",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_DECIM",
                       "enabled_icon": true,
                       "direction": "3",
                       "operator_bl_idname": "mesh.decimate",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Limited Dissolve",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "2",
                       "operator_bl_idname": "mesh.dissolve_limited",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "Merge by Distance",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "AUTOMERGE_ON",
                       "enabled_icon": true,
                       "direction": "1",
                       "operator_bl_idname": "mesh.remove_doubles",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "3": {
                       "name": "Degenerate Dissolve",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "8",
                       "operator_bl_idname": "mesh.dissolve_degenerate",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "4": {
                       "name": "Delete Loose",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "STICKY_UVS_LOC",
                       "enabled_icon": true,
                       "direction": "7",
                       "operator_bl_idname": "mesh.delete_loose",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
@@ -329,7 +267,6 @@
                 "4": {
                   "name": "Face Clear",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "PARTICLEMODE",
                   "enabled_icon": true,
                   "direction": "8",
@@ -337,48 +274,32 @@
                     "0": {
                       "name": "Make Planar Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "1",
                       "operator_bl_idname": "mesh.face_make_planar",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Split Non-Planar Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "8",
                       "operator_bl_idname": "mesh.vert_connect_nonplanar",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "Split Concave Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "7",
                       "operator_bl_idname": "mesh.vert_connect_concave",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "3": {
                       "name": "Fill Holes",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "2",
                       "operator_bl_idname": "mesh.fill_holes",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
@@ -387,36 +308,30 @@
                 "5": {
                   "name": "Faces",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "FACESEL",
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "mesh.delete",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'FACE'}",
                   "operator_type": "OPERATOR"
                 },
                 "6": {
                   "name": "Edges",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "EDGESEL",
                   "enabled_icon": true,
                   "direction": "6",
                   "operator_bl_idname": "mesh.delete",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'EDGE'}",
                   "operator_type": "OPERATOR"
                 },
                 "7": {
                   "name": "Vertices",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "VERTEXSEL",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mesh.delete",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'VERT'}",
                   "operator_type": "OPERATOR"
                 }
@@ -425,45 +340,34 @@
             "1": {
               "name": "Curve",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"EDIT_CURVE\")",
               "element": {
                 "0": {
                   "name": "Vertices",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "FORCE_CURVE",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "curve.delete",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'VERT'}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Segment",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "IPO_EASE_IN_OUT",
                   "enabled_icon": true,
                   "direction": "1",
                   "operator_bl_idname": "curve.delete",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'SEGMENT'}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Dissolve Vertices",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "7",
                   "operator_bl_idname": "curve.dissolve_verts",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
@@ -472,16 +376,12 @@
             "2": {
               "name": "Armature",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"EDIT_ARMATURE\")",
               "element": {
                 "0": {
                   "name": "Delete",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "TRASH",
                   "enabled_icon": true,
                   "direction": "5",
@@ -493,12 +393,10 @@
                 "1": {
                   "name": "Dissolve Bones",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "GROUP_BONE",
                   "enabled_icon": true,
                   "direction": "1",
                   "operator_bl_idname": "armature.dissolve",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
@@ -507,16 +405,12 @@
             "3": {
               "name": "Object",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "selected_type": "ELIF",
               "poll_string": "(C.mode == \"OBJECT\")",
               "element": {
                 "0": {
                   "name": "Delete",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "PANEL_CLOSE",
                   "enabled_icon": true,
                   "direction": "5",
@@ -528,7 +422,6 @@
                 "1": {
                   "name": "Delete Global",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "REMOVE",
                   "enabled_icon": true,
                   "direction": "1",
@@ -540,21 +433,16 @@
                 "2": {
                   "name": "Mesh",
                   "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "(C.object and C.object.type == \"MESH\")",
                   "element": {
                     "0": {
                       "name": "Remove Unused Material Slots",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "NODE_MATERIAL",
                       "enabled_icon": true,
                       "direction": "7",
                       "operator_bl_idname": "object.material_slot_remove_unused",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
@@ -563,33 +451,26 @@
                 "3": {
                   "name": "Vertex Groups",
                   "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "len(C.object.vertex_groups)",
                   "element": {
                     "0": {
                       "name": "Clean Vertex Group Weights",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_VERTEX_WEIGHT",
                       "enabled_icon": true,
                       "direction": "6",
                       "operator_bl_idname": "object.vertex_group_clean",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{'group_select_mode': 'ALL'}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Limit Total Vertex Groups",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "GROUP_VERTEX",
                       "enabled_icon": true,
                       "direction": "8",
                       "operator_bl_idname": "object.vertex_group_limit_total",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{'group_select_mode': 'ALL'}",
                       "operator_type": "OPERATOR"
                     }
@@ -604,70 +485,193 @@
     },
     "2": {
       "name": "View",
-      "enabled": true,
       "key_string": "{\"type\": \"Z\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"3D View\", \"Node Editor\"]",
       "element": {
         "0": {
           "name": "3D View",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "IF",
           "poll_string": "C.space_data.type == \"VIEW_3D\" ",
           "element": {
             "0": {
+              "name": "Mesh",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.mode == \"EDIT_MESH\" ",
+              "element": {
+                "0": {
+                  "name": "Overlay",
+                  "element_type": "OPERATOR",
+                  "icon": "OVERLAY",
+                  "enabled_icon": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_edit_mesh'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "1": {
+              "name": "Bones",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.object and C.object.type == \"ARMATURE\" ",
+              "element": {
+                "0": {
+                  "name": "Overlay",
+                  "element_type": "OPERATOR",
+                  "icon": "OVERLAY",
+                  "enabled_icon": true,
+                  "direction": "6",
+                  "operator_bl_idname": "wm.call_panel",
+                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_bones'}",
+                  "operator_type": "OPERATOR"
+                }
+              }
+            },
+            "2": {
+              "name": "Wireframe",
+              "element_type": "OPERATOR",
+              "icon": "MOD_WIREFRAME",
+              "enabled_icon": true,
+              "direction": "5",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'WIREFRAME'}",
+              "operator_type": "OPERATOR"
+            },
+            "3": {
+              "name": "Solid",
+              "element_type": "OPERATOR",
+              "icon": "SHADING_SOLID",
+              "enabled_icon": true,
+              "direction": "1",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}",
+              "operator_type": "OPERATOR"
+            },
+            "4": {
+              "name": "Rendered",
+              "element_type": "OPERATOR",
+              "icon": "SHADING_RENDERED",
+              "enabled_icon": true,
+              "direction": "3",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'RENDERED'}",
+              "operator_type": "OPERATOR"
+            },
+            "5": {
+              "name": "Material",
+              "element_type": "OPERATOR",
+              "icon": "MATERIAL",
+              "enabled_icon": true,
+              "direction": "7",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'MATERIAL'}",
+              "operator_type": "OPERATOR"
+            },
+            "6": {
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "Gizmo",
+                  "element_type": "CHILD_GESTURE",
+                  "icon": "GIZMO",
+                  "enabled_icon": true,
+                  "direction": "4",
+                  "element": {
+                    "0": {
+                      "name": "Gizmo Display",
+                      "element_type": "OPERATOR",
+                      "icon": "HIDE_OFF",
+                      "enabled_icon": true,
+                      "direction": "5",
+                      "operator_bl_idname": "wm.call_panel",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "Show Gizmo",
+                      "element_type": "OPERATOR",
+                      "icon": "GIZMO",
+                      "enabled_icon": true,
+                      "direction": "4",
+                      "operator_bl_idname": "wm.context_toggle",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Selectability & Visibility",
+                      "element_type": "OPERATOR",
+                      "icon": "VIS_SEL_11",
+                      "enabled_icon": true,
+                      "direction": "3",
+                      "operator_bl_idname": "wm.call_panel",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                },
+                "1": {
+                  "name": "Shading",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "8",
+                  "element": {
+                    "0": {
+                      "name": "Shading Panel",
+                      "element_type": "OPERATOR",
+                      "icon": "SHADING_RENDERED",
+                      "enabled_icon": true,
+                      "direction": "8",
+                      "operator_bl_idname": "wm.call_panel",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
+            },
+            "7": {
               "name": "Overlays",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "OVERLAY",
               "enabled_icon": true,
-              "direction": "2",
+              "direction": "8",
               "element": {
                 "0": {
                   "name": "Face Orientation",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "ORIENTATION_NORMAL",
-                  "enabled_icon": true,
-                  "direction": "2",
+                  "direction": "8",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Overlays",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "OVERLAY",
                   "enabled_icon": true,
                   "direction": "6",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'space_data.overlay.show_overlays'}",
+                  "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "GP",
                   "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "IF",
                   "poll_string": "C.object and C.object.type in (\"GPENCIL\",\"GREASEPENCIL\") ",
                   "element": {
                     "0": {
                       "name": "Grease Pencil",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "OUTLINER_OB_GREASEPENCIL",
                       "enabled_icon": true,
                       "direction": "1",
                       "operator_bl_idname": "wm.call_panel",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'name': 'VIEW3D_PT_overlay_grease_pencil_options'}",
+                      "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     }
                   }
@@ -675,78 +679,64 @@
                 "3": {
                   "name": "Other",
                   "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "selected_type": "ELSE",
                   "poll_string": "None",
                   "element": {
                     "0": {
                       "name": "Overlay Panel",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "OVERLAY",
                       "enabled_icon": true,
                       "direction": "1",
                       "operator_bl_idname": "wm.call_panel",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'name': 'VIEW3D_PT_overlay'}",
+                      "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "1": {
                       "name": "Toggle X-Ray",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "XRAY",
                       "enabled_icon": true,
                       "direction": "3",
                       "operator_bl_idname": "view3d.toggle_xray",
-                      "operator_context": "INVOKE_DEFAULT",
                       "operator_properties": "{}",
                       "operator_type": "OPERATOR"
                     },
                     "2": {
                       "name": "Wireframe",
                       "element_type": "CHILD_GESTURE",
-                      "enabled": true,
                       "icon": "MOD_WIREFRAME",
                       "enabled_icon": true,
-                      "direction": "8",
+                      "direction": "2",
                       "element": {
                         "0": {
                           "name": "Wireframe",
                           "element_type": "OPERATOR",
-                          "enabled": true,
                           "icon": "MOD_WIREFRAME",
                           "enabled_icon": true,
                           "direction": "7",
                           "operator_bl_idname": "wm.context_toggle",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
+                          "operator_properties": "{}",
                           "operator_type": "OPERATOR"
                         },
                         "1": {
                           "name": "Wireframe Threshold",
                           "element_type": "OPERATOR",
-                          "enabled": true,
                           "icon": "PARTICLE_PATH",
                           "enabled_icon": true,
                           "direction": "6",
                           "operator_bl_idname": "gesture.modal_mouse_operator",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'data_path': 'space_data.overlay.wireframe_threshold', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL'}",
+                          "operator_properties": "{}",
                           "operator_type": "OPERATOR"
                         },
                         "2": {
                           "name": "Wireframe Opacity",
                           "element_type": "OPERATOR",
-                          "enabled": true,
                           "icon": "MOD_OPACITY",
                           "enabled_icon": true,
                           "direction": "8",
                           "operator_bl_idname": "gesture.modal_mouse_operator",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'data_path': 'space_data.overlay.wireframe_opacity', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL'}",
+                          "operator_properties": "{}",
                           "operator_type": "OPERATOR"
                         }
                       }
@@ -754,189 +744,22 @@
                   }
                 }
               }
-            },
-            "1": {
-              "name": "Gizmo",
-              "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "icon": "GIZMO",
-              "enabled_icon": true,
-              "direction": "4",
-              "element": {
-                "0": {
-                  "name": "Gizmo Display",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "HIDE_OFF",
-                  "enabled_icon": true,
-                  "direction": "5",
-                  "operator_bl_idname": "wm.call_panel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'VIEW3D_PT_gizmo_display'}",
-                  "operator_type": "OPERATOR"
-                },
-                "1": {
-                  "name": "Show Gizmo",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "GIZMO",
-                  "enabled_icon": true,
-                  "direction": "4",
-                  "operator_bl_idname": "wm.context_toggle",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'data_path': 'space_data.show_gizmo'}",
-                  "operator_type": "OPERATOR"
-                },
-                "2": {
-                  "name": "Selectability & Visibility",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "VIS_SEL_11",
-                  "enabled_icon": true,
-                  "direction": "3",
-                  "operator_bl_idname": "wm.call_panel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'VIEW3D_PT_object_type_visibility'}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            },
-            "2": {
-              "name": "Shading",
-              "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "8",
-              "element": {
-                "0": {
-                  "name": "Shading Panel",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "SHADING_RENDERED",
-                  "enabled_icon": true,
-                  "direction": "8",
-                  "operator_bl_idname": "wm.call_panel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'VIEW3D_PT_shading'}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            },
-            "3": {
-              "name": "Mesh",
-              "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "selected_type": "IF",
-              "poll_string": "C.mode == \"EDIT_MESH\" ",
-              "element": {
-                "0": {
-                  "name": "Overlay",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "OVERLAY",
-                  "enabled_icon": true,
-                  "direction": "6",
-                  "operator_bl_idname": "wm.call_panel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_edit_mesh'}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            },
-            "4": {
-              "name": "Bones",
-              "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "selected_type": "ELIF",
-              "poll_string": "C.object and C.object.type == \"ARMATURE\" ",
-              "element": {
-                "0": {
-                  "name": "Overlay",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "OVERLAY",
-                  "enabled_icon": true,
-                  "direction": "6",
-                  "operator_bl_idname": "wm.call_panel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'VIEW3D_PT_overlay_bones'}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            },
-            "5": {
-              "name": "Wireframe",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "MOD_WIREFRAME",
-              "enabled_icon": true,
-              "direction": "5",
-              "operator_bl_idname": "wm.context_set_enum",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'WIREFRAME'}",
-              "operator_type": "OPERATOR"
-            },
-            "6": {
-              "name": "Solid",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "SHADING_SOLID",
-              "enabled_icon": true,
-              "direction": "1",
-              "operator_bl_idname": "wm.context_set_enum",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}",
-              "operator_type": "OPERATOR"
-            },
-            "7": {
-              "name": "Rendered",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "SHADING_RENDERED",
-              "enabled_icon": true,
-              "direction": "3",
-              "operator_bl_idname": "wm.context_set_enum",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'RENDERED'}",
-              "operator_type": "OPERATOR"
-            },
-            "8": {
-              "name": "Material",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "MATERIAL",
-              "enabled_icon": true,
-              "direction": "7",
-              "operator_bl_idname": "wm.context_set_enum",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'MATERIAL'}",
-              "operator_type": "OPERATOR"
             }
           }
         },
         "1": {
           "name": "Node Overlay",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "C.space_data.type == \"NODE_EDITOR\" ",
           "element": {
             "0": {
               "name": "Overlay",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "OVERLAY",
               "enabled_icon": true,
               "direction": "1",
               "operator_bl_idname": "wm.call_panel",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'name': 'NODE_PT_overlay'}",
               "operator_type": "OPERATOR"
             }

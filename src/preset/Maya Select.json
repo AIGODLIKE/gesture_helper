@@ -1,377 +1,132 @@
 {
-  "time": 1729674833.6710715,
+  "time": 1758793037.740852,
   "blender_version": [
     4,
-    2,
+    5,
     3
   ],
   "addon_version": [
     2,
-    0,
-    3
+    1,
+    9
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
   "gesture": {
     "0": {
       "name": "Maya Select",
-      "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"Object Mode\", \"Mesh\", \"Curve\", \"Curves\", \"Armature\", \"Metaball\", \"3D View\"]",
       "element": {
         "0": {
           "name": "Object Mode",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "IF",
           "poll_string": "(C.mode == \"OBJECT\")",
           "element": {
             "0": {
               "name": "All",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "RESTRICT_SELECT_OFF",
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "object.select_all",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'action': 'SELECT'}",
               "operator_type": "OPERATOR"
             },
             "1": {
               "name": "Select Random",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "NETWORK_CONNECTION",
               "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "object.select_random",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'action': 'SELECT'}",
               "operator_type": "OPERATOR"
             },
             "2": {
               "name": "Camera",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CAMERA_DATA",
               "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "object.select_camera",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{}",
               "operator_type": "OPERATOR"
             },
             "3": {
               "name": "Deselect",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "RESTRICT_SELECT_ON",
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "object.select_all",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'action': 'DESELECT'}",
               "operator_type": "OPERATOR"
+            },
+            "4": {
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "\u6309\u540d\u79f0\u9009\u62e9",
+                  "element_type": "OPERATOR",
+                  "direction": "1",
+                  "operator_bl_idname": "object.select_pattern",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "\u9009\u62e9\u955c\u50cf",
+                  "element_type": "OPERATOR",
+                  "direction": "2",
+                  "operator_bl_idname": "object.select_mirror",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
             }
           }
         },
         "1": {
           "name": "Mesh Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_MESH\")",
           "element": {
             "0": {
               "name": "Mirror",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "MOD_MIRROR",
               "enabled_icon": true,
-              "direction": "3",
+              "direction": "1",
               "element": {
                 "0": {
                   "name": "Side of Active",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "AXIS_FRONT",
                   "enabled_icon": true,
-                  "direction": "4",
+                  "direction": "2",
                   "operator_bl_idname": "mesh.select_axis",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Select Mirror",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_MIRROR",
                   "enabled_icon": true,
-                  "direction": "3",
+                  "direction": "1",
                   "operator_bl_idname": "mesh.select_mirror",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
               }
             },
             "1": {
-              "name": "Select Similar",
-              "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "icon": "PMARKER_SEL",
-              "enabled_icon": true,
-              "direction": "7",
-              "element": {
-                "0": {
-                  "name": "Vertex",
-                  "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "selected_type": "IF",
-                  "poll_string": "(tool.mesh_select_mode[0] == True)",
-                  "element": {
-                    "0": {
-                      "name": "Normal",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "NORMALS_FACE",
-                      "enabled_icon": true,
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'VERT_NORMAL'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "1": {
-                      "name": "Vertex Groups",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "GROUP_VERTEX",
-                      "enabled_icon": true,
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'VERT_GROUPS'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "2": {
-                      "name": "Amount of Connecting Edges",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MOD_EDGESPLIT",
-                      "enabled_icon": true,
-                      "direction": "6",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'VERT_EDGES'}",
-                      "operator_type": "OPERATOR"
-                    }
-                  }
-                },
-                "1": {
-                  "name": "Edge",
-                  "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "selected_type": "ELIF",
-                  "poll_string": "(tool.mesh_select_mode[1] == True)",
-                  "element": {
-                    "0": {
-                      "name": "Length",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MOD_LENGTH",
-                      "enabled_icon": true,
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_LENGTH'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "1": {
-                      "name": "Direction",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "EMPTY_ARROWS",
-                      "enabled_icon": true,
-                      "direction": "6",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_DIR'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "2": {
-                      "name": "Amount of Faces Around an Edge",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_FACES'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "3": {
-                      "name": "Face Angles",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "KEY_WINDOWS_FILLED",
-                      "enabled_icon": false,
-                      "direction": "5",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_FACE_ANGLE'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "4": {
-                      "name": "Bevel",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MOD_BEVEL",
-                      "enabled_icon": true,
-                      "direction": "1",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_BEVEL'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "5": {
-                      "name": "Seam",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "EDGESEL",
-                      "enabled_icon": true,
-                      "direction": "4",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_SEAM'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "6": {
-                      "name": "Sharpness",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "SHARPCURVE",
-                      "enabled_icon": true,
-                      "direction": "2",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'EDGE_SHARP'}",
-                      "operator_type": "OPERATOR"
-                    }
-                  }
-                },
-                "2": {
-                  "name": "Face",
-                  "element_type": "SELECTED_STRUCTURE",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "selected_type": "ELIF",
-                  "poll_string": "(tool.mesh_select_mode[2] == True)",
-                  "element": {
-                    "0": {
-                      "name": "Material",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MATERIAL",
-                      "enabled_icon": true,
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_MATERIAL'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "1": {
-                      "name": "Area",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "FACESEL",
-                      "enabled_icon": true,
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_AREA'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "2": {
-                      "name": "Perimeter",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "NETWORK_CONNECTION.png",
-                      "enabled_icon": true,
-                      "direction": "6",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_PERIMETER'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "3": {
-                      "name": "Amount of Adjacent Faces",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "NORMALS_FACE",
-                      "enabled_icon": false,
-                      "direction": "5",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'VERT_FACES'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "4": {
-                      "name": "Normal",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
-                      "direction": "1",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_NORMAL'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "5": {
-                      "name": "Coplanar",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
-                      "direction": "4",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_COPLANAR'}",
-                      "operator_type": "OPERATOR"
-                    },
-                    "6": {
-                      "name": "Flat/Smooth",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MOD_SMOOTH",
-                      "enabled_icon": true,
-                      "direction": "2",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'type': 'FACE_SMOOTH'}",
-                      "operator_type": "OPERATOR"
-                    }
-                  }
-                }
-              }
-            },
-            "2": {
               "name": "Select",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "RESTRICT_SELECT_OFF",
               "enabled_icon": true,
               "direction": "5",
@@ -379,127 +134,46 @@
                 "0": {
                   "name": "All",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "RESTRICT_SELECT_OFF",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mesh.select_all",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'action': 'SELECT'}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Invert",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "RESTRICT_SELECT_ON",
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "mesh.select_all",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'action': 'INVERT'}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Checker Deselect",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "DRIVER_DISTANCE",
                   "enabled_icon": true,
                   "direction": "3",
                   "operator_bl_idname": "mesh.select_nth",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "Select Random",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "4",
                   "operator_bl_idname": "mesh.select_random",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'action': 'SELECT', 'seed': 114}",
                   "operator_type": "OPERATOR"
                 }
               }
             },
-            "3": {
-              "name": "Select All by Trait",
-              "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "icon": "TRACKER_DATA",
-              "enabled_icon": true,
-              "direction": "1",
-              "element": {
-                "0": {
-                  "name": "Non Manifold",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "1",
-                  "operator_bl_idname": "mesh.select_non_manifold",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                },
-                "1": {
-                  "name": "Loose Geometry",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "8",
-                  "operator_bl_idname": "mesh.select_loose",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                },
-                "2": {
-                  "name": "Interior Faces",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "2",
-                  "operator_bl_idname": "mesh.select_interior_faces",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                },
-                "3": {
-                  "name": "Faces by Sides",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "3",
-                  "operator_bl_idname": "mesh.select_face_by_sides",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                },
-                "4": {
-                  "name": "Ungrouped Vertices",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "7",
-                  "operator_bl_idname": "mesh.select_ungrouped",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                }
-              }
-            },
-            "4": {
+            "2": {
               "name": "Left Top",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "4",
               "enabled_icon": true,
               "direction": "4",
@@ -507,45 +181,32 @@
                 "0": {
                   "name": "Edge Loops",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "3",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'ring': False}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "Less",
+                  "name": "Select Less",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "4",
                   "operator_bl_idname": "mesh.select_less",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Select Loop Inner-Region",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "5",
                   "operator_bl_idname": "mesh.loop_to_region",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
               }
             },
-            "5": {
+            "3": {
               "name": "Right Top",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "2",
               "enabled_icon": true,
               "direction": "2",
@@ -553,281 +214,543 @@
                 "0": {
                   "name": "More",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "2",
                   "operator_bl_idname": "mesh.select_more",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Edge Rings",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "3",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'ring': True}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Select Boundary Loop",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "1",
                   "operator_bl_idname": "mesh.region_to_loop",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
               }
             },
-            "6": {
-              "name": "Select Similar",
+            "4": {
+              "name": "Child_Gesture",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
-              "icon": "ONE_TO_MANY_CONNECTION.png",
-              "enabled_icon": true,
-              "direction": "6",
+              "direction": "9",
               "element": {
                 "0": {
-                  "name": "Freestyle Face Marks",
+                  "name": "Sharp Edges",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "7",
-                  "operator_bl_idname": "mesh.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'FACE_FREESTYLE'}",
+                  "icon": "SHARPCURVE",
+                  "enabled_icon": true,
+                  "direction": "8",
+                  "operator_bl_idname": "mesh.edges_select_sharp",
+                  "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
-                  "name": "Face Regions",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
+                  "name": "By Property",
+                  "element_type": "CHILD_GESTURE",
+                  "icon": "ONE_TO_MANY_CONNECTION.png",
+                  "enabled_icon": true,
                   "direction": "6",
-                  "operator_bl_idname": "mesh.select_similar_region",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "element": {
+                    "0": {
+                      "name": "Freestyle Face Marks",
+                      "element_type": "OPERATOR",
+                      "direction": "7",
+                      "operator_bl_idname": "mesh.select_similar",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "Face Regions",
+                      "element_type": "OPERATOR",
+                      "direction": "6",
+                      "operator_bl_idname": "mesh.select_similar_region",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Freestyle Edge Marks",
+                      "element_type": "OPERATOR",
+                      "direction": "8",
+                      "operator_bl_idname": "mesh.select_similar",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "3": {
+                      "name": "Vertex Crease",
+                      "element_type": "OPERATOR",
+                      "direction": "5",
+                      "operator_bl_idname": "mesh.select_similar",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "4": {
+                      "name": "Crease",
+                      "element_type": "OPERATOR",
+                      "direction": "1",
+                      "operator_bl_idname": "mesh.select_similar",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "5": {
+                      "name": "Polygon Sides",
+                      "element_type": "OPERATOR",
+                      "direction": "4",
+                      "operator_bl_idname": "mesh.select_similar",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "6": {
+                      "name": "By Attribute",
+                      "element_type": "OPERATOR",
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.select_by_attribute",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
                 },
                 "2": {
-                  "name": "Freestyle Edge Marks",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "8",
-                  "operator_bl_idname": "mesh.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'EDGE_FREESTYLE'}",
-                  "operator_type": "OPERATOR"
+                  "name": "Select Similar",
+                  "element_type": "CHILD_GESTURE",
+                  "icon": "PMARKER_SEL",
+                  "enabled_icon": true,
+                  "direction": "7",
+                  "element": {
+                    "0": {
+                      "name": "Vertex",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "IF",
+                      "poll_string": "(tool.mesh_select_mode[0] == True)",
+                      "element": {
+                        "0": {
+                          "name": "Normal",
+                          "element_type": "OPERATOR",
+                          "icon": "NORMALS_FACE",
+                          "enabled_icon": true,
+                          "direction": "7",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "Vertex Groups",
+                          "element_type": "OPERATOR",
+                          "icon": "GROUP_VERTEX",
+                          "enabled_icon": true,
+                          "direction": "8",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "2": {
+                          "name": "Amount of Connecting Edges",
+                          "element_type": "OPERATOR",
+                          "icon": "MOD_EDGESPLIT",
+                          "enabled_icon": true,
+                          "direction": "6",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        }
+                      }
+                    },
+                    "1": {
+                      "name": "Edge",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "(tool.mesh_select_mode[1] == True)",
+                      "element": {
+                        "0": {
+                          "name": "Length",
+                          "element_type": "OPERATOR",
+                          "icon": "MOD_LENGTH",
+                          "enabled_icon": true,
+                          "direction": "7",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "Direction",
+                          "element_type": "OPERATOR",
+                          "icon": "EMPTY_ARROWS",
+                          "enabled_icon": true,
+                          "direction": "6",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "2": {
+                          "name": "Amount of Faces Around an Edge",
+                          "element_type": "OPERATOR",
+                          "direction": "8",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "3": {
+                          "name": "Face Angles",
+                          "element_type": "OPERATOR",
+                          "direction": "5",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "4": {
+                          "name": "Bevel",
+                          "element_type": "OPERATOR",
+                          "icon": "MOD_BEVEL",
+                          "enabled_icon": true,
+                          "direction": "1",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "5": {
+                          "name": "Seam",
+                          "element_type": "OPERATOR",
+                          "icon": "EDGESEL",
+                          "enabled_icon": true,
+                          "direction": "4",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "6": {
+                          "name": "Sharpness",
+                          "element_type": "OPERATOR",
+                          "icon": "SHARPCURVE",
+                          "enabled_icon": true,
+                          "direction": "2",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        }
+                      }
+                    },
+                    "2": {
+                      "name": "Face",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "(tool.mesh_select_mode[2] == True)",
+                      "element": {
+                        "0": {
+                          "name": "Material",
+                          "element_type": "OPERATOR",
+                          "icon": "MATERIAL",
+                          "enabled_icon": true,
+                          "direction": "7",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "1": {
+                          "name": "Area",
+                          "element_type": "OPERATOR",
+                          "icon": "FACESEL",
+                          "enabled_icon": true,
+                          "direction": "8",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "2": {
+                          "name": "Perimeter",
+                          "element_type": "OPERATOR",
+                          "icon": "NETWORK_CONNECTION.png",
+                          "enabled_icon": true,
+                          "direction": "6",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "3": {
+                          "name": "Amount of Adjacent Faces",
+                          "element_type": "OPERATOR",
+                          "direction": "5",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "4": {
+                          "name": "Normal",
+                          "element_type": "OPERATOR",
+                          "direction": "1",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "5": {
+                          "name": "Coplanar",
+                          "element_type": "OPERATOR",
+                          "direction": "4",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        },
+                        "6": {
+                          "name": "Flat/Smooth",
+                          "element_type": "OPERATOR",
+                          "icon": "MOD_SMOOTH",
+                          "enabled_icon": true,
+                          "direction": "2",
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{}",
+                          "operator_type": "OPERATOR"
+                        }
+                      }
+                    }
+                  }
                 },
                 "3": {
-                  "name": "Vertex Crease",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "5",
-                  "operator_bl_idname": "mesh.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'VERT_CREASE'}",
-                  "operator_type": "OPERATOR"
+                  "name": "Select All by Trait",
+                  "element_type": "CHILD_GESTURE",
+                  "icon": "TRACKER_DATA",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "Non Manifold",
+                      "element_type": "OPERATOR",
+                      "direction": "1",
+                      "operator_bl_idname": "mesh.select_non_manifold",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "Loose Geometry",
+                      "element_type": "OPERATOR",
+                      "direction": "8",
+                      "operator_bl_idname": "mesh.select_loose",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Interior Faces",
+                      "element_type": "OPERATOR",
+                      "direction": "2",
+                      "operator_bl_idname": "mesh.select_interior_faces",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "3": {
+                      "name": "Faces by Sides",
+                      "element_type": "OPERATOR",
+                      "direction": "3",
+                      "operator_bl_idname": "mesh.select_face_by_sides",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "4": {
+                      "name": "Ungrouped Vertices",
+                      "element_type": "OPERATOR",
+                      "direction": "7",
+                      "operator_bl_idname": "mesh.select_ungrouped",
+                      "operator_properties": "{}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
                 },
                 "4": {
-                  "name": "Crease",
+                  "name": "Select by Attribute",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "1",
-                  "operator_bl_idname": "mesh.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'EDGE_CREASE'}",
-                  "operator_type": "OPERATOR"
-                },
-                "5": {
-                  "name": "Polygon Sides",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
-                  "direction": "4",
-                  "operator_bl_idname": "mesh.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'FACE_SIDES'}",
-                  "operator_type": "OPERATOR"
-                },
-                "6": {
-                  "name": "By Attribute",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "2",
                   "operator_bl_idname": "mesh.select_by_attribute",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{}",
                   "operator_type": "OPERATOR"
                 }
               }
-            },
-            "7": {
-              "name": "Sharp Edges",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "SHARPCURVE",
-              "enabled_icon": true,
-              "direction": "8",
-              "operator_bl_idname": "mesh.edges_select_sharp",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
             }
           }
         },
         "2": {
           "name": "Curve Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_CURVE\")",
           "element": {
             "0": {
-              "name": "All",
+              "name": "Select Random",
               "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "RESTRICT_SELECT_OFF",
-              "enabled_icon": true,
-              "direction": "7",
-              "operator_bl_idname": "curve.select_all",
-              "operator_context": "INVOKE_DEFAULT",
+              "direction": "6",
+              "operator_bl_idname": "curve.select_random",
               "operator_properties": "{'action': 'SELECT'}",
               "operator_type": "OPERATOR"
             },
             "1": {
-              "name": "Select Random",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "6",
-              "operator_bl_idname": "curve.select_random",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
-            },
-            "2": {
               "name": "Checker Deselect",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MOD_DASH",
               "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "curve.select_nth",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{}",
               "operator_type": "OPERATOR"
+            },
+            "2": {
+              "name": "Next",
+              "element_type": "CHILD_GESTURE",
+              "direction": "1",
+              "element": {
+                "0": {
+                  "name": "Select Next",
+                  "element_type": "OPERATOR",
+                  "direction": "2",
+                  "operator_bl_idname": "curve.select_next",
+                  "operator_context": "EXEC_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Select More",
+                  "element_type": "OPERATOR",
+                  "direction": "1",
+                  "operator_bl_idname": "curve.select_more",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "(De)select Last",
+                  "element_type": "OPERATOR",
+                  "direction": "8",
+                  "operator_bl_idname": "curve.de_select_last",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
             },
             "3": {
-              "name": "(De)select First",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "4",
-              "operator_bl_idname": "curve.de_select_first",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "name": "Previous",
+              "element_type": "CHILD_GESTURE",
+              "direction": "5",
+              "element": {
+                "0": {
+                  "name": "Select Previous",
+                  "element_type": "OPERATOR",
+                  "direction": "4",
+                  "operator_bl_idname": "curve.select_previous",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Select Less",
+                  "element_type": "OPERATOR",
+                  "direction": "5",
+                  "operator_bl_idname": "curve.select_less",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "(De)select First",
+                  "element_type": "OPERATOR",
+                  "direction": "6",
+                  "operator_bl_idname": "curve.de_select_first",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
             },
             "4": {
-              "name": "(De)select Last",
-              "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "2",
-              "operator_bl_idname": "curve.de_select_last",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
-            },
-            "5": {
-              "name": "Select Next",
-              "element_type": "OPERATOR",
-              "enabled": false,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "4",
-              "operator_bl_idname": "curve.select_next",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
-            },
-            "6": {
-              "name": "Select Previous",
-              "element_type": "OPERATOR",
-              "enabled": false,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
-              "direction": "2",
-              "operator_bl_idname": "curve.select_previous",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "All",
+                  "element_type": "OPERATOR",
+                  "icon": "RESTRICT_SELECT_OFF",
+                  "enabled_icon": true,
+                  "direction": "7",
+                  "operator_bl_idname": "curve.select_all",
+                  "operator_properties": "{'action': 'SELECT'}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Select Linked",
+                  "element_type": "OPERATOR",
+                  "direction": "2",
+                  "operator_bl_idname": "curve.select_linked",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "Select Similar",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "1",
+                  "element": {
+                    "0": {
+                      "name": "Type",
+                      "element_type": "OPERATOR",
+                      "direction": "3",
+                      "operator_bl_idname": "curve.select_similar",
+                      "operator_properties": "{'type': 'TYPE'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "1": {
+                      "name": "Radius",
+                      "element_type": "OPERATOR",
+                      "direction": "2",
+                      "operator_bl_idname": "curve.select_similar",
+                      "operator_properties": "{'type': 'RADIUS'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "2": {
+                      "name": "Weight",
+                      "element_type": "OPERATOR",
+                      "direction": "4",
+                      "operator_bl_idname": "curve.select_similar",
+                      "operator_properties": "{'type': 'WEIGHT'}",
+                      "operator_type": "OPERATOR"
+                    },
+                    "3": {
+                      "name": "Direction",
+                      "element_type": "OPERATOR",
+                      "direction": "5",
+                      "operator_bl_idname": "curve.select_similar",
+                      "operator_properties": "{'type': 'DIRECTION'}",
+                      "operator_type": "OPERATOR"
+                    }
+                  }
+                }
+              }
             }
           }
         },
         "3": {
           "name": "Metaball Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
-          "icon": "COLOR_ERROR",
-          "enabled_icon": false,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_METABALL\")",
           "element": {
             "0": {
               "name": "All",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "RESTRICT_SELECT_OFF",
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "mball.select_all",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'action': 'SELECT'}",
               "operator_type": "OPERATOR"
             },
             "1": {
               "name": "Select Random",
               "element_type": "OPERATOR",
-              "enabled": true,
-              "icon": "COLOR_ERROR",
-              "enabled_icon": false,
               "direction": "7",
               "operator_bl_idname": "mball.select_random_metaelems",
-              "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{'action': 'SELECT'}",
               "operator_type": "OPERATOR"
             },
             "2": {
               "name": "Select Similar",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "MAGIC_WAND",
               "enabled_icon": true,
               "direction": "5",
@@ -835,48 +758,38 @@
                 "0": {
                   "name": "Type",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "KEY_EMPTY1",
                   "enabled_icon": true,
                   "direction": "4",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'TYPE'}",
                   "operator_type": "OPERATOR"
                 },
                 "1": {
                   "name": "Radius",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "CON_SHRINKWRAP",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'RADIUS'}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
                   "name": "Stiffness",
                   "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "COLOR_ERROR",
-                  "enabled_icon": false,
                   "direction": "6",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'STIFFNESS'}",
                   "operator_type": "OPERATOR"
                 },
                 "3": {
                   "name": "Rotation",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "CON_ROTLIMIT",
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_context": "INVOKE_DEFAULT",
                   "operator_properties": "{'type': 'ROTATION'}",
                   "operator_type": "OPERATOR"
                 }
