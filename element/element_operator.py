@@ -91,7 +91,9 @@ class OperatorProperty:
         try:
             return secure_call_eval(self.operator_properties)
         except Exception as e:
-            print('Properties Error', self.operator_properties, e.args)
+            print('Properties Error', )
+            print(self.operator_properties)
+            print(e.args)
             import traceback
             traceback.print_stack()
             traceback.print_exc()

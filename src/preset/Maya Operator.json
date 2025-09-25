@@ -1,22 +1,22 @@
 {
-  "time": 1735267892.5495532,
+  "time": 1758771526.4557376,
   "blender_version": [
     4,
-    2,
+    5,
     3
   ],
   "addon_version": [
     2,
-    0,
-    8
+    1,
+    9
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
   "gesture": {
-    "0": {
+    "1": {
       "name": "Maya Operator",
       "enabled": true,
-      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"hyper\": 0, \"hyper_ui\": false, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Font\", \"Lattice\", \"Pose\"]",
       "element": {
         "0": {
@@ -121,6 +121,139 @@
               "operator_context": "INVOKE_DEFAULT",
               "operator_properties": "{}",
               "operator_type": "OPERATOR"
+            },
+            "8": {
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "enabled": true,
+              "icon": "COLOR_ERROR",
+              "enabled_icon": false,
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "Ico Sphere",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "MESH_ICOSPHERE",
+                  "enabled_icon": true,
+                  "direction": "2",
+                  "operator_bl_idname": "mesh.primitive_ico_sphere_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "1": {
+                  "name": "Grid",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "MESH_GRID",
+                  "enabled_icon": true,
+                  "direction": "3",
+                  "operator_bl_idname": "mesh.primitive_grid_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "2": {
+                  "name": "Monkey",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "MESH_MONKEY",
+                  "enabled_icon": true,
+                  "direction": "4",
+                  "operator_bl_idname": "mesh.primitive_monkey_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "3": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE",
+                  "enabled": true
+                },
+                "4": {
+                  "name": "Bezier",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "CURVE_BEZCURVE",
+                  "enabled_icon": true,
+                  "direction": "5",
+                  "operator_bl_idname": "curve.primitive_bezier_curve_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "5": {
+                  "name": "Bezier Circle",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "CURVE_BEZCIRCLE",
+                  "enabled_icon": true,
+                  "direction": "6",
+                  "operator_bl_idname": "curve.primitive_bezier_circle_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "6": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE",
+                  "enabled": true
+                },
+                "7": {
+                  "name": "Nurbs Curve",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "SURFACE_NCURVE",
+                  "enabled_icon": true,
+                  "direction": "7",
+                  "operator_bl_idname": "curve.primitive_nurbs_curve_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "8": {
+                  "name": "Nurbs Cylinder",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "SURFACE_NCYLINDER",
+                  "enabled_icon": true,
+                  "direction": "8",
+                  "operator_bl_idname": "surface.primitive_nurbs_surface_cylinder_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "9": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE",
+                  "enabled": true
+                },
+                "10": {
+                  "name": "Metaball",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "META_BALL",
+                  "enabled_icon": true,
+                  "direction": "8",
+                  "operator_bl_idname": "object.metaball_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                },
+                "11": {
+                  "name": "Text",
+                  "element_type": "OPERATOR",
+                  "enabled": true,
+                  "icon": "OUTLINER_OB_FONT",
+                  "enabled_icon": true,
+                  "direction": "8",
+                  "operator_bl_idname": "object.text_add",
+                  "operator_context": "INVOKE_DEFAULT",
+                  "operator_properties": "{}",
+                  "operator_type": "OPERATOR"
+                }
+              }
             }
           }
         },
