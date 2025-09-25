@@ -25,11 +25,11 @@ class DrawProperty(bpy.types.PropertyGroup):
     element_extension_item_offset: FloatProperty(name='Extension Offset', default=4, max=10, min=3, step=.5)
 
     element_draw_child_icon: BoolProperty(name="Draw child Icon", default=True)
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=15, min=5, max=120)
-    text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=18, min=5, max=120)
+    text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=5, min=2,
                                       max=60)
     text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
-                                            default=(4, 5),
+                                            default=(12, 10),
                                             min=0,
                                             max=120,
                                             size=2)
