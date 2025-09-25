@@ -242,7 +242,6 @@ class GestureGpuDraw(DrawDebug):
         if self.is_draw_gesture:
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__last_region_position__)
-                self.draw_text(str(get_now_2d_offset_position()), size=10, position=[0, -10], z=10)
                 if self.is_window_region_type:
                     self.draw_circle((0, 0), threshold, line_width=2, segments=64)
                     if self.is_beyond_threshold:

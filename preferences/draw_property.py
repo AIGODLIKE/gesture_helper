@@ -25,7 +25,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     element_extension_item_offset: FloatProperty(name='Extension Offset', default=4, max=10, min=3, step=.5)
 
     element_draw_child_icon: BoolProperty(name="Draw child Icon", default=True)
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=12, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=15, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=3, min=2,
                                       max=60)
     text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
@@ -34,6 +34,8 @@ class DrawProperty(bpy.types.PropertyGroup):
                                             max=120,
                                             size=2)
     line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
+    dividing_line_height: IntProperty(name='Dividing Line Height', description='Gpu Draw Dividing Line Height',
+                                      default=3, min=1, max=10)
 
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
                                                    default=[0.072510, 0.084055, 0.088653, 1.000000])
@@ -55,6 +57,9 @@ class DrawProperty(bpy.types.PropertyGroup):
                                                 default=[0.100000, 0.900000, 1.000000, 1.000000])
     trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
                                                   default=[0.689335, 0.275156, 0.793810, 1.000000])
+
+    dividing_line_color:FloatVectorProperty(name='Dividing Line Color', **public_color,
+                                                  default=[0.143718, 0.143718, 0.143718, 1.000000])
 
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
@@ -90,6 +95,7 @@ class DrawProperty(bpy.types.PropertyGroup):
             cb.alert = True
             cb.label(text="Error, rounded corners are larger than the margins")
             cb.label(text="The size of the rounded corners is clamped by the margins")
+        col.prop(draw, 'dividing_line_height')
 
     @staticmethod
     def draw_color_property(layout: bpy.types.UILayout):
@@ -116,3 +122,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         bb = box.column(align=True)
         bb.prop(draw, 'trajectory_mouse_color')
         bb.prop(draw, 'trajectory_gesture_color')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'dividing_line_color')
+

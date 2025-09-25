@@ -175,7 +175,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
                 draw_debug_point((1, 0, 0, 1))
                 self.extension_offset_start_position = get_now_2d_offset_position()
-                self.draw_text(str(get_now_2d_offset_position()), size=10, position=[100, -10], z=10)
                 gpu.matrix.translate((-w / 2, 0))
                 self.draw_gpu_extension_item(ops)
             return
@@ -183,35 +182,22 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
         radius = get_pref().gesture_property.radius * scale
         position = get_position(self.direction, radius)
-        debug = get_pref().debug_property.debug_extension
 
         margin_x, margin_y = self.draw_property.text_gpu_draw_margin
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            draw_debug_point()
 
             w, h = self.draw_dimensions
-            # self.draw_text(self.text_dimensions, color=self.text_color, size=12)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.draw_direction_offset)
-                if debug:
-                    self.draw_2d_rectangle(0, 0, w, -h)
-
                 self.gpu_draw_margin()
-                if debug:
-                    draw_circle_2d([0, 0], (1, 1, 0, 1), 1)
-                    self.draw_text(self.direction, color=self.text_color, size=12)
-                    draw_circle_2d([w, -h], (0, 0, 1, 1), 1)
-
                 x, y = get_now_2d_offset_position()
                 self.gpu_draw_icon()
                 self.gpu_draw_text_fix_offset()
                 self.gpu_draw_child_icon()
 
                 self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
-                self.draw_text(f"element.mouse_is_in_area {self.mouse_is_in_area} {margin_x, margin_y}", size=12,
-                               position=(0, -10))
 
     def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
         """通过对每种不同的文字偏移实现绘制位置正确"""
@@ -321,26 +307,45 @@ class ElementGpuExtensionItem:
     extension_interval = .1
 
     @property
+    def dividing_line_height(self) -> float:
+        dividing_line_height = self.draw_property.dividing_line_height
+        scale = bpy.context.preferences.view.ui_scale
+        return dividing_line_height * scale
+
+    @property
+    def max_height_dimensions(self) -> float:
+        return max((0, *(item.text_dimensions[1] for item in self.extension_items if not item.is_dividing_line)))
+
+    @property
+    def max_width_dimensions(self) -> float:
+        return max((0, *(item.text_dimensions[0] for item in self.extension_items if not item.is_dividing_line)))
+
+    @property
+    def max_dimensions(self) -> Vector:
+        return Vector((self.max_width_dimensions, self.max_height_dimensions))
+
+    @property
     def extension_dimensions(self) -> Vector:
-        w, h = 0, 0
-        mh = 0
         interval = self.extension_interval
-        for index, item in enumerate(self.extension_items):
-            wi, hi = item.text_dimensions
-            if wi > w:
-                w = wi
-            if mh < hi:
-                mh = hi
-            h += hi + hi * interval
-        self.extension_icon_size = mh
-        self.extension_icon_interval = mh * interval
-        self.extension_text_width = w
-        w += mh * 2 + self.extension_icon_interval
+
+        max_height = self.max_height_dimensions
+        max_width = self.max_width_dimensions
+        h = 0
+        w = max_width
+        for item in self.extension_items:
+            if item.is_dividing_line:
+                h += self.dividing_line_height + max_height * interval
+            else:
+                h += max_height + max_height * interval
+
+        self.extension_icon_size = max_height
+        self.extension_icon_interval = max_height * interval
+        self.extension_text_width = max_width
+        w += max_height * 2 + self.extension_icon_interval
         return Vector((w, h))
 
     def draw_gpu_extension_item(self, ops):
         w, h = self.extension_dimensions
-        draw = self.draw_property
         with gpu.matrix.push_pop():
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
@@ -349,30 +354,49 @@ class ElementGpuExtensionItem:
 
             for item in self.extension_items:
                 item.ops = ops
-                wi, hi = item.draw_dimensions
-                ho = -(hi + hi * self.extension_interval)
+                wi, hi = self.max_dimensions
 
-                color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
-                self.draw_2d_rectangle(0, 0, w, ho, color=color)
-                with gpu.matrix.push_pop():
-                    s = self.extension_icon_size
-                    if item.is_draw_icon:
-                        item.gpu_draw_icon(False)
-                    gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
-                    item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
-                    gpu.matrix.translate((self.extension_text_width, 0))
-                    if item.is_child_gesture:
-                        self.draw_image([0, -s], s, s, texture=Texture.get_texture("1"))
-                    gpu.matrix.translate((self.extension_icon_size, 0))
+                if item.is_dividing_line:
+                    # 活动项颜色
+                    color = linear_to_srgb(np.array(self.draw_property.dividing_line_color, dtype=np.float32))
+                    hs = self.dividing_line_height / 2
+                    with gpu.matrix.push_pop():
+                        gpu.matrix.translate((w / 2, -hs))
+                        rounded_rectangle = {
+                            "radius": hs,
+                            "position": (0, 0),
+                            "width": w,
+                            "height": self.dividing_line_height,
+                            "color": color,
+                        }
+                        self.draw_rounded_rectangle_area(**rounded_rectangle)
+                    gpu.matrix.translate((0, -(self.dividing_line_height + self.extension_icon_interval)))
+                else:
+                    if item.extension_by_child_is_hover:
+                        color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
+                        self.draw_2d_rectangle(0, 0, w, -hi, color=color)
 
-                    draw_debug_point()
-                    if item.is_child_gesture and (item.extension_by_child_is_hover or item in ops.extension_hover):
-                        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
-                        gpu.matrix.translate((margin_x * 1.9, 0))
-                        item.draw_gpu_extension_item(ops)
-                    ex, ey = get_now_2d_offset_position()
+                    with gpu.matrix.push_pop():
+                        s = self.extension_icon_size
+                        if item.is_draw_icon:
+                            item.gpu_draw_icon(False)
+                        gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
+                        item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=True)
+                        gpu.matrix.translate((self.extension_text_width, 0))
+                        if item.is_child_gesture:
+                            self.draw_image([0, -s], s, s, texture=Texture.get_texture("1"))
+                        gpu.matrix.translate((self.extension_icon_size, 0))
 
-                gpu.matrix.translate((0, ho))
+                        draw_debug_point()
+                        if item.is_child_gesture and (item.extension_by_child_is_hover or item in ops.extension_hover):
+                            margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+                            gpu.matrix.translate((margin_x * 1.9, 0))
+                            item.draw_gpu_extension_item(ops)
+                        ex, ey = get_now_2d_offset_position()
+
+                    gpu.matrix.translate((0,
+                                          -(self.extension_icon_size + self.extension_icon_interval)
+                                          ))
 
                 draw_debug_point()
                 sx, sy = get_now_2d_offset_position()
@@ -384,13 +408,9 @@ class ElementGpuExtensionItem:
                     size=self.text_size,
                     position=[0, 0])
 
-            self.draw_text(f"in_extension_area {self.mouse_is_in_extension_area}", size=12, position=(0, 0))
-            self.draw_text(f"vertical_outside {self.mouse_is_in_extension_vertical_outside_area}", size=12,
-                           position=(0, -10))
-            self.draw_text(f"right_outside {self.mouse_is_in_extension_right_outside_area}", size=12,
-                           position=(0, -20))
-
     def draw_gpu_extension_margin(self):
+        draw = self.draw_property
+
         margin_x, margin_y = self.draw_property.text_gpu_draw_margin
 
         gpu.state.blend_set('ALPHA')
@@ -399,7 +419,6 @@ class ElementGpuExtensionItem:
         x, y = get_now_2d_offset_position()
 
         self.extension_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_x]
-        # col = (0.1, 0, 0, 1) if self.mouse_is_in_extension_area else draw.background_child_color
 
         if len(self.extension_items) == 0:
             return
@@ -408,7 +427,7 @@ class ElementGpuExtensionItem:
             "position": (w / 2, -h / 2),
             "width": w + margin_x * 2,
             "height": h + margin_y * 2,
-            "color": linear_to_srgb(np.array((1, 0, 0, 1), dtype=np.float32)),
+            "color": linear_to_srgb(np.array(draw.background_child_color, dtype=np.float32)),
         }
         self.draw_rounded_rectangle_area(**rounded_rectangle)
 

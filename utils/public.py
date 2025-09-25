@@ -94,7 +94,8 @@ def get_gesture_extension_items(iteration):
                     extension.extend(child)
                     last_selected_structure = item
             continue  # 不运行后面的
-        elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符
+        elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
+            # 是子项或者是操作符
             if item.enabled:
                 extension.append(item)
         if item.enabled:  # 如果不是选择结构并
