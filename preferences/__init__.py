@@ -50,20 +50,35 @@ class GesturePreferences(PublicProperty,
         from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
         from ..utils.property import get_property
 
-        def filter_data(filter_dict):
+        def filter_data(filter_dict, exclude_keywords=[]):
             res = {}
             if 'element_type' in filter_dict:
-                et = filter_dict['element_type']
-                ot = filter_dict.get("operator_type", None)
-                if et == "OPERATOR" and f"OPERATOR_{ot}" in EXPORT_PROPERTY_ITEM:
-                    et = f"OPERATOR_{ot}"
-                for i in EXPORT_PROPERTY_ITEM[et]:
+                element_type = filter_dict['element_type']
+                operator_type = filter_dict.get("operator_type", None)
+                if element_type == "OPERATOR" and f"OPERATOR_{operator_type}" in EXPORT_PROPERTY_ITEM:
+                    element_type = f"OPERATOR_{operator_type}"
+                for i in EXPORT_PROPERTY_ITEM[element_type]:
                     if i in filter_dict:
                         res[i] = filter_dict[i]
             else:
                 res.update(filter_dict)
             if 'element' in filter_dict and len(filter_dict['element']) != 0:
                 res['element'] = {k: filter_data(v) for k, v in filter_dict['element'].items()}
+
+            if res.get('enabled', False):  # 默认为开启,不需要导出
+                res.pop("enabled")
+            if "enabled_icon" in res:  # 如果没启用图标就不导出图标数据
+                if not res["enabled_icon"]:
+                    if "enabled_icon" in res:
+                        res.pop("enabled_icon")
+                    if "icon" in res:
+                        res.pop("icon")
+            if "operator_context" in res and res["operator_context"] == "INVOKE_DEFAULT":
+                # 默认值为INVOKE_DEFAULT
+                res.pop("operator_context")
+            for k in exclude_keywords:
+                if k in res:
+                    res.pop(k)
             return res
 
         data = {}

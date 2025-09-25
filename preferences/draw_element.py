@@ -165,7 +165,6 @@ class DrawElement:
 
         if is_alert:
             layout = layout.row(align=True)
-            layout.alert = True
             layout.active = False
 
         ops = layout.operator(ElementCURE.ADD.bl_idname, text="Div")

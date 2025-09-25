@@ -44,7 +44,6 @@ class GestureHandle:
                     return True
 
         element = self.direction_element
-        print("element.mouse_is_in_area", element.mouse_is_in_area)
         if element and element.is_operator and (self.is_beyond_threshold_confirm or element.mouse_is_in_area):
             error = element.running_operator()
             if error is not None:

@@ -170,7 +170,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 gpu.matrix.translate(position)
                 draw_debug_point((1, 1, 0, 1), 2)
 
-                gpu.matrix.translate(self.draw_direction_offset)
+                if "7" in self.ops.direction_items.keys():
+                    gpu.matrix.translate(self.draw_direction_offset)
+                else:
+                    gpu.matrix.translate((0, -self.max_height_dimensions))
                 w, h = self.extension_dimensions
 
                 draw_debug_point((1, 0, 0, 1))
@@ -259,7 +262,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             }
             self.draw_rounded_rectangle_area(**rounded_rectangle)
 
-    icon_interval = .3
+    icon_interval = .5
 
     @property
     def icon_offset_width(self) -> float:
@@ -362,7 +365,7 @@ class ElementGpuExtensionItem:
                     color = linear_to_srgb(np.array(self.draw_property.dividing_line_color, dtype=np.float32))
                     hs = self.dividing_line_height / 2
                     with gpu.matrix.push_pop():
-                        gpu.matrix.translate((w / 2, -hs))
+                        gpu.matrix.translate((w / 2, -(self.dividing_line_height + self.extension_icon_interval / 2)))
                         rounded_rectangle = {
                             "radius": hs,
                             "position": (0, 0),
@@ -411,7 +414,7 @@ class ElementGpuExtensionItem:
                     draw_debug_point()
                 sx, sy = get_now_2d_offset_position()
                 hs = (hi * self.extension_interval) / 2
-                item.extension_by_child_draw_area = [sx, sy - hs, ex, ey + hs]
+                item.extension_by_child_draw_area = [sx, sy, ex, ey + hs]
 
             if len(self.extension_items) == 0:
                 self.draw_text(
