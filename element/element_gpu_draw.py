@@ -389,7 +389,22 @@ class ElementGpuExtensionItem:
                         s = self.extension_icon_size
                         gpu.matrix.translate((0, -(hi * self.extension_interval) / 2))
                         if item.is_draw_icon:
+                            if item.is_draw_context_toggle_operator_bool:
+                                if item.get_operator_wm_context_toggle_property_bool:
+                                    sp = (hi * self.extension_interval) / 2
+                                    dh = hi + sp
+                                    color = linear_to_srgb(
+                                        np.array(self.draw_property.background_child_active_color, dtype=np.float32))
+                                    rounded_rectangle = {
+                                        "radius": max(dh / 2, self.text_radius),
+                                        "position": (dh / 2 - sp / 2, -dh / 2 + sp / 2),
+                                        "width": dh,
+                                        "height": dh,
+                                        "color": color,
+                                    }
+                                    self.draw_rounded_rectangle_area(**rounded_rectangle)
                             item.gpu_draw_icon(False)
+
                         gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
                         item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=True)
                         gpu.matrix.translate((self.extension_text_width, 0))
