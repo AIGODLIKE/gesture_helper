@@ -1,5 +1,5 @@
 {
-  "time": 1758794444.1134193,
+  "time": 1758855133.8181362,
   "blender_version": [
     4,
     5,
@@ -29,9 +29,7 @@
               "name": "Bevel Weight",
               "element_type": "OPERATOR",
               "direction": "1",
-              "operator_bl_idname": "transform.edge_bevelweight",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "transform.edge_bevelweight"
             },
             "1": {
               "name": "Clear Bevel Weight",
@@ -41,8 +39,7 @@
               "direction": "7",
               "operator_bl_idname": "transform.edge_bevelweight",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': -1.0}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': -1.0}"
             },
             "2": {
               "name": "1",
@@ -50,8 +47,7 @@
               "direction": "3",
               "operator_bl_idname": "transform.edge_bevelweight",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': 1.0}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': 1.0}"
             },
             "3": {
               "name": "0.5",
@@ -59,8 +55,7 @@
               "direction": "4",
               "operator_bl_idname": "transform.edge_bevelweight",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': 0.5}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': 0.5}"
             },
             "4": {
               "name": "Clear Bevel Weight",
@@ -70,8 +65,7 @@
               "direction": "2",
               "operator_bl_idname": "transform.edge_bevelweight",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': -1.0}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': -1.0}"
             }
           }
         },
@@ -84,41 +78,34 @@
               "name": "Mark Sharp",
               "element_type": "OPERATOR",
               "direction": "7",
-              "operator_bl_idname": "mesh.mark_sharp",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.mark_sharp"
             },
             "1": {
               "name": "Clear Sharp",
               "element_type": "OPERATOR",
               "direction": "8",
               "operator_bl_idname": "mesh.mark_sharp",
-              "operator_properties": "{'clear': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'clear': True}"
             },
             "2": {
               "name": "Mark Sharp Verts",
               "element_type": "OPERATOR",
               "direction": "6",
               "operator_bl_idname": "mesh.mark_sharp",
-              "operator_properties": "{'use_verts': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'use_verts': True}"
             },
             "3": {
               "name": "Set Sharpness by Angle",
               "element_type": "OPERATOR",
               "direction": "5",
-              "operator_bl_idname": "mesh.set_sharpness_by_angle",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.set_sharpness_by_angle"
             },
             "4": {
               "name": "Mark Sharp Verts",
               "element_type": "OPERATOR",
               "direction": "2",
               "operator_bl_idname": "mesh.mark_sharp",
-              "operator_properties": "{'use_verts': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'use_verts': True}"
             }
           }
         },
@@ -131,9 +118,7 @@
               "name": "Edge Crease",
               "element_type": "OPERATOR",
               "direction": "3",
-              "operator_bl_idname": "transform.edge_crease",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "transform.edge_crease"
             },
             "1": {
               "name": "Clear Crease",
@@ -141,8 +126,7 @@
               "direction": "4",
               "operator_bl_idname": "transform.edge_crease",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': -1.0}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': -1.0}"
             },
             "2": {
               "name": "1",
@@ -150,8 +134,7 @@
               "direction": "5",
               "operator_bl_idname": "transform.edge_crease",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': 1.0}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': 1.0}"
             },
             "3": {
               "name": "0.5",
@@ -159,8 +142,7 @@
               "direction": "7",
               "operator_bl_idname": "transform.edge_crease",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': 0.5}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': 0.5}"
             },
             "4": {
               "name": "0.25",
@@ -168,8 +150,7 @@
               "direction": "8",
               "operator_bl_idname": "transform.edge_crease",
               "operator_context": "EXEC_DEFAULT",
-              "operator_properties": "{'value': 0.25}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'value': 0.25}"
             }
           }
         },
@@ -182,25 +163,21 @@
               "name": "Mark Seam",
               "element_type": "OPERATOR",
               "direction": "1",
-              "operator_bl_idname": "mesh.mark_seam",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.mark_seam"
             },
             "1": {
               "name": "Clear Seam",
               "element_type": "OPERATOR",
               "direction": "8",
               "operator_bl_idname": "mesh.mark_seam",
-              "operator_properties": "{'clear': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'clear': True}"
             },
             "2": {
               "name": "Clear Seam",
               "element_type": "OPERATOR",
               "direction": "2",
               "operator_bl_idname": "mesh.mark_seam",
-              "operator_properties": "{'clear': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'clear': True}"
             }
           }
         },
@@ -211,8 +188,7 @@
           "enabled_icon": true,
           "direction": "2",
           "operator_bl_idname": "mesh.edge_rotate",
-          "operator_properties": "{'use_ccw': False}",
-          "operator_type": "OPERATOR"
+          "operator_properties": "{'use_ccw': False}"
         },
         "5": {
           "name": "Rotate Edge",
@@ -221,8 +197,7 @@
           "enabled_icon": true,
           "direction": "4",
           "operator_bl_idname": "mesh.edge_rotate",
-          "operator_properties": "{'use_ccw': True}",
-          "operator_type": "OPERATOR"
+          "operator_properties": "{'use_ccw': True}"
         },
         "6": {
           "name": "Freestyle",
@@ -233,25 +208,21 @@
               "name": "Mark Freestyle Edge",
               "element_type": "OPERATOR",
               "direction": "8",
-              "operator_bl_idname": "mesh.mark_freestyle_edge",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.mark_freestyle_edge"
             },
             "1": {
               "name": "Clear Freestyle Edge",
               "element_type": "OPERATOR",
               "direction": "1",
               "operator_bl_idname": "mesh.mark_freestyle_edge",
-              "operator_properties": "{'clear': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'clear': True}"
             },
             "2": {
               "name": "Clear Freestyle Edge",
               "element_type": "OPERATOR",
               "direction": "7",
               "operator_bl_idname": "mesh.mark_freestyle_edge",
-              "operator_properties": "{'clear': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'clear': True}"
             }
           }
         },
@@ -260,9 +231,8 @@
           "element_type": "OPERATOR",
           "icon": "PANEL_CLOSE",
           "enabled_icon": true,
-          "operator_type": "SCRIPT",
-          "operator_script": "bpy.ops.transform.edge_crease(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.transform.edge_bevelweight(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.mesh.mark_seam(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True, use_verts=True)\nbpy.ops.mesh.mark_freestyle_edge(clear=True)",
-          "direction": "6"
+          "direction": "6",
+          "operator_script": "bpy.ops.transform.edge_crease(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.transform.edge_bevelweight(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.mesh.mark_seam(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True, use_verts=True)\nbpy.ops.mesh.mark_freestyle_edge(clear=True)"
         }
       },
       "description": "Set edge properties to quickly add or clean up"

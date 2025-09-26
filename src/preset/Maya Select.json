@@ -1,5 +1,5 @@
 {
-  "time": 1758793037.740852,
+  "time": 1758855117.3876045,
   "blender_version": [
     4,
     5,
@@ -31,8 +31,7 @@
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "object.select_all",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'SELECT'}"
             },
             "1": {
               "name": "Select Random",
@@ -41,8 +40,7 @@
               "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "object.select_random",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'SELECT'}"
             },
             "2": {
               "name": "Camera",
@@ -50,9 +48,7 @@
               "icon": "CAMERA_DATA",
               "enabled_icon": true,
               "direction": "8",
-              "operator_bl_idname": "object.select_camera",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "object.select_camera"
             },
             "3": {
               "name": "Deselect",
@@ -61,8 +57,7 @@
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "object.select_all",
-              "operator_properties": "{'action': 'DESELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'DESELECT'}"
             },
             "4": {
               "name": "Child_Gesture",
@@ -70,20 +65,14 @@
               "direction": "9",
               "element": {
                 "0": {
-                  "name": "\u6309\u540d\u79f0\u9009\u62e9",
+                  "name": "Select Pattern",
                   "element_type": "OPERATOR",
-                  "direction": "1",
-                  "operator_bl_idname": "object.select_pattern",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "object.select_pattern"
                 },
                 "1": {
-                  "name": "\u9009\u62e9\u955c\u50cf",
+                  "name": "Select Mirror",
                   "element_type": "OPERATOR",
-                  "direction": "2",
-                  "operator_bl_idname": "object.select_mirror",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "object.select_mirror"
                 }
               }
             }
@@ -108,9 +97,7 @@
                   "icon": "AXIS_FRONT",
                   "enabled_icon": true,
                   "direction": "2",
-                  "operator_bl_idname": "mesh.select_axis",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_axis"
                 },
                 "1": {
                   "name": "Select Mirror",
@@ -118,9 +105,7 @@
                   "icon": "MOD_MIRROR",
                   "enabled_icon": true,
                   "direction": "1",
-                  "operator_bl_idname": "mesh.select_mirror",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_mirror"
                 }
               }
             },
@@ -138,8 +123,7 @@
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mesh.select_all",
-                  "operator_properties": "{'action': 'SELECT'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'action': 'SELECT'}"
                 },
                 "1": {
                   "name": "Invert",
@@ -148,8 +132,7 @@
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "mesh.select_all",
-                  "operator_properties": "{'action': 'INVERT'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'action': 'INVERT'}"
                 },
                 "2": {
                   "name": "Checker Deselect",
@@ -157,17 +140,14 @@
                   "icon": "DRIVER_DISTANCE",
                   "enabled_icon": true,
                   "direction": "3",
-                  "operator_bl_idname": "mesh.select_nth",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_nth"
                 },
                 "3": {
                   "name": "Select Random",
                   "element_type": "OPERATOR",
                   "direction": "4",
                   "operator_bl_idname": "mesh.select_random",
-                  "operator_properties": "{'action': 'SELECT', 'seed': 114}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'action': 'SELECT', 'seed': 114}"
                 }
               }
             },
@@ -183,24 +163,19 @@
                   "element_type": "OPERATOR",
                   "direction": "3",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "operator_properties": "{'ring': False}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'ring': False}"
                 },
                 "1": {
                   "name": "Select Less",
                   "element_type": "OPERATOR",
                   "direction": "4",
-                  "operator_bl_idname": "mesh.select_less",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_less"
                 },
                 "2": {
                   "name": "Select Loop Inner-Region",
                   "element_type": "OPERATOR",
                   "direction": "5",
-                  "operator_bl_idname": "mesh.loop_to_region",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.loop_to_region"
                 }
               }
             },
@@ -215,25 +190,20 @@
                   "name": "More",
                   "element_type": "OPERATOR",
                   "direction": "2",
-                  "operator_bl_idname": "mesh.select_more",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_more"
                 },
                 "1": {
                   "name": "Edge Rings",
                   "element_type": "OPERATOR",
                   "direction": "3",
                   "operator_bl_idname": "mesh.loop_multi_select",
-                  "operator_properties": "{'ring': True}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'ring': True}"
                 },
                 "2": {
                   "name": "Select Boundary Loop",
                   "element_type": "OPERATOR",
                   "direction": "1",
-                  "operator_bl_idname": "mesh.region_to_loop",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.region_to_loop"
                 }
               }
             },
@@ -247,73 +217,48 @@
                   "element_type": "OPERATOR",
                   "icon": "SHARPCURVE",
                   "enabled_icon": true,
-                  "direction": "8",
-                  "operator_bl_idname": "mesh.edges_select_sharp",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.edges_select_sharp"
                 },
                 "1": {
                   "name": "By Property",
                   "element_type": "CHILD_GESTURE",
                   "icon": "ONE_TO_MANY_CONNECTION.png",
                   "enabled_icon": true,
-                  "direction": "6",
                   "element": {
                     "0": {
                       "name": "Freestyle Face Marks",
                       "element_type": "OPERATOR",
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar"
                     },
                     "1": {
                       "name": "Face Regions",
                       "element_type": "OPERATOR",
-                      "direction": "6",
-                      "operator_bl_idname": "mesh.select_similar_region",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar_region"
                     },
                     "2": {
                       "name": "Freestyle Edge Marks",
                       "element_type": "OPERATOR",
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar"
                     },
                     "3": {
                       "name": "Vertex Crease",
                       "element_type": "OPERATOR",
-                      "direction": "5",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar"
                     },
                     "4": {
                       "name": "Crease",
                       "element_type": "OPERATOR",
-                      "direction": "1",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar"
                     },
                     "5": {
                       "name": "Polygon Sides",
                       "element_type": "OPERATOR",
-                      "direction": "4",
-                      "operator_bl_idname": "mesh.select_similar",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_similar"
                     },
                     "6": {
                       "name": "By Attribute",
                       "element_type": "OPERATOR",
-                      "direction": "2",
-                      "operator_bl_idname": "mesh.select_by_attribute",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_by_attribute"
                     }
                   }
                 },
@@ -322,7 +267,6 @@
                   "element_type": "CHILD_GESTURE",
                   "icon": "PMARKER_SEL",
                   "enabled_icon": true,
-                  "direction": "7",
                   "element": {
                     "0": {
                       "name": "Vertex",
@@ -335,30 +279,21 @@
                           "element_type": "OPERATOR",
                           "icon": "NORMALS_FACE",
                           "enabled_icon": true,
-                          "direction": "7",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "1": {
                           "name": "Vertex Groups",
                           "element_type": "OPERATOR",
                           "icon": "GROUP_VERTEX",
                           "enabled_icon": true,
-                          "direction": "8",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "2": {
                           "name": "Amount of Connecting Edges",
                           "element_type": "OPERATOR",
                           "icon": "MOD_EDGESPLIT",
                           "enabled_icon": true,
-                          "direction": "6",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         }
                       }
                     },
@@ -373,66 +308,45 @@
                           "element_type": "OPERATOR",
                           "icon": "MOD_LENGTH",
                           "enabled_icon": true,
-                          "direction": "7",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "1": {
                           "name": "Direction",
                           "element_type": "OPERATOR",
                           "icon": "EMPTY_ARROWS",
                           "enabled_icon": true,
-                          "direction": "6",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "2": {
                           "name": "Amount of Faces Around an Edge",
                           "element_type": "OPERATOR",
-                          "direction": "8",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "3": {
                           "name": "Face Angles",
                           "element_type": "OPERATOR",
-                          "direction": "5",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "4": {
                           "name": "Bevel",
                           "element_type": "OPERATOR",
                           "icon": "MOD_BEVEL",
                           "enabled_icon": true,
-                          "direction": "1",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "5": {
                           "name": "Seam",
                           "element_type": "OPERATOR",
                           "icon": "EDGESEL",
                           "enabled_icon": true,
-                          "direction": "4",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "6": {
                           "name": "Sharpness",
                           "element_type": "OPERATOR",
                           "icon": "SHARPCURVE",
                           "enabled_icon": true,
-                          "direction": "2",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         }
                       }
                     },
@@ -447,64 +361,43 @@
                           "element_type": "OPERATOR",
                           "icon": "MATERIAL",
                           "enabled_icon": true,
-                          "direction": "7",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "1": {
                           "name": "Area",
                           "element_type": "OPERATOR",
                           "icon": "FACESEL",
                           "enabled_icon": true,
-                          "direction": "8",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "2": {
                           "name": "Perimeter",
                           "element_type": "OPERATOR",
                           "icon": "NETWORK_CONNECTION.png",
                           "enabled_icon": true,
-                          "direction": "6",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "3": {
                           "name": "Amount of Adjacent Faces",
                           "element_type": "OPERATOR",
-                          "direction": "5",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "4": {
                           "name": "Normal",
                           "element_type": "OPERATOR",
-                          "direction": "1",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "5": {
                           "name": "Coplanar",
                           "element_type": "OPERATOR",
-                          "direction": "4",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         },
                         "6": {
                           "name": "Flat/Smooth",
                           "element_type": "OPERATOR",
                           "icon": "MOD_SMOOTH",
                           "enabled_icon": true,
-                          "direction": "2",
-                          "operator_bl_idname": "mesh.select_similar",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "mesh.select_similar"
                         }
                       }
                     }
@@ -515,57 +408,38 @@
                   "element_type": "CHILD_GESTURE",
                   "icon": "TRACKER_DATA",
                   "enabled_icon": true,
-                  "direction": "1",
                   "element": {
                     "0": {
                       "name": "Non Manifold",
                       "element_type": "OPERATOR",
-                      "direction": "1",
-                      "operator_bl_idname": "mesh.select_non_manifold",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_non_manifold"
                     },
                     "1": {
                       "name": "Loose Geometry",
                       "element_type": "OPERATOR",
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.select_loose",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_loose"
                     },
                     "2": {
                       "name": "Interior Faces",
                       "element_type": "OPERATOR",
-                      "direction": "2",
-                      "operator_bl_idname": "mesh.select_interior_faces",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_interior_faces"
                     },
                     "3": {
                       "name": "Faces by Sides",
                       "element_type": "OPERATOR",
-                      "direction": "3",
-                      "operator_bl_idname": "mesh.select_face_by_sides",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_face_by_sides"
                     },
                     "4": {
                       "name": "Ungrouped Vertices",
                       "element_type": "OPERATOR",
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.select_ungrouped",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.select_ungrouped"
                     }
                   }
                 },
                 "4": {
                   "name": "Select by Attribute",
                   "element_type": "OPERATOR",
-                  "direction": "2",
-                  "operator_bl_idname": "mesh.select_by_attribute",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.select_by_attribute"
                 }
               }
             }
@@ -582,8 +456,7 @@
               "element_type": "OPERATOR",
               "direction": "6",
               "operator_bl_idname": "curve.select_random",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'SELECT'}"
             },
             "1": {
               "name": "Checker Deselect",
@@ -591,9 +464,7 @@
               "icon": "MOD_DASH",
               "enabled_icon": true,
               "direction": "8",
-              "operator_bl_idname": "curve.select_nth",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "curve.select_nth"
             },
             "2": {
               "name": "Next",
@@ -605,25 +476,19 @@
                   "element_type": "OPERATOR",
                   "direction": "2",
                   "operator_bl_idname": "curve.select_next",
-                  "operator_context": "EXEC_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_context": "EXEC_DEFAULT"
                 },
                 "1": {
                   "name": "Select More",
                   "element_type": "OPERATOR",
                   "direction": "1",
-                  "operator_bl_idname": "curve.select_more",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.select_more"
                 },
                 "2": {
                   "name": "(De)select Last",
                   "element_type": "OPERATOR",
                   "direction": "8",
-                  "operator_bl_idname": "curve.de_select_last",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.de_select_last"
                 }
               }
             },
@@ -636,25 +501,19 @@
                   "name": "Select Previous",
                   "element_type": "OPERATOR",
                   "direction": "4",
-                  "operator_bl_idname": "curve.select_previous",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.select_previous"
                 },
                 "1": {
                   "name": "Select Less",
                   "element_type": "OPERATOR",
                   "direction": "5",
-                  "operator_bl_idname": "curve.select_less",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.select_less"
                 },
                 "2": {
                   "name": "(De)select First",
                   "element_type": "OPERATOR",
                   "direction": "6",
-                  "operator_bl_idname": "curve.de_select_first",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.de_select_first"
                 }
               }
             },
@@ -668,55 +527,41 @@
                   "element_type": "OPERATOR",
                   "icon": "RESTRICT_SELECT_OFF",
                   "enabled_icon": true,
-                  "direction": "7",
                   "operator_bl_idname": "curve.select_all",
-                  "operator_properties": "{'action': 'SELECT'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'action': 'SELECT'}"
                 },
                 "1": {
                   "name": "Select Linked",
                   "element_type": "OPERATOR",
-                  "direction": "2",
-                  "operator_bl_idname": "curve.select_linked",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "curve.select_linked"
                 },
                 "2": {
                   "name": "Select Similar",
                   "element_type": "CHILD_GESTURE",
-                  "direction": "1",
                   "element": {
                     "0": {
                       "name": "Type",
                       "element_type": "OPERATOR",
-                      "direction": "3",
                       "operator_bl_idname": "curve.select_similar",
-                      "operator_properties": "{'type': 'TYPE'}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'type': 'TYPE'}"
                     },
                     "1": {
                       "name": "Radius",
                       "element_type": "OPERATOR",
-                      "direction": "2",
                       "operator_bl_idname": "curve.select_similar",
-                      "operator_properties": "{'type': 'RADIUS'}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'type': 'RADIUS'}"
                     },
                     "2": {
                       "name": "Weight",
                       "element_type": "OPERATOR",
-                      "direction": "4",
                       "operator_bl_idname": "curve.select_similar",
-                      "operator_properties": "{'type': 'WEIGHT'}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'type': 'WEIGHT'}"
                     },
                     "3": {
                       "name": "Direction",
                       "element_type": "OPERATOR",
-                      "direction": "5",
                       "operator_bl_idname": "curve.select_similar",
-                      "operator_properties": "{'type': 'DIRECTION'}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'type': 'DIRECTION'}"
                     }
                   }
                 }
@@ -737,16 +582,14 @@
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "mball.select_all",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'SELECT'}"
             },
             "1": {
               "name": "Select Random",
               "element_type": "OPERATOR",
               "direction": "7",
               "operator_bl_idname": "mball.select_random_metaelems",
-              "operator_properties": "{'action': 'SELECT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'action': 'SELECT'}"
             },
             "2": {
               "name": "Select Similar",
@@ -762,8 +605,7 @@
                   "enabled_icon": true,
                   "direction": "4",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_properties": "{'type': 'TYPE'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'TYPE'}"
                 },
                 "1": {
                   "name": "Radius",
@@ -772,16 +614,14 @@
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_properties": "{'type': 'RADIUS'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'RADIUS'}"
                 },
                 "2": {
                   "name": "Stiffness",
                   "element_type": "OPERATOR",
                   "direction": "6",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_properties": "{'type': 'STIFFNESS'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'STIFFNESS'}"
                 },
                 "3": {
                   "name": "Rotation",
@@ -790,8 +630,7 @@
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "mball.select_similar",
-                  "operator_properties": "{'type': 'ROTATION'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'ROTATION'}"
                 }
               }
             }
