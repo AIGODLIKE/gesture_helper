@@ -62,18 +62,17 @@ class ElementGpuProperty:
         return self == self.ops.direction_element and distance_ok
 
     @property
-    def is_draw_property_bool(self) -> bool:
+    def is_draw_context_toggle_operator_bool(self) -> bool:
         is_ops = self.operator_bl_idname == 'wm.context_toggle'
         is_operator_type = self.operator_type == "OPERATOR"
-        data = self.properties
         if not self.is_operator or not is_operator_type:
             # 不是操作符或是脚本运行
             return False
         elif not is_ops:
             return False
-        elif 'data_path' not in data:
-            return False
         elif self.get_operator_wm_context_toggle_property_bool is Ellipsis:
+            return False
+        if 'data_path' not in self.properties:
             return False
         return True
 
@@ -107,7 +106,7 @@ class ElementGpuProperty:
                 return draw.background_child_active_color
         if self.is_operator:
             if self.operator_type == "OPERATOR":
-                if self.is_draw_property_bool:
+                if self.is_draw_context_toggle_operator_bool:
                     if self.get_operator_wm_context_toggle_property_bool:
                         return draw.background_bool_true
                     else:
@@ -210,11 +209,11 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     def gpu_draw_icon(self, use_offset=True):
         w, h = self.text_dimensions
-        if self.is_draw_property_bool and getattr(self, "extension_icon_size", None):
+        if self.is_draw_context_toggle_operator_bool and getattr(self, "extension_icon_size", None):
             h = self.extension_icon_size
         if self.is_draw_icon:
             icon = self.icon
-            if self.is_draw_property_bool:
+            if self.is_draw_context_toggle_operator_bool:
                 if self.get_operator_wm_context_toggle_property_bool:
                     icon = "CHECKBOX_HLT"
                 else:

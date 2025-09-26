@@ -55,12 +55,12 @@ class GesturePreferences(PublicProperty,
                 exclude_keywords = []
             res = {}
             element_type = filter_dict.get('element_type', None)
-            direction = filter_dict.get('direction', None)
-            operator_type = filter_dict.get("operator_type", None)
 
             if element_type:
-                if element_type == "OPERATOR" and f"OPERATOR_{operator_type}" in EXPORT_PROPERTY_ITEM:
-                    element_type = f"OPERATOR_{operator_type}"
+                operator_type = filter_dict.get("operator_type", None)
+                if element_type == "OPERATOR" and f"OPERATOR_{operator_type.upper()}" in EXPORT_PROPERTY_ITEM:
+                    element_type = f"OPERATOR_{operator_type.upper()}"
+
                 for i in EXPORT_PROPERTY_ITEM[element_type]:
                     if i in filter_dict:
                         res[i] = filter_dict[i]
@@ -69,21 +69,22 @@ class GesturePreferences(PublicProperty,
 
             if 'element' in filter_dict and len(filter_dict['element']) != 0:  # 处理子级
                 exclude = exclude_keywords.copy()
-                if element_type == "CHILD_GESTURE" and direction == "9":  # 第9个底部的手势不需要导出方向
+                if element_type == "CHILD_GESTURE" and filter_dict.get('direction', None) == "9":  # 第9个底部的手势不需要导出方向
                     exclude.append("direction")
                 res['element'] = {k: filter_data(v, exclude) for k, v in filter_dict['element'].items()}
 
-            if res.get('enabled', False):  # 默认为开启,不需要导出
+            # 清理默认值
+            if "enabled" in res and res['enabled']:  # 默认为开启,不需要导出
                 res.pop("enabled")
-            if "enabled_icon" in res:  # 如果没启用图标就不导出图标数据
-                if not res["enabled_icon"]:
-                    if "enabled_icon" in res:
-                        res.pop("enabled_icon")
-                    if "icon" in res:
-                        res.pop("icon")
+            if "enabled_icon" in res and not res['enabled_icon']:  # 如果没启用图标就不导出图标数据
+                if "enabled_icon" in res:
+                    res.pop("enabled_icon")
+                if "icon" in res:
+                    res.pop("icon")
             if "operator_context" in res and res["operator_context"] == "INVOKE_DEFAULT":  # 默认值为INVOKE_DEFAULT
                 res.pop("operator_context")
-            if "operator_type" in res and res["operator_type"] == "OPERATOR":  # 默认值为OPERATOR
+            if "operator_type" in res and res["operator_type"] == operator_type:  # 默认值为OPERATOR
+                print("pop operator_type", res)
                 res.pop("operator_type")
             if "operator_properties" in res and res["operator_properties"] == "{}":  # 默认值为{}
                 res.pop("operator_properties")

@@ -24,7 +24,12 @@ class DrawProperty(bpy.types.PropertyGroup):
                                       description="If you turn on \n, a pop-up will appear when you delete it.")
     element_extension_item_offset: FloatProperty(name='Extension Offset', default=4, max=10, min=3, step=.5)
 
-    element_draw_child_icon: BoolProperty(name="Draw child Icon", default=True)
+    element_draw_child_icon: BoolProperty(name="Child Icon",description="Draw Child Icon", default=True)
+    element_draw_property_toggle_icon: BoolProperty(
+        name='Property Icon',
+        description="Draw Toggle property operator icon",
+        default=True)
+
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=18, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=5, min=2,
                                       max=60)
@@ -80,6 +85,7 @@ class DrawProperty(bpy.types.PropertyGroup):
 
         col = layout.box().column(align=True)
         col.prop(draw, 'element_draw_child_icon')
+        col.prop(draw, 'element_draw_property_toggle_icon')
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
         cr.alert = radius_is_alert

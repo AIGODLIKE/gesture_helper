@@ -164,10 +164,6 @@ class ElementAddProperty:
 class ElementIcon:
     icon: StringProperty(name='Show Icon', default='COLOR_ERROR')
     enabled_icon: BoolProperty(name='Enabled Icon', default=False)
-    enabled_property_toggle_icon: BoolProperty(
-        name='Property Icon',
-        description="Toggle property operator icon",
-        default=True)
 
     @property
     def is_have_icon(self):
@@ -194,8 +190,8 @@ class ElementIcon:
     @property
     def is_draw_icon(self):
         """是绘制图标"""
-        if self.is_draw_property_bool:
-            return True
+        if self.is_draw_context_toggle_operator_bool:  # 绘制鼠标切换按钮
+            return self.draw_property.element_draw_property_toggle_icon
         return self.is_have_icon and self.is_show_icon
 
     @property

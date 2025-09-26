@@ -57,6 +57,7 @@ class OperatorProperty:
                                    items=ENUM_OPERATOR_CONTEXT)
 
     operator_properties: StringProperty(name='Operator Property',
+                                        default="{}",
                                         update=lambda self, context: self.update_operator_properties())
 
     operator_type: EnumProperty(name='Operator Type',
@@ -92,13 +93,15 @@ class OperatorProperty:
         try:
             return secure_call_eval(self.operator_properties)
         except Exception as e:
-            print('Properties Error', )
+            print('Properties Error')
+            print(self.name)
+            print(f"bpy.ops.{self.operator_bl_idname}")
             print(self.operator_properties)
             print(e.args)
             import traceback
             traceback.print_stack()
             traceback.print_exc()
-            self.operator_properties = "{}"
+            self['operator_properties'] = "{}"
             return {}
 
     @property
@@ -171,11 +174,11 @@ class ElementOperator(OperatorProperty):
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """从临时 keymap item 更新到属性"""
         print("from_tmp_kmi_operator_update_properties", )
-        print(self.operator_tmp_kmi_properties)
+        temp_kmi_properties = self.operator_tmp_kmi_properties
+        print(temp_kmi_properties)
         print(self.properties)
-        properties = self.operator_tmp_kmi_properties
-        if self.properties != properties:
-            self['operator_properties'] = str(properties)
+        if self.properties != temp_kmi_properties:
+            self['operator_properties'] = str(temp_kmi_properties)
 
     def running_operator(self) -> Exception:
         """运行此元素的操作符

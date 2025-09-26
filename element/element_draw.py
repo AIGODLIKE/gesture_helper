@@ -53,7 +53,7 @@ class ElementDraw:
             row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
         elif self.is_dividing_line:
             row.label(text='', icon_value=pref.__get_icon__("REMOVE"))
-            
+
         if self.parent_is_extension:  # 下面的展开项不显示图标
             if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
@@ -219,15 +219,17 @@ class ElementDraw:
 
     def draw_icon(self, layout):
         if self.draw_property.element_show_icon:
-            if self.is_draw_icon and not self.is_draw_property_bool:
+            if self.is_draw_context_toggle_operator_bool:
+                layout.label(text='', icon='BLANK1')
+            elif self.is_draw_icon:
                 layout.label(text='', icon_value=self.__get_icon__(self.icon))
             else:
                 layout.label(text='', icon='BLANK1')
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
-        if self.is_draw_property_bool:
-            layout.prop(self, 'enabled_property_toggle_icon')
+        if self.is_draw_context_toggle_operator_bool:
+            layout.label(text="use property toggle icon")
         else:
             row = layout.row(align=True)
             row.prop(self, 'enabled_icon')
