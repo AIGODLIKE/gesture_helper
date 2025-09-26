@@ -2,8 +2,6 @@
 
 which allows you to quickly use gestures to run the blender operator or change properties.
 
-![image](https://github.com/user-attachments/assets/da8f96e3-129e-462f-93aa-4b71bf16002a)
-
 <img width="1355" height="895" alt="image" src="https://github.com/user-attachments/assets/5086f258-922e-4f22-9447-2960c53545ab" />
 
 
