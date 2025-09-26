@@ -1,5 +1,5 @@
 {
-  "time": 1758855117.3876045,
+  "time": 1758881103.0729997,
   "blender_version": [
     4,
     5,
@@ -284,24 +284,24 @@
                           "element_type": "OPERATOR",
                           "icon": "NORMALS_FACE",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'VERT_NORMAL'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'VERT_NORMAL'}"
                         },
                         "1": {
                           "name": "Vertex Groups",
                           "element_type": "OPERATOR",
                           "icon": "GROUP_VERTEX",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'VERT_GROUPS'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'VERT_GROUPS'}"
                         },
                         "2": {
                           "name": "Amount of Connecting Edges",
                           "element_type": "OPERATOR",
                           "icon": "MOD_EDGESPLIT",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'VERT_EDGES'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'VERT_EDGES'}"
                         }
                       }
                     },
@@ -316,52 +316,52 @@
                           "element_type": "OPERATOR",
                           "icon": "MOD_LENGTH",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'EDGE_LENGTH'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_LENGTH'}"
                         },
                         "1": {
                           "name": "Direction",
                           "element_type": "OPERATOR",
                           "icon": "EMPTY_ARROWS",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'EDGE_DIR'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_DIR'}"
                         },
                         "2": {
                           "name": "Amount of Faces Around an Edge",
                           "element_type": "OPERATOR",
-                          "operator_properties": "{'type': 'EDGE_FACES'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_FACES'}"
                         },
                         "3": {
                           "name": "Face Angles",
                           "element_type": "OPERATOR",
-                          "operator_properties": "{'type': 'EDGE_FACE_ANGLE'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_FACE_ANGLE'}"
                         },
                         "4": {
                           "name": "Bevel",
                           "element_type": "OPERATOR",
                           "icon": "MOD_BEVEL",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'EDGE_BEVEL'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_BEVEL'}"
                         },
                         "5": {
                           "name": "Seam",
                           "element_type": "OPERATOR",
                           "icon": "EDGESEL",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'EDGE_SEAM'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_SEAM'}"
                         },
                         "6": {
                           "name": "Sharpness",
                           "element_type": "OPERATOR",
                           "icon": "SHARPCURVE",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'EDGE_SHARP'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'EDGE_SHARP'}"
                         }
                       }
                     },
@@ -376,50 +376,50 @@
                           "element_type": "OPERATOR",
                           "icon": "MATERIAL",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'FACE_MATERIAL'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_MATERIAL'}"
                         },
                         "1": {
                           "name": "Area",
                           "element_type": "OPERATOR",
                           "icon": "FACESEL",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'FACE_AREA'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_AREA'}"
                         },
                         "2": {
                           "name": "Perimeter",
                           "element_type": "OPERATOR",
                           "icon": "NETWORK_CONNECTION.png",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'FACE_PERIMETER'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_PERIMETER'}"
                         },
                         "3": {
                           "name": "Amount of Adjacent Faces",
                           "element_type": "OPERATOR",
-                          "operator_properties": "{'type': 'VERT_FACES'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'VERT_FACES'}"
                         },
                         "4": {
                           "name": "Normal",
                           "element_type": "OPERATOR",
-                          "operator_properties": "{'type': 'FACE_NORMAL'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_NORMAL'}"
                         },
                         "5": {
                           "name": "Coplanar",
                           "element_type": "OPERATOR",
-                          "operator_properties": "{'type': 'FACE_COPLANAR'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_COPLANAR'}"
                         },
                         "6": {
                           "name": "Flat/Smooth",
                           "element_type": "OPERATOR",
                           "icon": "MOD_SMOOTH",
                           "enabled_icon": true,
-                          "operator_properties": "{'type': 'FACE_SMOOTH'}",
-                          "operator_bl_idname": "mesh.select_similar"
+                          "operator_bl_idname": "mesh.select_similar",
+                          "operator_properties": "{'type': 'FACE_SMOOTH'}"
                         }
                       }
                     }

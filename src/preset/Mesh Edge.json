@@ -1,5 +1,5 @@
 {
-  "time": 1758855133.8181362,
+  "time": 1758881283.8611705,
   "blender_version": [
     4,
     5,
@@ -230,9 +230,9 @@
           "name": "Clear All Property",
           "element_type": "OPERATOR",
           "icon": "PANEL_CLOSE",
-          "operator_type": "SCRIPT",
           "enabled_icon": true,
           "direction": "6",
+          "operator_type": "SCRIPT",
           "operator_script": "bpy.ops.transform.edge_crease(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.transform.edge_bevelweight(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.mesh.mark_seam(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True, use_verts=True)\nbpy.ops.mesh.mark_freestyle_edge(clear=True)"
         }
       },

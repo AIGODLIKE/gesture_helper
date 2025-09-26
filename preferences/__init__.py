@@ -83,8 +83,7 @@ class GesturePreferences(PublicProperty,
                     res.pop("icon")
             if "operator_context" in res and res["operator_context"] == "INVOKE_DEFAULT":  # 默认值为INVOKE_DEFAULT
                 res.pop("operator_context")
-            if "operator_type" in res and res["operator_type"] == operator_type:  # 默认值为OPERATOR
-                print("pop operator_type", res)
+            if "operator_type" in res and res["operator_type"] == "OPERATOR":  # 默认值为OPERATOR
                 res.pop("operator_type")
             if "operator_properties" in res and res["operator_properties"] == "{}":  # 默认值为{}
                 res.pop("operator_properties")
