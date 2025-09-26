@@ -1,5 +1,5 @@
 {
-  "time": 1758793992.8151314,
+  "time": 1758847384.2107396,
   "blender_version": [
     4,
     5,
@@ -32,8 +32,7 @@
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_data_origin'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_data_origin'}"
             },
             "1": {
               "name": "Locations",
@@ -42,8 +41,7 @@
               "enabled_icon": true,
               "direction": "4",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_pivot_point_align'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_pivot_point_align'}"
             },
             "2": {
               "name": "Parents",
@@ -52,8 +50,7 @@
               "enabled_icon": true,
               "direction": "2",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'tool_settings.use_transform_skip_children'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.use_transform_skip_children'}"
             }
           }
         },
@@ -64,8 +61,7 @@
           "enabled_icon": true,
           "direction": "5",
           "operator_bl_idname": "wm.context_set_enum",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GLOBAL'}",
-          "operator_type": "OPERATOR"
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GLOBAL'}"
         },
         "2": {
           "name": "Local",
@@ -74,8 +70,7 @@
           "enabled_icon": true,
           "direction": "4",
           "operator_bl_idname": "wm.context_set_enum",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'LOCAL'}",
-          "operator_type": "OPERATOR"
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'LOCAL'}"
         },
         "3": {
           "name": "View",
@@ -91,8 +86,7 @@
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}"
             },
             "1": {
               "name": "Wireframe",
@@ -101,8 +95,7 @@
               "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}"
             },
             "2": {
               "name": "3D Cursor",
@@ -111,8 +104,7 @@
               "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "wm.context_toggle",
-              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}"
             }
           }
         },
@@ -130,8 +122,7 @@
               "enabled_icon": true,
               "direction": "5",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'VIEW'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'VIEW'}"
             },
             "1": {
               "name": "Normal",
@@ -140,8 +131,7 @@
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'NORMAL'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'NORMAL'}"
             },
             "2": {
               "name": "Gimbal",
@@ -150,8 +140,7 @@
               "enabled_icon": true,
               "direction": "4",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GIMBAL'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GIMBAL'}"
             },
             "3": {
               "name": "Parent",
@@ -160,8 +149,7 @@
               "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'PARENT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'PARENT'}"
             }
           }
         },
@@ -179,8 +167,7 @@
               "enabled_icon": true,
               "direction": "1",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'MEDIAN_POINT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'MEDIAN_POINT'}"
             },
             "1": {
               "name": "Individual Origins",
@@ -189,8 +176,7 @@
               "enabled_icon": true,
               "direction": "2",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'INDIVIDUAL_ORIGINS'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'INDIVIDUAL_ORIGINS'}"
             },
             "2": {
               "name": "3D Cursor",
@@ -199,8 +185,7 @@
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'CURSOR'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'CURSOR'}"
             },
             "3": {
               "name": "Bounding Box Center",
@@ -209,8 +194,7 @@
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'BOUNDING_BOX_CENTER'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'BOUNDING_BOX_CENTER'}"
             },
             "4": {
               "name": "Active Element",
@@ -219,8 +203,7 @@
               "enabled_icon": true,
               "direction": "8",
               "operator_bl_idname": "wm.context_set_enum",
-              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'ACTIVE_ELEMENT'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'ACTIVE_ELEMENT'}"
             }
           }
         },
@@ -231,8 +214,7 @@
           "enabled_icon": true,
           "direction": "2",
           "operator_bl_idname": "wm.context_set_enum",
-          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
-          "operator_type": "OPERATOR"
+          "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}"
         },
         "7": {
           "name": "Mesh Edit",
@@ -252,16 +234,14 @@
                   "element_type": "OPERATOR",
                   "direction": "3",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}"
                 },
                 "1": {
                   "name": "Y",
                   "element_type": "OPERATOR",
                   "direction": "2",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}"
                 },
                 "2": {
                   "name": "Merge by Distance",
@@ -270,16 +250,14 @@
                   "enabled_icon": true,
                   "direction": "1",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}"
                 },
                 "3": {
                   "name": "Z",
                   "element_type": "OPERATOR",
                   "direction": "8",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}"
                 }
               }
             }
