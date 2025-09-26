@@ -31,6 +31,12 @@ def including_chinese(text) -> bool:
 
 
 @cache
+def contains_uppercase(s) -> bool:
+    """只要包含大写"""
+    return any(char.isupper() for char in s)
+
+
+@cache
 def has_special_characters(input_string):
     """
     检查字符串是否包含字母、数字和下划线之外的字符

@@ -1,4 +1,5 @@
 import math
+import re
 from functools import cache
 
 import blf
@@ -9,7 +10,7 @@ from bl_operators.wm import context_path_validate
 from gpu_extras.presets import draw_circle_2d
 from mathutils import Vector
 
-from ..utils import including_chinese, has_special_characters
+from ..utils import including_chinese, has_special_characters, contains_uppercase
 from ..utils.color import linear_to_srgb
 from ..utils.gpu import get_now_2d_offset_position
 from ..utils.public import get_pref, get_gesture_extension_items
@@ -50,7 +51,9 @@ class ElementGpuProperty:
 
     @property
     def text_dimensions(self) -> tuple:
-        return from_text_get_dimensions(self.text, self.text_size)
+        mh = self.text_size
+        x, y = from_text_get_dimensions(self.text, self.text_size)
+        return x, max(mh, y)
 
     @property
     def text(self) -> str:
@@ -200,7 +203,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             elif has_special_characters(text):  # 特殊字符
                 offset = [0, h * 0.1]
             else:  # 只有英文
-                offset = [0, h * 0.355]
+                if contains_uppercase(text):  # 包含大写
+                    offset = [0, h * .09]
+                elif bool(re.search(r'j', text)):  # 小写的j是上下都有
+                    offset = [0, h * .2]
+                elif bool(re.search(r'[tidfhklb]*', text)):  # 上部分
+                    offset = [0, h * .2]
+                elif bool(re.search(r'[qypg]*', text)):  # 下部分
+                    offset = [0, h * .2]
+                else:  # 中部 weruopaszxcvnm
+                    offset = [0, h * 0.355]
             if fix_offset:
                 gpu.matrix.translate(offset)
             self.draw_text(text, position=[0, 0], color=self.text_color, size=self.text_size, auto_offset=False)
@@ -208,17 +220,17 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             gpu.matrix.translate((w, 0))
 
     def gpu_draw_icon(self, use_offset=True):
-        w, h = self.text_dimensions
-        if self.is_draw_context_toggle_operator_bool and getattr(self, "extension_icon_size", None):
-            h = self.extension_icon_size
+        w, icon_size = self.text_dimensions
         if self.is_draw_icon:
             icon = self.icon
             if self.is_draw_context_toggle_operator_bool:
+                if self.parent_is_extension:
+                    icon_size = self.parent_element.max_height_dimensions
                 if self.get_operator_wm_context_toggle_property_bool:
                     icon = "CHECKBOX_HLT"
                 else:
                     icon = "CHECKBOX_DEHLT"
-            self.draw_image([0, -h], h, h, texture=Texture.get_texture(icon))
+            self.draw_image([0, -icon_size], icon_size, icon_size, texture=Texture.get_texture(icon))
             if use_offset:
                 gpu.matrix.translate((self.icon_offset_width, 0))
 
