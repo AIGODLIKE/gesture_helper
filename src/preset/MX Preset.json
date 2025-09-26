@@ -599,7 +599,7 @@
                       "enabled_icon": true,
                       "direction": "4",
                       "operator_bl_idname": "wm.context_toggle",
-                      "operator_properties": "{}",
+                      "operator_properties": "{'data_path': 'space_data.show_gizmo'}",
                       "operator_type": "OPERATOR"
                     },
                     "2": {
@@ -655,7 +655,7 @@
                   "enabled_icon": true,
                   "direction": "6",
                   "operator_bl_idname": "wm.context_toggle",
-                  "operator_properties": "{}",
+                  "operator_properties": "{'data_path': 'space_data.overlay.show_overlays'}",
                   "operator_type": "OPERATOR"
                 },
                 "2": {
@@ -716,7 +716,7 @@
                           "enabled_icon": true,
                           "direction": "7",
                           "operator_bl_idname": "wm.context_toggle",
-                          "operator_properties": "{}",
+                          "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
                           "operator_type": "OPERATOR"
                         },
                         "1": {
