@@ -100,6 +100,11 @@ class PublicCacheFunc(PublicCache):
         get_gesture_direction_items.cache_clear()
 
     @staticmethod
+    def gesture_extension_cache_clear():
+        from .public import get_gesture_extension_items
+        get_gesture_extension_items.cache_clear()
+
+    @staticmethod
     def cache_clear():
         cls = PublicCacheFunc
         if cls.__is_updatable__:
@@ -109,3 +114,4 @@ class PublicCacheFunc(PublicCache):
             cls.gesture_cache_clear()
             cls.element_cache_clear()
             cls.gesture_direction_cache_clear()
+            cls.gesture_extension_cache_clear()

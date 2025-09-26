@@ -5,7 +5,8 @@ from bpy.props import CollectionProperty, IntProperty
 
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
-from .element_gpu_draw import ElementGpuDraw
+from .element_extension import ElementExtension
+from .element_gpu_draw import ElementGpuDraw, ElementGpuExtensionItem
 from .element_operator import ElementOperator
 from .element_poll import ElementPoll
 from .element_property import ElementProperty
@@ -18,10 +19,12 @@ from ..utils.public_cache import cache_update_lock
 class Element(ElementCURE,
               ElementDraw,
               ElementGpuDraw,
+              ElementGpuExtensionItem,
               ElementOperator,
               ElementPoll,
               ElementProperty,
               ElementRelationship,
+              ElementExtension,
 
               PublicProperty,
 
@@ -32,6 +35,9 @@ class Element(ElementCURE,
     @cache_update_lock
     def __init_element__(self):
         getattr(self, f'__init_{self.element_type.lower()}__')()
+
+    def __init_dividing_line__(self):
+        self.name = "------------"
 
     @property
     def name_translate(self) -> str:

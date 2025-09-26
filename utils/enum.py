@@ -41,6 +41,7 @@ ENUM_ELEMENT_TYPE = [
     ('SELECTED_STRUCTURE', 'Sel Structure', 'Select structure'),
     ('CHILD_GESTURE', 'Child', 'Child gesture'),
     ('OPERATOR', 'Op', 'Operator'),
+    ('DIVIDING_LINE', 'Div', 'Dividing line'),
 ]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 

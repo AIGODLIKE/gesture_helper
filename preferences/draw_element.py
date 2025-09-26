@@ -93,8 +93,8 @@ class DrawElement:
         ).cancel_cut = False
         row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel paste').cancel_cut = True
 
-    @staticmethod
-    def draw_element_add_property(layout: 'bpy.types.UILayout') -> None:
+    @classmethod
+    def draw_element_add_property(cls, layout: 'bpy.types.UILayout') -> None:
         from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
         from ..element import ElementCURE
 
@@ -105,7 +105,7 @@ class DrawElement:
         add_child = add.is_have_add_child
 
         if bpy.context.region.width < 2000:
-            split = layout.box().column(align=True)
+            split = layout.box().column(align=False)
         else:
             split = layout.split(factor=.4)
 
@@ -121,11 +121,16 @@ class DrawElement:
             element_row = sub_row.row(align=True)
             element_row.separator()
             element_row.label(text='Add item:')
+
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i != 'SELECTED_STRUCTURE':
-                    ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
-                    ops.element_type = i
-                    ops.relationship = relationship
+                    if i == "DIVIDING_LINE":
+                        cls.draw_element_add_div_property(element_row)
+                    else:
+                        ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
+                        ops.element_type = i
+                        ops.relationship = relationship
+
             element_row.separator()
             for i, n, d in ENUM_SELECTED_TYPE:
                 ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
@@ -134,3 +139,34 @@ class DrawElement:
                 ops.relationship = relationship
         else:
             sub_row.row(align=True).label(text="Cannot add child to 'operator'")
+
+    @classmethod
+    def draw_element_add_div_property(cls, layout: 'bpy.types.UILayout') -> None:
+        from ..element import ElementCURE
+        pref = get_pref()
+        add = pref.add_element_property
+        relationship = add.relationship
+        active = pref.active_element
+        is_alert = False
+
+        if relationship == "ROOT":
+            is_alert = True
+        elif relationship == "SAME":
+            if active and active.parent_element and active.parent_is_extension:
+                ...
+            else:
+                is_alert = True
+        elif relationship == "CHILD" and active:
+            is_e = active.is_child_gesture and (active.direction == "9" or active.parent_is_extension)
+            if is_e or active.is_selected_structure:
+                ...
+            else:
+                is_alert = True
+
+        if is_alert:
+            layout = layout.row(align=True)
+            layout.active = False
+
+        ops = layout.operator(ElementCURE.ADD.bl_idname, text="Div")
+        ops.element_type = "DIVIDING_LINE"
+        ops.relationship = relationship

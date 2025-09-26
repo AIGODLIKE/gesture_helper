@@ -2,8 +2,9 @@
 # 切换
 
 import bpy
-from bpy.props import StringProperty
 from bpy.app.translations import pgettext_iface
+from bpy.props import StringProperty
+
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..gesture.gesture_handle import GestureHandle
@@ -15,9 +16,11 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     bl_idname = 'gesture.operator'
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
+    extension_hover = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.extension_hover = []
         self.screen = None
         self.area = None
 
@@ -48,17 +51,17 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             return pass_d
 
         wm = context.window_manager
-        self.timer = wm.event_timer_add(1 / 5, window=context.window)
+        self.timer = wm.event_timer_add(1 / 24, window=context.window)
         wm.modal_handler_add(self)
         if self.is_debug:
             print(self.bl_idname, event.type, event.value)
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.init_module(event)
-        if self.is_debug:
-            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
+        # if self.is_debug:
+        #     print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         if self.try_immediate_implementation():
             self.__exit_modal__()
             return {"FINISHED"}
@@ -90,8 +93,6 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 self.try_pass_through_keymap(context, event)
                 print()
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
-        else:
-            self.report({'INFO'}, self.direction_element.name_translate)
         return {'FINISHED'}
 
     def cancel(self, context):
@@ -103,9 +104,32 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         wm.event_timer_remove(self.timer)
 
     def try_immediate_implementation(self):
+        """尝试立即执行操作"""
         if self.gesture_property.immediate_implementation:
             de = self.direction_element
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
                 if de.is_operator:
                     res = self.try_running_operator(self)
                     return res
+
+    @property
+    def mouse_is_in_extension_any_area(self) -> bool:
+        if self.extension_element and len(self.extension_hover):
+            for (index, last) in enumerate(self.extension_hover):
+                if (
+                        last.extension_by_child_is_hover or
+                        last.mouse_is_in_extension_area or
+                        last.mouse_is_in_extension_vertical_outside_area or
+                        last.mouse_is_in_extension_right_outside_area
+                ):
+                    return True
+
+                for item in last.extension_items:
+                    if (
+                            item.extension_by_child_is_hover or
+                            item.mouse_is_in_extension_area or
+                            item.mouse_is_in_extension_vertical_outside_area or
+                            item.mouse_is_in_extension_right_outside_area
+                    ):
+                        return True
+        return False

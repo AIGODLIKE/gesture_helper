@@ -2,8 +2,8 @@ import bpy
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
-from ..utils.property import set_property_to_kmi_properties
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
+from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.secure_call import secure_call_eval, secure_call_exec
 
@@ -46,6 +46,7 @@ class OperatorProperty:
 
     @cache_update_lock
     def update_operator_properties(self) -> None:
+        print("update_operator_properties:", self.operator_properties)
         self.to_operator_tmp_kmi()
 
     operator_bl_idname: StringProperty(name='Operator bl_idname',
@@ -56,6 +57,7 @@ class OperatorProperty:
                                    items=ENUM_OPERATOR_CONTEXT)
 
     operator_properties: StringProperty(name='Operator Property',
+                                        default="{}",
                                         update=lambda self, context: self.update_operator_properties())
 
     operator_type: EnumProperty(name='Operator Type',
@@ -91,11 +93,15 @@ class OperatorProperty:
         try:
             return secure_call_eval(self.operator_properties)
         except Exception as e:
-            print('Properties Error', self.operator_properties, e.args)
+            print('Properties Error')
+            print(self.name)
+            print(f"bpy.ops.{self.operator_bl_idname}")
+            print(self.operator_properties)
+            print(e.args)
             import traceback
             traceback.print_stack()
             traceback.print_exc()
-            self.operator_properties = "{}"
+            self['operator_properties'] = "{}"
             return {}
 
     @property
@@ -167,9 +173,12 @@ class ElementOperator(OperatorProperty):
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """从临时 keymap item 更新到属性"""
-        properties = self.operator_tmp_kmi_properties
-        if self.properties != properties:
-            self['operator_properties'] = str(properties)
+        print("from_tmp_kmi_operator_update_properties", )
+        temp_kmi_properties = self.operator_tmp_kmi_properties
+        print(temp_kmi_properties)
+        print(self.properties)
+        if self.properties != temp_kmi_properties:
+            self['operator_properties'] = str(temp_kmi_properties)
 
     def running_operator(self) -> Exception:
         """运行此元素的操作符

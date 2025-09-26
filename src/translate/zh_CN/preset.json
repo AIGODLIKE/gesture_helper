@@ -44,5 +44,10 @@
   "Clear Crease": "清理折痕",
   "Clear All Property": "清理所有属性",
   "Set edge properties to quickly add or clean up": "设置边属性,快速添加或清理",
-  "Mesh Edge Property": "网格边属性"
+  "Mesh Edge Property": "网格边属性",
+  "Extension Menu": "扩展菜单",
+  "Bezier Circle": "贝塞尔圆",
+  "Dividing_Line": "分割线",
+  "Reference Image": "参考图",
+  "Child_Gesture": "子级手势"
 }

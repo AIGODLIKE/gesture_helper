@@ -192,6 +192,8 @@ class ElementCURE:
             ae = self.active_element
             if ae:
                 ae.radio = True
+                parent = ae.parent
+                parent.element.move(len(parent.element) - 1, ae.index+1)
 
             self.cache_clear()
             bpy.ops.wm.save_userpref()

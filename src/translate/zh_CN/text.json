@@ -134,7 +134,10 @@
   "Text Active Color": "文字活动颜色",
   "Mouse Track Color": "鼠标轨迹颜色",
   "Gesture Track Color": "手势轨迹颜色",
+  "Dividing Line Color": "分割线颜色",
   "Panel Name": "面板名称",
+  "Extension Offset": "扩展偏移",
+  "Dividing Line Height": "分割线高度",
   "Auto Update Operator Property": "自动更新操作属性",
   "Initialized addon": "已初始化插件",
   "Dynamic enumeration properties cannot be added!!": "动态枚举属性无法添加!!",
@@ -321,5 +324,10 @@
   "Operator Run Error,Please check the console": "操作符运行错误,请检查控制台",
   "Rounded corner size": "圆角大小",
   "Mesh Edge": "网格边",
-  "Draw child Icon": "绘制子级图标"
+  "Draw child Icon": "绘制子级图标",
+  "Child Icon": "子级图标",
+  "No child level, please add": "无子级,请添加",
+  "Div": "分隔",
+  "Property Icon": "属性图标",
+  "Draw Toggle property operator icon": "绘制切换属性操作图标"
 }

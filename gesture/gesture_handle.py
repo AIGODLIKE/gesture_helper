@@ -27,16 +27,32 @@ class GestureHandle:
         if (distance < return_distance) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
             self.gesture_direction_cache_clear()
+            self.gesture_extension_cache_clear()
 
     def try_running_operator(self, ops):
         """尝试运行手势"""
+        # 运行扩展的操作符
+        if self.extension_element and len(self.extension_hover):
+            last = self.extension_hover[-1]
+            for item in last.extension_items:
+                if item.extension_by_child_is_hover and item.is_operator:
+                    error = item.running_operator()
+                    if error is not None:
+                        from bpy.app.translations import pgettext_iface
+                        ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+                    ops.report({'INFO'}, item.name_translate)
+                    return True
+
         element = self.direction_element
-        if self.is_beyond_threshold_confirm and element and element.is_operator:
+        if element and element.is_operator and (self.is_beyond_threshold_confirm or element.mouse_is_in_area):
             error = element.running_operator()
             if error is not None:
                 from bpy.app.translations import pgettext_iface
                 ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+            ops.report({'INFO'}, element.name_translate)
             return True
+
+        return False
 
     def init_trajectory(self):
         """初始化轨迹信息"""
@@ -46,13 +62,16 @@ class GestureHandle:
         self.trajectory_mouse_move_time = []
         self.trajectory_tree = GesturePointKDTree()
         self.draw_trajectory_mouse_move = False
+        self.last_mouse_mouse_time = time.time()
 
-    def event_trajectory(self, context, event):
+    def trajectory_event_update(self, context, event):
         """事件轨迹"""
         self.area = context.area
         self.screen = context.screen
         if event.type != "TIMER":
             self.move_count += 1
+        if event.type == "MOUSEMOVE":
+            self.last_mouse_mouse_time = time.time()
         self.event_count += 1
         emp = self.__mouse_position__
         if self.event_count > 2:
@@ -63,8 +82,20 @@ class GestureHandle:
             if not len(self.trajectory_tree):
                 self.trajectory_tree.append(None, emp)
             if self.is_access_child_gesture:
-                self.trajectory_tree.append(self.direction_element, emp)
-                self.gesture_direction_cache_clear()
+
+                if self.is_have_extension_item and self.direction_element.direction == "7":
+                    if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
+                        self.trajectory_tree.append(self.direction_element, emp)
+                        self.gesture_direction_cache_clear()
+                        self.gesture_extension_cache_clear()
+                else:
+                    self.trajectory_tree.append(self.direction_element, emp)
+                    self.gesture_direction_cache_clear()
+                    self.gesture_extension_cache_clear()
             if self.is_draw_gesture:
                 self.check_return_previous()
         self.tag_redraw()
+
+    @property
+    def is_have_extension_item(self) -> bool:
+        return self.is_draw_gesture and "9" in self.direction_items

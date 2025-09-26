@@ -80,6 +80,29 @@ def get_gesture_direction_items(iteration):
     return direction
 
 
+@cache
+def get_gesture_extension_items(iteration):
+    extension = []
+    last_selected_structure = None  # 如果不是连续的选择结构
+    for item in iteration:
+        if item.is_selected_structure:  # 是选择结构
+            if item.__selected_structure_is_validity__:  # 是可用的选择结构
+                # 是True
+                poll = (item.is_selected_else or item.poll_bool)
+                if poll and (not last_selected_structure or item.is_selected_if):
+                    child = get_gesture_extension_items(item.element)
+                    extension.extend(child)
+                    last_selected_structure = item
+            continue  # 不运行后面的
+        elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
+            # 是子项或者是操作符
+            if item.enabled:
+                extension.append(item)
+        if item.enabled:  # 如果不是选择结构并
+            last_selected_structure = None
+    return extension
+
+
 def update(func):
     def w(*args, **kwargs):
         self = args[0]
@@ -146,6 +169,7 @@ class PublicProperty(PublicCacheFunc):
             for element in act_ges.element_iteration:
                 if element.radio:
                     return element
+        return None
 
     @classmethod
     def update_state(cls):

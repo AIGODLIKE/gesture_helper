@@ -48,7 +48,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         """是绘制手势的布尔值"""
         if self.draw_trajectory_mouse_move:
             return True
-        return self.operator_time is not None
+        return self.last_move_mouse_timeout
 
     def __sync_gesture__(self):
         """同步手势名称"""
@@ -71,7 +71,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.offset_position = self.start_mouse_position
 
         self.init_trajectory()
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.register_draw()
 
         wm = context.window_manager
@@ -91,7 +91,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.__sync_gesture__()
 
         self.init_module(event)
-        self.event_trajectory(context, event)
+        self.trajectory_event_update(context, event)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
 
         res = self.gpu.draw_run(self, event)

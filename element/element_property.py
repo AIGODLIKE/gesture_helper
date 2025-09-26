@@ -44,6 +44,10 @@ class ElementAddProperty:
         return self.element_type == 'OPERATOR'
 
     @property
+    def is_dividing_line(self) -> bool:
+        return self.element_type == 'DIVIDING_LINE'
+
+    @property
     def is_child_relationship(self) -> bool:
         return self.relationship == 'CHILD'
 
@@ -68,6 +72,93 @@ class ElementAddProperty:
     @property
     def is_selected_else(self) -> bool:
         return self.selected_type == 'ELSE'
+
+    @property
+    def parent_is_extension(self) -> bool:  # 父级是扩展项,就是底部的菜单
+        pe = self.parent_element
+        if pe:
+            if pe.parent_is_extension:
+                return True
+            if pe.direction == "9":
+                return True
+        return False
+
+    @property
+    def extension_by_child_is_hover(self) -> bool:
+        """此项是显示为扩展子级并且是hover悬停"""
+        ops = getattr(self, "ops", None)
+        area = getattr(self, "extension_by_child_draw_area", None)
+        if ops and area:
+            x1, y1, x2, y2 = area
+            x, y = ops.event.mouse_region_x, ops.event.mouse_region_y
+            return x1 < x < x2 and y1 < y < y2
+        return False
+
+    @property
+    def mouse_is_in_area(self) -> bool:
+        if item := getattr(self, "item_draw_area", None):
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            return x1 < x < x2 and y1 < y < y2
+        return False
+
+    @property
+    def mouse_is_in_extension_area(self) -> bool:
+        """鼠标是在扩展区域的
+        当前扩展的子级绘制区域
+        """
+        if item := getattr(self, "extension_draw_area", None):
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            return x1 < x < x2 and y1 < y < y2
+        return False
+
+    @property
+    def mouse_is_in_extension_vertical_outside_area(self) -> bool:
+        """鼠标是在扩展区域外的
+        当前扩展的子级绘制区域
+        """
+        if item := getattr(self, "extension_draw_area", None):
+            w, h = self.extension_dimensions
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+
+            yl = y1 - h < y < y1
+            yu = y2 < y < y2 + h
+
+            y_ok = yl or yu
+            x_ok = x1 < x < x2
+            return x_ok and y_ok
+        return False
+
+    @property
+    def mouse_is_in_extension_vertical_area(self) -> bool:
+        """鼠标是在扩展垂直区域
+        """
+        if item := getattr(self, "extension_draw_area", None):
+            x1, y1, x2, y2 = item
+            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            x_ok = x1 < x < x2
+            return x_ok
+        return False
+
+    @property
+    def mouse_is_in_extension_right_outside_area(self) -> bool:
+        """
+        鼠标在区域外部并且是最后一个
+        """
+        if extension_hover := getattr(self.ops, "extension_hover", None):
+            is_last = len(extension_hover) > 1 and extension_hover[-1] == self
+            if is_last:
+                if item := getattr(self, "extension_draw_area", None):
+                    w, h = self.extension_dimensions
+                    x1, y1, x2, y2 = item
+                    x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+
+                    y_ok = y1 - h < y < y2 + h
+                    x_ok = x2 < x < x2 + w
+                    return x_ok and y_ok
+        return False
 
 
 class ElementIcon:
@@ -99,6 +190,8 @@ class ElementIcon:
     @property
     def is_draw_icon(self):
         """是绘制图标"""
+        if self.is_draw_context_toggle_operator_bool:  # 绘制鼠标切换按钮
+            return self.draw_property.element_draw_property_toggle_icon
         return self.is_have_icon and self.is_show_icon
 
     @property

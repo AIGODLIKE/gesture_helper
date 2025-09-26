@@ -1,140 +1,196 @@
 {
-  "time": 1735267892.5495532,
+  "time": 1758881096.1482086,
   "blender_version": [
     4,
-    2,
+    5,
     3
   ],
   "addon_version": [
     2,
-    0,
-    8
+    1,
+    9
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
   "gesture": {
     "0": {
       "name": "Maya Operator",
-      "enabled": true,
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
       "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Font\", \"Lattice\", \"Pose\"]",
       "element": {
         "0": {
           "name": "Object Mode",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
           "selected_type": "IF",
           "poll_string": "(C.mode == \"OBJECT\")",
           "element": {
             "0": {
               "name": "UV Sphere",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MESH_UVSPHERE",
               "enabled_icon": true,
               "direction": "1",
-              "operator_bl_idname": "mesh.primitive_uv_sphere_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_uv_sphere_add"
             },
             "1": {
               "name": "Circle",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MESH_CIRCLE",
               "enabled_icon": true,
               "direction": "2",
-              "operator_bl_idname": "mesh.primitive_circle_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_circle_add"
             },
             "2": {
               "name": "Add Tool",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "ADD",
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "wm.tool_set_by_id",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'name': 'builtin.primitive_cube_add', 'as_fallback': True, 'cycle': True}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'name': 'builtin.primitive_cube_add', 'as_fallback': True, 'cycle': True}"
             },
             "3": {
               "name": "Plane",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "SNAP_FACE",
               "enabled_icon": true,
               "direction": "4",
-              "operator_bl_idname": "mesh.primitive_plane_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_plane_add"
             },
             "4": {
               "name": "Cylinder",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MESH_CYLINDER",
               "enabled_icon": true,
               "direction": "5",
-              "operator_bl_idname": "mesh.primitive_cylinder_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_cylinder_add"
             },
             "5": {
               "name": "Cone",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CONE",
               "enabled_icon": true,
               "direction": "6",
-              "operator_bl_idname": "mesh.primitive_cone_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_cone_add"
             },
             "6": {
               "name": "Cube",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CUBE",
               "enabled_icon": true,
               "direction": "7",
-              "operator_bl_idname": "mesh.primitive_cube_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_cube_add"
             },
             "7": {
               "name": "Torus",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MESH_TORUS",
               "enabled_icon": true,
               "direction": "8",
-              "operator_bl_idname": "mesh.primitive_torus_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "mesh.primitive_torus_add"
+            },
+            "8": {
+              "name": "Extension Menu",
+              "element_type": "CHILD_GESTURE",
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "Ico Sphere",
+                  "element_type": "OPERATOR",
+                  "icon": "MESH_ICOSPHERE",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "mesh.primitive_ico_sphere_add"
+                },
+                "1": {
+                  "name": "Grid",
+                  "element_type": "OPERATOR",
+                  "icon": "MESH_GRID",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "mesh.primitive_grid_add"
+                },
+                "2": {
+                  "name": "Monkey",
+                  "element_type": "OPERATOR",
+                  "icon": "MESH_MONKEY",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "mesh.primitive_monkey_add"
+                },
+                "3": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "4": {
+                  "name": "Bezier",
+                  "element_type": "OPERATOR",
+                  "icon": "CURVE_BEZCURVE",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "curve.primitive_bezier_curve_add"
+                },
+                "5": {
+                  "name": "Bezier Circle",
+                  "element_type": "OPERATOR",
+                  "icon": "CURVE_BEZCIRCLE",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "curve.primitive_bezier_circle_add"
+                },
+                "6": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "7": {
+                  "name": "Nurbs Curve",
+                  "element_type": "OPERATOR",
+                  "icon": "SURFACE_NCURVE",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "curve.primitive_nurbs_curve_add"
+                },
+                "8": {
+                  "name": "Nurbs Cylinder",
+                  "element_type": "OPERATOR",
+                  "icon": "SURFACE_NCYLINDER",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "surface.primitive_nurbs_surface_cylinder_add"
+                },
+                "9": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "10": {
+                  "name": "Metaball",
+                  "element_type": "OPERATOR",
+                  "icon": "META_BALL",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "object.metaball_add",
+                  "operator_context": "EXEC_DEFAULT"
+                },
+                "11": {
+                  "name": "Text",
+                  "element_type": "OPERATOR",
+                  "icon": "OUTLINER_OB_FONT",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "object.text_add"
+                },
+                "12": {
+                  "name": "Reference Image",
+                  "element_type": "OPERATOR",
+                  "icon": "IMAGE_BACKGROUND",
+                  "enabled_icon": true,
+                  "operator_bl_idname": "object.empty_image_add",
+                  "operator_properties": "{'background': True}"
+                }
+              }
             }
           }
         },
         "1": {
-          "name": "Edit Mode",
+          "name": "Mesh Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_MESH\")",
           "element": {
             "0": {
               "name": "Merge",
               "element_type": "CHILD_GESTURE",
-              "enabled": true,
               "icon": "AUTOMERGE_OFF",
               "enabled_icon": true,
               "direction": "3",
@@ -142,76 +198,59 @@
                 "0": {
                   "name": "At Center",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "SNAP_FACE_CENTER",
                   "enabled_icon": true,
                   "direction": "3",
                   "operator_bl_idname": "mesh.merge",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'CENTER'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'CENTER'}"
                 },
                 "1": {
                   "name": "At Cursor",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "PIVOT_CURSOR",
                   "enabled_icon": true,
                   "direction": "4",
                   "operator_bl_idname": "mesh.merge",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'CURSOR'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'CURSOR'}"
                 },
                 "2": {
                   "name": "Collapse",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MESH_ICOSPHERE",
                   "enabled_icon": true,
                   "direction": "2",
                   "operator_bl_idname": "mesh.merge",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'COLLAPSE'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'COLLAPSE'}"
                 },
                 "3": {
                   "name": "At First",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "ANCHOR_LEFT",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "mesh.merge",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'FIRST'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'FIRST'}"
                 },
                 "4": {
                   "name": "At Last",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "ANCHOR_RIGHT",
                   "enabled_icon": true,
                   "direction": "1",
                   "operator_bl_idname": "mesh.merge",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'type': 'LAST'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'type': 'LAST'}"
                 }
               }
             },
             "1": {
               "name": "Select Vertex",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
               "selected_type": "IF",
               "poll_string": "(tool.mesh_select_mode[0] == True)",
               "element": {
                 "0": {
                   "name": "Smooth",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "MOD_SMOOTH",
                   "enabled_icon": true,
                   "direction": "2",
@@ -219,114 +258,100 @@
                     "0": {
                       "name": "Smooth Vertices",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_SMOOTH",
                       "enabled_icon": true,
                       "direction": "2",
                       "operator_bl_idname": "mesh.vertices_smooth",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'factor': 0.5}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'factor': 0.5}"
                     },
                     "1": {
                       "name": "Smooth Laplacian",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "SMOOTHCURVE",
                       "enabled_icon": true,
                       "direction": "1",
-                      "operator_bl_idname": "mesh.vertices_smooth_laplacian",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.vertices_smooth_laplacian"
                     }
                   }
                 },
                 "1": {
                   "name": "Connect Vertex Pairs",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "UV_VERTEXSEL",
                   "enabled_icon": true,
                   "direction": "1",
-                  "operator_bl_idname": "mesh.vert_connect",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.vert_connect"
                 },
                 "2": {
                   "name": "Bevel Vertices",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_BEVEL",
                   "enabled_icon": true,
                   "direction": "6",
-                  "operator_bl_idname": "mesh.bevel",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.bevel"
                 },
                 "3": {
                   "name": "Knife",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "CUT",
                   "enabled_icon": true,
                   "direction": "4",
                   "operator_bl_idname": "wm.tool_set_by_id",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{'name': 'builtin.knife'}",
-                  "operator_type": "OPERATOR"
+                  "operator_properties": "{'name': 'builtin.knife'}"
                 },
                 "4": {
                   "name": "Make Vertex Parent",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "ORIENTATION_PARENT",
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "object.vertex_parent_set",
-                  "operator_context": "EXEC_AREA",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_context": "EXEC_AREA"
                 },
                 "5": {
                   "name": "Vertex Crease",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "UV_EDGESEL",
                   "enabled_icon": true,
                   "direction": "8",
-                  "operator_bl_idname": "transform.vert_crease",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "transform.vert_crease"
+                },
+                "6": {
+                  "name": "Child_Gesture",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "9",
+                  "element": {
+                    "0": {
+                      "name": "Blend from Shape",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.blend_from_shape"
+                    },
+                    "1": {
+                      "name": "Propagate to Shapes",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.shape_propagate_to_all"
+                    }
+                  }
                 }
               }
             },
             "2": {
               "name": "Select Edge",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(tool.mesh_select_mode[1] == True)",
               "element": {
                 "0": {
                   "name": "Bridge Edge Loops",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "SNAP_EDGE",
                   "enabled_icon": true,
                   "direction": "4",
-                  "operator_bl_idname": "mesh.bridge_edge_loops",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.bridge_edge_loops"
                 },
                 "1": {
                   "name": "Subdivide",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "MOD_SUBSURF",
                   "enabled_icon": true,
                   "direction": "2",
@@ -334,45 +359,30 @@
                     "0": {
                       "name": "Subdivide",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_SUBSURF",
                       "enabled_icon": true,
                       "direction": "2",
-                      "operator_bl_idname": "mesh.subdivide",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.subdivide"
                     },
                     "1": {
                       "name": "Subdivide Edge-Ring",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "1",
-                      "operator_bl_idname": "mesh.subdivide_edgering",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.subdivide_edgering"
                     },
                     "2": {
                       "name": "Un-Subdivide",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_REMESH",
                       "enabled_icon": true,
                       "direction": "3",
-                      "operator_bl_idname": "mesh.unsubdivide",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.unsubdivide"
                     }
                   }
                 },
                 "2": {
                   "name": "Rotate Edge",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "CON_ROTLIMIT",
                   "enabled_icon": true,
                   "direction": "1",
@@ -380,57 +390,34 @@
                     "0": {
                       "name": "Rotate Edge CW",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "LOOP_FORWARDS",
                       "enabled_icon": true,
                       "direction": "1",
                       "operator_bl_idname": "mesh.edge_rotate",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'use_ccw': False}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'use_ccw': False}"
                     },
                     "1": {
                       "name": "Rotate Edge CCW",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "LOOP_BACK",
                       "enabled_icon": true,
                       "direction": "8",
                       "operator_bl_idname": "mesh.edge_rotate",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'use_ccw': True}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'use_ccw': True}"
                     }
                   }
                 },
                 "3": {
                   "name": "Screw",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_SCREW",
                   "enabled_icon": true,
                   "direction": "6",
-                  "operator_bl_idname": "mesh.screw",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.screw"
                 },
                 "4": {
-                  "name": "Edge Slide",
-                  "element_type": "OPERATOR",
-                  "enabled": true,
-                  "icon": "MOD_OFFSET",
-                  "enabled_icon": true,
-                  "direction": "7",
-                  "operator_bl_idname": "transform.edge_slide",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
-                },
-                "5": {
                   "name": "Edge Property",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "EDGESEL",
                   "enabled_icon": true,
                   "direction": "8",
@@ -438,7 +425,6 @@
                     "0": {
                       "name": "Freestyle",
                       "element_type": "CHILD_GESTURE",
-                      "enabled": true,
                       "icon": "SEQ_LUMA_WAVEFORM",
                       "enabled_icon": true,
                       "direction": "1",
@@ -446,33 +432,22 @@
                         "0": {
                           "name": "Mark Freestyle Edge",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "6",
                           "operator_bl_idname": "mesh.mark_freestyle_edge",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': False}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': False}"
                         },
                         "1": {
                           "name": "Clear Freestyle Edge",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "7",
                           "operator_bl_idname": "mesh.mark_freestyle_edge",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': True}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': True}"
                         }
                       }
                     },
                     "1": {
                       "name": "Sharp",
                       "element_type": "CHILD_GESTURE",
-                      "enabled": true,
                       "icon": "SHARPCURVE",
                       "enabled_icon": true,
                       "direction": "8",
@@ -480,57 +455,36 @@
                         "0": {
                           "name": "Mark Sharp",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "8",
                           "operator_bl_idname": "mesh.mark_sharp",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': False}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': False}"
                         },
                         "1": {
                           "name": "Clear Sharp",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "7",
                           "operator_bl_idname": "mesh.mark_sharp",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': True}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': True}"
                         },
                         "2": {
                           "name": "Mark Sharp from Vertices",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "6",
                           "operator_bl_idname": "mesh.mark_sharp",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': False, 'use_verts': True}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': False, 'use_verts': True}"
                         },
                         "3": {
                           "name": "Clear Sharp from Vertices",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "5",
                           "operator_bl_idname": "mesh.mark_sharp",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': True, 'use_verts': True}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': True, 'use_verts': True}"
                         }
                       }
                     },
                     "2": {
                       "name": "Seam",
                       "element_type": "CHILD_GESTURE",
-                      "enabled": true,
                       "icon": "MOD_EDGESPLIT",
                       "enabled_icon": true,
                       "direction": "7",
@@ -538,45 +492,30 @@
                         "0": {
                           "name": "Mark Seam",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "7",
                           "operator_bl_idname": "mesh.mark_seam",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': False}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': False}"
                         },
                         "1": {
                           "name": "Clear Seam",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "8",
                           "operator_bl_idname": "mesh.mark_seam",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{'clear': True}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'clear': True}"
                         }
                       }
                     },
                     "3": {
                       "name": "Clear Edge Crease",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "2",
                       "operator_bl_idname": "transform.edge_crease",
                       "operator_context": "EXEC_DEFAULT",
-                      "operator_properties": "{'value': -1.0}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'value': -1.0}"
                     },
                     "4": {
                       "name": "Bevel Weight",
                       "element_type": "CHILD_GESTURE",
-                      "enabled": true,
                       "icon": "UV_EDGESEL",
                       "enabled_icon": true,
                       "direction": "3",
@@ -584,104 +523,100 @@
                         "0": {
                           "name": "Bevel",
                           "element_type": "OPERATOR",
-                          "enabled": true,
-                          "icon": "COLOR_ERROR",
-                          "enabled_icon": false,
                           "direction": "3",
-                          "operator_bl_idname": "transform.edge_bevelweight",
-                          "operator_context": "INVOKE_DEFAULT",
-                          "operator_properties": "{}",
-                          "operator_type": "OPERATOR"
+                          "operator_bl_idname": "transform.edge_bevelweight"
                         },
                         "1": {
                           "name": "Clear Weight",
                           "element_type": "OPERATOR",
-                          "enabled": true,
                           "icon": "PANEL_CLOSE",
                           "enabled_icon": true,
                           "direction": "2",
                           "operator_bl_idname": "transform.edge_bevelweight",
                           "operator_context": "EXEC_DEFAULT",
-                          "operator_properties": "{'value': -1.0}",
-                          "operator_type": "OPERATOR"
+                          "operator_properties": "{'value': -1.0}"
                         }
                       }
                     }
                   }
                 },
-                "6": {
+                "5": {
                   "name": "Edge Crease",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_BEVEL",
                   "enabled_icon": true,
                   "direction": "5",
-                  "operator_bl_idname": "transform.edge_bevelweight",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "transform.edge_bevelweight"
+                },
+                "6": {
+                  "name": "Child_Gesture",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "9",
+                  "element": {
+                    "0": {
+                      "name": "Edge Slide",
+                      "element_type": "OPERATOR",
+                      "icon": "MOD_OFFSET",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "transform.edge_slide"
+                    },
+                    "1": {
+                      "name": "Mark Sharp",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.mark_sharp",
+                      "operator_properties": "{'clear': True}"
+                    },
+                    "2": {
+                      "name": "Clear Sharp",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.mark_sharp",
+                      "operator_properties": "{'clear': False}"
+                    }
+                  }
                 }
               }
             },
             "3": {
               "name": "Select Face",
               "element_type": "SELECTED_STRUCTURE",
-              "enabled": true,
               "selected_type": "ELIF",
               "poll_string": "(tool.mesh_select_mode[2] == True)",
               "element": {
                 "0": {
                   "name": "Inset Faces",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "SNAP_FACE_CENTER",
                   "enabled_icon": true,
                   "direction": "2",
-                  "operator_bl_idname": "mesh.poke",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.poke"
                 },
                 "1": {
                   "name": "Solidify Faces",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_SOLIDIFY",
                   "enabled_icon": true,
                   "direction": "5",
-                  "operator_bl_idname": "mesh.solidify",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.solidify"
                 },
                 "2": {
                   "name": "Wireframe",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "MOD_WIREFRAME",
                   "enabled_icon": true,
                   "direction": "6",
-                  "operator_bl_idname": "mesh.wireframe",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.wireframe"
                 },
                 "3": {
                   "name": "Grid Fill",
                   "element_type": "OPERATOR",
-                  "enabled": true,
                   "icon": "KEY_WINDOWS_FILLED",
                   "enabled_icon": true,
                   "direction": "4",
-                  "operator_bl_idname": "mesh.fill_grid",
-                  "operator_context": "INVOKE_DEFAULT",
-                  "operator_properties": "{}",
-                  "operator_type": "OPERATOR"
+                  "operator_bl_idname": "mesh.fill_grid"
                 },
                 "4": {
                   "name": "Face Data",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "FACESEL",
                   "enabled_icon": true,
                   "direction": "8",
@@ -689,93 +624,52 @@
                     "0": {
                       "name": "Reverse Colors",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "3",
-                      "operator_bl_idname": "mesh.colors_reverse",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.colors_reverse"
                     },
                     "1": {
                       "name": "Rotate Colors",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "2",
-                      "operator_bl_idname": "mesh.colors_rotate",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.colors_rotate"
                     },
                     "2": {
                       "name": "Rotate UVs",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "1",
-                      "operator_bl_idname": "mesh.uvs_rotate",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.uvs_rotate"
                     },
                     "3": {
                       "name": "Reverse UVs",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "8",
-                      "operator_bl_idname": "mesh.uvs_reverse",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.uvs_reverse"
                     },
                     "4": {
                       "name": "Flip Quad Tessellation",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "6",
-                      "operator_bl_idname": "mesh.flip_quad_tessellation",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.flip_quad_tessellation"
                     },
                     "5": {
                       "name": "Mark Freestyle Face",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "5",
                       "operator_bl_idname": "mesh.mark_freestyle_face",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'clear': False}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'clear': False}"
                     },
                     "6": {
                       "name": "Clear Freestyle Face",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "4",
                       "operator_bl_idname": "mesh.mark_freestyle_face",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{'clear': True}",
-                      "operator_type": "OPERATOR"
+                      "operator_properties": "{'clear': True}"
                     }
                   }
                 },
                 "5": {
                   "name": "Extrude Faces",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "SELECT_EXTEND",
                   "enabled_icon": true,
                   "direction": "1",
@@ -783,108 +677,92 @@
                     "0": {
                       "name": "Extrude Faces Along Normals",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "1",
-                      "operator_bl_idname": "view3d.edit_mesh_extrude_move_shrink_fatten",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "view3d.edit_mesh_extrude_move_shrink_fatten"
                     },
                     "1": {
                       "name": "Extrude Individual Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
                       "direction": "8",
-                      "operator_bl_idname": "mesh.extrude_faces_move",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.extrude_faces_move"
                     }
                   }
                 },
                 "6": {
                   "name": "Face Operator",
                   "element_type": "CHILD_GESTURE",
-                  "enabled": true,
                   "icon": "PROPERTIES",
                   "enabled_icon": true,
-                  "direction": "7",
+                  "direction": "9",
                   "element": {
                     "0": {
                       "name": "Shade Smooth",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "MOD_SMOOTH",
                       "enabled_icon": true,
-                      "direction": "1",
-                      "operator_bl_idname": "mesh.faces_shade_smooth",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.faces_shade_smooth"
                     },
                     "1": {
                       "name": "Shade Flat",
                       "element_type": "OPERATOR",
-                      "enabled": true,
                       "icon": "GP_CAPS_FLAT",
                       "enabled_icon": true,
-                      "direction": "8",
-                      "operator_bl_idname": "mesh.faces_shade_flat",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.faces_shade_flat"
                     },
                     "2": {
-                      "name": "Intersect (Boolean)",
-                      "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "SELECT_INTERSECT",
-                      "enabled_icon": true,
-                      "direction": "5",
-                      "operator_bl_idname": "mesh.intersect_boolean",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
                     },
                     "3": {
-                      "name": "Intersect (Knife)",
+                      "name": "Intersect (Boolean)",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "COLOR_ERROR",
-                      "enabled_icon": false,
-                      "direction": "6",
-                      "operator_bl_idname": "mesh.intersect",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "icon": "SELECT_INTERSECT",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "mesh.intersect_boolean"
                     },
                     "4": {
-                      "name": "Weld Edges into Faces",
+                      "name": "Intersect (Knife)",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "MOD_EDGESPLIT",
-                      "enabled_icon": true,
-                      "direction": "7",
-                      "operator_bl_idname": "mesh.face_split_by_edges",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.intersect"
                     },
                     "5": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "6": {
+                      "name": "Weld Edges into Faces",
+                      "element_type": "OPERATOR",
+                      "icon": "MOD_EDGESPLIT",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "mesh.face_split_by_edges"
+                    },
+                    "7": {
                       "name": "Beautify Faces",
                       "element_type": "OPERATOR",
-                      "enabled": true,
-                      "icon": "EDGESEL",
-                      "enabled_icon": false,
-                      "direction": "3",
-                      "operator_bl_idname": "mesh.beautify_fill",
-                      "operator_context": "INVOKE_DEFAULT",
-                      "operator_properties": "{}",
-                      "operator_type": "OPERATOR"
+                      "operator_bl_idname": "mesh.beautify_fill"
+                    },
+                    "8": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "9": {
+                      "name": "Triangles to Quads",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.tris_convert_to_quads"
+                    },
+                    "10": {
+                      "name": "Triangulate Faces",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.quads_convert_to_tris"
+                    },
+                    "11": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "12": {
+                      "name": "\u7ebf\u6846",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "mesh.wireframe"
                     }
                   }
                 }
@@ -895,138 +773,142 @@
         "2": {
           "name": "Metaball Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_METABALL\")",
           "element": {
             "0": {
               "name": "Ball",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "META_BALL",
               "enabled_icon": true,
               "direction": "5",
               "operator_bl_idname": "object.metaball_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'type': 'BALL'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'type': 'BALL'}"
             },
             "1": {
               "name": "Capsule",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "META_CAPSULE",
               "enabled_icon": true,
               "direction": "1",
               "operator_bl_idname": "object.metaball_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'type': 'CAPSULE'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'type': 'CAPSULE'}"
             },
             "2": {
               "name": "Plane",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MATPLANE",
               "enabled_icon": true,
               "direction": "3",
               "operator_bl_idname": "object.metaball_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'type': 'PLANE'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'type': 'PLANE'}"
             },
             "3": {
               "name": "Ellipsoid",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "META_ELLIPSOID",
               "enabled_icon": true,
               "direction": "7",
               "operator_bl_idname": "object.metaball_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'type': 'ELLIPSOID'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'type': 'ELLIPSOID'}"
             },
             "4": {
               "name": "Cube",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "META_CUBE",
               "enabled_icon": true,
               "direction": "6",
               "operator_bl_idname": "object.metaball_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{'type': 'CUBE'}",
-              "operator_type": "OPERATOR"
+              "operator_properties": "{'type': 'CUBE'}"
             }
           }
         },
         "3": {
           "name": "Curve Edit",
           "element_type": "SELECTED_STRUCTURE",
-          "enabled": true,
           "selected_type": "ELIF",
           "poll_string": "(C.mode == \"EDIT_CURVE\")",
           "element": {
             "0": {
               "name": "Bezier",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MOD_CURVE",
               "enabled_icon": true,
               "direction": "1",
-              "operator_bl_idname": "curve.primitive_bezier_curve_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "curve.primitive_bezier_curve_add"
             },
             "1": {
               "name": "Circle",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "MESH_CIRCLE",
               "enabled_icon": true,
               "direction": "5",
-              "operator_bl_idname": "curve.primitive_bezier_circle_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "curve.primitive_bezier_circle_add"
             },
             "2": {
               "name": "Nurbs Curve",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CURVE_NCURVE",
               "enabled_icon": true,
               "direction": "8",
-              "operator_bl_idname": "curve.primitive_nurbs_circle_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "curve.primitive_nurbs_circle_add"
             },
             "3": {
               "name": "Nurbs Circle",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CURVE_NCIRCLE",
               "enabled_icon": true,
-              "direction": "7",
-              "operator_bl_idname": "curve.primitive_nurbs_curve_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "direction": "6",
+              "operator_bl_idname": "curve.primitive_nurbs_curve_add"
             },
             "4": {
               "name": "Path",
               "element_type": "OPERATOR",
-              "enabled": true,
               "icon": "CURVE_PATH",
               "enabled_icon": true,
               "direction": "3",
-              "operator_bl_idname": "curve.primitive_nurbs_path_add",
-              "operator_context": "INVOKE_DEFAULT",
-              "operator_properties": "{}",
-              "operator_type": "OPERATOR"
+              "operator_bl_idname": "curve.primitive_nurbs_path_add"
+            },
+            "5": {
+              "name": "Child_Gesture",
+              "element_type": "CHILD_GESTURE",
+              "direction": "9",
+              "element": {
+                "0": {
+                  "name": "Subdivide",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.subdivide"
+                },
+                "1": {
+                  "name": "Switch Direction",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.switch_direction"
+                },
+                "2": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "3": {
+                  "name": "Smooth",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.smooth"
+                },
+                "4": {
+                  "name": "Smooth Curve Tilt",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.smooth_tilt"
+                },
+                "5": {
+                  "name": "Smooth Curve Radius",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.smooth_radius"
+                },
+                "6": {
+                  "name": "Smooth Curve Weight",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "curve.smooth_weight"
+                }
+              }
             }
           }
         }

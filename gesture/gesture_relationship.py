@@ -4,8 +4,7 @@ from ..utils.public import (
     get_pref,
     get_gesture_direction_items,
     PublicUniqueNamePropertyGroup,
-    PublicSortAndRemovePropertyGroup,
-)
+    PublicSortAndRemovePropertyGroup, )
 from ..utils.public_cache import cache_update_lock
 
 

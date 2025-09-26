@@ -1,4 +1,5 @@
-# version = 1.0.1
+# version = 1.0.2
+# 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
 import bpy
@@ -129,7 +130,7 @@ def get_property(prop, exclude=(), reversal=False) -> dict:
                 elif typ == 'ENUM' and pr.is_enum_flag:
                     # 可多选枚举
                     pro = list(pro)
-                elif typ == "FLOAT" and pr.subtype == "COLOR":
+                elif typ == 'FLOAT' and pr.subtype == 'COLOR':
                     # color
                     pro = pro[:]
                 elif isinstance(pro, (Euler, Vector, bpy.types.bpy_prop_array)):
@@ -155,7 +156,8 @@ def get_kmi_property(kmi):
             kmi,
             exclude=(
                 'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
-                'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined'
+                'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined',
+                'hyper', 'hyper_ui',
             )
         )
     )

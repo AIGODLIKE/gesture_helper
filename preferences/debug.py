@@ -12,6 +12,7 @@ class DebugProperty(bpy.types.PropertyGroup):
     debug_export_import: BoolProperty(name='Debug export import', default=IS_DEBUG)
     debug_operator: BoolProperty(name='Debug operator', default=False)
     debug_poll: BoolProperty(name='Debug Poll', default=False)
+    debug_extension: BoolProperty(name='Debug Extension', default=False)
 
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):
@@ -33,3 +34,4 @@ class DebugProperty(bpy.types.PropertyGroup):
         col.prop(debug, 'debug_export_import')
         col.prop(debug, 'debug_operator')
         col.prop(debug, 'debug_poll')
+        col.prop(debug, 'debug_extension')

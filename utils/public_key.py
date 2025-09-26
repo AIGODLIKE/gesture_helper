@@ -11,7 +11,7 @@ def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
 
 
 def simple_set_property(prop, to) -> None:
-    for k, v in prop.items():  # TIPS简单的赋值,这个属性在这里只有字符串,所以可以这样弄
+    for k, v in prop.items():  #简单的赋值,这个属性在这里只有字符串,所以可以这样弄
         setattr(to, k, v)
 
 

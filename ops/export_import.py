@@ -11,9 +11,9 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
+from ..utils.property import __set_prop__
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
-from ..utils.property import __set_prop__
 
 EXPORT_PROPERTY_EXCLUDE = (
     'selected',
@@ -31,32 +31,15 @@ EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
-    'OPERATOR': [
-        *EXPORT_PUBLIC_ITEM,
-        *EXPORT_ICON_ITEM,
-        'direction',
-        'operator_bl_idname',
-        'operator_context',
-        'operator_properties',
-        'operator_type',
-        'operator_script',
-    ],
     'OPERATOR_SCRIPT': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
-        'operator_type',
-        'operator_script',
-        'direction'
-    ],
+        'direction', 'operator_type', 'operator_script', ],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
-        'direction',
-        'operator_bl_idname',
-        'operator_context',
-        'operator_properties',
-        'operator_type',
-    ]
+        'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', ],
+    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
 }
 
 
