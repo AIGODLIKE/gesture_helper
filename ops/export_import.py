@@ -31,22 +31,22 @@ EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
-    'OPERATOR': [
-        *EXPORT_PUBLIC_ITEM,
-        *EXPORT_ICON_ITEM,
-        'direction',
-        'operator_bl_idname',
-        'operator_context',
-        'operator_properties',
-        'operator_type',
-        'operator_script',
-    ],
+    # 'OPERATOR': [
+    #     *EXPORT_PUBLIC_ITEM,
+    #     *EXPORT_ICON_ITEM,
+    #     'direction',
+    #     'operator_bl_idname',
+    #     'operator_context',
+    #     'operator_properties',
+    #     'operator_type',
+    #     'operator_script',
+    # ],
     'OPERATOR_SCRIPT': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
+        'direction'
         'operator_type',
         'operator_script',
-        'direction'
     ],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
@@ -55,7 +55,6 @@ EXPORT_PROPERTY_ITEM = {
         'operator_bl_idname',
         'operator_context',
         'operator_properties',
-        'operator_type',
     ],
     "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
 }

@@ -2,8 +2,8 @@ import bpy
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
-from ..utils.property import set_property_to_kmi_properties
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
+from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.secure_call import secure_call_eval, secure_call_exec
 
@@ -46,6 +46,7 @@ class OperatorProperty:
 
     @cache_update_lock
     def update_operator_properties(self) -> None:
+        print("update_operator_properties:", self.operator_properties)
         self.to_operator_tmp_kmi()
 
     operator_bl_idname: StringProperty(name='Operator bl_idname',
@@ -169,6 +170,9 @@ class ElementOperator(OperatorProperty):
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """从临时 keymap item 更新到属性"""
+        print("from_tmp_kmi_operator_update_properties", )
+        print(self.operator_tmp_kmi_properties)
+        print(self.properties)
         properties = self.operator_tmp_kmi_properties
         if self.properties != properties:
             self['operator_properties'] = str(properties)
