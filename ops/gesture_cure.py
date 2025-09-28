@@ -4,6 +4,19 @@ from bpy.props import BoolProperty
 from ..gesture import GestureKeymap
 
 
+def add_all_preset():
+    from ..utils.preset import get_preset_gesture_list
+    count = 0
+    for k, v in get_preset_gesture_list().items():
+        bpy.ops.gesture.gesture_import(
+            filepath=v,
+            run_execute=True,
+            preset_show=False,
+        )
+        count += 1
+    return count
+
+
 class GestureCURE:
     """手势项 增删查改"""
     from ..utils.public import PublicOperator, PublicProperty
@@ -21,23 +34,10 @@ class GestureCURE:
 
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
-                count = self.add_all_preset()
+                count = add_all_preset()
                 self.report({'INFO'}, f"Import preset {count}")
                 return {'FINISHED'}
             return self.execute(context)
-
-        @staticmethod
-        def add_all_preset():
-            from ..utils.preset import get_preset_gesture_list
-            count = 0
-            for k, v in get_preset_gesture_list().items():
-                bpy.ops.gesture.gesture_import(
-                    filepath=v,
-                    run_execute=True,
-                    preset_show=False,
-                )
-                count += 1
-            return count
 
         def execute(self, _):
             add = self.pref.gesture.add()

@@ -10,7 +10,6 @@ def cache_update_lock(func, cache_clear=False):
             if cache_clear:
                 PublicCacheFunc.cache_clear()
             return func_return
-
     return wap
 
 
