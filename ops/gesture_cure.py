@@ -17,6 +17,27 @@ class GestureCURE:
     class ADD(PublicOperator, PublicProperty):
         bl_idname = 'gesture.gesture_add'
         bl_label = 'Add gesture'
+        bl_description = 'Ctrl Alt Shift + Click: Add all preset gesture!!!'
+
+        def invoke(self, context, event):
+            if event.ctrl and event.alt and event.shift:
+                count = self.add_all_preset()
+                self.report({'INFO'}, f"Import preset {count}")
+                return {'FINISHED'}
+            return self.execute(context)
+
+        @staticmethod
+        def add_all_preset():
+            from ..utils.preset import get_preset_gesture_list
+            count = 0
+            for k, v in get_preset_gesture_list().items():
+                bpy.ops.gesture.gesture_import(
+                    filepath=v,
+                    run_execute=True,
+                    preset_show=False,
+                )
+                count += 1
+            return count
 
         def execute(self, _):
             add = self.pref.gesture.add()
@@ -29,16 +50,27 @@ class GestureCURE:
     class REMOVE(GesturePoll):
         bl_idname = 'gesture.gesture_remove'
         bl_label = 'Remove gesture'
+        bl_description = 'Ctrl Alt Shift + Click: Remove all gesture!!!'
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
-            return operator_invoke_confirm(
-                self,
-                event,
-                context,
-                title="Confirm deletion gesture?",
-                message=f"{self.active_gesture.name}",
-            )
+            if event.ctrl and event.alt and event.shift:
+                gesture = self.pref.gesture
+                while len(gesture):
+                    gesture[0].remove()
+                    self.cache_clear()
+                GestureKeymap.key_restart()
+                bpy.ops.wm.save_userpref()
+                return {'FINISHED'}
+            if self.pref.draw_property.gesture_remove_tips:
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Confirm deletion gesture?",
+                    message=f"{self.active_gesture.name}",
+                )
+            return self.execute(context)
 
         def execute(self, _):
             pref = self.pref

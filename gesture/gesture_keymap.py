@@ -77,6 +77,7 @@ class GestureKeymap(KeymapProperty):
         from ..ops import gesture
         return {'idname': gesture.GestureOperator.bl_idname, **self.key}
 
+    @cache_update_lock
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:

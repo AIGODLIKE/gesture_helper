@@ -8,7 +8,7 @@ from .public_cache import PublicCacheFunc, cache_update_lock
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 BACKUPS_FOLDER = abspath(join(ADDON_FOLDER, 'backups'))
-PROPERTY_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
+PRESET_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
 
 TRANSLATE_ID = "gesture"
 TRANSLATE_KEY = TRANSLATE_ID + "_keymap"

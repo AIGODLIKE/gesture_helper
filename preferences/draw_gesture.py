@@ -17,7 +17,6 @@ class GestureDraw:
         column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
         column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
 
-        column.operator_context = "INVOKE_DEFAULT" if pref.draw_property.gesture_remove_tips else "EXEC_DEFAULT"
         column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
         column.operator_context = "INVOKE_DEFAULT"
 

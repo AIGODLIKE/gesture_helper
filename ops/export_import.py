@@ -104,20 +104,11 @@ class Import(PublicFileOperator):
 
     @property
     def preset_items(self):
-        from ..utils.public import PROPERTY_FOLDER
+        from ..utils.preset import get_preset_gesture_list
         if len(Import.preset):
             return Import.preset
-
-        items = {}
-        try:
-            for f in os.listdir(PROPERTY_FOLDER):
-                path = os.path.join(PROPERTY_FOLDER, f)
-                if os.path.isfile(path) and f.lower().endswith('.json'):
-                    items[f[:-5]] = path
-        except Exception as e:
-            print(e.args)
-        Import.preset = items
-        return items
+        Import.preset = get_preset_gesture_list()
+        return Import.preset
 
     def execute(self, _):
         if self.preset_show:
