@@ -290,7 +290,7 @@ class PublicUniqueNamePropertyGroup:
         return list(map(lambda s: s.name, self.names_iteration))
 
     @cache_update_lock
-    def __check_duplicate_name__(self):
+    def __fix_duplicate_name__(self):
         names = self.__names__
         if self.__names__.count(self.name) > 1:
             self.name = self.__generate_new_name__(self.__names__, self.name)
@@ -303,7 +303,7 @@ class PublicUniqueNamePropertyGroup:
     @update
     def rename(self):
         if self.__is_check_duplicate_name__:
-            self.__check_duplicate_name__()
+            self.__fix_duplicate_name__()
         update_name = getattr(self, "update_name", None)
         if update_name:
             update_name()

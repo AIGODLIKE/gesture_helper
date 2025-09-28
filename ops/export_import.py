@@ -158,8 +158,6 @@ class Import(PublicFileOperator):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
-        if active := get_pref().active_gesture:
-            active.to_temp_kmi()
 
     def read_json(self):
         with open(self.filepath, 'r') as file:

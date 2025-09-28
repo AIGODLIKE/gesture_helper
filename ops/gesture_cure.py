@@ -11,7 +11,6 @@ def add_all_preset():
         bpy.ops.gesture.gesture_import(
             filepath=v,
             run_execute=True,
-            preset_show=False,
         )
         count += 1
     return count
@@ -103,7 +102,7 @@ class GestureCURE:
         def execute(self, _):
             self.active_gesture.copy()
             self.cache_clear()
-            self.pref.gesture[-1].__check_duplicate_name__()
+            self.pref.gesture[-1].__fix_duplicate_name__()
             self.cache_clear()
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}

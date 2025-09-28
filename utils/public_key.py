@@ -11,7 +11,7 @@ def get_temp_kmi_by_id_name(id_name: str) -> 'bpy.types.KeyMapItem':
 
 
 def simple_set_property(prop, to) -> None:
-    for k, v in prop.items():  #简单的赋值,这个属性在这里只有字符串,所以可以这样弄
+    for k, v in prop.items():  # 简单的赋值,这个属性在这里只有字符串,所以可以这样弄
         setattr(to, k, v)
 
 
@@ -20,19 +20,24 @@ def get_temp_keymap() -> 'bpy.types.KeyMap':
     return keyconfig.keymaps.get('TEMP', keyconfig.keymaps.new('TEMP'))
 
 
-def get_temp_kmi(id_name: str, properties: dict) -> 'bpy.types.KeyMapItem':
+def clear_temp_keymap() -> None:
+    keymap = get_temp_keymap()
+    for kmi in keymap.keymap_items:
+        keymap.keymap_items.remove(kmi)
+
+
+def get_temp_kmi(id_name: str, properties: dict, kmi_data: dict) -> 'bpy.types.KeyMapItem':
     """
     bpy.context.window_manager.keyconfigs.active.keymaps['TEMP'].keymap_items
-    @return:
     """
     keymap_items = get_temp_keymap().keymap_items
     for temp_kmi in keymap_items:
-        if temp_kmi.properties is None:
-            keymap_items.remove(temp_kmi)
-        elif get_kmi_operator_properties(temp_kmi) == properties:
-            return temp_kmi
-
-    kmi = keymap_items.new(id_name, "NONE", "PRESS")
+        if temp_kmi.idname == id_name:
+            if temp_kmi.properties is None:
+                keymap_items.remove(temp_kmi)
+            elif get_kmi_operator_properties(temp_kmi) == properties:
+                return temp_kmi
+    kmi = keymap_items.new(**{"idname": id_name, **kmi_data})
     simple_set_property(properties, kmi.properties)
     return kmi
 
@@ -192,6 +197,9 @@ def draw_kmi(layout: bpy.types.UILayout, kmi: 'bpy', key_maps):
         row.label()
 
     from ..ops.restore_key import RestoreKey
+    # (not kmi.is_user_defined) and kmi.is_user_modified
+    # row.label(text=str(kmi.is_user_defined))
+    # row.label(text=str(kmi.is_user_modified))
     row.operator(RestoreKey.bl_idname, text="", icon='BACK').item_id = kmi.id
     # Expanded, additional event settings
     if show_expanded:

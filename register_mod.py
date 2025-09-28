@@ -5,6 +5,7 @@ from .gesture import gesture_keymap
 # from .ops.qucik_add.keymap import GestureQuickAddKeymap
 from .src import translate
 from .utils import public_cache
+from .utils.public_key import clear_temp_keymap
 
 module_list = (
     ui,
@@ -23,6 +24,7 @@ def init_register():
 
     pref = get_pref()
     try:
+
         register_panel()
         icons.Icons.register()
 
@@ -49,6 +51,8 @@ def register():
             traceback.print_stack()
             traceback.print_exc()
             print(e.args, "\n")
+    clear_temp_keymap()
+
     # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
 

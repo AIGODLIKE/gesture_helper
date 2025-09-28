@@ -70,7 +70,7 @@ class GestureKeymap(KeymapProperty):
     @property
     def temp_kmi(self) -> 'bpy.types.KeyMapItem':
         from ..ops import set_key
-        return get_temp_kmi(set_key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
+        return get_temp_kmi(set_key.OperatorTempModifierKey.bl_idname, {'gesture': self.name}, self.key)
 
     @property
     def add_kmi_data(self) -> dict:
@@ -81,12 +81,14 @@ class GestureKeymap(KeymapProperty):
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
-            print(f"from_temp_key_update_data\n{data}\n{self.key}")
+            print(f"from_temp_key_update_data")
+            print(type(self.key), self.key)
+            print(type(data), data)
             self.key = data
 
     def to_temp_kmi(self) -> None:
         key = ",".join(list(f"{k.title()}={v}" for k, v in self.key.items()))
-        print(f'Gesture -> Kmi {self.name} (%s)' % key)
+        print(f'Gesture -> Temp kmi {self.name} (%s)' % key)
         set_property(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
