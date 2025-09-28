@@ -44,6 +44,7 @@ class GestureCURE:
             add.name = 'Gesture'
             GestureKeymap.key_restart()
             bpy.ops.wm.save_userpref()
+            self.cache_clear()
             return {'FINISHED'}
 
     class REMOVE(GesturePoll):

@@ -40,22 +40,22 @@ class DrawElement:
     @staticmethod
     def draw_property(layout: 'bpy.types.UILayout') -> None:
         pref = get_pref()
-        act = pref.active_element
+        active_element = pref.active_element
         prop = pref.draw_property
         if pref.__is_cut_element__:
             DrawElement.draw_cut_element(layout)
 
-        elif act:
+        elif active_element:
             from ..element.element_cure import ElementCURE
             if pref.__is_move_element__:
                 DrawElement.draw_move_element(layout)
             elif not prop.element_show_left_side:
-                act.draw_alert(layout)
-                act.draw_item_property(layout)
+                active_element.draw_alert(layout)
+                active_element.draw_item_property(layout)
             if get_debug():
-                act.draw_debug(layout)
+                active_element.draw_debug(layout)
         else:
-            layout.label(text='Please select or add a gesture element')
+            layout.label(text='Add or select a element')
 
     @staticmethod
     def draw_move_element(layout: 'bpy.types.UILayout'):

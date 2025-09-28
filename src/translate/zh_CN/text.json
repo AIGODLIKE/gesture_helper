@@ -331,5 +331,7 @@
   "Property Icon": "属性图标",
   "Draw Toggle property operator icon": "绘制切换属性操作图标",
   "Ctrl Alt Shift + Click: Remove all gesture!!!": "Ctrl Alt Shift + 点击: 删除所有手势!!!",
-  "Ctrl Alt Shift + Click: Add all preset gesture!!!": "Ctrl Alt Shift + 点击: 添加所有预设手势!!!"
+  "Ctrl Alt Shift + Click: Add all preset gesture!!!": "Ctrl Alt Shift + 点击: 添加所有预设手势!!!",
+  "Add or select a element": "添加/选择 一个元素",
+  "Add or select a gesture": "添加/选择 一个手势"
 }
