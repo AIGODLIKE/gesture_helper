@@ -180,8 +180,8 @@ class PublicProperty(PublicCacheFunc):
         ae = pref.active_element
         try:
             if ag:
-                ag.to_temp_kmi()
-                ag.__check_duplicate_name__()
+                ag.__fix_duplicate_name__()
+                ag.to_temp_kmi()  # 需要在重命名之后,不然会导致快捷键更新错误
             if ae:
                 if ae.element_type == "OPERATOR" and ae.operator_type == "OPERATOR":
                     ae.to_operator_tmp_kmi()
