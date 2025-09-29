@@ -42,7 +42,7 @@ class ElementGpuProperty:
     @property
     def text_margin(self):
         scale = bpy.context.preferences.view.ui_scale
-        return [i * scale for i in self.draw_property.text_gpu_draw_margin]
+        return [i * scale for i in self.draw_property.margin]
 
     @property
     def text_radius(self):
@@ -174,7 +174,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         radius = get_pref().gesture_property.radius * scale
         position = get_position(self.direction, radius)
 
-        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+        margin_x, margin_y = self.draw_property.margin
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
@@ -346,7 +346,7 @@ class ElementGpuExtensionItem:
 
     def draw_gpu_extension_item(self, ops):
         w, h = self.extension_dimensions
-        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+        margin_x, margin_y = self.draw_property.margin
         with gpu.matrix.push_pop():
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
@@ -436,7 +436,7 @@ class ElementGpuExtensionItem:
     def draw_gpu_extension_margin(self):
         draw = self.draw_property
 
-        margin_x, margin_y = self.draw_property.text_gpu_draw_margin
+        margin_x, margin_y = self.draw_property.margin
 
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')

@@ -33,7 +33,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=18, min=5, max=120)
     text_gpu_draw_radius: IntProperty(name='Rounded corner size', description='Gpu Draw Radius Size', default=5, min=2,
                                       max=60)
-    text_gpu_draw_margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
+    margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
                                             default=(12, 10),
                                             min=0,
                                             max=120,
@@ -81,7 +81,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         pref = get_pref()
         draw = pref.draw_property
 
-        radius_is_alert = draw.text_gpu_draw_radius > min(draw.text_gpu_draw_margin)
+        radius_is_alert = draw.text_gpu_draw_radius > min(draw.margin)
 
         col = layout.box().column(align=True)
         col.prop(draw, 'element_draw_child_icon')
@@ -93,7 +93,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         col.separator()
         col.prop(draw, 'element_extension_item_offset')
         col.separator()
-        col.prop(draw, 'text_gpu_draw_margin')
+        col.prop(draw, 'margin')
         col.separator()
         col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')

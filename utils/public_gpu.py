@@ -226,7 +226,7 @@ class PublicGpu:
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
         with gpu.matrix.push_pop():
-            margin = min(get_pref().draw_property.text_gpu_draw_margin) * scale
+            margin = min(get_pref().draw_property.margin) * scale
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
             draw_line(vertex, color, line_width=line_width)
@@ -236,7 +236,7 @@ class PublicGpu:
                                     segments=20):
         scale = bpy.context.preferences.view.ui_scale
         from .public import get_pref
-        margin = min(get_pref().draw_property.text_gpu_draw_margin) * scale
+        margin = min(get_pref().draw_property.margin) * scale
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             vertex = get_rounded_rectangle_vertex(min(radius, margin), width, height, segments)
