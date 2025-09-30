@@ -1,6 +1,6 @@
 import bpy
 
-from ...utils.panel import get_3d_panels_by_context
+from ...utils.panel import get_3d_panels_by_context, get_panels_by_context
 from ...utils.public import PublicProperty
 
 
@@ -10,10 +10,15 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
 
     panel_name: bpy.props.StringProperty()
     filter: bpy.props.StringProperty(options={"TEXTEDIT_UPDATE"}, name="Filter")
+    panels = []
 
     def invoke(self, context, event):
         """source\blender\makesrna\intern\rna_screen.cc L348"""
         wm = context.window_manager
+
+        self.panels = get_3d_panels_by_context(context)
+        if not self.panels:
+            self.panels = get_panels_by_context(context, area="VIEW_3D", region="UI")
         return wm.invoke_props_dialog(**{'operator': self, 'width': 300})
 
     def execute(self, context):
@@ -31,7 +36,7 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         # layout.label(text=context.region.type)
         layout.prop(self, "filter")
         column = layout.column(align=True)
-        for category in get_3d_panels_by_context(context):
+        for category in self.panels:
             tn = bpy.app.translations.pgettext_iface(category).lower()
             if self.filter and (not self.filter.lower() in tn or not self.filter.lower() in category):
                 continue

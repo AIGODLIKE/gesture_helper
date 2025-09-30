@@ -99,16 +99,24 @@ class ElementCURE:
     class REMOVE(ElementPoll):
         bl_label = 'Remove gesture item'
         bl_idname = 'gesture.element_remove'
+        bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
-            return operator_invoke_confirm(
-                self,
-                event,
-                context,
-                title="Confirm To Delete The Element?",
-                message=f"{self.active_element.name}",
-            )
+            if event.ctrl and event.alt and event.shift:
+                self.pref.active_gesture.element.clear()
+                self.cache_clear()
+                bpy.ops.wm.save_userpref()
+                return {'FINISHED'}
+            elif self.pref.draw_property.element_remove_tips:
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Confirm To Delete The Element?",
+                    message=f"{self.active_element.name}",
+                )
+            return self.execute(context)
 
         def execute(self, _):
             self.pref.active_element.remove()

@@ -46,7 +46,7 @@ class KeymapProperty:
 
     def get_keymap(self) -> list:
         key = self.__keymaps__
-        return self[key] if key in self else ['Window', ]
+        return self[key] if key in self else ['Window', "3D View", "Object Mode", "Mesh"]
 
     def set_keymap(self, value) -> None:
         self[self.__keymaps__] = value

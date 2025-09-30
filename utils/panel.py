@@ -1,6 +1,7 @@
-import bpy
-import re
 import ast
+import re
+
+import bpy
 
 
 def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
@@ -53,6 +54,8 @@ TypeError: bpy_struct: item.attr = val: enum "glTF Variants" not found in ('Item
     except TypeError as e:
         matches = re.findall(r'\(([^()]*)\)', e.args[-1])
         return ast.literal_eval(f"({matches[-1]})")
+    except IndexError:  # 当前上下文不是3d视图
+        return []
 
 
 if __name__ == "__main__":

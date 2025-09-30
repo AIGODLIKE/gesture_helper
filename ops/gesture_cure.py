@@ -55,14 +55,12 @@ class GestureCURE:
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
-                gesture = self.pref.gesture
-                while len(gesture):
-                    gesture[0].remove()
-                    self.cache_clear()
+                self.pref.gesture.clear()
+                self.cache_clear()
                 GestureKeymap.key_restart()
                 bpy.ops.wm.save_userpref()
                 return {'FINISHED'}
-            if self.pref.draw_property.gesture_remove_tips:
+            elif self.pref.draw_property.gesture_remove_tips:
                 return operator_invoke_confirm(
                     self,
                     event,
