@@ -1,11 +1,11 @@
 import bpy
 
-from ...utils.panel import get_panels_by_context
+from ...utils.panel import get_3d_panels_by_context
 from ...utils.public import PublicProperty
 
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
-    bl_label = 'Create Switch Panel'
+    bl_label = 'Switch Panel Opterator'
     bl_idname = 'gesture.create_switch_panel'
 
     panel_name: bpy.props.StringProperty()
@@ -31,7 +31,7 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         # layout.label(text=context.region.type)
         layout.prop(self, "filter")
         column = layout.column(align=True)
-        for category in get_panels_by_context(context, region="UI"):
+        for category in get_3d_panels_by_context(context):
             tn = bpy.app.translations.pgettext_iface(category).lower()
             if self.filter and (not self.filter.lower() in tn or not self.filter.lower() in category):
                 continue

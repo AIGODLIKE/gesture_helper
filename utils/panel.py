@@ -1,4 +1,6 @@
 import bpy
+import re
+import ast
 
 
 def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
@@ -39,6 +41,18 @@ def get_panels_by_context(context, area=None, region=None, check_poll=True):
         if region in panels[area]:
             return panels[area][region]
     return []
+
+
+def get_3d_panels_by_context(context):
+    """
+  File "<string>", line 1, in <module>
+TypeError: bpy_struct: item.attr = val: enum "glTF Variants" not found in ('Item', 'Tool', 'View', 'MP7', 'Gesture')
+    """
+    try:
+        context.area.regions[5].active_panel_category = ""
+    except TypeError as e:
+        matches = re.findall(r'\(([^()]*)\)', e.args[-1])
+        return ast.literal_eval(f"({matches[-1]})")
 
 
 if __name__ == "__main__":
