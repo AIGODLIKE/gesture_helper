@@ -5,6 +5,17 @@ from ..utils.public import get_pref, get_debug
 from ..utils.public_ui import icon_two
 
 
+def draw_label(lay: bpy.types.UILayout, label: str) -> bpy.types.UILayout:
+    width = bpy.context.region.width
+    if width < 600:
+        split = lay.row(align=True)
+    else:
+        split = lay.split(align=True, factor=0.3)
+        split.label(text=label)
+        split = split.row(align=True)
+    return split
+
+
 class DrawElement:
 
     @staticmethod
@@ -97,48 +108,40 @@ class DrawElement:
     def draw_element_add_property(cls, layout: 'bpy.types.UILayout') -> None:
         from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
         from ..element import ElementCURE
+        from ..ui.menu import GESTURE_MT_add_element_menu
 
         pref = get_pref()
         add = pref.add_element_property
 
-        relationship = add.relationship
         add_child = add.is_have_add_child
 
-        if bpy.context.region.width < 2000:
-            split = layout.box().column(align=False)
-        else:
-            split = layout.split(factor=.4)
+        column = layout.box().column(align=True)
+        column.label(text='Add element')
 
-        row = split.row(align=True)
-        row.label(text='Elemental Relationship:')
+        row = draw_label(column, 'Elemental Relationship:')
         row.prop(add, 'relationship', expand=True)
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
-        sub_row = split.row(align=True)
-        sub_row.enabled = add_child
-
         if add_child:
-            element_row = sub_row.row(align=True)
-            element_row.separator()
-            element_row.label(text='Add item:')
-
+            row = draw_label(column, 'Selected Structure:')
+            for i, n, d in ENUM_SELECTED_TYPE:
+                ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
+                ops.element_type = 'SELECTED_STRUCTURE'
+                ops.selected_type = i
+            column.separator()
+            row = draw_label(column, 'Add item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i != 'SELECTED_STRUCTURE':
                     if i == "DIVIDING_LINE":
-                        cls.draw_element_add_div_property(element_row)
+                        cls.draw_element_add_div_property(row)
                     else:
-                        ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
+                        ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
                         ops.element_type = i
-                        ops.relationship = relationship
-
-            element_row.separator()
-            for i, n, d in ENUM_SELECTED_TYPE:
-                ops = element_row.operator(ElementCURE.ADD.bl_idname, text=n)
-                ops.element_type = 'SELECTED_STRUCTURE'
-                ops.selected_type = i
-                ops.relationship = relationship
+            row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
         else:
-            sub_row.row(align=True).label(text="Cannot add child to 'operator'")
+            row = column.row(align=True)
+            row.enabled = add_child
+            row.row(align=True).label(text="Cannot add child to 'Operator'")
 
     @classmethod
     def draw_element_add_div_property(cls, layout: 'bpy.types.UILayout') -> None:
@@ -165,8 +168,7 @@ class DrawElement:
 
         if is_alert:
             layout = layout.row(align=True)
-            layout.active = False
+            layout.enabled = False
 
         ops = layout.operator(ElementCURE.ADD.bl_idname, text="Div")
         ops.element_type = "DIVIDING_LINE"
-        ops.relationship = relationship

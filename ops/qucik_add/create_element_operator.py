@@ -29,11 +29,9 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         """
         pref = get_pref()
         act = pref.active_element
-        add = pref.add_element_property
         bpy.ops.gesture.element_add(
             add_active_radio=True,
             element_type="OPERATOR",
-            relationship=add.relationship,
         )
 
         button_operator = getattr(context, "button_operator", None)

@@ -2,7 +2,7 @@ import bpy
 from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
-from .element_property import ElementDirectionProperty
+from .element_property import ElementAddProperty
 from ..utils.public import PublicProperty, PublicOperator, get_pref
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 
@@ -44,15 +44,11 @@ class ElementCURE:
         def poll(cls, _):
             return cls._pref().active_element is not None
 
-    class ADD(PublicOperator, PublicProperty, ElementDirectionProperty):
+    class ADD(PublicOperator, PublicProperty, ElementAddProperty):
         bl_label = 'Add gesture item'
         bl_idname = 'gesture.element_add'
+        last_element = None
 
-        add_active_radio: BoolProperty(name="Whether or not to set it as an active item when adding an element",
-                                       default=False,
-                                       options={'HIDDEN', 'SKIP_SAVE'})
-
-        # Some users may experience Gizmo failure in version 4.3 due to attribute updates ,Rewrite Solution
         from ..utils.enum import ENUM_SELECTED_TYPE
         from bpy.props import EnumProperty
         selected_type: EnumProperty(
@@ -62,15 +58,15 @@ class ElementCURE:
 
         @property
         def collection(self):
-            r = self.relationship
-            ae = self.active_element
-            if r == 'SAME' and ae:
-                pe = ae.parent_element
+            relationship = get_pref().add_element_property.relationship
+            active = self.active_element
+            if relationship == 'SAME' and active:
+                parent = active.parent_element
                 # 如果没有同级则快进到根
-                if pe:
-                    return pe.element
-            elif r == 'CHILD' and ae and ae.is_have_add_child:
-                return ae.element
+                if parent:
+                    return parent
+            elif relationship == 'CHILD' and active and active.is_have_add_child:
+                return active.element
             return self.active_gesture.element
 
         @property
@@ -91,11 +87,12 @@ class ElementCURE:
             add.cache_clear()
             add.name = self.add_name
 
-            if self.pref.add_element_property.add_active_radio or self.add_active_radio:
+            if self.pref.add_element_property.add_active_radio:
                 if self.active_element:
                     self.active_element.show_child = True
                 add.cache_clear()
                 add.radio = True
+            self.__class__.last_element = add
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
@@ -193,7 +190,7 @@ class ElementCURE:
             if ae:
                 ae.radio = True
                 parent = ae.parent
-                parent.element.move(len(parent.element) - 1, ae.index+1)
+                parent.element.move(len(parent.element) - 1, ae.index + 1)
 
             self.cache_clear()
             bpy.ops.wm.save_userpref()

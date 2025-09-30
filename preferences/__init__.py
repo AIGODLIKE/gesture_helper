@@ -6,6 +6,7 @@ from bpy.props import (
     PointerProperty,
     EnumProperty)
 
+from .add_element import AddElementProperty
 from .backups import BackupsProperty, BackupsPreferences
 from .debug import DebugProperty
 from .draw import PreferencesDraw
@@ -14,10 +15,7 @@ from .gesture import GestureProperty
 from .other import OtherProperty
 from .. import __package__ as base_package
 from .. import gesture
-from ..element.element_property import ElementAddProperty
 from ..utils.public import PublicProperty
-
-AddElementProperty = type('Add Element Property', (ElementAddProperty, bpy.types.PropertyGroup), {})
 
 
 class GesturePreferences(PublicProperty,

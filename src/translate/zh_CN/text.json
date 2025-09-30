@@ -104,7 +104,7 @@
   "Cancel paste": "取消粘贴",
   "Elemental Relationship:": "元素关系:",
   "Add item:": "添加项:",
-  "Cannot add child to 'operator'": "无法为 '操作符' 添加子级",
+  "Cannot add child to 'Operator'": "无法为 '操作符' 添加子级",
   "Please add or select a gesture": "请添加或选择一个手势",
   "Show enable/disable button": "显示 启用/禁用 按钮",
   "Show keymap": "显示快捷键",
@@ -333,5 +333,7 @@
   "Ctrl Alt Shift + Click: Remove all gesture!!!": "Ctrl Alt Shift + 点击: 删除所有手势!!!",
   "Ctrl Alt Shift + Click: Add all preset gesture!!!": "Ctrl Alt Shift + 点击: 添加所有预设手势!!!",
   "Add or select a element": "添加/选择 一个元素",
-  "Add or select a gesture": "添加/选择 一个手势"
+  "Add or select a gesture": "添加/选择 一个手势",
+  "Selected Structure:": "选择结构:",
+  "Add element": "添加元素"
 }
