@@ -16,27 +16,6 @@ module_list = (
 )
 
 
-def fix_margin_bug():
-    """
-    由于一次修改了偏好设置margin字段的类型，导致出现了数据bug
-    2.1.9 -> 2.2.0
-
-    margin: IntProperty
-     ->
-    margin: IntVectorProperty(name='Margin', description='Gpu Draw Margin Size',
-                                            default=(12, 10),
-                                            min=0,
-                                            max=120,
-                                            size=2)
-    # bpy.context.preferences.addons['bl_ext.user_default.gesture_helper'].preferences.draw_property.margin[1]
-    """
-    from .utils.public import get_pref
-    pref = get_pref().draw_property
-    margin = pref.margin
-    if 120 < max(margin) or 0 > (min(margin)):
-        pref.property_unset("margin")
-
-
 def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
@@ -76,7 +55,6 @@ def register():
 
     # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
-    fix_margin_bug()
 
     bpy.app.timers.register(init_register, first_interval=0.1, persistent=True)
 
