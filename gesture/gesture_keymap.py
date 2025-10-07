@@ -20,7 +20,7 @@ from ..utils.public_cache import cache_update_lock
 from ..utils.public_key import get_kmi_operator_properties
 from ..utils.public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
 
-default_key = {'type': 'NONE', 'value': 'PRESS'}
+default_key = {'type': 'RIGHTMOUSE', 'value': 'PRESS'}
 
 __key_data__ = []  # [(keymap:kmi),]
 
@@ -81,10 +81,11 @@ class GestureKeymap(KeymapProperty):
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
-            # print(f"from_temp_key_update_data")
-            # print(self.key)
-            # print(data)
+            print(f"from_temp_key_update_data")
+            print(self.key)
+            print(data)
             self.key = data
+            self.key_restart()
 
     def to_temp_kmi(self) -> None:
         key = ",".join(list(f"{k.title()}={v}" for k, v in self.key.items()))
@@ -106,19 +107,20 @@ class GestureKeymap(KeymapProperty):
     def key_load(self) -> None:
         global __key_data__
         if self.is_enable:
+            kmi_data = self.add_kmi_data
+            if get_debug("key"):
+                content = {k: v for k, v in self.add_kmi_data.items() if k in ("type", "value")}
+                print(f"Add Kmi\t{content} to {self.keymaps}", flush=True)
             for keymap in self.keymaps:
-                if get_debug("key"):
-                    content = {k: v for k, v in self.add_kmi_data.items() if k in ("type", "value")}
-                    print(f"Add Kmi\t{self.name}\t{keymap}\t\t{content}", flush=True)
-                add_addon_kmi(keymap, self.add_kmi_data, {"gesture": self.name})
+                add_addon_kmi(keymap, kmi_data, {"gesture": self.name})
 
     @cache_update_lock
     def key_update(self) -> None:
         # 在keymap被改时更新
         # 在key被改时更新
-        caller_name = traceback.extract_stack()[-2][2]
         self.key_restart()
         if get_debug('key'):
+            caller_name = traceback.extract_stack()[-2][2]
             print("Key Update 被 {} 调用".format(caller_name), self)
 
     @classmethod
