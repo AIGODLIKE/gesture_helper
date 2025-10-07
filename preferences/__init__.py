@@ -34,7 +34,6 @@ class GesturePreferences(PublicProperty,
     backups_property: PointerProperty(type=BackupsProperty)
     gesture_property: PointerProperty(type=GestureProperty)
     add_element_property: PointerProperty(type=AddElementProperty)
-
     enabled: BoolProperty(
         name='Enable gesture',
         description="""Enable gesture system""",

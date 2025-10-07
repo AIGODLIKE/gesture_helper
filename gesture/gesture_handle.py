@@ -10,8 +10,8 @@ class GestureHandle:
     trajectory_mouse_move: []  # 鼠标移动轨迹,在每次移动鼠标时就加上
     trajectory_mouse_move_time: []  # 鼠标移动时间
     trajectory_tree: "GesturePointKDTree"  # 轨迹树
-    event_count: IntProperty(options={"SKIP_SAVE", "HIDDEN"})  # 事件数
-    draw_trajectory_mouse_move: BoolProperty(options={"SKIP_SAVE", "HIDDEN"})
+    event_count: 0  # 事件数
+    draw_trajectory_mouse_move: bool
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

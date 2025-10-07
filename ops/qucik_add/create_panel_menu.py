@@ -24,20 +24,20 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
             return {"CANCELLED"}
 
         pref = get_pref()
-        bpy.ops.gesture.element_add(
-            add_active_radio=True,
-            element_type="OPERATOR",
-            relationship=pref.add_element_property.relationship,
-        )
-        ae = self.active_element
-        if self.type == "PANEL":
-            ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'
-        elif self.type == "MENU":
-            ae.operator_bl_idname = f'bpy.ops.wm.call_menu(name="{self.create_id_name}")'
-        else:
-            return {"CANCELLED"}
-        ae.name = t.bl_label if t.bl_label else getattr(t, "bl_idname", self.create_id_name)
-        return {"FINISHED"}
+        with pref.add_element_property.active_radio():
+            bpy.ops.gesture.element_add(
+                element_type="OPERATOR",
+                relationship=pref.add_element_property.relationship,
+            )
+            ae = self.active_element
+            if self.type == "PANEL":
+                ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'
+            elif self.type == "MENU":
+                ae.operator_bl_idname = f'bpy.ops.wm.call_menu(name="{self.create_id_name}")'
+            else:
+                return {"CANCELLED"}
+            ae.name = t.bl_label if t.bl_label else getattr(t, "bl_idname", self.create_id_name)
+            return {"FINISHED"}
 
 
 def draw_add(self, context):

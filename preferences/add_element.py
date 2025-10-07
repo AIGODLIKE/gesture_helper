@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import bpy
 
 from ..element.element_property import ElementAddProperty
@@ -17,3 +19,12 @@ class AddElementProperty(ElementAddProperty, bpy.types.PropertyGroup):
     @property
     def is_child_relationship(self) -> bool:
         return self.relationship == 'CHILD'
+
+    @contextmanager
+    def active_radio(self):
+        last_active_radio = self.add_active_radio
+        try:
+            self.add_active_radio = True
+            yield
+        finally:
+            self.add_active_radio = last_active_radio

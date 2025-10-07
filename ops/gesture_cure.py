@@ -39,9 +39,13 @@ class GestureCURE:
             return self.execute(context)
 
         def execute(self, _):
-            add = self.pref.gesture.add()
+            pref = self.pref
+            add = pref.gesture.add()
             self.cache_clear()
             add.name = 'Gesture'
+            print("add key", add.key)
+            # if ag := pref.active_gesture:
+            #     ag.to_temp_kmi() # 如果在添加时不将快捷键同步到临时快捷键，会同步被删的快捷键数据
             GestureKeymap.key_restart()
             bpy.ops.wm.save_userpref()
             self.cache_clear()

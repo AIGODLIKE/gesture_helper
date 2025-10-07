@@ -327,26 +327,23 @@ class Create(Draw):
         :return:
         """
         pref = get_pref()
-        act = pref.active_element
-        bpy.ops.gesture.element_add(
-            add_active_radio=True,
-            element_type="OPERATOR",
-        )
-        pt = self.property_type
-        if pt == "BOOLEAN":
-            self.create_boolean()
-        elif pt == "INT":
-            self.create_int()
-        elif pt == "FLOAT":
-            self.create_float()
-        elif pt == "STRING":
-            self.create_string()
-        elif pt == "ENUM":
-            self.create_enum()
+        with pref.add_element_property.active_radio():
+            bpy.ops.gesture.element_add(element_type="OPERATOR")
+            pt = self.property_type
+            if pt == "BOOLEAN":
+                self.create_boolean()
+            elif pt == "INT":
+                self.create_int()
+            elif pt == "FLOAT":
+                self.create_float()
+            elif pt == "STRING":
+                self.create_string()
+            elif pt == "ENUM":
+                self.create_enum()
 
-        ae = self.active_element
-        if ae and self.button_prop:
-            ae.name = self.__prop_name__
+            ae = self.active_element
+            if ae and self.button_prop:
+                ae.name = self.__prop_name__
 
     @property
     def __prop_name__(self) -> str:

@@ -29,14 +29,12 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         """
         pref = get_pref()
         act = pref.active_element
-        bpy.ops.gesture.element_add(
-            add_active_radio=True,
-            element_type="OPERATOR",
-        )
+        with pref.add_element_property.active_radio():
+            bpy.ops.gesture.element_add(element_type="OPERATOR")
 
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
-        print(f"\n{self.bl_idname}\tinvoke\t", bl_idname)
+        print(f"\n{self.bl_label}\tinvoke\t", bl_idname)
 
         properties = {}
         for prop in dir(button_operator):
