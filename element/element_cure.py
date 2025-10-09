@@ -92,6 +92,7 @@ class ElementCURE:
                     self.active_element.show_child = True
                 add.cache_clear()
                 add.radio = True
+            add.update_radio()
             self.__class__.last_element = add
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}
