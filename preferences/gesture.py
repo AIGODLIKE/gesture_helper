@@ -11,7 +11,7 @@ class GestureProperty(bpy.types.PropertyGroup):
         if self.threshold > self.threshold_confirm:
             self['threshold_confirm'] = self.threshold_confirm + 20
 
-    timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(100, 'TIME'))
+    timeout: IntProperty(name='Gesture Timeout(ms)', **gen_gesture_prop(200, 'TIME'))
     radius: IntProperty(name='Gesture Radius', **{**gen_gesture_prop(95), "max": 500})
     threshold: IntProperty(name='Threshold', **gen_gesture_prop(20))
     threshold_confirm: IntProperty(name='Confirm Threshold', **gen_gesture_prop(70))

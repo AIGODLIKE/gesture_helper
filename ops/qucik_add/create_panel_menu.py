@@ -13,6 +13,7 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])
     create_id_name: StringProperty()
+    is_draw = False
 
     @classmethod
     def poll(cls, context):
@@ -25,10 +26,7 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
 
         pref = get_pref()
         with pref.add_element_property.active_radio():
-            bpy.ops.gesture.element_add(
-                element_type="OPERATOR",
-                relationship=pref.add_element_property.relationship,
-            )
+            bpy.ops.gesture.element_add(element_type="OPERATOR")
             ae = self.active_element
             if self.type == "PANEL":
                 ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'
@@ -38,6 +36,17 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
                 return {"CANCELLED"}
             ae.name = t.bl_label if t.bl_label else getattr(t, "bl_idname", self.create_id_name)
             return {"FINISHED"}
+
+    def invoke(self, context, event):
+        if self.__class__.is_draw:
+            unregister()
+        else:
+            register()
+
+        for area in context.screen.areas:
+            area.tag_redraw()
+        self.__class__.is_draw = not self.__class__.is_draw
+        return {"FINISHED"}
 
 
 def draw_add(self, context):
@@ -53,6 +62,7 @@ def draw_add(self, context):
 
     layout.separator()
     layout.alert = True
+    layout.operator_context = "EXEC_DEFAULT"
     text = f"{pgettext_iface('Adding')} {pgettext_iface(self.bl_label)} {pgettext_iface(t)}({self.bl_idname})"
     ops = layout.operator(CreatePanelMenu.bl_idname, text=text)
     ops.type = t.upper()
@@ -61,11 +71,11 @@ def draw_add(self, context):
 
 def register():
     for p in bpy.types.Panel.__subclasses__():
-        if hasattr(p, "draw"):
+        if hasattr(p, "draw") and "gesture" not in p.__name__.lower():
             p.append(draw_add)
             __panel__.append(p)
     for m in bpy.types.Menu.__subclasses__():
-        if hasattr(m, "draw"):
+        if hasattr(m, "draw") and "gesture" not in m.__name__.lower():
             m.append(draw_add)
             __menu__.append(m)
 
