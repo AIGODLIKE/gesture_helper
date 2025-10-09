@@ -229,7 +229,7 @@ class ElementDraw:
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
         if self.is_draw_context_toggle_operator_bool:
-            layout.label(text="use property toggle icon")
+            layout.label(text="Use property toggle icon")
         else:
             row = layout.row(align=True)
             row.prop(self, 'enabled_icon')

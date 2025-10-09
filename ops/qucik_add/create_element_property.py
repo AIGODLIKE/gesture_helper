@@ -1,6 +1,6 @@
 import bpy
 from bl_ui.properties_paint_common import UnifiedPaintPanel
-from bpy.app.translations import pgettext
+from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, BoolProperty
 
 from ...utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
@@ -354,8 +354,8 @@ class Create(Draw):
                 value = self.enum_value_a
                 for item in bp.enum_items:
                     if item.identifier == value:
-                        return pgettext(item.name, bp.translation_context)
-        return pgettext(bp.name, bp.translation_context)
+                        return pgettext_n(item.name, bp.translation_context)
+        return pgettext_n(bp.name, bp.translation_context)
 
 
 class CreateElementProperty(Create):

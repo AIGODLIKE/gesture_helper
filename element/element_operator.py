@@ -1,5 +1,5 @@
 import bpy
-from bpy.app.translations import pgettext
+from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import StringProperty, EnumProperty, BoolProperty
 
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
@@ -197,6 +197,15 @@ class ElementOperator(OperatorProperty):
             if func:
                 rna = func.get_rna_type()
                 return pgettext(rna.name, rna.translation_context)
+
+    @property
+    def __operator_original_name__(self) -> str:
+        """原名称"""
+        if self.operator_type == "OPERATOR":
+            func = self.operator_func
+            if func:
+                rna = func.get_rna_type()
+                return pgettext_n(rna.name, rna.translation_context)
 
     def __running_by_bl_idname__(self):
         """通过bl_idname运行操作符

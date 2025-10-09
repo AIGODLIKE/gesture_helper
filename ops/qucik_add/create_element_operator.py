@@ -66,8 +66,7 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         ae = self.active_element
         if ae:
             ae.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
-            on = ae.__operator_name__
-            if on:
+            if on := ae.__operator_original_name__ :
                 ae.name = on
             print(ae.operator_bl_idname)
         self.cache_clear()
