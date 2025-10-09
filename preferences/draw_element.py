@@ -138,9 +138,11 @@ class DrawElement:
                         ops.element_type = i
             row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
         else:
+            column.separator()
             row = column.row(align=True)
-            row.enabled = add_child
+            row.enabled = False
             row.row(align=True).label(text="Cannot add child to 'Operator'")
+            column.label(text="Operator should not have children")
 
     @classmethod
     def draw_element_add_div_property(cls, layout: 'bpy.types.UILayout') -> None:
@@ -158,10 +160,13 @@ class DrawElement:
                 ...
             else:
                 is_alert = True
-        elif relationship == "CHILD" and active:
-            is_e = active.is_child_gesture and (active.direction == "9" or active.parent_is_extension)
-            if is_e or active.is_selected_structure:
-                ...
+        elif relationship == "CHILD":
+            if active:
+                is_e = active.is_child_gesture and (active.direction == "9" or active.parent_is_extension)
+                if is_e or active.is_selected_structure:
+                    ...
+                else:
+                    is_alert = True
             else:
                 is_alert = True
 

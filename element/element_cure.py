@@ -3,8 +3,10 @@ from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
 from .element_property import ElementAddProperty
+from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import PublicProperty, PublicOperator, get_pref
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
+from ..utils.translate import translate_lines_text
 
 
 class ElementCURE:
@@ -45,16 +47,22 @@ class ElementCURE:
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
-        bl_label = 'Add gesture item'
+        bl_label = 'Add Element item'
         bl_idname = 'gesture.element_add'
         last_element = None
 
-        from ..utils.enum import ENUM_SELECTED_TYPE
-        from bpy.props import EnumProperty
-        selected_type: EnumProperty(
-            name='Select structure type',
-            items=ENUM_SELECTED_TYPE,
-        )
+        @classmethod
+        def description(cls, context, properties):
+            texts = []
+
+            if properties.element_type == 'SELECTED_STRUCTURE':
+                for (i, t, d) in ENUM_SELECTED_TYPE:
+                    if i == properties.selected_type:
+                        texts.append(d)
+            for (i, t, d) in ENUM_ELEMENT_TYPE:
+                if i == properties.element_type:
+                    texts.append(d)
+            return translate_lines_text(*texts)
 
         @property
         def collection(self):
@@ -74,12 +82,9 @@ class ElementCURE:
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, _):
+            active = self.active_element
             add = self.collection.add()
             add.cache_clear()
-
-            if self.active_element:
-                add.cache_clear()
-                self.active_element.radio = True  # 还是保持默认选择是当前
 
             add.element_type = self.element_type
             add.selected_type = self.selected_type
@@ -91,8 +96,11 @@ class ElementCURE:
                 if self.active_element:
                     self.active_element.show_child = True
                 add.cache_clear()
-                add.radio = True
-            add.update_radio()
+                add.update_radio()
+            else:
+                # 还是保持默认选择是当前
+                active.update_radio()
+
             self.__class__.last_element = add
             bpy.ops.wm.save_userpref()
             return {'FINISHED'}

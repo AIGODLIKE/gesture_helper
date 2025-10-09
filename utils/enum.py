@@ -48,7 +48,7 @@ ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 ENUM_RELATIONSHIP = [
     ('ROOT', 'Root', 'Add to root'),
     ('SAME', 'Same', 'Add to same'),
-    ('CHILD', 'Child', 'Add to child')
+    ('CHILD', 'Child', 'Add to child'),
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)
 

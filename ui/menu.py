@@ -2,7 +2,7 @@ import bpy
 
 
 class GESTURE_MT_add_element_menu(bpy.types.Menu):
-    bl_label = "Add Element"
+    bl_label = "Other Element"
 
     def draw(self, context):
         from ..ops.qucik_add.create_switch_panel import CreateSwitchPanel
@@ -10,5 +10,5 @@ class GESTURE_MT_add_element_menu(bpy.types.Menu):
         layout = self.layout
         layout.label(text="Other")
         layout.operator(CreateSwitchPanel.bl_idname, text="Switch N Panel")
-        text = "Cancel adding panel or menu" if CreatePanelMenu.is_draw else "Call Panel or Menu"
+        text = "Cancel adding panel or menu" if CreatePanelMenu.is_draw else "Adding Panel or Menu"
         layout.operator(CreatePanelMenu.bl_idname, text=text)
