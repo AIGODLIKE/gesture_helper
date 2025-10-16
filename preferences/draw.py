@@ -31,7 +31,6 @@ class PreferencesDraw(GestureDraw):
     @staticmethod
     def draw_topbar(layout: 'bpy.types.UILayout'):
         """绘制顶部栏"""
-        from ..ops.qucik_add.gesture_preview import GesturePreview
         pref = get_pref()
         row = layout.row(align=True)
         rr = row.row(align=True)
@@ -40,8 +39,9 @@ class PreferencesDraw(GestureDraw):
         rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
-        row.operator_context = "INVOKE_DEFAULT"
-        row.operator(GesturePreview.bl_idname, icon="RNA_ADD", text=GesturePreview.bl_label)
+        # from ..ops.qucik_add.gesture_preview import GesturePreview
+        # row.operator_context = "INVOKE_DEFAULT"
+        # row.operator(GesturePreview.bl_idname, icon=get_adapter_blender_icon("RNA_ADD"), text=GesturePreview.bl_label)
 
     @staticmethod
     def draw_ui_property(layout):

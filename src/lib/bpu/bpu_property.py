@@ -50,18 +50,21 @@ class BpuProperty(BpuColor):
         if self.parent_top.__layout_haver_histories__:
             last = self.parent_top.__layout_haver_histories__[0]
             return last
+        return None
 
     @property
     def __active_operator__(self) -> "BpuLayout":
         lh = self.___last_haver___
         if lh and lh.type.is_operator:
             return lh
+        return None
 
     @property
     def __active_property__(self) -> "BpuLayout":
         lh = self.___last_haver___
         if lh and lh.type.is_prop:
             return lh
+        return None
 
     @property
     def __quadrant_translate__(self) -> Vector:
