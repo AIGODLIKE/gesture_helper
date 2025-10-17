@@ -38,7 +38,7 @@ class CreateElementOperator(PublicOperator, PublicProperty):
 
         properties = {}
         for prop in dir(button_operator):
-            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type'):
+            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
                 value = getattr(button_operator, prop)
 
                 if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
@@ -49,24 +49,31 @@ class CreateElementOperator(PublicOperator, PublicProperty):
                         res += (*tuple(i[:]),)
                     value = res
 
-                p = button_operator.bl_rna.properties[prop]
-                print(prop, p.type, value)
-                if p.type not in ("POINTER", "COLLECTION"):
-                    if getattr(p, "is_array", False):
-                        default = p.default_array[:]
-                    else:
-                        if p.type == "ENUM" and p.default == '':
-                            default = value
+                try:
+                    p = button_operator.bl_rna.properties[prop]
+                    print(prop, p.type, value)
+                    if p.type not in ("POINTER", "COLLECTION"):
+                        if getattr(p, "is_array", False):
+                            default = p.default_array[:]
                         else:
-                            default = p.default
-                    if default != value:
-                        print("default != value", default)
-                        properties[prop] = value
+                            if p.type == "ENUM" and p.default == '':
+                                default = value
+                            else:
+                                default = p.default
+                        if default != value:
+                            print("default != value", default)
+                            properties[prop] = value
+                except Exception as e:
+                    print(e.args)
+                    import traceback
+                    traceback.print_exc()
+                    traceback.print_stack()
+
         pp = ",".join((f"{k}='{v}'" if type(v) is str else f"{k}={v}" for k, v in properties.items()))
         ae = self.active_element
         if ae:
             ae.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
-            if on := ae.__operator_original_name__ :
+            if on := ae.__operator_original_name__:
                 ae.name = on
             print(ae.operator_bl_idname)
         self.cache_clear()

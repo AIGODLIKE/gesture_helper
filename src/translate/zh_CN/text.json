@@ -65,6 +65,7 @@
   "Set keymaps": "设置键位映射",
   "Prerequisite:": "条件:",
   "Prerequisite": "条件",
+  "Switch": "切换",
   "Switch mode": "切换模式",
   "Switch object mode": "切换物体模式",
   "Switch object edit mode": "切换物体编辑模式",
@@ -348,5 +349,6 @@
   "Add to root": "添加到根级",
   "Add to same": "添加到同级",
   "Add to child": "添加到子级",
-  "Dividing line": "分隔线"
+  "Dividing line": "分隔线",
+  "Array property not supported": "不支持数组属性"
 }

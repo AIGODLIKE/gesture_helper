@@ -63,7 +63,7 @@ class Enum:
 
 class OpsProperty(Enum):
     boolean_mode: EnumProperty(
-        items=[('SET_TRUE', 'Set To True', ''), ('SET_FALSE', 'Set To False', ''), ('SWITCH', 'Switch', '')],
+        items=[('SET_TRUE', 'Set to True', ''), ('SET_FALSE', 'Set to False', ''), ('SWITCH', 'Switch', '')],
         name='Boolean Mode',
         options={'HIDDEN', 'SKIP_SAVE'},
     )
@@ -119,9 +119,6 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         if prop and ContextMenu.show_context_menu:
             prop_type = prop.type
 
-            text = pgettext(prop.name, prop.translation_context)
-            type_translate = pgettext(prop_type, "*")
-            relationship = pgettext(pref.add_element_property.relationship, "*")
             value = getattr(pointer, prop.identifier)
 
             if self.data_path != "":
@@ -130,7 +127,10 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 elif prop_type == "INT":
                     self.draw_int(context, layout)
                 elif prop_type == "FLOAT":
-                    self.draw_float(context, layout)
+                    if prop.is_array:
+                        layout.label(text="Array property not supported")
+                    else:
+                        self.draw_float(context, layout)
                 elif prop_type == "STRING":
                     self.draw_string(context, layout)
                 elif prop_type == "ENUM":
@@ -140,19 +140,23 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 layout.label(text="Unable to get data path")
                 layout.label(text="Unable to add")
 
-            layout.separator()
-            layout.label(text=text)
-            layout.label(text=prop.identifier)
-            layout.label(text=str(type_translate))
-            layout.label(text="Adding Property to Gestures")
-            layout.label(text=pgettext("Add element relationship: %s") % relationship)
-            layout.label(text=pgettext("Current value: %s") % value)
+            if self.debug_property.debug_mode:
+                text = pgettext(prop.name, prop.translation_context)
+                type_translate = pgettext(prop_type, "*")
+                relationship = pgettext(pref.add_element_property.relationship, "*")
+                layout.separator()
+                layout.label(text=text)
+                layout.label(text=prop.identifier)
+                layout.label(text=str(type_translate))
+                layout.label(text="Adding Property to Gestures")
+                layout.label(text=pgettext("Add element relationship: %s") % relationship)
+                layout.label(text=pgettext("Current value: %s") % value)
 
-            layout.label(text=f"button_pointer:\t{pointer}")
-            layout.label(text=f"button_prop:\t{prop}")
-            layout.label(text=f"a:\t{getattr(context, 'button_prop', None)}")
-            layout.label(text=f"subtype:\t{prop.subtype}")
-            layout.label(text=f"data_path:\t{self.data_path}")
+                layout.label(text=f"button_pointer:\t{pointer}")
+                layout.label(text=f"button_prop:\t{prop}")
+                layout.label(text=f"a:\t{getattr(context, 'button_prop', None)}")
+                layout.label(text=f"subtype:\t{prop.subtype}")
+                layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
         layout.label(text="Set Boolean Value")

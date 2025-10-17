@@ -91,7 +91,8 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                     print(f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}")
                     print(f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}")
                 self.try_pass_through_keymap(context, event)
-                print()
+                if self.is_debug:
+                    print()
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         return {'FINISHED'}
 
