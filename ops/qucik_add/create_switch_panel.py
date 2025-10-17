@@ -22,6 +22,8 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         return wm.invoke_props_dialog(**{'operator': self, 'width': 300})
 
     def execute(self, context):
+        if self.panel_name == "":
+            return {"FINISHED"}
         from ...element.element_cure import ElementCURE
         bpy.ops.gesture.element_add(element_type="OPERATOR")
         last = ElementCURE.ADD.last_element
