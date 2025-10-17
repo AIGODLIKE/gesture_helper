@@ -9,7 +9,6 @@ from ..element import ElementCURE
 from ..ops.gesture_cure import GestureCURE
 from ..utils.public import PublicProperty
 
-
 class Gesture(
     GestureKeymap,
     GestureProperty,

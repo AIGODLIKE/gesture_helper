@@ -162,6 +162,7 @@ class OperatorProperty:
             return False
 
 
+
 class ElementOperator(OperatorProperty):
 
     def to_operator_tmp_kmi(self) -> None:

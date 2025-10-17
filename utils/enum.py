@@ -55,6 +55,7 @@ ENUM_OPERATOR_CONTEXT = from_each_as_title(OPERATOR_CONTEXT_ELEMENT)
 ENUM_OPERATOR_TYPE = [
     ('OPERATOR', 'Operator', 'Enter Blender own operator bl_idname'),
     ('SCRIPT', 'Script', 'Use custom script to run'),
+    ('MODAL', 'Modal', 'Use modal run operator'),
 ]
 
 CREATE_ELEMENT_VALUE_MODE_ENUM = [

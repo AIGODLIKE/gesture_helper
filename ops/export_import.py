@@ -35,6 +35,10 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
         'direction', 'operator_type', 'operator_script', ],
+    'OPERATOR_MODAL': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
+        'direction', 'operator_type'],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,

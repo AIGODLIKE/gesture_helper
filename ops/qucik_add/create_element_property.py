@@ -379,7 +379,7 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
-        return context.window_manager.invoke_popup(**{'operator': self, 'width': 600})
+        return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
     def execute(self, context) -> set[str]:
         self.clear_info()

@@ -101,56 +101,7 @@ class ElementDraw:
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
-            is_operator = self.operator_type == 'OPERATOR'
-            preview_script = self.preview_operator_script
-            row = layout.row(align=True)
-            col = row.column(align=True)
-            col.prop(self, 'name')
-            self.draw_edit_icon(col)
-            col.prop(self, 'operator_type')
-
-            if is_operator:
-                c = col.column(align=True)
-                c.alert = not self.__operator_id_name_is_validity__
-                c.prop(self, 'operator_bl_idname')
-                b = col.column(align=True)
-                b.alert = not self.__operator_properties_is_validity__
-                b.prop(self, 'operator_properties')
-            else:
-                c = col.column(align=True)
-                c.operator(ElementCURE.ScriptEdit.bl_idname)
-                rr = c.row(align=True)
-                rr.label(text=f'{pgettext_iface("Script word count")}:{len(self.operator_script)}')
-                rr.separator()
-                rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
-                        emboss=False)
-
-            if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
-                SetDirection.draw_direction(row.column())
-
-            if is_operator:
-                is_change = self.properties != self.operator_tmp_kmi_properties
-                row = layout.row(align=True)
-                row.prop(self, 'operator_context')
-                row.alert = is_change
-                row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
-                row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
-                row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
-                if self.other_property.auto_update_element_operator_properties:
-                    self.from_tmp_kmi_operator_update_properties()
-                if is_change:
-                    layout.alert = True
-                    layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
-                                 icon='ERROR')
-                    layout.alert = False
-                layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
-
-            else:
-                if preview_script:
-                    script_box = layout.box()
-                    for i in self.operator_script.split('\n'):
-                        script_box.label(text=i)
-
+            self.draw_operator(layout)
         elif self.is_child_gesture:
             row = layout.row(align=True)
             column = row.column()
@@ -239,3 +190,61 @@ class ElementDraw:
                 row.alert = True
                 row.prop(self, 'icon', text='', icon='ERROR')
             row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
+
+    def draw_operator(self, layout):
+        is_operator = self.operator_type == 'OPERATOR'
+        is_modal = self.operator_type == "MODAL"
+        is_script = self.operator_type == "SCRIPT"
+
+        preview_script = self.preview_operator_script
+        row = layout.row(align=True)
+        col = row.column(align=True)
+        col.prop(self, 'name')
+        self.draw_edit_icon(col)
+        col.prop(self, 'operator_type')
+
+        if is_operator:
+            c = col.column(align=True)
+            c.alert = not self.__operator_id_name_is_validity__
+            c.prop(self, 'operator_bl_idname')
+            b = col.column(align=True)
+            b.alert = not self.__operator_properties_is_validity__
+            b.prop(self, 'operator_properties')
+        elif is_modal:
+            col.label(text='Modal')
+        elif is_script:
+            c = col.column(align=True)
+            c.operator(ElementCURE.ScriptEdit.bl_idname)
+            rr = c.row(align=True)
+            rr.label(text=f'{pgettext_iface("Script word count")}:{len(self.operator_script)}')
+            rr.separator()
+            rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
+                    emboss=False)
+
+        if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
+            SetDirection.draw_direction(row.column())
+
+        if is_operator:
+            is_change = self.properties != self.operator_tmp_kmi_properties
+            row = layout.row(align=True)
+            row.prop(self, 'operator_context')
+            row.alert = is_change
+            row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
+            row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
+            row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
+            if self.other_property.auto_update_element_operator_properties:
+                self.from_tmp_kmi_operator_update_properties()
+
+            layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
+            if is_change:
+                layout.alert = True
+                layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
+                             icon='ERROR')
+                layout.alert = False
+        elif is_modal:
+            layout.label(text='Modal ww')
+        elif is_script:
+            if preview_script:
+                script_box = layout.box()
+                for i in self.operator_script.split('\n'):
+                    script_box.label(text=i)

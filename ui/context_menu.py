@@ -45,10 +45,13 @@ class ContextMenu(bpy.types.Menu):
                 button_operator = getattr(context, "button_operator", None)
                 br = button_operator.bl_rna
                 text = __name_translate__(br.name)
-                layout.operator(
-                    CreateElementOperator.bl_idname,
-                    text=pgettext("Add Operator %s To Gesture") % text
-                )
+                row = layout.column(align=True)
+                rr = row
+                rr.operator_context = "EXEC_DEFAULT"
+                rr.operator(CreateElementOperator.bl_idname, text=pgettext("Add Operator %s To Gesture") % text)
+                rr = row
+                rr.operator_context = "INVOKE_DEFAULT"
+                rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
 
 
 def register():

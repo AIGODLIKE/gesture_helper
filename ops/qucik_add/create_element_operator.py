@@ -4,14 +4,65 @@ from mathutils import Euler, Vector, Matrix
 from ...utils.public import PublicOperator, PublicProperty, get_pref
 
 
-def __from_rna_get_bl_ops_idname__(bl_rna) -> str:
+def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
     identifier = bl_rna.identifier
     if "_OT_" in identifier:
         a, b = identifier.split("_OT_")
         return f"{a.lower()}.{b.lower()}"
+    return None
 
 
-class CreateElementOperator(PublicOperator, PublicProperty):
+class CreateModalOperator:
+    def invoke(self, context, event):
+        self.button_operator = getattr(context, "button_operator", None)
+        return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
+
+    def draw(self, context):
+        button_operator = self.button_operator
+
+        bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
+        description =  button_operator.bl_rna.description
+
+        layout = self.layout
+        layout.label(text=description)
+        layout.label(text=bl_idname)
+
+        properties = {}
+        for prop in dir(button_operator):
+            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
+                value = getattr(button_operator, prop, None)
+
+                if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
+                    value = value[:]
+                elif isinstance(value, Matrix):
+                    res = ()
+                    for i in value:
+                        res += (*tuple(i[:]),)
+                    value = res
+                layout.label(text=prop + " " + str(value))
+
+                # try:
+                #     p = button_operator.bl_rna.properties[prop]
+                #     print(prop, p.type, value)
+                #     if p.type not in ("POINTER", "COLLECTION"):
+                #         if getattr(p, "is_array", False):
+                #             default = p.default_array[:]
+                #         else:
+                #             if p.type == "ENUM" and p.default == '':
+                #                 default = value
+                #             else:
+                #                 default = p.default
+                #         if default != value:
+                #             print("default != value", default)
+                #             properties[prop] = value
+                # except Exception as e:
+                #     print(e.args)
+                #     import traceback
+                #     traceback.print_exc()
+                #     traceback.print_stack()
+
+
+class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
     bl_label = 'Create Operator Element'
     bl_idname = 'gesture.create_element_operator'
 
