@@ -62,20 +62,27 @@ def draw_add(self, context):
 
     layout.separator()
     layout.alert = True
-    layout.operator_context = "EXEC_DEFAULT"
+    row = layout.row(align=True)
+    row.operator_context = "EXEC_DEFAULT"
     text = f"{pgettext_iface('Adding')} {pgettext_iface(self.bl_label)} {pgettext_iface(t)}({self.bl_idname})"
-    ops = layout.operator(CreatePanelMenu.bl_idname, text=text)
+    ops = row.operator(CreatePanelMenu.bl_idname, text=text)
     ops.type = t.upper()
     ops.create_id_name = self.bl_idname
+    rr = row.row(align=True)
+    rr.operator_context = "INVOKE_DEFAULT"
+    rr.operator(CreatePanelMenu.bl_idname, text="",icon="PANEL_CLOSE")
+
+
+exclude_panel = ["PROPERTIES_PT_navigation_bar"]
 
 
 def register():
     for p in bpy.types.Panel.__subclasses__():
-        if hasattr(p, "draw") and "gesture" not in p.__name__.lower():
+        if hasattr(p, "draw") and "gesture" not in p.__name__.lower() and p.__name__ not in exclude_panel:
             p.append(draw_add)
             __panel__.append(p)
     for m in bpy.types.Menu.__subclasses__():
-        if hasattr(m, "draw") and "gesture" not in m.__name__.lower():
+        if hasattr(m, "draw") and "gesture" not in m.__name__.lower() and m.__name__ not in exclude_panel:
             m.append(draw_add)
             __menu__.append(m)
 
