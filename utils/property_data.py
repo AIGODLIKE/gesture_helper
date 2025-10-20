@@ -12,6 +12,7 @@ CREATE_ELEMENT_DATA_PATHS = {
 
     "SpaceUVEditor": "bpy.context.space_data.uv_editor",
     "SpaceTextEditor": "bpy.context.space_data",
+    "SpaceNodeEditor": "bpy.context.space_data",
     "SpaceDopeSheetEditor": "bpy.context.space_data",
     "SpaceImageEditor": "bpy.context.space_data",
     "SpaceView3D": "bpy.context.space_data",
