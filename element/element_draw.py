@@ -203,15 +203,13 @@ class ElementDraw:
         self.draw_edit_icon(col)
         col.prop(self, 'operator_type')
 
-        if is_operator:
+        if is_operator or is_modal:
             c = col.column(align=True)
             c.alert = not self.__operator_id_name_is_validity__
             c.prop(self, 'operator_bl_idname')
             b = col.column(align=True)
             b.alert = not self.__operator_properties_is_validity__
             b.prop(self, 'operator_properties')
-        elif is_modal:
-            col.label(text='Modal')
         elif is_script:
             c = col.column(align=True)
             c.operator(ElementCURE.ScriptEdit.bl_idname)
@@ -224,7 +222,7 @@ class ElementDraw:
         if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
             SetDirection.draw_direction(row.column())
 
-        if is_operator:
+        if is_operator or is_modal:
             is_change = self.properties != self.operator_tmp_kmi_properties
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
@@ -241,10 +239,29 @@ class ElementDraw:
                 layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
                              icon='ERROR')
                 layout.alert = False
-        elif is_modal:
-            layout.label(text='Modal ww')
+            if is_modal:
+                self.draw_operator_modal(layout)
         elif is_script:
             if preview_script:
                 script_box = layout.box()
                 for i in self.operator_script.split('\n'):
                     script_box.label(text=i)
+
+    def draw_operator_modal(self, layout):
+        from .element_modal_operator import ElementModalOperatorEventCRUE
+        from ..ui.ui_list import ElementModalEventUIList
+        
+        box = layout.box()
+        box.label(text='Modal ww')
+        row = box.row(align=True)
+        row.template_list(
+            ElementModalEventUIList.bl_idname,
+            ElementModalEventUIList.bl_idname,
+            self,
+            'modal_events',
+            self,
+            'modal_events_index',
+        )
+        col = row.column(align=True)
+        col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname)
+        col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname)

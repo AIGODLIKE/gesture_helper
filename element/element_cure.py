@@ -47,7 +47,7 @@ class ElementCURE:
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
-        bl_label = 'Add Element item'
+        bl_label = 'Add element item'
         bl_idname = 'gesture.element_add'
         last_element = None
 
@@ -106,7 +106,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):
-        bl_label = 'Remove gesture item'
+        bl_label = 'Remove element item'
         bl_idname = 'gesture.element_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
 
@@ -134,8 +134,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class MOVE(ElementPoll):
-        bl_idname = 'gesture.element_move'
         bl_label = 'Move gesture item'
+        bl_idname = 'gesture.element_move'
         move_item = None
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -196,8 +196,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class COPY(ElementPoll):
-        bl_idname = 'gesture.element_copy'
         bl_label = 'Copy gesture item'
+        bl_idname = 'gesture.element_copy'
 
         def execute(self, _):
             self.active_element.copy()
@@ -214,8 +214,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class CUT(ElementPoll):
-        bl_idname = 'gesture.element_cut'
         bl_label = 'Cut gesture item'
+        bl_idname = 'gesture.element_cut'
 
         __cut_data__ = None  # 剪切的数据
 
@@ -279,8 +279,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):
-        bl_idname = 'gesture.element_operator_script_edit'
         bl_label = 'Edit script'
+        bl_idname = 'gesture.element_operator_script_edit'
 
         # 获取脚本数据块
         def get_text_data(self) -> bpy.types.Text:
@@ -313,8 +313,8 @@ class ElementCURE:
         def poll(cls, context):
             pref = get_pref()
             h = context.space_data.text.gesture_element_hash
-            hashOk = h == str(hash(pref.active_element))
-            return super().poll(context) and hashOk
+            hash_ok = h == str(hash(pref.active_element))
+            return super().poll(context) and hash_ok
 
         @staticmethod
         def register_ui():

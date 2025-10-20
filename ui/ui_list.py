@@ -64,6 +64,14 @@ class ElementUIList(bpy.types.UIList, PublicProperty):
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
+class ElementModalEventUIList(bpy.types.UIList, PublicProperty):
+    bl_idname = 'DRAW_UL_element_modal_items'
+
+    def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
+                  flt_flag):
+        item.draw_item(layout.column(align=True))
+
+
 class ImportPresetUIList(bpy.types.UIList,
                          PublicProperty):
     bl_idname = 'DRAW_UL_preset'
