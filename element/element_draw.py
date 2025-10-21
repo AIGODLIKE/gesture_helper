@@ -248,11 +248,11 @@ class ElementDraw:
                     script_box.label(text=i)
 
     def draw_operator_modal(self, layout):
-        from .element_modal_operator import ElementModalOperatorEventCRUE
+        from .element_modal_operator_cure import ElementModalOperatorEventCRUE
         from ..ui.ui_list import ElementModalEventUIList
-        
+
         box = layout.box()
-        box.label(text='Modal ww')
+        box.label(text='Modal event control')
         row = box.row(align=True)
         row.template_list(
             ElementModalEventUIList.bl_idname,
@@ -263,5 +263,5 @@ class ElementDraw:
             'modal_events_index',
         )
         col = row.column(align=True)
-        col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname)
-        col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname)
+        col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname, text="", icon="ADD")
+        col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname, text="", icon="REMOVE")

@@ -7,7 +7,7 @@ from ..utils.public_cache import PublicCache, cache_update_lock
 
 
 @cache
-def get_element_index(element) -> int:
+def get_element_index(element) -> int | None:
     try:
         return element.collection.values().index(element)
     except ValueError:

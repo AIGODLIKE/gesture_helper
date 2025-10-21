@@ -73,3 +73,4 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
+    clear_temp_keymap()

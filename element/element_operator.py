@@ -24,6 +24,30 @@ class ModalProperty:
         ...
 
 
+class ScriptOperator:
+    """脚本操作符"""
+    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
+
+    preview_operator_script: BoolProperty(name='Preview Script', default=True)
+
+    def __running_by_script__(self):
+        """运行自定义脚本"""
+        try:
+            res = secure_call_exec(self.operator_script)
+            if res is None:
+                ...
+            elif isinstance(res, str):
+                return res
+
+        except Exception as e:
+            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            print("运行错误,")
+            return e
+
+
 class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """从此元素的属性更新到临时 keymap item"""
@@ -82,21 +106,23 @@ class RunOperator:
     """Blender操作符"""
 
     @property
-    def __operator_name__(self) -> str:
+    def __operator_name__(self) -> str | None:
         if self.operator_type == "OPERATOR":
             func = self.operator_func
             if func:
                 rna = func.get_rna_type()
                 return pgettext(rna.name, rna.translation_context)
+        return None
 
     @property
-    def __operator_original_name__(self) -> str:
+    def __operator_original_name__(self) -> str | None:
         """原名称"""
         if self.operator_type == "OPERATOR":
             func = self.operator_func
             if func:
                 rna = func.get_rna_type()
                 return pgettext_n(rna.name, rna.translation_context)
+        return None
 
     def __running_by_bl_idname__(self):
         """通过bl_idname运行操作符
@@ -118,30 +144,6 @@ class RunOperator:
                 )
         except Exception as e:
             print('running_operator ERROR', e)
-            return e
-
-
-class ScriptOperator:
-    """脚本操作符"""
-    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
-
-    preview_operator_script: BoolProperty(name='Preview Script', default=True)
-
-    def __running_by_script__(self):
-        """运行自定义脚本"""
-        try:
-            res = secure_call_exec(self.operator_script)
-            if res is None:
-                ...
-            elif isinstance(res, str):
-                return res
-
-        except Exception as e:
-            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
-            print("运行错误,")
             return e
 
 
@@ -222,7 +224,7 @@ class OperatorProperty:
             return {}
 
     @property
-    def operator_func(self) -> 'bpy.types.Operator':
+    def operator_func(self) -> 'bpy.types.Operator | None':
         """获取操作符
 
         Returns:
@@ -233,6 +235,7 @@ class OperatorProperty:
             prefix, suffix = sp
             func = getattr(getattr(bpy.ops, prefix), suffix)
             return func
+        return None
 
     @property
     def __operator_id_name_is_validity__(self) -> bool:

@@ -1,6 +1,7 @@
 import bpy
 from mathutils import Euler, Vector, Matrix
 
+from ...element.element_cure import ElementCURE
 from ...utils.public import PublicOperator, PublicProperty, get_pref
 
 
@@ -15,17 +16,26 @@ def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
 class CreateModalOperator:
     def invoke(self, context, event):
         self.button_operator = getattr(context, "button_operator", None)
+
+        self.execute(context)
+
+        last_element = ElementCURE.ADD.last_element
+        last_element.operator_type = "MODAL"
+
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
     def draw(self, context):
         button_operator = self.button_operator
 
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
-        description =  button_operator.bl_rna.description
+        description = button_operator.bl_rna.description
 
         layout = self.layout
         layout.label(text=description)
         layout.label(text=bl_idname)
+
+        last_element = ElementCURE.ADD.last_element
+        last_element.draw_operator_modal(layout)
 
         properties = {}
         for prop in dir(button_operator):
@@ -40,26 +50,6 @@ class CreateModalOperator:
                         res += (*tuple(i[:]),)
                     value = res
                 layout.label(text=prop + " " + str(value))
-
-                # try:
-                #     p = button_operator.bl_rna.properties[prop]
-                #     print(prop, p.type, value)
-                #     if p.type not in ("POINTER", "COLLECTION"):
-                #         if getattr(p, "is_array", False):
-                #             default = p.default_array[:]
-                #         else:
-                #             if p.type == "ENUM" and p.default == '':
-                #                 default = value
-                #             else:
-                #                 default = p.default
-                #         if default != value:
-                #             print("default != value", default)
-                #             properties[prop] = value
-                # except Exception as e:
-                #     print(e.args)
-                #     import traceback
-                #     traceback.print_exc()
-                #     traceback.print_stack()
 
 
 class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
@@ -85,7 +75,7 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
 
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
-        print(f"\n{self.bl_label}\tinvoke\t", bl_idname)
+        print(f"\n{self.bl_label}\texecute\t", bl_idname)
 
         properties = {}
         for prop in dir(button_operator):

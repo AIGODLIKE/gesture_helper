@@ -26,10 +26,12 @@ def clear_temp_keymap() -> None:
         keymap.keymap_items.remove(kmi)
 
 
-def get_temp_kmi(id_name: str, properties: dict) -> 'bpy.types.KeyMapItem':
+def get_temp_kmi(id_name: str, properties: dict, kmi_data=None) -> 'bpy.types.KeyMapItem':
     """
     bpy.context.window_manager.keyconfigs.active.keymaps['TEMP'].keymap_items
     """
+    if kmi_data is None:
+        kmi_data = {"type": "A", "value": "PRESS"}
     keymap_items = get_temp_keymap().keymap_items
     for temp_kmi in keymap_items:
         if temp_kmi.idname == id_name:
@@ -37,7 +39,7 @@ def get_temp_kmi(id_name: str, properties: dict) -> 'bpy.types.KeyMapItem':
                 keymap_items.remove(temp_kmi)
             elif get_kmi_operator_properties(temp_kmi) == properties:
                 return temp_kmi
-    kmi = keymap_items.new(id_name, "A", "PRESS")
+    kmi = keymap_items.new(id_name, **kmi_data)
     simple_set_property(properties, kmi.properties)
     return kmi
 

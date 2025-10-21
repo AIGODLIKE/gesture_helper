@@ -171,6 +171,13 @@ class PublicProperty(PublicCacheFunc):
                     return element
         return None
 
+    @property
+    def active_event(self):
+        """反回活动手势的活动元素的活动modal事件"""
+        if self.active_element:
+            return self.active_element.active_event
+        return None
+
     @classmethod
     def update_state(cls):
         """更新临时快捷键的状态

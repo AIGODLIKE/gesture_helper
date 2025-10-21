@@ -34,13 +34,14 @@ class BpuOperator:
         self.__operator_properties__ = OperatorProperties()
 
     @property
-    def __operator_func__(self) -> "bpy.types.Operator":
+    def __operator_func__(self) -> "bpy.types.Operator|None":
         if self.__bl_idname__:
             sp = self.__bl_idname__.split('.')
             if len(sp) == 2:
                 prefix, suffix = sp
                 func = getattr(getattr(bpy.ops, prefix), suffix)
                 return func
+        return None
 
     @property
     def __operator_text__(self) -> str:
