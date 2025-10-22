@@ -319,6 +319,7 @@ class Create(Draw):
         :return:
         """
         pref = get_pref()
+        self.cache_clear()
         with pref.add_element_property.active_radio():
             bpy.ops.gesture.element_add(element_type="OPERATOR")
             pt = self.property_type

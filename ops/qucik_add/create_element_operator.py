@@ -17,7 +17,9 @@ class CreateModalOperator:
     def invoke(self, context, event):
         self.button_operator = getattr(context, "button_operator", None)
 
+        self.cache_clear()
         self.execute(context)
+        self.cache_clear()
 
         last_element = ElementCURE.ADD.last_element
         last_element.operator_type = "MODAL"
@@ -41,7 +43,6 @@ class CreateModalOperator:
         for prop in dir(button_operator):
             if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
                 value = getattr(button_operator, prop, None)
-
                 if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
                     value = value[:]
                 elif isinstance(value, Matrix):
@@ -69,14 +70,13 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
         :return:
         """
         pref = get_pref()
-        act = pref.active_element
         with pref.add_element_property.active_radio():
             bpy.ops.gesture.element_add(element_type="OPERATOR")
 
+        # return {"FINISHED"}
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
         print(f"\n{self.bl_label}\texecute\t", bl_idname)
-
         properties = {}
         for prop in dir(button_operator):
             if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
@@ -111,14 +111,11 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
                     traceback.print_stack()
 
         pp = ",".join((f"{k}='{v}'" if type(v) is str else f"{k}={v}" for k, v in properties.items()))
-        ae = self.active_element
-        if ae:
-            ae.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
-            if on := ae.__operator_original_name__:
-                ae.name = on
-            print(ae.operator_bl_idname)
+        last_element = ElementCURE.ADD.last_element
+        if last_element:
+            last_element.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
+            if on := last_element.__operator_original_name__:
+                last_element.name = on
+            print(last_element.operator_bl_idname)
         self.cache_clear()
-        if act:
-            act.radio = True
-            self.cache_clear()
         return {"FINISHED"}

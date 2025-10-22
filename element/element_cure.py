@@ -97,9 +97,6 @@ class ElementCURE:
                     self.active_element.show_child = True
                 add.cache_clear()
                 add.update_radio()
-            else:
-                # 还是保持默认选择是当前
-                active.update_radio()
 
             self.__class__.last_element = add
             bpy.ops.wm.save_userpref()

@@ -30,5 +30,8 @@ class AddElementProperty(ElementAddProperty, bpy.types.PropertyGroup):
         finally:
             self.add_active_radio = last_active_radio
             if active and not last_active_radio:
+                active.cache_clear()
                 active.radio = True
+                active.cache_clear()
                 active.update_radio()
+                active.cache_clear()

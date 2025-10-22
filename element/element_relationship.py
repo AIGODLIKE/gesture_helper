@@ -125,7 +125,7 @@ class RadioSelect:
                     self.to_operator_tmp_kmi()
         except Exception as e:
             self.cache_clear()
-            print(e.args)
+            print("update_radio Error", e.args)
             import traceback
             traceback.print_exc()
             traceback.print_stack()

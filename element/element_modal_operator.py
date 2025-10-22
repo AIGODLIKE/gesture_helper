@@ -173,6 +173,7 @@ class ElementModalOperatorEventItem(
         return False
 
     def draw_item(self, layout):
+        """UIList draw item"""
         row = layout.row(align=True)
         row.alert = not self.check_property_is_validity
 
@@ -180,9 +181,9 @@ class ElementModalOperatorEventItem(
         row.label(text=self.control_property_type)
         row.label(text=self.control_property)
         self.draw_event_type(row)
-        self.draw_modal(layout)
 
     def draw_modal(self, layout):
+        """绘制单项属性"""
         column = layout.column(align=True)
         column.label(text="draw_modal")
         column.prop(self, "event_type")
