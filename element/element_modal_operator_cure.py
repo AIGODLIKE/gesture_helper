@@ -1,7 +1,7 @@
 import bpy
 
-from utils.public import PublicProperty
-from utils.public_cache import PublicCache
+from ..utils.public import PublicProperty
+from ..utils.public_cache import PublicCache
 
 
 class ElementModalOperatorEventCRUE:
@@ -19,7 +19,7 @@ class ElementModalOperatorEventCRUE:
 
         def invoke(self, context, event):
             wm = context.window_manager
-            return wm.invoke_props_dialog(**{'operator': self, 'width': 600})
+            return wm.invoke_props_dialog(**{'operator': self, 'width': 500})
 
         def draw(self, context):
             layout = self.layout
@@ -28,7 +28,10 @@ class ElementModalOperatorEventCRUE:
                 try:
                     for i in self.active_element.operator_func.get_rna_type().properties:
                         if i.identifier not in ["rna_type", ]:
-                            ops = layout.operator(self.bl_idname, text=f"{i.name}({i.identifier})")
+                            row = layout.row(align=True)
+                            row.label(text=i.name)
+                            row.label(text=i.name, translate=False)
+                            ops = row.operator(self.bl_idname, text=i.identifier)
                             ops.control_property = i.identifier
                 except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'
                     ...
@@ -40,6 +43,30 @@ class ElementModalOperatorEventCRUE:
             new = element.modal_events.add()
             new.control_property = self.control_property
             self.cache_clear()
+            return {"FINISHED"}
+
+    class COPY(ModalPoll):
+        bl_label = 'Copy element modal item'
+        bl_idname = 'gesture.element_modal_copy'
+
+        @classmethod
+        def poll(cls, context):
+            pref = cls._pref()
+            ae = pref.active_element
+            return super().poll(context) and ae.active_event is not None
+
+        def execute(self, context):
+            element = self.pref.active_element
+            element.active_event.copy()
+
+            self.cache_clear()
+            ae = element.active_event
+            if ae:
+                parent = ae.parent
+                parent.modal_events.move(len(parent.modal_events) - 1, ae.index + 1)
+
+            self.cache_clear()
+            bpy.ops.wm.save_userpref()
             return {"FINISHED"}
 
     class REMOVE(ModalPoll):

@@ -3,7 +3,7 @@ from bl_ui.properties_paint_common import UnifiedPaintPanel
 from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, BoolProperty
 
-from ...utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
+from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
 from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
 from ...utils.public import get_pref, PublicOperator, PublicProperty
 
@@ -33,25 +33,13 @@ class Enum:
                                       getattr(self, "button_prop", None)
                                       )
                               )
-        if button_prop:
-            if button_prop.enum_items:
-                items = button_prop.enum_items
-            elif button_prop.enum_items_static:
-                items = button_prop.enum_items_static
-            elif button_prop.enum_items_static_ui:
-                items = button_prop.enum_items_static_ui
-            else:
-                items = []
+        items = from_rna_get_enum_items(button_prop)
+        if items:
+            if items != OpsProperty.___enum___:
+                OpsProperty.___enum___ = items
         else:
-            items = []
-        it = [(item.identifier, item.name, item.description, item.icon, index)
-              for (index, item) in enumerate(items)]
-        if it:
-            if it != OpsProperty.___enum___:
-                OpsProperty.___enum___ = it
-        else:
-            if OpsProperty.___enum___ != CREATE_ELEMENT_VALUE_MODE_ENUM:
-                OpsProperty.___enum___ = CREATE_ELEMENT_VALUE_MODE_ENUM
+            if OpsProperty.___enum___ != ENUM_NUMBER_VALUE_CHANGE_MODE:
+                OpsProperty.___enum___ = ENUM_NUMBER_VALUE_CHANGE_MODE
         return OpsProperty.___enum___
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -63,7 +51,7 @@ class Enum:
 
 class OpsProperty(Enum):
     boolean_mode: EnumProperty(
-        items=[('SET_TRUE', 'Set to True', ''), ('SET_FALSE', 'Set to False', ''), ('SWITCH', 'Switch', '')],
+        items=ENUM_BOOL_VALUE_CHANGE_MODE,
         name='Boolean Mode',
         options={'HIDDEN', 'SKIP_SAVE'},
     )
@@ -80,7 +68,7 @@ class OpsProperty(Enum):
         # ("COLLECTION", "Collection", ""),
     ])
 
-    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM, name="Value Mode")
+    value_mode: EnumProperty(items=ENUM_NUMBER_VALUE_CHANGE_MODE, name="Value Mode")
     int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
     float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
     string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")

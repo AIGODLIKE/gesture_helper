@@ -4,7 +4,7 @@ from bpy.app.translations import pgettext
 from bpy.props import StringProperty, FloatProperty, EnumProperty
 from mathutils import Vector
 
-from ..utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
+from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
 from ..utils.secure_call import secure_call_eval
 
 
@@ -44,7 +44,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue):
         options={'SKIP_SAVE'},
     )
     value_mode: EnumProperty(
-        items=CREATE_ELEMENT_VALUE_MODE_ENUM[1:],
+        items=ENUM_NUMBER_VALUE_CHANGE_MODE[1:],
         name="Value Mode",
         description="How to interpret the value",
         options={'SKIP_SAVE'},

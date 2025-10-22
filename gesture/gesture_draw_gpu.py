@@ -5,7 +5,6 @@ import bpy
 import gpu
 from mathutils import Vector
 
-from ..utils.gpu import get_now_2d_offset_position
 from ..utils.public_gpu import PublicGpu
 
 
@@ -84,6 +83,8 @@ class DrawDebug(PublicGpu):
             data.append('find_closest_point:' + str(self.find_closest_point))
             data.append('last_move_mouse_timeout:' + str(self.last_move_mouse_timeout))
             data.append('last_mouse_mouse_time:' + str(self.last_mouse_mouse_time))
+            data.append('time.time():' + str(time.time()))
+            data.append('self.pref.gesture_property.timeout / 1000:' + str(self.pref.gesture_property.timeout / 1000))
             data.append('timeout:' + str(time.time() - self.last_mouse_mouse_time))
         text_size = 15
         self.draw_rectangle(0, 0, 400, len(data) * text_size)

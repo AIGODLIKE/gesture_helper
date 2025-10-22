@@ -56,6 +56,7 @@ class Gesture(
 classes_list = (
     ElementModalOperatorEventItem,
     ElementModalOperatorEventCRUE.ADD,
+    ElementModalOperatorEventCRUE.COPY,
     ElementModalOperatorEventCRUE.REMOVE,
 
     Element,

@@ -23,6 +23,12 @@ class ModalProperty:
     def __running_by_modal__(self):
         ...
 
+    def draw_modal_property(self, layout):
+        if self.active_event:
+            self.active_event.draw_modal(layout)
+        else:
+            layout.label(text='No active modal event')
+
 
 class ScriptOperator:
     """脚本操作符"""

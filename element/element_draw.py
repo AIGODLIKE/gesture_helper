@@ -264,4 +264,7 @@ class ElementDraw:
         )
         col = row.column(align=True)
         col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname, text="", icon="ADD")
+        col.operator(ElementModalOperatorEventCRUE.COPY.bl_idname, text="", icon="COPYDOWN")
         col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname, text="", icon="REMOVE")
+
+        self.draw_modal_property(box)
