@@ -26,7 +26,7 @@ class DebugProperty(bpy.types.PropertyGroup):
 
         col = layout.box().column(heading="Debug", align=True)
 
-        ops = col.operator("preferences.keymap_restore")
+        ops = col.operator("preferences.keymap_restore", text="Restore All Keymaps!!")
         ops.all = True
         col.prop(debug, 'debug_mode')
         col.prop(debug, 'debug_key')

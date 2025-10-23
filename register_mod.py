@@ -51,8 +51,9 @@ def register():
             traceback.print_stack()
             traceback.print_exc()
             print(e.args, "\n")
-    clear_temp_keymap()
 
+    clear_temp_keymap()
+    gesture_keymap.GestureKeymap.key_clear_legacy()
     # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
 

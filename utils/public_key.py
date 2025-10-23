@@ -116,7 +116,7 @@ def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
     id_name = GestureOperator.bl_idname
     kcs = bpy.context.window_manager.keyconfigs
 
-    for km in kcs.addon.keymaps.values():
+    for km in [*kcs.addon.keymaps.values(), *kcs.active.keymaps.values()]:
         kmi_item = km.keymap_items.find_from_operator(id_name)
         if kmi_item:
             return km, kmi_item
