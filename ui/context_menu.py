@@ -3,6 +3,7 @@ from bpy.app.translations import pgettext
 
 from ..ops.qucik_add.create_element_operator import CreateElementOperator
 from ..ops.qucik_add.create_element_property import CreateElementProperty
+from ..utils.public import get_pref
 
 
 class ContextMenu(bpy.types.Menu):
@@ -34,7 +35,7 @@ class ContextMenu(bpy.types.Menu):
             button_prop = getattr(context, "button_prop", None)
             layout.context_pointer_set('show_gesture_add_menu', self)
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
-
+            layout.enabled = get_pref().active_gesture is not None
             if show_property:
                 layout.operator(
                     CreateElementProperty.bl_idname,
