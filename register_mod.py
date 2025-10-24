@@ -53,9 +53,9 @@ def register():
             print(e.args, "\n")
 
     clear_temp_keymap()
-    gesture_keymap.GestureKeymap.key_clear_legacy()
     # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
+    gesture_keymap.GestureKeymap.key_clear_legacy()
 
     bpy.app.timers.register(init_register, first_interval=0.1, persistent=True)
 
