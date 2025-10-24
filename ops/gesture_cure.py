@@ -47,7 +47,6 @@ class GestureCURE:
             # if ag := pref.active_gesture:
             #     ag.to_temp_kmi() # 如果在添加时不将快捷键同步到临时快捷键，会同步被删的快捷键数据
             GestureKeymap.key_restart()
-            bpy.ops.wm.save_userpref()
             self.cache_clear()
             return {'FINISHED'}
 
@@ -62,7 +61,6 @@ class GestureCURE:
                 self.pref.gesture.clear()
                 self.cache_clear()
                 GestureKeymap.key_restart()
-                bpy.ops.wm.save_userpref()
                 return {'FINISHED'}
             elif self.pref.draw_property.gesture_remove_tips:
                 return operator_invoke_confirm(
@@ -83,7 +81,6 @@ class GestureCURE:
                 act.to_temp_kmi()
             self.cache_clear()
             GestureKeymap.key_restart()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class SORT(GesturePoll):
@@ -95,7 +92,6 @@ class GestureCURE:
         def execute(self, _):
             self.pref.active_gesture.sort(self.is_next)
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class COPY(GesturePoll):
@@ -107,5 +103,4 @@ class GestureCURE:
             self.cache_clear()
             self.pref.gesture[-1].__fix_duplicate_name__()
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}

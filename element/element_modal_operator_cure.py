@@ -66,7 +66,6 @@ class ElementModalOperatorEventCRUE:
                 parent.modal_events.move(len(parent.modal_events) - 1, ae.index + 1)
 
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {"FINISHED"}
 
     class REMOVE(ModalPoll):
