@@ -111,18 +111,18 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
 
             if self.data_path != "":
                 if prop_type == "BOOLEAN":
-                    self.draw_boolean(context, layout)
+                    self.draw_boolean(layout)
                 elif prop_type == "INT":
-                    self.draw_int(context, layout)
+                    self.draw_int(layout)
                 elif prop_type == "FLOAT":
                     if prop.is_array:
                         layout.label(text="Array property not supported")
                     else:
-                        self.draw_float(context, layout)
+                        self.draw_float(layout)
                 elif prop_type == "STRING":
-                    self.draw_string(context, layout)
+                    self.draw_string(layout)
                 elif prop_type == "ENUM":
-                    self.draw_enum(context, layout)
+                    self.draw_enum(layout)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
@@ -146,7 +146,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 layout.label(text=f"subtype:\t{prop.subtype}")
                 layout.label(text=f"data_path:\t{self.data_path}")
 
-    def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_boolean(self, layout: bpy.types.UILayout):
         layout.label(text="Set Boolean Value")
         for item in self.rna_type.properties["boolean_mode"].enum_items:  # 绘制添加的布尔模式
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
@@ -154,7 +154,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             ops.data_path = self.data_path
             ops.property_type = "BOOLEAN"
 
-    def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_int(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Int Value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
@@ -167,7 +167,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.int_value = self.int_value
         ops.property_type = "INT"
 
-    def draw_float(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_float(self, layout: bpy.types.UILayout):
         layout.label(text="Modify float value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
@@ -180,7 +180,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.float_value = self.float_value
         ops.property_type = "FLOAT"
 
-    def draw_string(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_string(self, layout: bpy.types.UILayout):
         layout.label(text="Modify String")
         layout.separator()
         layout.prop(self, "string_value")
@@ -190,7 +190,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.string_value = self.string_value
         ops.property_type = "STRING"
 
-    def draw_enum(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_enum(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Enumeration")
 
         layout.separator()
@@ -207,8 +207,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             b.prop(self, "enum_value_b", expand=True)
         elif self.enum_mode == "SET":
             layout.prop(self, "enum_value_a", expand=True)
-
-        if self.enum_mode == "CYCLE":
+        elif self.enum_mode == "CYCLE":
             layout.separator()
             layout.prop(self, "enum_reverse")
             layout.prop(self, "enum_wrap")

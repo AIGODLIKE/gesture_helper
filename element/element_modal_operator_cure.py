@@ -29,8 +29,9 @@ class ElementModalOperatorEventCRUE:
                     for i in self.active_element.operator_func.get_rna_type().properties:
                         if i.identifier not in ["rna_type", ]:
                             row = layout.row(align=True)
-                            row.label(text=i.name)
+                            row.label(text=i.type, translate=False)
                             row.label(text=i.name, translate=False)
+                            row.label(text=i.name)
                             ops = row.operator(self.bl_idname, text=i.identifier)
                             ops.control_property = i.identifier
                 except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'

@@ -26,18 +26,21 @@ class FloatControl:
 
 class IntControl:
     int_incremental_value: bpy.props.IntProperty(default=1)
+    int_value: bpy.props.IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
 
     def draw_int(self, layout):
-        layout.label(text="int")
-        layout.prop(self, "int_incremental_value")
-        layout.prop(self, "number_value_mode")
+        layout.label(text="Int Value")
+        layout.prop(self, "number_value_mode", expand=True)
+        layout.separator()
+        if self.number_value_mode == "SET_VALUE":
+            layout.prop(self, "int_value")
 
 
 class BoolControl:
     bool_value_mode: bpy.props.EnumProperty(items=ENUM_BOOL_VALUE_CHANGE_MODE)
 
     def draw_bool(self, layout):
-        layout.label(text="bool")
+        layout.label(text="Boolean Value")
         layout.prop(self, "bool_value_mode")
 
 
@@ -68,12 +71,35 @@ class EnumControl:
     enum_wrap: bpy.props.BoolProperty(default=True, name="Cycle",
                                       description="Automatically jumps if it is the last or first value in the loop")
 
+    # noinspection DuplicatedCode
     def draw_enum(self, layout):
-        layout.label(text="enum")
-        layout.prop(self, "enum_wrap")
-        layout.prop(self, "enum_value_a")
-        layout.prop(self, "enum_value_b")
-        layout.prop(self, "enum_reverse")
+        layout.prop(self, "enum_value_mode", text="Enumeration Value", expand=True)
+        if self.enum_value_mode == "TOGGLE":
+            row = layout.row(align=True)
+            a = row.column(align=True)
+            a.label(text="Value A")
+            a.prop(self, "enum_value_a", expand=True)
+
+            b = row.column(align=True)
+            b.label(text="Value B")
+            b.prop(self, "enum_value_b", expand=True)
+        elif self.enum_value_mode == "SET":
+            layout.prop(self, "enum_value_a", expand=True)
+        elif self.enum_value_mode == "CYCLE":
+            layout.separator()
+            layout.prop(self, "enum_reverse")
+            layout.prop(self, "enum_wrap")
+
+        layout.separator()
+
+        cc = layout.column(align=True)
+        is_eq = self.enum_value_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
+        if is_eq:
+            cc.alert = True
+            cc.label(text="Value A == Value B")
+            cc = cc.column(align=True)
+            cc.enabled = False
+
 
 
 class KeymapEvent:
@@ -164,6 +190,13 @@ class ElementModalOperatorEventItem(
         return "Unknown"
 
     @property
+    def control_property_explanation(self) -> str:
+        """控制属性解释"""
+        if text := getattr(self, f"{self.control_property_type.lower()}_explanation", None):
+            return text
+        return "Unknown"
+
+    @property
     def check_property_is_validity(self) -> bool:
         """检测属性是否为有效的"""
         pe = self.parent_element
@@ -191,8 +224,9 @@ class ElementModalOperatorEventItem(
         column.label(text=self.property_name)
         column.label(text=self.control_property_type)
         column.label(text=self.control_property)
-        if draw_func := getattr(self, f"draw_{self.control_property_type}", None):
-            draw_func(column)
+        column.label(text=self.control_property_explanation)
+        if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
+            draw_func(column.box())
 
         for i in dir(self.control_property_rna):
             if i in ("hard_max", "hard_min", "soft_max", "soft_min"):
