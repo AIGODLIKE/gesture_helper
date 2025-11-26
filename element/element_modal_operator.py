@@ -63,7 +63,9 @@ class EnumControl:
                 if items != self.___enum___:
                     self.___enum___ = items
             return self.___enum___
-        return []
+        return [
+            ("None", "", "")
+        ]
 
     enum_value_a: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -99,7 +101,6 @@ class EnumControl:
             cc.label(text="Value A == Value B")
             cc = cc.column(align=True)
             cc.enabled = False
-
 
 
 class KeymapEvent:
