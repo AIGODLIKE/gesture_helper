@@ -84,6 +84,7 @@ class ElementCURE:
         def execute(self, _):
             active = self.active_element
             add = self.collection.add()
+            self.collection.update()
             add.cache_clear()
 
             add.element_type = self.element_type

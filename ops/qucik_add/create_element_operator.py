@@ -76,8 +76,12 @@ class CreateElementOperator(PublicOperator, PublicProperty):
             if on := ae.__operator_original_name__:
                 ae.name = on
             print(ae.operator_bl_idname)
-        self.cache_clear()
-        if act:
-            act.radio = True
-            self.cache_clear()
+        # if act:
+        #     self.cache_clear()
+        #     print("update_radio act['radio'] = True", act)
+        #     print("pp rr", act.parent_gesture)
+        #     act.radio = True
+        #     self.cache_clear()
+        #     act.update_radio()
+        #     self.cache_clear()
         return {"FINISHED"}

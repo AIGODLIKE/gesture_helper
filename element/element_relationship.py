@@ -2,6 +2,7 @@ from functools import cache
 
 from bpy.props import BoolProperty, StringProperty
 
+from ..debug import DEBUG_CACHE
 from ..utils.public import (PublicSortAndRemovePropertyGroup, get_gesture_direction_items)
 from ..utils.public_cache import PublicCache, cache_update_lock
 
@@ -12,6 +13,7 @@ def get_element_index(element) -> int:
         return element.collection.values().index(element)
     except ValueError:
         ...
+    return -1
 
 
 @cache
@@ -61,11 +63,27 @@ class Relationship:
 
     @property
     def parent_element(self):
+        if self not in PublicCache.__element_parent_element_cache__:
+            self.init_cache()
+            if DEBUG_CACHE:
+                print("parent_element key error", self, self not in PublicCache.__element_parent_element_cache__,
+                      PublicCache.__element_parent_element_cache__.get(self))
+                print("\tw")
+                for k, v in PublicCache.__element_parent_element_cache__.items():
+                    print("\t", k, v)
         return PublicCache.__element_parent_element_cache__[self]
 
     @property
     def parent_gesture(self):
-        return PublicCache.__element_parent_gesture_cache__[self]
+        if self not in PublicCache.__element_parent_gesture_cache__:
+            self.init_cache()
+            if DEBUG_CACHE:
+                print("parent_gesture key error", self, self not in PublicCache.__element_parent_gesture_cache__,
+                      PublicCache.__element_parent_gesture_cache__.get(self))
+                print("\ts")
+                for k, v in PublicCache.__element_parent_gesture_cache__.items():
+                    print("\t", k, v)
+        return PublicCache.__element_parent_gesture_cache__.get(self)
 
     @property
     def collection_iteration(self) -> list:
