@@ -1,3 +1,6 @@
+from ..debug import DEBUG_CACHE
+
+
 def cache_update_lock(func, cache_clear=False):
     """缓存更新锁"""
     cls = PublicCache
@@ -10,6 +13,7 @@ def cache_update_lock(func, cache_clear=False):
             if cache_clear:
                 PublicCacheFunc.cache_clear()
             return func_return
+
     return wap
 
 
@@ -47,19 +51,36 @@ class PublicCache:
         cls = PublicCache
         cls.cache_clear_data()
 
-        def from_collection(g, item):
+        def from_collection(gest, item):
             element_iteration = []
             prev_element = None
             for element in item.element:
+                if DEBUG_CACHE:
+                    print("from_collection", element)
                 element_iteration.append(element)
                 cls.__element_prev_cache__[element] = prev_element
                 prev_element = element
-
-                element_iteration.extend(cls.from_element_get_data(g, element, None, 0))
+                element_iteration.extend(cls.from_element_get_data(gest, element, None, 0))
             return element_iteration
 
+        def update_list_clear(pe):
+            pe.element.update()
+            for el in pe.element:
+                el.element.update()
+                update_list_clear(el)
+
+        if DEBUG_CACHE:
+            print("init_cache")
+
+        pref.gesture.update()
         for gesture in pref.gesture:
+            if DEBUG_CACHE:
+                print("gesture", gesture)
+            gesture.element.update()
+            update_list_clear(gesture)
             cls.__gesture_element_iteration__[gesture] = from_collection(gesture, gesture)
+        if DEBUG_CACHE:
+            print("")
 
     @staticmethod
     def from_element_get_data(gesture, element, parent_element, level):
@@ -67,9 +88,12 @@ class PublicCache:
         cls.__element_parent_gesture_cache__[element] = gesture
         cls.__element_parent_element_cache__[element] = parent_element
         element.level = level
-
+        if DEBUG_CACHE:
+            print("from_element_get_data", gesture, element, parent_element, level,
+                  element in cls.__element_parent_element_cache__,
+                  element in cls.__element_parent_gesture_cache__,
+                  )
         child_iteration = []
-
         prev_element = None
         for child in element.element:
             child_iteration.append(child)
@@ -111,6 +135,8 @@ class PublicCacheFunc(PublicCache):
     def cache_clear():
         cls = PublicCacheFunc
         if cls.__is_updatable__:
+            if DEBUG_CACHE:
+                print("cache_clear")
             from .public import get_pref
             get_pref.cache_clear()
             cls.init_cache()
@@ -118,3 +144,6 @@ class PublicCacheFunc(PublicCache):
             cls.element_cache_clear()
             cls.gesture_direction_cache_clear()
             cls.gesture_extension_cache_clear()
+
+            if DEBUG_CACHE:
+                print("")
