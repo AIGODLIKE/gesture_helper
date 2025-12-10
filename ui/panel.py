@@ -71,6 +71,24 @@ class GesturePropertyPanel(bpy.types.Panel, PublicProperty):
         PreferencesDraw.draw_ui_property(layout)
 
 
+class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
+    bl_label = "Modal Event"
+    bl_idname = "GESTURE_PT_Modal_Event"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Gesture"
+    bl_parent_id = GestureElementPanel.bl_idname
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        pref = get_pref()
+        return pref.active_element and pref.active_event
+
+    def draw(self, context):
+        get_pref().active_element.draw_operator_modal(self.layout)
+
+
 class GestureDebugPanel(bpy.types.Panel, PublicProperty):
     bl_label = "Debug"
     bl_idname = "GESTURE_PT_Debug"
@@ -86,7 +104,14 @@ class GestureDebugPanel(bpy.types.Panel, PublicProperty):
         PreferencesDraw.draw_ui_debug(layout)
 
 
-panel_list = (GesturePanel, GestureItemPanel, GestureElementPanel, GesturePropertyPanel, GestureDebugPanel)
+panel_list = (
+    GesturePanel,
+    GestureItemPanel,
+    GestureElementPanel,
+    GesturePropertyPanel,
+    GestureModalEventPanel,
+    GestureDebugPanel,
+)
 register_classes, unregister_classes = bpy.utils.register_classes_factory(panel_list)
 
 

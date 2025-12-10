@@ -104,7 +104,7 @@ class EnumControl:
 
 
 class KeymapEvent:
-    event_type: bpy.props.EnumProperty(items=all_event, default="A")
+    event_type: bpy.props.EnumProperty(items=all_event, default="A", name="Event Type")
     event_ctrl: bpy.props.BoolProperty(default=False, name="Ctrl")
     event_alt: bpy.props.BoolProperty(default=False, name="Alt")
     event_shift: bpy.props.BoolProperty(default=False, name="Shift")
@@ -219,13 +219,22 @@ class ElementModalOperatorEventItem(
     def draw_modal(self, layout):
         """绘制单项属性"""
         column = layout.column(align=True)
-        column.label(text="draw_modal")
-        column.prop(self, "event_type")
+
+        col = column.column(align=True)
+        row = col.row(align=True)
+        row.prop(self, "event_type")
+        self.draw_event_type(row)
+        row = col.row(align=True)
+        row.prop(self, "event_ctrl")
+        row.prop(self, "event_alt")
+        row.prop(self, "event_shift")
+
         column.prop(self, "control_property")
         column.label(text=self.property_name)
         column.label(text=self.control_property_type)
         column.label(text=self.control_property)
         column.label(text=self.control_property_explanation)
+
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
 

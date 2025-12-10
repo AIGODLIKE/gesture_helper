@@ -239,8 +239,8 @@ class ElementDraw:
                 layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
                              icon='ERROR')
                 layout.alert = False
-            if is_modal:
-                self.draw_operator_modal(layout)
+            # if is_modal:
+            #     self.draw_operator_modal(layout)
         elif is_script:
             if preview_script:
                 script_box = layout.box()
@@ -251,9 +251,8 @@ class ElementDraw:
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE
         from ..ui.ui_list import ElementModalEventUIList
 
-        box = layout.box()
-        box.label(text='Modal event control')
-        row = box.row(align=True)
+        column = layout.column(align=True)
+        row = column.row(align=True)
         row.template_list(
             ElementModalEventUIList.bl_idname,
             ElementModalEventUIList.bl_idname,
@@ -266,5 +265,4 @@ class ElementDraw:
         col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname, text="", icon="ADD")
         col.operator(ElementModalOperatorEventCRUE.COPY.bl_idname, text="", icon="COPYDOWN")
         col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname, text="", icon="REMOVE")
-
-        self.draw_modal_property(box)
+        self.draw_modal_property(column)
