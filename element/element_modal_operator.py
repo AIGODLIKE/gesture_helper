@@ -2,9 +2,10 @@ import bpy
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
+from ..utils.public_cache import cache_update_lock
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty, PublicCacheFunc
-from .element_relationship import Relationship
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
+from .element_relationship import ElementRelationship
 
 
 class NumberControl:
@@ -131,24 +132,13 @@ class KeymapEvent:
         self.sync_type_from_temp_kmi(temp_kmi)
 
 
-class ElementModalOperatorEventItem(
-    bpy.types.PropertyGroup,
+class EventRelationship:
 
-    NumberControl,
-    FloatControl,
-    IntControl,
-    BoolControl,
-    EnumControl,
-
-    KeymapEvent,
-
-    Relationship,
-
-    PublicSortAndRemovePropertyGroup,
-    PublicProperty,
-    PublicCacheFunc
-):
-    control_property: bpy.props.StringProperty(name="Control Property")
+    @cache_update_lock
+    def copy(self):
+        """复制元素"""
+        from ..utils.property import __set_prop__
+        __set_prop__(self.parent, 'modal_events', {'0': self.active_event.___dict_data___})
 
     @property
     def collection(self):
@@ -165,6 +155,27 @@ class ElementModalOperatorEventItem(
     def remove_before(self):
         if self.is_last and self.index != 0:  # 被删除项是最后一个
             self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+
+
+class ElementModalOperatorEventItem(
+    bpy.types.PropertyGroup,
+
+    NumberControl,
+    FloatControl,
+    IntControl,
+    BoolControl,
+    EnumControl,
+
+    KeymapEvent,
+
+    EventRelationship,
+    ElementRelationship,
+
+    PublicSortAndRemovePropertyGroup,
+    PublicProperty,
+    PublicCacheFunc
+):
+    control_property: bpy.props.StringProperty(name="Control Property")
 
     @property
     def control_property_rna(self):
@@ -213,7 +224,7 @@ class ElementModalOperatorEventItem(
 
         row.label(text=self.property_name)
         row.label(text=self.control_property_type)
-        row.label(text=self.control_property)
+        row.label(text=self.control_property, translate=False)
         self.draw_event_type(row)
 
     def draw_modal(self, layout):

@@ -83,7 +83,8 @@ class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
     @classmethod
     def poll(cls, context):
         pref = get_pref()
-        return pref.active_element and pref.active_event
+        active = pref.active_element
+        return active and active.operator_is_modal
 
     def draw(self, context):
         get_pref().active_element.draw_operator_modal(self.layout)

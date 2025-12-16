@@ -223,6 +223,8 @@ class ElementDraw:
             SetDirection.draw_direction(row.column())
 
         if is_operator or is_modal:
+            if self.other_property.auto_update_element_operator_properties:
+                self.from_tmp_kmi_operator_update_properties()
             is_change = self.properties != self.operator_tmp_kmi_properties
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
@@ -230,8 +232,6 @@ class ElementDraw:
             row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
             row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
             row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
-            if self.other_property.auto_update_element_operator_properties:
-                self.from_tmp_kmi_operator_update_properties()
 
             layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
             if is_change:

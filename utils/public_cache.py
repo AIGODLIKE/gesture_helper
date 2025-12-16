@@ -99,12 +99,12 @@ class PublicCache:
             child_iteration.append(child)
             cls.__element_prev_cache__[child] = prev_element
             prev_element = child
-
             child_iteration.extend(PublicCache.from_element_get_data(gesture, child, element, level + 1))
         cls.__element_child_iteration__[element] = child_iteration
 
         # modal events parent
         for event in element.modal_events:
+            cls.__element_parent_gesture_cache__[event] = gesture
             cls.__element_parent_element_cache__[event] = element
         return child_iteration
 

@@ -3,6 +3,7 @@ from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import StringProperty, EnumProperty, BoolProperty, CollectionProperty
 
 from .element_modal_operator import ElementModalOperatorEventItem
+from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
@@ -64,10 +65,12 @@ class RunOperatorPropertiesSync:
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """从临时 keymap item 更新到属性"""
-        print("from_tmp_kmi_operator_update_properties", )
+        if TMP_KMI_SYNC_DEBUG:
+            print("from_tmp_kmi_operator_update_properties", )
         temp_kmi_properties = self.operator_tmp_kmi_properties
-        print(temp_kmi_properties)
-        print(self.properties)
+        if TMP_KMI_SYNC_DEBUG:
+            print(temp_kmi_properties)
+            print(self.properties)
         if self.properties != temp_kmi_properties:
             self['operator_properties'] = str(temp_kmi_properties)
 

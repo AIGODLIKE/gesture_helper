@@ -123,7 +123,6 @@ class Relationship:
 
 
 class RadioSelect:
-
     @cache_update_lock
     def update_radio(self):
         try:
