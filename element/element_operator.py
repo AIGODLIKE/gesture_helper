@@ -11,7 +11,7 @@ from ..utils.secure_call import secure_call_eval, secure_call_exec
 
 
 class ModalProperty:
-    modal_events_index: bpy.props.IntProperty(name='Modal Event Index', )
+    modal_events_index: bpy.props.IntProperty(name='Modal Event Index', default=-1)
     modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
 
     @property

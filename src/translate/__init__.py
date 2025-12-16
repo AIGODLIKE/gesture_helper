@@ -109,13 +109,13 @@ def register():
     from .helper import TranslationHelper
     all_language = get_language_list()
     for language, translate_dict in __translate__.items():
-        if "text" in translate_dict:
+        for k, v in translate_dict.items():
             if language not in all_language:
                 if language == "zh_CN":
                     language = "zh_HANS"
                 elif language == "zh_HANS":
                     language = "zh_CN"
-            ti = TranslationHelper(f"Gesture_{language}", translate_dict["text"], lang=language)
+            ti = TranslationHelper(f"Gesture_{language}_{k}", v, lang=language)
             ti.register()
             __language_list__.append(ti)
 

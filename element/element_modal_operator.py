@@ -115,21 +115,38 @@ class KeymapEvent:
             self["event_type"] = all_id.index(kmi.type)  # enum被改为了索引
 
         if kmi.ctrl != self.event_ctrl:
-            self["ctrl"] = kmi.ctrl
+            self["event_ctrl"] = kmi.ctrl
         if kmi.alt != self.event_alt:
-            self["alt"] = kmi.alt
+            self["event_alt"] = kmi.alt
         if kmi.shift != self.event_shift:
-            self["shift"] = kmi.shift
+            self["event_shift"] = kmi.shift
+
+    def sync_to_tem_kmi(self):
+        temp_kmi = self.temp_kmi
+        temp_kmi.type = self.event_type
+        temp_kmi.ctrl = self.event_ctrl
+        temp_kmi.shift = self.event_shift
+        temp_kmi.alt = self.event_alt
 
     def draw_event_type(self, layout):
         """绘制事件的类型
         用临时kmi
         并且同步到self.event_type"""
+        temp_kmi = self.temp_kmi
+        layout.prop(temp_kmi, "type", text="", full_event=True)
+        self.sync_type_from_temp_kmi(temp_kmi)
+
+    @property
+    def temp_kmi(self):
         from ..utils.public_key import get_temp_kmi
         hs = str(hash(self))
         temp_kmi = get_temp_kmi("modal_event_" + hs, {}, {"type": self.event_type, "value": "PRESS"})
-        layout.prop(temp_kmi, "type", text="", full_event=True)
-        self.sync_type_from_temp_kmi(temp_kmi)
+        return temp_kmi
+
+
+@cache
+def get_element_index(gesture) -> int:
+    return gesture.pref.gesture.values().index(gesture)
 
 
 class EventRelationship:
@@ -142,19 +159,16 @@ class EventRelationship:
 
     @property
     def collection(self):
-        return self.parent_element.modal_events
+        return self.parent.modal_events
 
     def _get_index_(self) -> int:
-        return self.parent_element.modal_events_index
+        return self.parent.modal_events_index
 
     def _set_index_(self, value):
-        self.parent_element.modal_events_index = value
+        self.parent.modal_events_index = value
 
     index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
 
-    def remove_before(self):
-        if self.is_last and self.index != 0:  # 被删除项是最后一个
-            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
 
 
 class ElementModalOperatorEventItem(
@@ -168,14 +182,23 @@ class ElementModalOperatorEventItem(
 
     KeymapEvent,
 
-    EventRelationship,
     ElementRelationship,
+    EventRelationship,
 
     PublicSortAndRemovePropertyGroup,
     PublicProperty,
     PublicCacheFunc
 ):
     control_property: bpy.props.StringProperty(name="Control Property")
+
+    def remove_after(self):
+        """继承了EventRelationship的类,需要在最后一个"""
+        ...
+
+    def remove_before(self):
+        # if self.is_last and self.index != 0:  # 被删除项是最后一个
+        #     self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+        ...
 
     @property
     def control_property_rna(self):
@@ -229,6 +252,7 @@ class ElementModalOperatorEventItem(
 
     def draw_modal(self, layout):
         """绘制单项属性"""
+        from .element_modal_operator_cure import ElementModalOperatorEventCRUE
         column = layout.column(align=True)
 
         col = column.column(align=True)
@@ -236,11 +260,13 @@ class ElementModalOperatorEventItem(
         row.prop(self, "event_type")
         self.draw_event_type(row)
         row = col.row(align=True)
-        row.prop(self, "event_ctrl")
-        row.prop(self, "event_alt")
-        row.prop(self, "event_shift")
+        row.prop(self, "event_ctrl", translate=False)
+        row.prop(self, "event_alt", translate=False)
+        row.prop(self, "event_shift", translate=False)
 
-        column.prop(self, "control_property")
+        row = column.row(align=True)
+        row.prop(self, "control_property")
+        row.operator(ElementModalOperatorEventCRUE.SelectControlProperty.bl_idname, icon="RESTRICT_SELECT_OFF")
         column.label(text=self.property_name)
         column.label(text=self.control_property_type)
         column.label(text=self.control_property)

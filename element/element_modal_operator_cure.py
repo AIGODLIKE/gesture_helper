@@ -81,7 +81,40 @@ class ElementModalOperatorEventCRUE:
 
         def execute(self, context):
             element = self.pref.active_element
-            element.active_event.remove()
+            active = element.active_event
+            print("active", active, active.collection, active.event_type, active.parent_element,
+                  element.modal_events_index)
+            self.cache_clear()
+            active.remove()
             # element.modal_events.remove(element.modal_events_index)
             self.cache_clear()
+            return {"FINISHED"}
+
+    class SelectControlProperty(ModalPoll):
+        bl_label = 'Select Control Property'
+        bl_idname = 'gesture.select_control_property'
+        control_property: bpy.props.StringProperty(name="Control Property")
+
+        def invoke(self, context, event):
+            wm = context.window_manager
+            return wm.invoke_popup(self)
+
+        def draw(self, context):
+            layout = self.layout
+            layout.operator_context = "EXEC_DEFAULT"
+            if self.active_element:
+                try:
+                    for i in self.active_element.operator_func.get_rna_type().properties:
+                        if i.identifier not in ["rna_type", ]:
+                            row = layout.row(align=True)
+                            row.label(text=i.type, translate=False)
+                            row.label(text=i.name, translate=False)
+                            row.label(text=i.name)
+                            ops = row.operator(self.bl_idname, text=i.identifier)
+                            ops.control_property = i.identifier
+                except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'
+                    ...
+
+        def execute(self, context):
+            print(self.bl_idname, self.control_property)
             return {"FINISHED"}

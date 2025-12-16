@@ -58,6 +58,7 @@ classes_list = (
     ElementModalOperatorEventCRUE.ADD,
     ElementModalOperatorEventCRUE.COPY,
     ElementModalOperatorEventCRUE.REMOVE,
+    ElementModalOperatorEventCRUE.SelectControlProperty,
 
     Element,
     ElementCURE.ADD,

@@ -120,7 +120,10 @@ class PublicCacheFunc(PublicCache):
         from ..element import element_relationship
         element_relationship.get_element_index.cache_clear()
         element_relationship.get_available_selected_structure.cache_clear()
-
+    @staticmethod
+    def event_cache_claer():
+        from ..element import element_modal_operator
+        element_modal_operator
     @staticmethod
     def gesture_direction_cache_clear():
         from .public import get_gesture_direction_items
