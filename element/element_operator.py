@@ -281,6 +281,21 @@ class OperatorProperty:
 class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperator, RunOperatorPropertiesSync):
 
     @property
+    def is_not_recommended_as_modal(self):
+        """一部分操作符不建议使用模态来控制
+        列如已经有modal操作写法的操作符
+        移动旋转等操作
+        """
+        if self.operator_bl_idname in [
+            "transform.translate",
+            "transform.rotate",
+            "transform.resize",
+        ]:
+            return True
+
+        return False
+
+    @property
     def operator_is_script(self):
         return self.operator_type == "SCRIPT"
 

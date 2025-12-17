@@ -374,5 +374,4 @@ class PublicSortAndRemovePropertyGroup:
 
     @update
     def remove(self):
-        print("remove", self, self.collection, self.index)
         self.collection.remove(self.index)

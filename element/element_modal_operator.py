@@ -7,7 +7,7 @@ from ..debug import DEBUG_CACHE
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
 from ..utils.public_cache import cache_update_lock, PublicCache
-from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty, PublicCacheFunc
+from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
 
 
@@ -150,7 +150,6 @@ class KeymapEvent:
 @cache
 def get_event_index(event) -> int:
     try:
-        # print("get_event_index", event, event.collection.values().index(event))
         return event.collection.values().index(event)
     except ValueError:
         ...
@@ -214,10 +213,8 @@ class ElementModalOperatorEventItem(
         ...
 
     def remove_before(self):
-        print("remove_before", self.is_last, self.index)
-        # if self.is_last and self.index != 0:  # 被删除项是最后一个
-        #     self.index = self.index - 1  # 索引-1,保持始终有一个所选项
-        #     print("www", self.index)
+        if self.is_last and self.index != 0:  # 被删除项是最后一个
+            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
 
     @property
     def control_property_rna(self):

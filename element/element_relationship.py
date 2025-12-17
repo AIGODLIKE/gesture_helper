@@ -197,7 +197,6 @@ class ElementRelationship(RadioSelect,
 
     def remove_after(self):
         """删除之后判断索引是否需要偏移"""
-        print('remove_after', self)
         parent = self.parent
         index = parent.index_element
         col = self.collection
