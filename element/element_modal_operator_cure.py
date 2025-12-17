@@ -83,7 +83,7 @@ class ElementModalOperatorEventCRUE:
             element = self.pref.active_element
             active = element.active_event
             print("active", active, active.collection, active.event_type, active.parent_element,
-                  element.modal_events_index)
+                  element.modal_events_index, active.index)
             self.cache_clear()
             active.remove()
             # element.modal_events.remove(element.modal_events_index)

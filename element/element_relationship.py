@@ -160,7 +160,7 @@ class ElementRelationship(RadioSelect,
     name: StringProperty(name="Name")
 
     def _get_index(self) -> int:
-        return self.parent.index_element
+        return get_element_index(self)
 
     def _set_index(self, value):
         self.parent.index_element = value
@@ -169,10 +169,6 @@ class ElementRelationship(RadioSelect,
         fget=_get_index,
         fset=_set_index,
         doc='通过当前项的index,来设置索引的index值,以及移动项')
-
-    @property
-    def self_index(self):
-        return get_element_index(self)
 
     @property
     def is_root(self):

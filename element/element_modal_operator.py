@@ -1,11 +1,14 @@
+from functools import cache
+
 import bpy
+
+from ..debug import DEBUG_CACHE
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
-from ..utils.public_cache import cache_update_lock
+from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty, PublicCacheFunc
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
-from .element_relationship import ElementRelationship
 
 
 class NumberControl:
@@ -145,34 +148,55 @@ class KeymapEvent:
 
 
 @cache
-def get_element_index(gesture) -> int:
-    return gesture.pref.gesture.values().index(gesture)
+def get_event_index(event) -> int:
+    try:
+        # print("get_event_index", event, event.collection.values().index(event))
+        return event.collection.values().index(event)
+    except ValueError:
+        ...
+    return -1
 
 
-class EventRelationship:
+class EventRelationship(
+    PublicSortAndRemovePropertyGroup,
+):
 
     @cache_update_lock
     def copy(self):
         """复制元素"""
         from ..utils.property import __set_prop__
-        __set_prop__(self.parent, 'modal_events', {'0': self.active_event.___dict_data___})
+        __set_prop__(self.parent_element, 'modal_events', {'0': self.active_event.___dict_data___})
 
     @property
     def collection(self):
-        return self.parent.modal_events
+        return self.parent_element.modal_events
 
     def _get_index_(self) -> int:
-        return self.parent.modal_events_index
+        return get_event_index(self)
 
     def _set_index_(self, value):
-        self.parent.modal_events_index = value
+        self.parent_element.modal_events_index = value
 
     index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
 
+    @property
+    def parent_element(self):
+        if self not in PublicCache.__element_parent_element_cache__:
+            self.init_cache()
+            if DEBUG_CACHE:
+                print("parent_element key error", self, self not in PublicCache.__element_parent_element_cache__,
+                      PublicCache.__element_parent_element_cache__.get(self))
+                print("\tw")
+                for k, v in PublicCache.__element_parent_element_cache__.items():
+                    print("\t", k, v)
+        return PublicCache.__element_parent_element_cache__[self]
 
 
 class ElementModalOperatorEventItem(
     bpy.types.PropertyGroup,
+    PublicProperty,
+    # PublicCacheFunc,
+    # ElementRelationship,
 
     NumberControl,
     FloatControl,
@@ -181,13 +205,7 @@ class ElementModalOperatorEventItem(
     EnumControl,
 
     KeymapEvent,
-
-    ElementRelationship,
     EventRelationship,
-
-    PublicSortAndRemovePropertyGroup,
-    PublicProperty,
-    PublicCacheFunc
 ):
     control_property: bpy.props.StringProperty(name="Control Property")
 
@@ -196,9 +214,10 @@ class ElementModalOperatorEventItem(
         ...
 
     def remove_before(self):
+        print("remove_before", self.is_last, self.index)
         # if self.is_last and self.index != 0:  # 被删除项是最后一个
         #     self.index = self.index - 1  # 索引-1,保持始终有一个所选项
-        ...
+        #     print("www", self.index)
 
     @property
     def control_property_rna(self):
