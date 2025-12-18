@@ -13,7 +13,7 @@ class ElementModalOperatorEventCRUE:
             return ae is not None and ae.is_operator and ae.operator_is_modal
 
     class ADD(ModalPoll):
-        bl_label = 'Add element modal item'
+        bl_label = 'Add modal event item'
         bl_idname = 'gesture.element_modal_add'
         control_property: bpy.props.StringProperty(name="Control Property")
 

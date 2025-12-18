@@ -15,6 +15,26 @@ class ModalProperty:
     modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
 
     @property
+    def is_not_recommended_as_modal(self):
+        """一部分操作符不建议使用模态来控制
+        列如已经有modal操作写法的操作符
+        移动旋转等操作
+        is_array不推荐使用
+        """
+        if self.operator_is_modal:
+            if self.operator_bl_idname in [
+                "transform.translate",
+                "transform.rotate",
+                "transform.resize",
+            ]:
+                return True
+            if rna := self.operator_func.get_rna_type():
+                for prop in rna.properties:
+                    if getattr(prop, "is_array", False):
+                        return True
+        return False
+
+    @property
     def active_event(self) -> ElementModalOperatorEventItem | None:
         """活动事件项"""
         if len(self.modal_events) > self.modal_events_index and self.modal_events:
@@ -279,21 +299,6 @@ class OperatorProperty:
 
 
 class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperator, RunOperatorPropertiesSync):
-
-    @property
-    def is_not_recommended_as_modal(self):
-        """一部分操作符不建议使用模态来控制
-        列如已经有modal操作写法的操作符
-        移动旋转等操作
-        """
-        if self.operator_bl_idname in [
-            "transform.translate",
-            "transform.rotate",
-            "transform.resize",
-        ]:
-            return True
-
-        return False
 
     @property
     def operator_is_script(self):

@@ -14,5 +14,7 @@
   "Horizontal Move": "水平移动",
   "Vertical Move": "垂直移动",
   "Arbitrary Move": "任意移动",
-  "Set to": "设置为"
+  "Set to": "设置为",
+  "Please enter the control property": "请输入控制属性",
+  "Is Array": "是阵列"
 }

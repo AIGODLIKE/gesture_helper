@@ -121,20 +121,34 @@ class EnumControl:
 
     ___enum_items___ = {}  # 防止脏数据
 
+    @property
+    def enum_key(self) -> str:
+        return f"{self.parent_element.operator_bl_idname}.{self.control_property}"
+
     def __load_enum__(self):
+        key = self.enum_key
         if self.control_property_type == "ENUM":
             items = from_rna_get_enum_items(self.control_property_rna)
-            if items:
-                if self.control_property not in self.___enum_items___:
-                    self.___enum_items___[self.control_property] = items
-            return
-        self.___enum_items___[self.control_property] = [
-            ("None", "", ""),
-        ]
+            if items and key not in EnumControl.___enum_items___:
+                EnumControl.___enum_items___[key] = items
 
     def __get_enum__(self, context):
         self.__load_enum__()
-        return self.___enum_items___[self.control_property]
+        key = self.enum_key
+        if key not in EnumControl.___enum_items___:
+            self.__load_enum__()
+            return [
+                ("None", "", ""),
+            ]
+        return EnumControl.___enum_items___[key]
+
+    def get_enum_name(self, identifier):
+        self.__load_enum__()
+        items = EnumControl.___enum_items___[self.enum_key]
+        for (i, name, d, icon, index) in items:
+            if identifier == i:
+                return pgettext_iface(name)
+        return "Unknown"
 
     enum_value_a: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -145,19 +159,24 @@ class EnumControl:
     @property
     def enum_explanation(self):
         em = self.enum_value_mode
+        a = self.get_enum_name(self.enum_value_a)
+        b = self.get_enum_name(self.enum_value_b)
         if em == "SET":
-            return f"{em} {self.enum_value_a}"
+            text = pgettext_iface("Set to")
+            return f"{text}->{a}"
         elif em == "TOGGLE":
-            return f"{em} {self.enum_value_a} {self.enum_value_b}"
+            text = pgettext_iface("Toggle")
+            return f"{text}({a}<->{b})"
         elif em == "CYCLE":
-            return em
+            return em.title()
         return em
 
     # noinspection DuplicatedCode
     def draw_enum(self, layout):
-        layout.prop(self, "enum_value_mode", text="Enumeration Value", expand=True)
+        column = layout.column(align=True)
+        column.prop(self, "enum_value_mode", text="Enumeration Value", expand=True)
         if self.enum_value_mode == "TOGGLE":
-            row = layout.row(align=True)
+            row = column.row(align=True)
             a = row.column(align=True)
             a.label(text="Value A")
             a.prop(self, "enum_value_a", expand=True)
@@ -166,16 +185,17 @@ class EnumControl:
             b.label(text="Value B")
             b.prop(self, "enum_value_b", expand=True)
         elif self.enum_value_mode == "SET":
-            layout.prop(self, "enum_value_a", expand=True)
+            column.separator()
+            column.prop(self, "enum_value_a", expand=True)
         elif self.enum_value_mode == "CYCLE":
-            layout.separator()
-            layout.prop(self, "enum_reverse")
-            layout.prop(self, "enum_wrap")
+            column.separator()
+            column.prop(self, "enum_reverse")
+            column.prop(self, "enum_wrap")
 
         is_eq = self.enum_value_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
         if is_eq:
-            layout.separator()
-            cc = layout.column(align=True)
+            column.separator()
+            cc = column.column(align=True)
             cc.alert = True
             cc.label(text="Value A == Value B")
             cc = cc.column(align=True)
@@ -304,6 +324,13 @@ class ElementModalOperatorEventItem(
         return None
 
     @property
+    def property_is_array(self) -> bool:
+        if self.control_property_type != "ENUM":
+            if rna := self.control_property_rna:
+                return getattr(rna, "is_array", False)
+        return False
+
+    @property
     def control_property_type(self) -> str:
         if rna := self.control_property_rna:
             return rna.type
@@ -336,9 +363,11 @@ class ElementModalOperatorEventItem(
         row = layout.row(align=True)
         row.alert = not self.check_property_is_validity
 
-        row.label(text=self.property_name)
-        row.label(text=self.control_property_type)
         row.label(text=self.control_property, translate=False)
+        row.label(text=self.property_name)
+        rr = row.row(align=True)
+        rr.alert = self.property_is_array
+        rr.label(text=self.control_property_type)
         row.label(text=self.control_property_explanation)
         self.draw_event_type(row)
 
@@ -364,16 +393,26 @@ class ElementModalOperatorEventItem(
 
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
+        elif self.control_property_type == "":  # 没输入属性
+            column.label(text=f"Please enter the control property")
+            return
         else:
-            column.label(text=f"Unknown {self.control_property_type}")
-
+            column.label(text=f"Unknown {self.control_property}")
         box = column.box().column(align=True)
         for i in dir(self.control_property_rna):
-            if i in ("hard_max", "hard_min", "soft_max", "soft_min", "default", "step"):
+            if i in ("hard_max", "hard_min", "soft_max", "soft_min", "default", "step", "is_array"):
                 name = bpy.app.translations.pgettext_iface(i.replace("_", " ").title())
                 row = box.row(align=True)
+                if i == "is_array":
+                    row.alert = self.property_is_array
                 row.label(text=name)
-                row.label(text=str(getattr(self.control_property_rna, i, None)), translate=False)
+                if self.control_property_type == "ENUM":
+                    # 获取有可能会  current value '256' matches no enum in 'EnumProperty', 'snap_elements', 'default'
+                    value = getattr(self.control_property_rna, i, None)
+                    row.label(text=f"{self.get_enum_name(value)}({value})", translate=False)
+                else:
+                    value = getattr(self.control_property_rna, i, None)
+                    row.label(text=f"{value}", translate=False)
         if self.debug_property.debug_mode:
             box = column.box()
             for k in dir(self.control_property_rna):

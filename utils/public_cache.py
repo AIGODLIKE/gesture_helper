@@ -125,6 +125,7 @@ class PublicCacheFunc(PublicCache):
     def event_cache_clear():
         from ..element import element_modal_operator
         element_modal_operator.get_event_index.cache_clear()
+        element_modal_operator.EnumControl.___enum_items___.clear()
 
     @staticmethod
     def gesture_direction_cache_clear():
