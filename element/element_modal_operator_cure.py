@@ -63,9 +63,8 @@ class ElementModalOperatorEventCRUE:
             self.cache_clear()
             ae = element.active_event
             if ae:
-                parent = ae.parent
+                parent = ae.parent_element
                 parent.modal_events.move(len(parent.modal_events) - 1, ae.index + 1)
-
             self.cache_clear()
             return {"FINISHED"}
 

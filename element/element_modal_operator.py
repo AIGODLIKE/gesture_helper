@@ -9,43 +9,104 @@ all_id = list((i[0] for i in all_event))
 from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
+from bpy.app.translations import pgettext_iface
 
 
 class NumberControl:
-    number_value_mode: bpy.props.EnumProperty(items=[
-        ("ADD", "Add", ""),
-        ("SUBTRACT", "Subtract", ""),
-        *ENUM_NUMBER_VALUE_CHANGE_MODE
-    ])
+    number_value_mode: bpy.props.EnumProperty(
+        name="Number Value Mode",
+        items=[
+            ("ADD", "Add", ""),
+            ("SUBTRACT", "Subtract", ""),
+            *ENUM_NUMBER_VALUE_CHANGE_MODE
+        ])
+
+    @property
+    def number_explanation(self):
+        nm = self.number_value_mode
+        if nm == "ADD":
+            return "+"
+        elif nm == "SUBTRACT":
+            return "-"
+        elif nm == "SET_VALUE":
+            return pgettext_iface("Set to")
+        elif nm == "MOUSE_CHANGES_HORIZONTAL":
+            return pgettext_iface("Horizontal Move")
+        elif nm == "MOUSE_CHANGES_VERTICAL":
+            return pgettext_iface("Vertical Move")
+        elif nm == "MOUSE_CHANGES_ARBITRARY":
+            return pgettext_iface("Arbitrary Move")
+        return "NE"
+
+    @property
+    def is_use_mouse(self):
+        return self.number_value_mode in ["MOUSE_CHANGES_HORIZONTAL", "MOUSE_CHANGES_VERTICAL",
+                                          "MOUSE_CHANGES_ARBITRARY"]
 
 
 class FloatControl:
-    float_incremental_value: bpy.props.FloatProperty(default=1)
+    float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value")
+    float_value: bpy.props.IntProperty(name="Int Value", options={'HIDDEN', 'SKIP_SAVE'}, default=0)
 
     def draw_float(self, layout):
-        layout.label(text="float")
-        layout.prop(self, "float_incremental_value")
-        layout.prop(self, "number_value_mode")
+        is_set = self.number_value_mode == "SET_VALUE"
+        column = layout.column(align=False)
+        column.label(text="Float Value")
+        column.prop(self, "number_value_mode", expand=True)
+        if is_set:
+            column.prop(self, "float_value")
+        else:
+            column.prop(self, "float_incremental_value", expand=True)
+
+    @property
+    def float_explanation(self):
+        if self.number_value_mode == "SET_VALUE":
+            return f"{self.number_explanation}{self.float_value}"
+        if self.is_use_mouse:
+            text = bpy.app.translations.pgettext_iface("Incremental")
+            return f"{self.number_explanation}({text}{self.float_incremental_value})"
+        return f"{self.number_explanation}{self.float_incremental_value}"
 
 
 class IntControl:
-    int_incremental_value: bpy.props.IntProperty(default=1)
-    int_value: bpy.props.IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
+    int_incremental_value: bpy.props.IntProperty(name="Int Incremental Value", default=1)
+    int_value: bpy.props.IntProperty(name="Int Value", options={'HIDDEN', 'SKIP_SAVE'}, default=0)
 
     def draw_int(self, layout):
-        layout.label(text="Int Value")
-        layout.prop(self, "number_value_mode", expand=True)
-        layout.separator()
+        is_set = self.number_value_mode == "SET_VALUE"
+        column = layout.column(align=False)
+        column.label(text="Int Value")
+        column.prop(self, "number_value_mode", expand=True)
+        if is_set:
+            column.prop(self, "int_value")
+        else:
+            column.prop(self, "int_incremental_value", expand=True)
+
+    @property
+    def int_explanation(self):
         if self.number_value_mode == "SET_VALUE":
-            layout.prop(self, "int_value")
+            return f"{self.number_explanation}{self.int_value}"
+        if self.is_use_mouse:
+            text = pgettext_iface("Incremental")
+            return f"{self.number_explanation}({text}{self.int_incremental_value})"
+        return f"{self.number_explanation}{self.int_incremental_value}"
 
 
 class BoolControl:
-    bool_value_mode: bpy.props.EnumProperty(items=ENUM_BOOL_VALUE_CHANGE_MODE)
+    bool_value_mode: bpy.props.EnumProperty(name="Boolean Value Mode", items=ENUM_BOOL_VALUE_CHANGE_MODE)
 
-    def draw_bool(self, layout):
+    def draw_boolean(self, layout):
         layout.label(text="Boolean Value")
-        layout.prop(self, "bool_value_mode")
+        layout.prop(self, "bool_value_mode", expand=True)
+
+    @property
+    def boolean_explanation(self):
+        if self.bool_value_mode == "SET_TRUE":
+            return pgettext_iface("Set to True")
+        elif self.bool_value_mode == "SET_FALSE":
+            return pgettext_iface("Set to False")
+        elif self.bool_value_mode == "SWITCH":
+            return pgettext_iface("Switch")
 
 
 class EnumControl:
@@ -58,24 +119,39 @@ class EnumControl:
          ''),
     ])
 
-    ___enum___ = []  # 防止脏数据
+    ___enum_items___ = {}  # 防止脏数据
 
-    def __get_enum__(self, context):
+    def __load_enum__(self):
         if self.control_property_type == "ENUM":
             items = from_rna_get_enum_items(self.control_property_rna)
             if items:
-                if items != self.___enum___:
-                    self.___enum___ = items
-            return self.___enum___
-        return [
-            ("None", "", "")
+                if self.control_property not in self.___enum_items___:
+                    self.___enum_items___[self.control_property] = items
+            return
+        self.___enum_items___[self.control_property] = [
+            ("None", "", ""),
         ]
+
+    def __get_enum__(self, context):
+        self.__load_enum__()
+        return self.___enum_items___[self.control_property]
 
     enum_value_a: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_reverse: bpy.props.BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
     enum_wrap: bpy.props.BoolProperty(default=True, name="Cycle",
                                       description="Automatically jumps if it is the last or first value in the loop")
+
+    @property
+    def enum_explanation(self):
+        em = self.enum_value_mode
+        if em == "SET":
+            return f"{em} {self.enum_value_a}"
+        elif em == "TOGGLE":
+            return f"{em} {self.enum_value_a} {self.enum_value_b}"
+        elif em == "CYCLE":
+            return em
+        return em
 
     # noinspection DuplicatedCode
     def draw_enum(self, layout):
@@ -96,11 +172,10 @@ class EnumControl:
             layout.prop(self, "enum_reverse")
             layout.prop(self, "enum_wrap")
 
-        layout.separator()
-
-        cc = layout.column(align=True)
         is_eq = self.enum_value_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
         if is_eq:
+            layout.separator()
+            cc = layout.column(align=True)
             cc.alert = True
             cc.label(text="Value A == Value B")
             cc = cc.column(align=True)
@@ -264,6 +339,7 @@ class ElementModalOperatorEventItem(
         row.label(text=self.property_name)
         row.label(text=self.control_property_type)
         row.label(text=self.control_property, translate=False)
+        row.label(text=self.control_property_explanation)
         self.draw_event_type(row)
 
     def draw_modal(self, layout):
@@ -281,21 +357,23 @@ class ElementModalOperatorEventItem(
         row.prop(self, "event_shift", translate=False)
 
         row = column.row(align=True)
-        row.prop(self, "control_property")
-        row.operator(ElementModalOperatorEventCRUE.SelectControlProperty.bl_idname, icon="RESTRICT_SELECT_OFF")
         column.label(text=self.property_name)
         column.label(text=self.control_property_type)
-        column.label(text=self.control_property)
-        column.label(text=self.control_property_explanation)
+        row.prop(self, "control_property")
+        row.operator(ElementModalOperatorEventCRUE.SelectControlProperty.bl_idname, icon="RESTRICT_SELECT_OFF", text="")
 
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
+        else:
+            column.label(text=f"Unknown {self.control_property_type}")
 
+        box = column.box().column(align=True)
         for i in dir(self.control_property_rna):
-            if i in ("hard_max", "hard_min", "soft_max", "soft_min"):
-                row = column.row(align=True)
-                row.label(text=i)
-                row.label(text=str(getattr(self.control_property_rna, i, None)))
+            if i in ("hard_max", "hard_min", "soft_max", "soft_min", "default", "step"):
+                name = bpy.app.translations.pgettext_iface(i.replace("_", " ").title())
+                row = box.row(align=True)
+                row.label(text=name)
+                row.label(text=str(getattr(self.control_property_rna, i, None)), translate=False)
         if self.debug_property.debug_mode:
             box = column.box()
             for k in dir(self.control_property_rna):

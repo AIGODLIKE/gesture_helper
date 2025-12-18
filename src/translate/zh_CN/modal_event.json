@@ -2,5 +2,17 @@
   "Modal Event": "模态事件",
   "Event Type": "事件类型",
   "Control Property": "控制属性",
-  "No active modal event": "无活动模态事件"
+  "No active modal event": "无活动模态事件",
+  "Float Incremental Value": "浮点增量值",
+  "Int Incremental Value": "整数增量值",
+  "Int Value": "整数值",
+  "Float Value": "浮点值",
+  "Number Value Mode": "数字值模式",
+  "Boolean Value Mode": "布尔值模式",
+  "Hard Max": "硬限制最大值",
+  "Hard Min": "硬限制最小值",
+  "Horizontal Move": "水平移动",
+  "Vertical Move": "垂直移动",
+  "Arbitrary Move": "任意移动",
+  "Set to": "设置为"
 }
