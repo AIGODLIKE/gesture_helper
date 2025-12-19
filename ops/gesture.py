@@ -59,7 +59,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
     def modal(self, context, event):
         self.trajectory_event_update(context, event)
-        self.init_module(event)
+        self.init_modal(event)
         if self.is_debug:
             print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         if self.try_immediate_implementation():

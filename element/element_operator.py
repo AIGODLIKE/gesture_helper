@@ -42,7 +42,8 @@ class ModalProperty:
         return None
 
     def __running_by_modal__(self):
-        ...
+        with bpy.context.temp_override(element=self, gesture=self.parent_gesture):
+            bpy.ops.gesture.element_modal_event("INVOKE_DEFAULT", False)
 
     def draw_modal_property(self, layout):
         if self.active_event:

@@ -233,13 +233,22 @@ class ElementDraw:
             row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
             row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
 
+            if is_modal:
+                layout.prop(get_pref().gesture_property, "modal_pass_view_rotation")
+
             layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
             if is_change:
                 layout.alert = True
                 layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
                              icon='ERROR')
                 layout.alert = False
-            # if is_modal:
+            if is_modal:
+                if self.is_not_recommended_as_modal:
+                    column = layout.column(align=True)
+                    column.alert = True
+                    column.label(text='Not recommended as modal operator', icon='ERROR')
+                    column.label(text='The operator contains array properties and cannot be controlled')
+
             #     self.draw_operator_modal(layout)
         elif is_script:
             if preview_script:

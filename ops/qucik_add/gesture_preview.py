@@ -90,7 +90,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.screen = context.screen
         self.__sync_gesture__()
 
-        self.init_module(event)
+        self.init_modal(event)
         self.trajectory_event_update(context, event)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
 

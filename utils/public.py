@@ -255,7 +255,7 @@ class PublicOperator(bpy.types.Operator):
     def init_invoke(self, event):
         self.event = event
 
-    def init_module(self, event):
+    def init_modal(self, event):
         self.event = event
 
     @property

@@ -14,7 +14,6 @@ from .element_relationship import ElementRelationship
 from ..utils.public import PublicProperty
 from ..utils.public_cache import cache_update_lock
 
-
 # 子元素的删除需要单独处理,是子级的子级,不能直接拿到
 class Element(ElementCURE,
               ElementDraw,
