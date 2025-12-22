@@ -14,6 +14,8 @@ class ModalProperty:
     modal_events_index: bpy.props.IntProperty(name='Modal Event Index', default=-1)
     modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
 
+    last_modal_operator_property: bpy.props.StringProperty(name='Last Modal Operator Property', default="{}")
+
     @property
     def is_not_recommended_as_modal(self):
         """一部分操作符不建议使用模态来控制

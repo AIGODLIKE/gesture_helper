@@ -39,14 +39,20 @@ class NumberControl:
         return "NE"
 
     @property
-    def is_use_mouse(self):
-        return self.number_value_mode in ["MOUSE_CHANGES_HORIZONTAL", "MOUSE_CHANGES_VERTICAL",
-                                          "MOUSE_CHANGES_ARBITRARY"]
+    def control_is_number(self):
+        """控制的属性是数字"""
+        return self.control_property_type in ["INT", "FLOAT"]
+
+    @property
+    def default_value(self):
+        if rna := self.control_property_rna:
+            return rna.default
+        return None
 
 
 class FloatControl:
-    float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value")
-    float_value: bpy.props.IntProperty(name="Int Value", options={'HIDDEN', 'SKIP_SAVE'}, default=0)
+    float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value", precision=2)
+    float_value: bpy.props.FloatProperty(name="Float Value", default=1, precision=2)
 
     def draw_float(self, layout):
         is_set = self.number_value_mode == "SET_VALUE"
@@ -62,10 +68,24 @@ class FloatControl:
     def float_explanation(self):
         if self.number_value_mode == "SET_VALUE":
             return f"{self.number_explanation}{self.float_value}"
-        if self.is_use_mouse:
-            text = bpy.app.translations.pgettext_iface("Incremental")
-            return f"{self.number_explanation}({text}{self.float_incremental_value})"
-        return f"{self.number_explanation}{self.float_incremental_value}"
+        if self.is_mouse_move_event:
+            return f"{self.number_explanation}"
+        return f"{self.number_explanation}{round(self.float_incremental_value, 2)}"
+
+    def float_execute(self, ops):
+        op = ops.operator_properties
+        key = self.control_property
+        float_value = op[key] if key in op else self.default_value
+
+        value = round(self.float_incremental_value, 2)
+        m = self.number_value_mode
+        if m == "ADD":
+            op[key] = float_value + value
+        elif m == "SUBTRACT":
+            op[key] = float_value - value
+        elif m == "SET_VALUE":
+            op[key] = self.float_value
+        op[key] = round(op[key], 2)
 
 
 class IntControl:
@@ -86,14 +106,31 @@ class IntControl:
     def int_explanation(self):
         if self.number_value_mode == "SET_VALUE":
             return f"{self.number_explanation}{self.int_value}"
-        if self.is_use_mouse:
-            text = pgettext_iface("Incremental")
-            return f"{self.number_explanation}({text}{self.int_incremental_value})"
+        if self.is_mouse_move_event:
+            return f"{self.number_explanation}"
         return f"{self.number_explanation}{self.int_incremental_value}"
+
+    @property
+    def is_int(self) -> bool:
+        return self.control_property_type == "INT"
+
+    def int_execute(self, ops):
+        op = ops.operator_properties
+        key = self.control_property
+        int_value = op[key] if key in op else self.default_value
+
+        m = self.number_value_mode
+        if m == "ADD":
+            op[key] = int_value + self.int_incremental_value
+        elif m == "SUBTRACT":
+            op[key] = int_value - self.int_incremental_value
+        elif m == "SET_VALUE":
+            op[key] = self.int_value
 
 
 class BoolControl:
-    bool_value_mode: bpy.props.EnumProperty(name="Boolean Value Mode", items=ENUM_BOOL_VALUE_CHANGE_MODE)
+    bool_value_mode: bpy.props.EnumProperty(name="Boolean Value Mode", items=ENUM_BOOL_VALUE_CHANGE_MODE,
+                                            default="SWITCH")
 
     def draw_boolean(self, layout):
         layout.label(text="Boolean Value")
@@ -107,6 +144,21 @@ class BoolControl:
             return pgettext_iface("Set to False")
         elif self.bool_value_mode == "SWITCH":
             return pgettext_iface("Switch")
+
+    def boolean_execute(self, ops):
+        bm = self.bool_value_mode
+        op = ops.operator_properties
+        key = self.control_property
+        print(f"\tcall boolean_execute\t{self.bool_value_mode}\t{op}\t{key}")
+        if bm == "SET_TRUE":
+            op[key] = True
+        elif bm == "SET_FALSE":
+            op[key] = False
+        elif bm == "SWITCH":
+            if key in op:
+                op[key] = not op.get(key, False)
+            else:
+                op[key] = True
 
 
 class EnumControl:
@@ -192,6 +244,10 @@ class EnumControl:
             column.separator()
             column.prop(self, "enum_reverse")
             column.prop(self, "enum_wrap")
+            column.separator()
+            col = column.column(align=True)
+            col.enabled = False
+            col.prop(self, "enum_value_a", expand=True)
 
         is_eq = self.enum_value_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
         if is_eq:
@@ -201,6 +257,45 @@ class EnumControl:
             cc.label(text="Value A == Value B")
             cc = cc.column(align=True)
             cc.enabled = False
+
+    def enum_execute(self, ops):
+        op = ops.operator_properties
+        key = self.control_property
+        enum_value = op.get(key, None)
+
+        m = self.enum_value_mode
+        if m == "SET":
+            op[key] = self.enum_value_a
+        elif m == "TOGGLE":
+            if enum_value == self.enum_value_a:
+                op[key] = self.enum_value_b
+            else:
+                op[key] = self.enum_value_a
+        elif m == "CYCLE":
+            op[key] = self.cycle_enum_value(enum_value)
+
+    def cycle_enum_value(self, orig_value):
+        enums = list([i[0] for i in self.__get_enum__(None)])
+
+        bpy.ops.wm.context_cycle_enum()
+        is_reverse = self.enum_reverse
+        is_wrap = self.enum_wrap
+        if orig_value is None:
+            orig_value = enums[0]
+        orig_index = enums.index(orig_value)
+
+        print("cycle_enum_value", orig_value, orig_index, is_reverse, is_wrap, len(enums), enums)
+        if is_reverse:
+            if orig_index == 0:
+                advance_enum = enums[-1] if is_wrap else enums[0]
+            else:
+                advance_enum = enums[orig_index - 1]
+        else:
+            if orig_index == len(enums) - 1:
+                advance_enum = enums[0] if is_wrap else enums[-1]
+            else:
+                advance_enum = enums[orig_index + 1]
+        return advance_enum
 
 
 class KeymapEvent:
@@ -231,16 +326,33 @@ class KeymapEvent:
         """绘制事件的类型
         用临时kmi
         并且同步到self.event_type"""
+        if self.is_mouse_move_event:
+            text = pgettext_iface("Incremental")
+            value = self.int_incremental_value if self.is_int else self.float_incremental_value
+            layout.label(text=f"{text}{value}")
+            return
         temp_kmi = self.temp_kmi
         layout.prop(temp_kmi, "type", text="", full_event=True)
         self.sync_type_from_temp_kmi(temp_kmi)
 
     @property
     def temp_kmi(self):
+        """临时事件的快捷键"""
         from ..utils.public_key import get_temp_kmi
         hs = str(hash(self))
         temp_kmi = get_temp_kmi("modal_event_" + hs, {}, {"type": self.event_type, "value": "PRESS"})
         return temp_kmi
+
+    @property
+    def is_mouse_move_event(self) -> bool:
+        """是否为鼠标移动事件"""
+        if self.control_is_number:
+            return self.number_value_mode in (
+                "MOUSE_CHANGES_HORIZONTAL",
+                "MOUSE_CHANGES_VERTICAL",
+                "MOUSE_CHANGES_ARBITRARY",
+            )
+        return False
 
 
 @cache
@@ -424,5 +536,31 @@ class ElementModalOperatorEventItem(
                     row = box.row(align=True)
                     row.label(text=f"{k} = {i}")
 
-    def execute(self,ops, context, event) -> bool:
-        ...
+    def execute(self, ops, context, event) -> bool:
+        """
+        WHEELUPMOUSE
+         WHEELDOWNMOUSE
+        """
+        if self.is_mouse_move_event:
+            ...
+        else:
+            if self.check_event(event):
+                if execute_func := getattr(self, f"{self.control_property_type.lower()}_execute", None):
+                    print(f"\texecute_func {execute_func} {self.control_property_type.lower()} {self.control_property}")
+                    execute_func(ops)
+                    return True
+        return False
+
+    def check_event(self, event):
+        event_type = self.event_type
+        event_ctrl = self.event_ctrl
+        event_alt = self.event_alt
+        event_shift = self.event_shift
+
+        is_press = event.value == 'PRESS'
+        is_event = event.type == event_type
+        is_ctrl = event.ctrl == event_ctrl
+        is_alt = event.alt == event_alt
+        is_shift = event.shift == event_shift
+
+        return is_press and is_event and is_ctrl and is_alt and is_shift

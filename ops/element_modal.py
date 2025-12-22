@@ -1,4 +1,4 @@
-import bpy.ops.ed
+import bpy
 
 from ..utils.public import PublicOperator
 from ..utils.public import get_pref
@@ -18,7 +18,7 @@ class ElementModal(PublicOperator):
         self.init_invoke(event)
         self.gesture = getattr(context, "gesture", None)
         self.element = getattr(context, "element", None)
-        self.operator_properties = getattr(self.element, "operator_properties", None)
+        self.operator_properties = getattr(self.element, "properties", None)
         print(self.bl_idname, self.gesture, self.element, self.operator_properties)
 
         bpy.ops.ed.undo_push("EXEC_DEFAULT", message="Gesture Element Modal")
@@ -26,22 +26,25 @@ class ElementModal(PublicOperator):
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        print("\t", event.type, event.value)
+        context.area.header_text_set(str(self.operator_properties))
         self.init_modal(event)
         pref = get_pref()
         if pref.gesture_property.modal_pass_view_rotation:
             if event.type == 'MIDDLEMOUSE' and event.value == 'PRESS':
                 return {'PASS_THROUGH'}
-        if self.is_exit:
+        if self.is_right_mouse:
             return self.exit(context, event)
         if event.type not in ("TIMER_REPORT",):
+            if event.type not in {"MOUSEMOVE", "INBETWEEN_MOUSEMOVE"}:
+                print("\t", event.type, event.value)
             for e in self.element.modal_events:
                 if e.execute(self, context, event):
-                    ...
+                    return {'RUNNING_MODAL'}
         return {'RUNNING_MODAL'}
 
     def exit(self, context, event):
         print("exit", context, event)
+        context.area.header_text_set(None)
         return {"FINISHED"}
 
     def remember(self, context):
