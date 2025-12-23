@@ -49,6 +49,19 @@ class NumberControl:
             return rna.default
         return None
 
+    def limit_number_value(self, value):
+        """
+        限制数字的值
+        有最大最小值
+        "hard_max", "hard_min", "soft_max", "soft_min"
+        """
+        if rna := self.control_property_rna:
+            hard_max = getattr(rna, "hard_max", None)
+            hard_min = getattr(rna, "hard_min", None)
+            if hard_max is not None and hard_min is not None:
+                return min(max(value, hard_min), hard_max)
+        return value
+
 
 class FloatControl:
     float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value", precision=2)
@@ -80,12 +93,12 @@ class FloatControl:
         value = round(self.float_incremental_value, 2)
         m = self.number_value_mode
         if m == "ADD":
-            op[key] = float_value + value
+            value = float_value + value
         elif m == "SUBTRACT":
-            op[key] = float_value - value
+            value = float_value - value
         elif m == "SET_VALUE":
-            op[key] = self.float_value
-        op[key] = round(op[key], 2)
+            value = self.float_value
+        op[key] = round(self.limit_number_value(value), 2)
 
 
 class IntControl:
@@ -121,11 +134,12 @@ class IntControl:
 
         m = self.number_value_mode
         if m == "ADD":
-            op[key] = int_value + self.int_incremental_value
+            value = int_value + self.int_incremental_value
         elif m == "SUBTRACT":
-            op[key] = int_value - self.int_incremental_value
+            value = int_value - self.int_incremental_value
         elif m == "SET_VALUE":
-            op[key] = self.int_value
+            value = self.int_value
+        op[key] = self.limit_number_value(value)
 
 
 class BoolControl:
@@ -414,7 +428,24 @@ class ElementModalOperatorEventItem(
     KeymapEvent,
     EventRelationship,
 ):
-    control_property: bpy.props.StringProperty(name="Control Property")
+    def update_control_property(self, context):
+        """初始化属性
+        根据需要控制的属性进行初始化"""
+        if tp := self.control_property_type:
+            if default := self.default_value:
+                if tp == "FLOAT":
+                    self.float_incremental_value = default
+                    self.float_value = default
+                elif tp == "INT":
+                    self.int_incremental_value = default
+                    self.int_value = default
+                elif tp == "BOOL":
+                    ...
+                elif tp == "ENUM":
+                    self.enum_value_a = default
+                    self.enum_value_b = default
+
+    control_property: bpy.props.StringProperty(name="Control Property", update=update_control_property)
 
     def remove_after(self):
         """继承了EventRelationship的类,需要在最后一个"""

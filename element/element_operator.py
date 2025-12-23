@@ -156,11 +156,12 @@ class RunOperator:
                 return pgettext_n(rna.name, rna.translation_context)
         return None
 
-    def __running_by_bl_idname__(self):
-        """通过bl_idname运行操作符
-        """
+    def __running_by_bl_idname__(self, operator_properties: str = None):
+        """通过bl_idname运行操作符"""
+        if operator_properties is None:
+            operator_properties = self.operator_properties
         try:
-            prop = secure_call_eval(self.operator_properties)
+            prop = secure_call_eval(operator_properties)
             func = self.operator_func
             if func:
                 func(self.operator_context, True, **prop)

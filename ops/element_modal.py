@@ -1,10 +1,22 @@
+import json
+
 import bpy
 
-from ..utils.public import PublicOperator
-from ..utils.public import get_pref
+from ..utils.public import PublicOperator, get_pref
 
 
-class ElementModal(PublicOperator):
+class State:
+    show_region_hud = None
+
+    def start_hud(self, context):
+        self.show_region_hud = context.space_data.show_region_hud
+        context.space_data.show_region_hud = False
+
+    def restore_hud(self, context):
+        context.space_data.show_region_hud = self.show_region_hud
+
+
+class ElementModal(PublicOperator, State):
     bl_idname = 'gesture.element_modal_event'
     bl_label = 'Element Modal'
 
@@ -21,7 +33,11 @@ class ElementModal(PublicOperator):
         self.operator_properties = getattr(self.element, "properties", None)
         print(self.bl_idname, self.gesture, self.element, self.operator_properties)
 
-        bpy.ops.ed.undo_push("EXEC_DEFAULT", message="Gesture Element Modal")
+        bpy.ops.ed.undo_push(message="Gesture Element Modal")
+
+        # 进入模态时要运行一次
+        self.element.__running_by_bl_idname__(json.dumps(self.operator_properties))
+        self.start_hud(context)
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
@@ -29,6 +45,10 @@ class ElementModal(PublicOperator):
         context.area.header_text_set(str(self.operator_properties))
         self.init_modal(event)
         pref = get_pref()
+
+        if event.type == "LEFTMOUSE" and event.value == "PRESS":  # 确认
+            return self.exit(context, event)
+
         if pref.gesture_property.modal_pass_view_rotation:
             if event.type == 'MIDDLEMOUSE' and event.value == 'PRESS':
                 return {'PASS_THROUGH'}
@@ -37,18 +57,17 @@ class ElementModal(PublicOperator):
         if event.type not in ("TIMER_REPORT",):
             if event.type not in {"MOUSEMOVE", "INBETWEEN_MOUSEMOVE"}:
                 print("\t", event.type, event.value)
-            for e in self.element.modal_events:
+            element = self.element
+            for e in element.modal_events:
                 if e.execute(self, context, event):
+                    if bpy.ops.ed.undo.poll():
+                        bpy.ops.ed.undo()
+                    element.__running_by_bl_idname__(json.dumps(self.operator_properties))
                     return {'RUNNING_MODAL'}
         return {'RUNNING_MODAL'}
 
     def exit(self, context, event):
         print("exit", context, event)
         context.area.header_text_set(None)
+        self.restore_hud(context)
         return {"FINISHED"}
-
-    def remember(self, context):
-        ...
-
-    def restore(self, context):
-        ...
