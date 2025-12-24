@@ -279,21 +279,41 @@ class GesturePassThroughKeymap:
                     print(f"else\t{key}\t{[i.idname for i in match_kmis]}")
 
     @staticmethod
-    def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set:
+    def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
         """尝试跳过注释橡皮擦事件
         GESTURE_OT_operator     modal   PRESS   D       prev RIGHTMOUSE PRESS   get_key:
         GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
         GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
         """
-        if context.space_data and context.space_data.type in ("VIEW_3D",
-                                                              "NODE_EDITOR") and context.active_annotation_layer:
-            if (event.type, event.type_prev) in [
-                ('D', 'RIGHTMOUSE'),
-                ('RIGHTMOUSE', 'D'),
-                ('MOUSEMOVE', 'D'),
-                ('D', 'D')
-            ]:
-                return {'FINISHED', 'PASS_THROUGH'}
+        if context.space_data and context.space_data.type in ("VIEW_3D", "NODE_EDITOR"):
+            if context.active_annotation_layer:
+                if (event.type, event.type_prev) in [
+                    ('D', 'RIGHTMOUSE'),
+                    ('RIGHTMOUSE', 'D'),
+                    ('MOUSEMOVE', 'D'),
+                    ('D', 'D')
+                ]:
+                    return {'FINISHED', 'PASS_THROUGH'}
+        return None
+
+    @staticmethod
+    def try_pass_paint_texture_stencil(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
+        """尝试跳过纹理绘制镂板事件
+        GESTURE_OT_operator     modal   PRESS   D       prev RIGHTMOUSE PRESS   get_key:
+        GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
+        GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
+        """
+        from bl_ui.properties_paint_common import UnifiedPaintPanel
+
+        settings = UnifiedPaintPanel.paint_settings(context)
+        brush = getattr(settings, "brush", None)
+        if context.space_data and context.space_data.type == "VIEW_3D":
+            if context.mode == "PAINT_TEXTURE" and brush:
+                ts = getattr(brush, "texture_slot", None)
+                if ts and getattr(ts, "map_mode", None) == "STENCIL":
+                    if event.type == "RIGHTMOUSE":
+                        return {'FINISHED', 'PASS_THROUGH'}
+        return None
 
     def try_pass_set_cursor3d_location(self, context: bpy.types.Context, event: bpy.types.Event,
                                        kmi: bpy.types.KeyMapItem) -> bool:
