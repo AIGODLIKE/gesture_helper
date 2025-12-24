@@ -15,10 +15,21 @@ class ElementModalOperatorEventCRUE:
     class ADD(ModalPoll):
         bl_label = 'Add modal event item'
         bl_idname = 'gesture.element_modal_add'
+        bl_description = 'Ctrl Alt Shift + Click: Add all item!!!'
         control_property: bpy.props.StringProperty(name="Control Property")
 
         def invoke(self, context, event):
             wm = context.window_manager
+            if event.ctrl and event.alt and event.shift:
+                if self.active_element:
+                    try:
+                        for i in self.active_element.operator_func.get_rna_type().properties:
+                            if i.identifier not in ["rna_type", ]:
+                                self.control_property = i.identifier
+                                self.execute(context)
+                    except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'
+                        ...
+                return {'FINISHED'}
             return wm.invoke_props_dialog(**{'operator': self, 'width': 500})
 
         def draw(self, context):
@@ -43,6 +54,7 @@ class ElementModalOperatorEventCRUE:
             element = self.active_element
             new = element.modal_events.add()
             new.control_property = self.control_property
+            new.__init_modal__()
             self.cache_clear()
             return {"FINISHED"}
 
@@ -71,12 +83,21 @@ class ElementModalOperatorEventCRUE:
     class REMOVE(ModalPoll):
         bl_label = 'Remove element modal item'
         bl_idname = 'gesture.element_modal_remove'
+        bl_description = 'Ctrl Alt Shift + Click: Remove all modal item!!!'
 
         @classmethod
         def poll(cls, context):
             pref = cls._pref()
             ae = pref.active_element
             return super().poll(context) and ae.active_event is not None
+
+        def invoke(self, context, event):
+            if event.ctrl and event.alt and event.shift:
+                element = self.pref.active_element
+                element.modal_events.clear()
+                self.cache_clear()
+                return {'FINISHED'}
+            return self.execute(context)
 
         def execute(self, context):
             element = self.pref.active_element
@@ -111,5 +132,5 @@ class ElementModalOperatorEventCRUE:
                     ...
 
         def execute(self, context):
-            print(self.bl_idname, self.control_property)
+            self.active_event.control_property = self.control_property
             return {"FINISHED"}

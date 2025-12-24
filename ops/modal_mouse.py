@@ -1,10 +1,10 @@
 import bpy
 from bl_operators.wm import operator_value_undo_return
 from bpy.app.translations import pgettext
-from bpy.props import StringProperty, FloatProperty, EnumProperty
-from mathutils import Vector
+from bpy.props import StringProperty, EnumProperty
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
+from ..utils.public import by_path_set_value, PublicMouseModal
 from ..utils.secure_call import secure_call_eval
 
 
@@ -18,7 +18,7 @@ class StoreValue:
         setattr(self, self.data_path, self.___value___)
 
 
-class ModalMouseOperator(bpy.types.Operator, StoreValue):
+class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
     """
     from bl_operators.wm import WM_OT_context_modal_mouse
     scripts/startup/bl_operators/wm.py
@@ -31,17 +31,11 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue):
         name="数据路径",
         options={'SKIP_SAVE'},
     )
-
     header_text: StringProperty(
         name="Header Text",
         description="Text to display in header during scale",
         options={'SKIP_SAVE'},
         default="Header Text",
-    )
-    input_scale: FloatProperty(
-        description="Scale the mouse movement by this value before applying the delta",
-        default=0.01,
-        options={'SKIP_SAVE'},
     )
     value_mode: EnumProperty(
         items=ENUM_NUMBER_VALUE_CHANGE_MODE[1:],
@@ -78,20 +72,23 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue):
         if self.___value___ is None:
             return {'CANCELLED'}
         else:
-            self.mouse = Vector((event.mouse_x, event.mouse_y))
+            self.start_mouse(event)
             context.window_manager.modal_handler_add(self)
             return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        print("modal", self.bl_idname, self.___value___, self.data_path, f"\tmodal\t{event.value}\t{event.type}",
-              "\tprev", event.type_prev,
-              event.value_prev)
-        event_type = event.type
+        et = event.type
 
-        self.set_cursor(context)
+        vm = self.value_mode
+        self.set_cursor(context, vm)
 
-        if event_type == 'MOUSEMOVE':
-            delta = self.value_delta(event)
+        if et == 'MOUSEMOVE':
+            delta = self.value_delta(event, vm)
+            if type(self.___value___) == int:
+                value = int(round(self.___value___ + delta))
+            else:
+                value = self.___value___ + delta
+            by_path_set_value(bpy.context, self.data_path.split("."), value)
             header_text = self.__header_text__
             if header_text:
                 value = secure_call_eval(f"bpy.context.{self.data_path}")
@@ -100,56 +97,18 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue):
                         header_text = header_text % value
                     else:
                         header_text = (self.__header_text__ % delta) + pgettext(" (delta)")
-                except Exception:
-                    header_text = f"header_text Text Error:{header_text} {value}"
+                except Exception as e:
+                    header_text = f"header_text Text Error:{header_text} {value} {e.args}"
                 context.area.header_text_set(header_text)
 
-        elif 'LEFTMOUSE' == event_type or event.value == "RELEASE":
+        elif 'LEFTMOUSE' == et or event.value == "RELEASE":
             self.exit()
             return operator_value_undo_return(self.___value___)
 
-        elif event_type in {'RIGHTMOUSE', 'ESC'}:
+        elif et in {'RIGHTMOUSE', 'ESC'}:
             self.__restore__()
             self.exit()
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
 
-    @staticmethod
-    def exit():
-        bpy.context.area.header_text_set(None)
-        bpy.context.window.cursor_set("DEFAULT")
-
-    def set_cursor(self, context):
-        cursor = {
-            "MOUSE_CHANGES_HORIZONTAL": "MOVE_X",
-            "MOUSE_CHANGES_VERTICAL": "MOVE_Y",
-            "MOUSE_CHANGES_ARBITRARY": "SCROLL_XY"}
-        context.window.cursor_set(cursor[self.value_mode])
-
-    def value_delta(self, event):
-        delta = self.get_delta(event) * self.input_scale
-        from ..utils.public import by_path_set_value
-
-        if type(self.___value___) == int:
-            value = int(round(self.___value___ + delta))
-        else:
-            value = self.___value___ + delta
-        by_path_set_value(bpy.context, self.data_path.split("."), value)
-        return delta
-
-    def get_delta(self, event):
-        vm = self.value_mode
-        if vm == "MOUSE_CHANGES_HORIZONTAL":
-            return event.mouse_x - self.mouse.x
-        elif vm == "MOUSE_CHANGES_VERTICAL":
-            return event.mouse_y - self.mouse.y
-        elif vm == "MOUSE_CHANGES_ARBITRARY":
-            x = event.mouse_x - self.mouse.x
-            y = event.mouse_y - self.mouse.y
-            if x > y:
-                return max(x, y)
-            else:
-                return min(x, y)
-        else:
-            raise ValueError("Invalid value mode: %r" % vm)

@@ -62,6 +62,30 @@ class NumberControl:
                 return min(max(value, hard_min), hard_max)
         return value
 
+    @property
+    def is_int(self) -> bool:
+        return self.control_property_type == "INT"
+
+    def number_mouse_move_execute(self, ops, context, event):
+        vm = self.number_value_mode
+        cp = self.control_property
+
+        ops.set_cursor(context, vm)
+
+        default_value = ops.start_operator_properties.get(cp, self.default_value)
+        delta = ops.value_delta(event, vm)
+
+        if type(default_value) == int:
+            value = int(round(default_value + delta))
+        else:
+            value = round(default_value + delta, 2)
+        lv = self.limit_number_value(value)
+        print("number_mouse_move_execute", cp, default_value, value, delta, lv)
+        if lv == ops.operator_properties.get(cp, None):  # 没有改变
+            return False
+        ops.operator_properties[cp] = lv
+        return True
+
 
 class FloatControl:
     float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value", precision=2)
@@ -123,10 +147,6 @@ class IntControl:
             return f"{self.number_explanation}"
         return f"{self.number_explanation}{self.int_incremental_value}"
 
-    @property
-    def is_int(self) -> bool:
-        return self.control_property_type == "INT"
-
     def int_execute(self, ops):
         op = ops.operator_properties
         key = self.control_property
@@ -183,7 +203,7 @@ class EnumControl:
          ''),
         ('TOGGLE', 'Toggle setting Enumeration values (toggle between two enumeration values)',
          ''),
-    ])
+    ], default="CYCLE")
 
     ___enum_items___ = {}  # 防止脏数据
 
@@ -313,14 +333,33 @@ class EnumControl:
 
 
 class KeymapEvent:
-    event_type: bpy.props.EnumProperty(items=all_event, default="A", name="Event Type")
+    def update_event_type(self, _):
+        if self.control_is_number:
+            et = self.event_type
+            if et == "WHEELUPMOUSE":
+                self.number_value_mode = "ADD"
+            elif et == "WHEELDOWNMOUSE":
+                self.number_value_mode = "SUBTRACT"
+
+    event_type: bpy.props.EnumProperty(items=all_event, default="A", name="Event Type", update=update_event_type)
     event_ctrl: bpy.props.BoolProperty(default=False, name="Ctrl")
     event_alt: bpy.props.BoolProperty(default=False, name="Alt")
     event_shift: bpy.props.BoolProperty(default=False, name="Shift")
 
+    def __init_keymap_event__(self):
+        """添加时不重复快捷键"""
+        import string
+        keymap_list = [i.event_type for i in self.parent_element.modal_events if i != self]
+        for j in string.ascii_uppercase:
+            if j not in keymap_list:
+                self.event_type = j
+                self.sync_to_tem_kmi()
+                return
+
     def sync_type_from_temp_kmi(self, kmi):
         if kmi.type != self.event_type:
             self["event_type"] = all_id.index(kmi.type)  # enum被改为了索引
+            self.update_event_type(None)
 
         if kmi.ctrl != self.event_ctrl:
             self["event_ctrl"] = kmi.ctrl
@@ -463,7 +502,7 @@ class ElementModalOperatorEventItem(
                 for i in rna.properties:
                     if i.identifier == self.control_property:
                         return i
-            except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'
+            except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found
                 ...
         return None
 
@@ -567,21 +606,6 @@ class ElementModalOperatorEventItem(
                     row = box.row(align=True)
                     row.label(text=f"{k} = {i}")
 
-    def execute(self, ops, context, event) -> bool:
-        """
-        WHEELUPMOUSE
-         WHEELDOWNMOUSE
-        """
-        if self.is_mouse_move_event:
-            ...
-        else:
-            if self.check_event(event):
-                if execute_func := getattr(self, f"{self.control_property_type.lower()}_execute", None):
-                    print(f"\texecute_func {execute_func} {self.control_property_type.lower()} {self.control_property}")
-                    execute_func(ops)
-                    return True
-        return False
-
     def check_event(self, event):
         event_type = self.event_type
         event_ctrl = self.event_ctrl
@@ -595,3 +619,17 @@ class ElementModalOperatorEventItem(
         is_shift = event.shift == event_shift
 
         return is_press and is_event and is_ctrl and is_alt and is_shift
+
+    def execute(self, ops, context, event) -> bool:
+        """
+        WHEELUPMOUSE
+        WHEELDOWNMOUSE
+        """
+        if self.check_event(event):
+            if execute_func := getattr(self, f"{self.control_property_type.lower()}_execute", None):
+                print(f"\texecute_func {execute_func} {self.control_property_type.lower()} {self.control_property}")
+                execute_func(ops)
+                return True
+
+    def __init_modal__(self):
+        self.__init_keymap_event__()

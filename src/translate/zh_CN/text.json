@@ -332,7 +332,6 @@
   "Div": "分隔",
   "Property Icon": "属性图标",
   "Draw Toggle property operator icon": "绘制切换属性操作图标",
-  "Ctrl Alt Shift + Click: Remove all gesture!!!": "Ctrl Alt Shift + 点击: 删除所有手势!!!",
   "Ctrl Alt Shift + Click: Add all preset gesture!!!": "Ctrl Alt Shift + 点击: 添加所有预设手势!!!",
   "Add or select a element": "添加/选择 一个元素",
   "Add or select a gesture": "添加/选择 一个手势",
@@ -341,7 +340,9 @@
   "Switch Panel Opterator": "切换面板操作",
   "Switch Panel": "切换面板",
   "Switch N Panel": "切换N面板",
+  "Ctrl Alt Shift + Click: Remove all gesture!!!": "Ctrl Alt Shift + 点击: 删除所有手势!!!",
   "Ctrl Alt Shift + Click: Remove all element!!!": "Ctrl Alt Shift + 点击: 删除所有元素!!!",
+  "Ctrl Alt Shift + Click: Remove all modal item!!!": "Ctrl Alt Shift + 点击: 删除所有模态项!!!",
   "Use property toggle icon": "使用属性切换按扭",
   "Adding Panel or Menu": "添加 面板或菜单",
   "Other Element": "其它元素",
@@ -350,5 +351,6 @@
   "Add to same": "添加到同级",
   "Add to child": "添加到子级",
   "Dividing line": "分隔线",
-  "Array property not supported": "不支持数组属性"
+  "Array property not supported": "不支持数组属性",
+  "Incremental": "增量"
 }

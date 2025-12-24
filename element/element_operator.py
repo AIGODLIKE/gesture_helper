@@ -53,6 +53,49 @@ class ModalProperty:
         else:
             layout.label(text='No active modal event')
 
+    @property
+    def modal_properties(self):
+        """获取操作符的属性"""
+        try:
+            return secure_call_eval(self.last_modal_operator_property)
+        except Exception as e:
+            print('Properties Error')
+            print(self.name)
+            print(f"bpy.ops.{self.operator_bl_idname}")
+            print(self.last_modal_operator_property)
+            print(e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            self['last_modal_operator_property'] = "{}"
+            return {}
+
+    @property
+    def last_properties(self):
+        """反回上一次的属性
+        没有则反回默认的"""
+        if self.modal_properties:
+            return self.modal_properties
+        return self.properties
+
+    def run_modal(self, ops, context, event) -> bool:
+        is_mouse = False
+        for e in self.modal_events:
+            if e.is_mouse_move_event:
+                if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
+                    is_mouse = True
+                    e.number_mouse_move_execute(ops, context, event)  # 鼠标事件时不反回,
+            else:
+                if e.execute(ops, context, event):
+                    return True
+        return is_mouse
+
+    def get_header_text(self, properties: dict):
+        def gkn(k):
+            text = self.operator_func.get_rna_type().properties[k].name
+            return bpy.app.translations.pgettext_iface(text)
+        return "  ".join([f"{gkn(k)}:{v}" for k, v in properties.items()])
+
 
 class ScriptOperator:
     """脚本操作符"""

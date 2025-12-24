@@ -3,6 +3,7 @@ from os.path import dirname, realpath, join, abspath
 
 import bpy
 from bpy.props import StringProperty, CollectionProperty
+from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
 
@@ -375,3 +376,48 @@ class PublicSortAndRemovePropertyGroup:
     @update
     def remove(self):
         self.collection.remove(self.index)
+
+
+class PublicMouseModal:
+    mouse = None
+
+    input_scale: bpy.props.FloatProperty(
+        description="Scale the mouse movement by this value before applying the delta",
+        default=0.01,
+        options={'SKIP_SAVE'},
+    )
+
+    def start_mouse(self, event):
+        self.mouse = Vector((event.mouse_x, event.mouse_y))
+
+    @staticmethod
+    def exit():
+        bpy.context.area.header_text_set(None)
+        bpy.context.window.cursor_set("DEFAULT")
+
+    @staticmethod
+    def set_cursor(context, value_mode):
+        if cursor := {
+            "MOUSE_CHANGES_HORIZONTAL": "MOVE_X",
+            "MOUSE_CHANGES_VERTICAL": "MOVE_Y",
+            "MOUSE_CHANGES_ARBITRARY": "SCROLL_XY"}.get(value_mode, None):
+            context.window.cursor_set(cursor)
+
+    def value_delta(self, event, value_mode):
+        delta = self.get_delta(event, value_mode) * self.input_scale
+        return delta
+
+    def get_delta(self, event, value_mode):
+        if value_mode == "MOUSE_CHANGES_HORIZONTAL":
+            return event.mouse_x - self.mouse.x
+        elif value_mode == "MOUSE_CHANGES_VERTICAL":
+            return event.mouse_y - self.mouse.y
+        elif value_mode == "MOUSE_CHANGES_ARBITRARY":
+            x = event.mouse_x - self.mouse.x
+            y = event.mouse_y - self.mouse.y
+            if x > y:
+                return max(x, y)
+            else:
+                return min(x, y)
+        else:
+            raise ValueError("Invalid value mode: %r" % value_mode)

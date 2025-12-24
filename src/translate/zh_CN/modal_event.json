@@ -20,5 +20,6 @@
   "The operator contains array properties and cannot be controlled": "操作符中含有阵列属性,无法被控制",
   "Not recommended as modal operator": "不建议做为操作符模态",
   "Allow view rotation in modal": "允许在模态中旋转视图",
-  "Will occupy the middle click operation": "将会占用中键点击操作"
+  "Will occupy the middle click operation": "将会占用中键点击操作",
+  "Remove element item": "删除元素项"
 }

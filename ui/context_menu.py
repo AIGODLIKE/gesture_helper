@@ -22,17 +22,19 @@ class ContextMenu(bpy.types.Menu):
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
 
-        button_pointer = getattr(context, "button_pointer", None)
-
         show = not getattr(context, "show_gesture_add_menu", False)
+        button_pointer = getattr(context, "button_pointer", None)
+        button_prop = getattr(context, "button_prop", None)
+        button_operator = getattr(context, "button_operator", None)
 
+        if button_operator and button_operator.bl_rna.identifier.startswith("GESTURE_OT_"):
+            return
         layout = self.layout
 
         if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
             layout.label(text="Dynamic enumeration properties cannot be added!!")
         elif (show_operator or show_property) and show:
-            button_prop = getattr(context, "button_prop", None)
             layout.context_pointer_set('show_gesture_add_menu', self)
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
             layout.enabled = get_pref().active_gesture is not None
@@ -43,7 +45,6 @@ class ContextMenu(bpy.types.Menu):
                 )
 
             if show_operator:
-                button_operator = getattr(context, "button_operator", None)
                 br = button_operator.bl_rna
                 text = __name_translate__(br.name)
                 row = layout.column(align=True)
