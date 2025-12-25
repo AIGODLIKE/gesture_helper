@@ -37,10 +37,6 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
         self.operator_properties = self.start_operator_properties.copy()
         print(self.bl_idname, self.gesture, self.element, self.operator_properties)
 
-        if not self.element.operator_func.poll():
-            self.report({'ERROR'}, f"{self.element.name} poll error")
-            return {"FINISHED"}
-
         bpy.ops.ed.undo_push(message="Gesture Element Modal")
 
         # 进入模态时要运行一次
@@ -81,6 +77,8 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
     def exit(self, context, event):
         print("exit", context, event)
         context.area.header_text_set(None)
+        x, y = self.mouse
+        context.window.cursor_warp(x=int(x), y=int(y))
         self.restore_hud(context)
         super().exit()
         return {"FINISHED"}

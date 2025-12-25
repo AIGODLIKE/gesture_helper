@@ -114,7 +114,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
                 if de.is_operator:
                     res = self.try_running_operator(self)
-                    return res
+                    return True
 
     @property
     def mouse_is_in_extension_any_area(self) -> bool:

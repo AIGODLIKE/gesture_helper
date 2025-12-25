@@ -94,6 +94,7 @@ class ModalProperty:
         def gkn(k):
             text = self.operator_func.get_rna_type().properties[k].name
             return bpy.app.translations.pgettext_iface(text)
+
         return "  ".join([f"{gkn(k)}:{v}" for k, v in properties.items()])
 
 
@@ -376,3 +377,15 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperat
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
         self.operator_properties = r'{}'
+
+    def check_operator_poll(self):
+        if self.operator_is_operator or self.operator_is_modal:
+            # 需要检查是否需要运行操作符
+            poll = self.operator_func.poll()
+            if not poll:
+                context = bpy.context
+                at = context.area.type
+                print(
+                    f"Gesture Poll 失败 {self.parent_gesture} {self.operator_bl_idname} area:{at} mode:{context.mode}")
+            return poll
+        return True

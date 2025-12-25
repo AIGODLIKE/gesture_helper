@@ -1,7 +1,6 @@
 import time
 
 import bpy
-from bpy.props import IntProperty, BoolProperty
 
 from ..gesture.gesture_point_kd_tree import GesturePointKDTree
 
@@ -31,27 +30,35 @@ class GestureHandle:
 
     def try_running_operator(self, ops):
         """尝试运行手势"""
+
+        def run(i):
+            if i.check_operator_poll():
+                error = i.running_operator()
+                if error is not None:
+                    from bpy.app.translations import pgettext_iface
+                    ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+                    return
+                ops.report({'INFO'}, i.name_translate)
+            else:
+                name = bpy.app.translations.pgettext_iface(self.operator_gesture.name)
+                tips = bpy.app.translations.pgettext_iface(
+                    "Operator context error, please ensure that the operator is available in this context")
+                self.report({'ERROR'},
+                            f" {tips} {name}->{i.name} bpy.ops.{i.operator_bl_idname}.poll()")
+                # poll失败
+
         # 运行扩展的操作符
         if self.extension_element and len(self.extension_hover):
             last = self.extension_hover[-1]
             for item in last.extension_items:
                 if item.extension_by_child_is_hover and item.is_operator:
-                    error = item.running_operator()
-                    if error is not None:
-                        from bpy.app.translations import pgettext_iface
-                        ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
-                    ops.report({'INFO'}, item.name_translate)
+                    run(item)
                     return True
 
         element = self.direction_element
         if element and element.is_operator and (self.is_beyond_threshold_confirm or element.mouse_is_in_area):
-            error = element.running_operator()
-            if error is not None:
-                from bpy.app.translations import pgettext_iface
-                ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
-            ops.report({'INFO'}, element.name_translate)
+            run(element)
             return True
-
         return False
 
     def init_trajectory(self):
