@@ -1,5 +1,5 @@
 # version = 1.0.3
-# 1.0.3: 添加自定认Pointer 属性导出函数匹配___pointer_properties___
+# 1.0.3: 添加自定义属性导出函数匹配 ___set_properties___ ___properties___
 # 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
