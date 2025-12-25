@@ -30,10 +30,11 @@ class ModalProperty:
                 "transform.resize",
             ]:
                 return True
-            if rna := self.operator_func.get_rna_type():
-                for prop in rna.properties:
-                    if getattr(prop, "is_array", False):
-                        return True
+            if self.operator_func:
+                if rna := self.operator_func.get_rna_type():
+                    for prop in rna.properties:
+                        if getattr(prop, "is_array", False):
+                            return True
         return False
 
     @property

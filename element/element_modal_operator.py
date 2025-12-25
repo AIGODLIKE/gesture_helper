@@ -8,6 +8,7 @@ all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.
 all_id = list((i[0] for i in all_event))
 from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
+from ..utils.property import __get_property__, set_property, __set_property__
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
 from bpy.app.translations import pgettext_iface
 
@@ -381,7 +382,7 @@ class KeymapEvent:
         并且同步到self.event_type"""
         if self.is_mouse_move_event:
             text = pgettext_iface("Incremental")
-            value = self.int_incremental_value if self.is_int else self.float_incremental_value
+            value = self.int_incremental_value if self.is_int else round(self.float_incremental_value, 2)
             layout.label(text=f"{text}{value}")
             return
         temp_kmi = self.temp_kmi
@@ -424,8 +425,10 @@ class EventRelationship(
     @cache_update_lock
     def copy(self):
         """复制元素"""
-        from ..utils.property import __set_prop__
-        __set_prop__(self.parent_element, 'modal_events', {'0': self.active_event.___dict_data___})
+        add = self.parent_element.modal_events.add()
+        data = self.active_event.___dict_data___
+        add.control_property = self.control_property  # 避免出现enum设置的错误
+        set_property(add, data)
 
     @property
     def collection(self):
@@ -633,3 +636,43 @@ class ElementModalOperatorEventItem(
 
     def __init_modal__(self):
         self.__init_keymap_event__()
+
+    @property
+    def ___properties___(self) -> dict:
+        """给获取属性函数用的
+        用于导出时只导出指定的内容"""
+        keymap = ("event_type", "event_ctrl", "event_alt", "event_shift",)
+        include = ("control_property",)
+
+        if item := {
+            "INT": ("number_value_mode",
+                    *{
+                        "ADD": ("int_incremental_value",),
+                        "SUBTRACT": ("int_incremental_value",),
+                        "SET_VALUE": ("int_value",)
+                    }.get(self.number_value_mode, ())
+                    ),
+            "FLOAT": ("number_value_mode",
+                      *{
+                          "ADD": ("float_incremental_value",),
+                          "SUBTRACT": ("float_incremental_value",),
+                          "SET_VALUE": ("float_value",)
+                      }.get(self.number_value_mode, ())
+                      ),
+            "BOOLEAN": ("bool_value_mode",),
+            "ENUM": {
+                "SET": ("enum_value_mode", "enum_value_a"),
+                "CYCLE": ("enum_value_mode", "enum_reverse", "enum_wrap",),
+                "TOGGLE": ("enum_value_mode", "enum_value_a", "enum_value_b"),
+            }.get(self.enum_value_mode)
+        }.get(self.control_property_type, None):
+            include += item
+
+        if not self.is_mouse_move_event:
+            include += keymap
+        return __get_property__(self, exclude=include, reversal=True)
+
+    def ___set_properties___(self, data):
+        self.control_property = data.get("control_property", "error get")
+        self.__load_enum__()
+        __set_property__(self, data)
