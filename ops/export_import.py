@@ -39,6 +39,7 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
         'modal_events',
+        'modal_events_index',
         'control_property',
         'number_value_mode',
         'float_incremental_value',

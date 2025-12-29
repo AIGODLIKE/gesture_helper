@@ -381,12 +381,6 @@ class PublicSortAndRemovePropertyGroup:
 class PublicMouseModal:
     mouse = None
 
-    input_scale: bpy.props.FloatProperty(
-        description="Scale the mouse movement by this value before applying the delta",
-        default=0.01,
-        options={'SKIP_SAVE'},
-    )
-
     def start_mouse(self, event):
         self.mouse = Vector((event.mouse_x, event.mouse_y))
 
@@ -404,7 +398,11 @@ class PublicMouseModal:
             context.window.cursor_set(cursor)
 
     def value_delta(self, event, value_mode):
-        delta = self.get_delta(event, value_mode) * self.input_scale
+        input_scale  = 0.01
+        if event.shift:
+            input_scale = 0.001
+
+        delta = self.get_delta(event, value_mode) * input_scale
         return delta
 
     def get_delta(self, event, value_mode):

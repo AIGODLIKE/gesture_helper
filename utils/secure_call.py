@@ -33,7 +33,7 @@ def __secure_call_args__():
     sel_objs = getattr(bpy.context, "selected_objects", [])
     use_sel_obj = ((not ob) and sel_objs)  # use selected object if no active object
     active_object = sel_objs[-1] if use_sel_obj else ob
-    mesh = active_object.data if active_object else None
+    data = active_object.data if active_object else None
 
     return {'bpy': bpy,
 
@@ -41,7 +41,7 @@ def __secure_call_args__():
             'D': D,  # bpy.data
             'O': active_object,
 
-            'mesh': mesh,
+            'data': data,
             'mode': C.mode,
             'tool': C.tool_settings,
             }
@@ -73,13 +73,15 @@ def __check_shield__(eval_string) -> bool:
 
 def secure_call_eval(eval_string: str):
     if __check_shield__(eval_string):
-        return eval(eval_string, __secure_call_globals__, __secure_call_args__())
+        args = __secure_call_args__()
+        return eval(eval_string, __secure_call_globals__, args)
     else:
         return Exception("There is a syntax error, please enter the expression according to the safety standard")
 
 
 def secure_call_exec(eval_string: str):
     if __check_shield__(eval_string):
-        return exec(eval_string, __secure_call_globals__, __secure_call_args__())
+        args = __secure_call_args__()
+        return exec(eval_string, __secure_call_globals__, args)
     else:
         return Exception("There is a syntax error, please enter the expression according to the safety standard")

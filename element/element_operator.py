@@ -1,6 +1,7 @@
 import bpy
 from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import StringProperty, EnumProperty, BoolProperty, CollectionProperty
+from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
 from ..debug import TMP_KMI_SYNC_DEBUG
@@ -79,17 +80,24 @@ class ModalProperty:
             return self.modal_properties
         return self.properties
 
-    def run_modal(self, ops, context, event) -> bool:
-        is_mouse = False
-        for e in self.modal_events:
-            if e.is_mouse_move_event:
-                if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
-                    is_mouse = True
-                    e.number_mouse_move_execute(ops, context, event)  # 鼠标事件时不反回,
-            else:
-                if e.execute(ops, context, event):
-                    return True
-        return is_mouse
+    def run_element_modal_event(self, ops, context, event) -> bool:
+        # print("run_element_modal_event", event.type, event.value)
+        if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
+            last_mouse = getattr(ops, "mouse", None)
+            mouse = Vector((event.mouse_x, event.mouse_y))
+            is_change = False
+            for e in self.modal_events:
+                if e.is_mouse_move_event and last_mouse != mouse:
+                    is_change |= e.number_mouse_move_execute(ops, context, event)  # 鼠标事件时不反回
+            if is_change:  # 如果鼠标值移动并且修改了值的
+                ops.start_mouse(event)
+            return is_change  # 修改了值就要更新一下操作符再执行一次
+        else:
+            for e in self.modal_events:
+                if not e.is_mouse_move_event:
+                    if e.modal_execute(ops, context, event):
+                        return True
+            return False
 
     def get_header_text(self, properties: dict):
         def gkn(k):
@@ -206,9 +214,12 @@ class RunOperator:
         if operator_properties is None:
             operator_properties = self.operator_properties
         try:
-            prop = secure_call_eval(operator_properties)
-            func = self.operator_func
-            if func:
+            if func := self.operator_func:
+                if isinstance(operator_properties, dict):
+                    prop = operator_properties
+                else:
+                    prop = secure_call_eval(operator_properties)
+
                 func(self.operator_context, True, **prop)
 
                 def g(v):
@@ -221,7 +232,10 @@ class RunOperator:
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
                 )
         except Exception as e:
-            print('running_operator ERROR', e)
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+            print('__running_by_bl_idname__ ERROR', e)
             return e
 
 

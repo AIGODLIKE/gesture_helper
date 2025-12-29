@@ -74,17 +74,18 @@ class NumberControl:
         ops.set_cursor(context, vm)
 
         default_value = ops.start_operator_properties.get(cp, self.default_value)
+        value = ops.operator_properties.get(cp, default_value)
         delta = ops.value_delta(event, vm)
 
-        if type(default_value) == int:
-            value = int(round(default_value + delta))
+        if type(value) == int:
+            value = int(round(value + delta))
         else:
-            value = round(default_value + delta, 2)
+            value = round(value + delta, 2)
         lv = self.limit_number_value(value)
-        print("number_mouse_move_execute", cp, default_value, value, delta, lv)
         if lv == ops.operator_properties.get(cp, None):  # 没有改变
             return False
         ops.operator_properties[cp] = lv
+        print("number_mouse_move_execute", cp, default_value, value, delta, lv)
         return True
 
 
@@ -160,7 +161,7 @@ class IntControl:
             value = int_value - self.int_incremental_value
         elif m == "SET_VALUE":
             value = self.int_value
-        op[key] = self.limit_number_value(value)
+        ops.operator_properties[key] = self.limit_number_value(value)
 
 
 class BoolControl:
@@ -626,7 +627,7 @@ class ElementModalOperatorEventItem(
 
         return is_press and is_event and is_ctrl and is_alt and is_shift
 
-    def execute(self, ops, context, event) -> bool:
+    def modal_execute(self, ops, context, event) -> bool:
         """
         WHEELUPMOUSE
         WHEELDOWNMOUSE

@@ -1,7 +1,9 @@
 import json
+import time
 
 import bpy
 
+from ..debug import DEBUG_MODAL_OPERATOR
 from ..utils.public import PublicOperator, get_pref, PublicMouseModal
 
 
@@ -22,6 +24,7 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
 
     start_operator_properties: dict  # 用于鼠标模式的值
     operator_properties: dict
+    last_running_time = 0
 
     @classmethod
     def poll(cls, context):
@@ -49,8 +52,12 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
     def modal(self, context, event):
         self.init_modal(event)
         pref = get_pref()
-
+        if self.last_running_time > 1 / 60:  # 至少60fps才会流畅
+            text = bpy.app.translations.pgettext_iface("Running operators consumes too much time")
+            self.report({'ERROR'}, f"{text} {self.last_running_time}s")
+            return self.exit(context, event)
         if event.type == "LEFTMOUSE" and event.value == "PRESS":  # 确认
+            self.finished(context)
             return self.exit(context, event)
 
         if pref.gesture_property.modal_pass_view_rotation:
@@ -58,14 +65,24 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
                 return {'PASS_THROUGH'}
         if self.is_right_mouse or event.type == "ESC":
             if bpy.ops.ed.undo.poll():
+                if DEBUG_MODAL_OPERATOR:
+                    print("esc undo")
                 bpy.ops.ed.undo()
             return self.exit(context, event)
         if event.type not in ("TIMER_REPORT",):
             element = self.element
-            if element.run_modal(self, context, event):
+            if element.run_element_modal_event(self, context, event):
                 if bpy.ops.ed.undo.poll():
+                    if DEBUG_MODAL_OPERATOR:
+                        print("undo")
                     bpy.ops.ed.undo()
-                element.__running_by_bl_idname__(json.dumps(self.operator_properties))
+                start_time = time.time()
+                if DEBUG_MODAL_OPERATOR:
+                    print("__running_by_bl_idname__", self.operator_properties)
+                element.__running_by_bl_idname__(self.operator_properties)
+                self.last_running_time = time.time() - start_time
+                if DEBUG_MODAL_OPERATOR:
+                    print("last_running_time", self.last_running_time)
                 self.update_header_text(context)
                 return {'RUNNING_MODAL'}
         return {'RUNNING_MODAL'}
@@ -75,7 +92,6 @@ class ElementModal(PublicOperator, State, PublicMouseModal):
         context.area.header_text_set(self.element.get_header_text(self.operator_properties))
 
     def exit(self, context, event):
-        print("exit", context, event)
         context.area.header_text_set(None)
         x, y = self.mouse
         context.window.cursor_warp(x=int(x), y=int(y))

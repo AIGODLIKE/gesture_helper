@@ -44,6 +44,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
         options={'SKIP_SAVE'},
     )
     mouse = None
+    last_mouse = None
 
     @property
     def __header_text__(self) -> str:
@@ -111,4 +112,3 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
-

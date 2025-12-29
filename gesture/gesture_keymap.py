@@ -14,6 +14,7 @@ from bpy.app.translations import pgettext
 from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
+from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.property import set_property, get_kmi_property
 from ..utils.public import get_debug
 from ..utils.public_cache import cache_update_lock
@@ -81,9 +82,10 @@ class GestureKeymap(KeymapProperty):
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
-            print(f"from_temp_key_update_data")
-            print(self.key)
-            print(data)
+            if TMP_KMI_SYNC_DEBUG:
+                print(f"from_temp_key_update_data")
+                print(self.key)
+                print(data)
             self.key = data
             self.key_restart()
 
