@@ -125,6 +125,7 @@ class ElementCURE:
             return self.execute(context)
 
         def execute(self, _):
+            self.cache_clear()
             self.pref.active_element.remove()
             self.cache_clear()
             return {'FINISHED'}

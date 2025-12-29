@@ -195,17 +195,15 @@ class ElementRelationship(RadioSelect,
         """是一个可用的选择结构"""
         return get_available_selected_structure(self) and self.__poll_bool_is_validity__
 
-    def remove_after(self):
-        """删除之后判断索引是否需要偏移"""
-        parent = self.parent
-        index = parent.index_element
-        col = self.collection
-        cl = len(col)
-        if cl:
-            if cl >= index + 1:
-                col[index].radio = True
-            else:
-                col[-1].radio = True
+    def remove_before(self):
+        if self.is_last and self.index != 0:  # 被删除项是最后一个
+            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+        index = self.parent.index_element
+        if -1 < index < len(self.parent.element):
+            el = self.parent.element[index]
+            el["radio"] = True
+            print("remove_before", el["radio"], el)
+            el.update_radio()
 
     def __init_direction_by_sort__(self):
         """初始化方向按排序"""
