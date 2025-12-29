@@ -1,14 +1,14 @@
 {
-  "time": 1758881096.1482086,
+  "time": 1767000102.7267025,
   "blender_version": [
-    4,
     5,
-    3
+    0,
+    0
   ],
   "addon_version": [
     2,
-    1,
-    9
+    2,
+    6
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -260,9 +260,35 @@
                       "element_type": "OPERATOR",
                       "icon": "MOD_SMOOTH",
                       "enabled_icon": true,
-                      "direction": "2",
+                      "modal_events": {
+                        "0": {
+                          "float_incremental_value": 1.0,
+                          "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                          "control_property": "factor"
+                        },
+                        "1": {
+                          "event_type": "WHEELUPMOUSE",
+                          "event_ctrl": false,
+                          "event_alt": false,
+                          "event_shift": false,
+                          "int_incremental_value": 1,
+                          "number_value_mode": "ADD",
+                          "control_property": "repeat"
+                        },
+                        "2": {
+                          "event_type": "WHEELUPMOUSE",
+                          "event_ctrl": false,
+                          "event_alt": false,
+                          "event_shift": false,
+                          "int_incremental_value": 1,
+                          "number_value_mode": "ADD",
+                          "control_property": "repeat"
+                        }
+                      },
+                      "modal_events_index": 1,
                       "operator_bl_idname": "mesh.vertices_smooth",
-                      "operator_properties": "{'factor': 0.5}"
+                      "direction": "2",
+                      "operator_type": "MODAL"
                     },
                     "1": {
                       "name": "Smooth Laplacian",
@@ -346,8 +372,53 @@
                   "element_type": "OPERATOR",
                   "icon": "SNAP_EDGE",
                   "enabled_icon": true,
+                  "modal_events": {
+                    "0": {
+                      "int_incremental_value": 1,
+                      "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                      "control_property": "twist_offset"
+                    },
+                    "1": {
+                      "event_type": "WHEELUPMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "ADD",
+                      "control_property": "number_cuts"
+                    },
+                    "2": {
+                      "event_type": "WHEELDOWNMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "SUBTRACT",
+                      "control_property": "number_cuts"
+                    },
+                    "3": {
+                      "event_type": "C",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "enum_value_mode": "CYCLE",
+                      "enum_reverse": false,
+                      "enum_wrap": true,
+                      "control_property": "type"
+                    },
+                    "4": {
+                      "event_type": "A",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "bool_value_mode": "SWITCH",
+                      "control_property": "use_merge"
+                    }
+                  },
+                  "modal_events_index": 3,
+                  "operator_bl_idname": "mesh.bridge_edge_loops",
                   "direction": "4",
-                  "operator_bl_idname": "mesh.bridge_edge_loops"
+                  "operator_type": "MODAL"
                 },
                 "1": {
                   "name": "Subdivide",

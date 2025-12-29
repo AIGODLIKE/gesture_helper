@@ -230,6 +230,7 @@ class RunOperator:
                 print(
                     f'running_operator bpy.ops.{self.operator_bl_idname}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
+                    prop
                 )
         except Exception as e:
             import traceback
