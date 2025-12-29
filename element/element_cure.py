@@ -106,6 +106,7 @@ class ElementCURE:
         bl_label = 'Remove element item'
         bl_idname = 'gesture.element_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
+        bl_otions = {'REGISTER', 'UNDO'}
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm

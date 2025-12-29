@@ -1,0 +1,176 @@
+{
+  "time": 1766979363.3407476,
+  "blender_version": [
+    5,
+    0,
+    0
+  ],
+  "addon_version": [
+    2,
+    2,
+    6
+  ],
+  "author": "\u5c0f\u840c\u65b0",
+  "description": "This is a description",
+  "gesture": {
+    "0": {
+      "name": "Gesture.001",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"Window\", \"3D View\", \"Object Mode\", \"Mesh\"]",
+      "element": {
+        "0": {
+          "name": "Subdivide",
+          "element_type": "OPERATOR",
+          "modal_events": {
+            "0": {
+              "event_type": "A",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "int_incremental_value": 55,
+              "number_value_mode": "ADD",
+              "control_property": "number_cuts"
+            },
+            "1": {
+              "event_type": "B",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "int_value": 27,
+              "number_value_mode": "SET_VALUE",
+              "control_property": "number_cuts"
+            },
+            "2": {
+              "event_type": "C",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "int_incremental_value": 91,
+              "number_value_mode": "SUBTRACT",
+              "control_property": "number_cuts"
+            },
+            "3": {
+              "int_incremental_value": 72,
+              "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+              "control_property": "number_cuts"
+            },
+            "4": {
+              "int_incremental_value": -50,
+              "number_value_mode": "MOUSE_CHANGES_VERTICAL",
+              "control_property": "number_cuts"
+            },
+            "5": {
+              "int_incremental_value": 62,
+              "number_value_mode": "MOUSE_CHANGES_ARBITRARY",
+              "control_property": "number_cuts"
+            },
+            "6": {
+              "event_type": "D",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "float_incremental_value": 1.71999990940094,
+              "number_value_mode": "ADD",
+              "control_property": "smoothness"
+            },
+            "7": {
+              "event_type": "F",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "float_incremental_value": 1.5399999618530273,
+              "number_value_mode": "SUBTRACT",
+              "control_property": "smoothness"
+            },
+            "8": {
+              "event_type": "R",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "float_value": 1.5099999904632568,
+              "number_value_mode": "SET_VALUE",
+              "control_property": "smoothness"
+            },
+            "9": {
+              "float_incremental_value": 1.75,
+              "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+              "control_property": "smoothness"
+            },
+            "10": {
+              "float_incremental_value": 3.2799999713897705,
+              "number_value_mode": "MOUSE_CHANGES_VERTICAL",
+              "control_property": "smoothness"
+            },
+            "11": {
+              "float_incremental_value": 4.239999771118164,
+              "number_value_mode": "MOUSE_CHANGES_ARBITRARY",
+              "control_property": "smoothness"
+            },
+            "12": {
+              "float_incremental_value": -7.669999599456787,
+              "number_value_mode": "MOUSE_CHANGES_ARBITRARY",
+              "control_property": "smoothness"
+            },
+            "13": {
+              "event_type": "T",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "bool_value_mode": "SWITCH",
+              "control_property": "ngon"
+            },
+            "14": {
+              "event_type": "S",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "bool_value_mode": "SET_TRUE",
+              "control_property": "ngon"
+            },
+            "15": {
+              "event_type": "G",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "bool_value_mode": "SET_FALSE",
+              "control_property": "ngon"
+            },
+            "16": {
+              "event_type": "H",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "enum_value_mode": "SET",
+              "enum_value_a": "STRAIGHT_CUT",
+              "control_property": "quadcorner"
+            },
+            "17": {
+              "event_type": "J",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "enum_value_mode": "CYCLE",
+              "enum_reverse": true,
+              "enum_wrap": true,
+              "control_property": "quadcorner"
+            },
+            "18": {
+              "event_type": "K",
+              "event_ctrl": false,
+              "event_alt": false,
+              "event_shift": false,
+              "enum_value_mode": "TOGGLE",
+              "enum_value_a": "STRAIGHT_CUT",
+              "enum_value_b": "STRAIGHT_CUT",
+              "control_property": "quadcorner"
+            }
+          },
+          "operator_bl_idname": "mesh.subdivide",
+          "direction": "1",
+          "operator_type": "MODAL"
+        }
+      },
+      "description": "This is a gesture..."
+    }
+  }
+}

@@ -54,6 +54,7 @@ class GestureCURE:
         bl_idname = 'gesture.gesture_remove'
         bl_label = 'Remove gesture'
         bl_description = 'Ctrl Alt Shift + Click: Remove all gesture!!!'
+        bl_otions = {'REGISTER', 'UNDO'}
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm

@@ -84,6 +84,7 @@ class ElementModalOperatorEventCRUE:
         bl_label = 'Remove element modal item'
         bl_idname = 'gesture.element_modal_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all modal item!!!'
+        bl_otions = {'REGISTER', 'UNDO'}
 
         @classmethod
         def poll(cls, context):

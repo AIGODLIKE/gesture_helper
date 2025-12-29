@@ -105,7 +105,7 @@ class FloatControl:
     @property
     def float_explanation(self):
         if self.number_value_mode == "SET_VALUE":
-            return f"{self.number_explanation}{self.float_value}"
+            return f"{self.number_explanation}{round(self.float_value, 2)}"
         if self.is_mouse_move_event:
             return f"{self.number_explanation}"
         return f"{self.number_explanation}{round(self.float_incremental_value, 2)}"
@@ -354,7 +354,7 @@ class KeymapEvent:
         for j in string.ascii_uppercase:
             if j not in keymap_list:
                 self.event_type = j
-                self.sync_to_tem_kmi()
+                self.sync_to_temp_kmi()
                 return
 
     def sync_type_from_temp_kmi(self, kmi):
@@ -369,12 +369,15 @@ class KeymapEvent:
         if kmi.shift != self.event_shift:
             self["event_shift"] = kmi.shift
 
-    def sync_to_tem_kmi(self):
-        temp_kmi = self.temp_kmi
-        temp_kmi.type = self.event_type
-        temp_kmi.ctrl = self.event_ctrl
-        temp_kmi.shift = self.event_shift
-        temp_kmi.alt = self.event_alt
+    def sync_to_temp_kmi(self):
+        try:
+            temp_kmi = self.temp_kmi
+            temp_kmi.type = self.event_type
+            temp_kmi.ctrl = self.event_ctrl
+            temp_kmi.shift = self.event_shift
+            temp_kmi.alt = self.event_alt
+        except TypeError as e:
+            print("sync_to_temp_kmi error", e)
 
     def draw_event_type(self, layout):
         """绘制事件的类型
@@ -647,17 +650,13 @@ class ElementModalOperatorEventItem(
         if item := {
             "INT": ("number_value_mode",
                     *{
-                        "ADD": ("int_incremental_value",),
-                        "SUBTRACT": ("int_incremental_value",),
                         "SET_VALUE": ("int_value",)
-                    }.get(self.number_value_mode, ())
+                    }.get(self.number_value_mode, ("int_incremental_value",))
                     ),
             "FLOAT": ("number_value_mode",
                       *{
-                          "ADD": ("float_incremental_value",),
-                          "SUBTRACT": ("float_incremental_value",),
                           "SET_VALUE": ("float_value",)
-                      }.get(self.number_value_mode, ())
+                      }.get(self.number_value_mode, ("float_incremental_value",))
                       ),
             "BOOLEAN": ("bool_value_mode",),
             "ENUM": {
@@ -673,6 +672,20 @@ class ElementModalOperatorEventItem(
         return __get_property__(self, exclude=include, reversal=True)
 
     def ___set_properties___(self, data):
-        self.control_property = data.get("control_property", "error get")
+        data = self.__load_keymap__(data)
+        if "control_property" in data:
+            self.control_property = data.pop("control_property")
         self.__load_enum__()
         __set_property__(self, data)
+
+    def __load_keymap__(self, data):
+        for k in ("event_type",
+                  "event_ctrl",
+                  "event_alt",
+                  "event_shift",):
+            if k in data:
+                try:
+                    setattr(self, k, data.pop(k))
+                except Exception as e:
+                    print("load_keymap error", e.args)
+        return data
