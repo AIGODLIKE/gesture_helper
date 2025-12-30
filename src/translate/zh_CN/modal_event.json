@@ -22,5 +22,6 @@
   "Allow view rotation in modal": "允许在模态中旋转视图",
   "Will occupy the middle click operation": "将会占用中键点击操作",
   "Remove element item": "删除元素项",
-  "Running operators consumes too much time": "运行操作符消耗了太多时间"
+  "Running operators consumes too much time": "运行操作符消耗了太多时间",
+  "Cycle Enum": "循环枚举"
 }

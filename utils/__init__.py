@@ -3,6 +3,7 @@ from functools import cache
 
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
+import bpy
 
 
 def is_blender_close() -> bool:
@@ -52,3 +53,51 @@ def has_special_characters(input_string):
     if re.search(pattern, input_string):
         return True
     return False
+
+
+def get_region(region_type, context=None) -> "None|bpy.types.Region":
+    """
+    enum in ["WINDOW", "HEADER", "CHANNELS", "TEMPORARY", "UI", "TOOLS", "TOOL_PROPS",
+        "PREVIEW", "HUD", "NAVIGATION_BAR", "EXECUTE", "FOOTER", "TOOL_HEADER", "XR"]]
+    region_types = set(region.type for area in bpy.context.screen.areas for region in area.regions)
+    {
+    'WINDOW',
+     'ASSET_SHELF',
+     'TOOL_HEADER',
+     'ASSET_SHELF_HEADER',
+     'HUD',
+     'UI',
+     'NAVIGATION_BAR',
+     'TOOLS',
+     'EXECUTE',
+     'HEADER',
+     'CHANNELS'
+     }
+    """
+    area = bpy.context.area if context is None else context.area
+    for region in area.regions:
+        if region.type == region_type:
+            return region
+    return None
+
+
+def get_toolbar_width(region_type="TOOLS"):
+    for i in bpy.context.area.regions:
+        if i.type == region_type:
+            if region_type == "TOOLS":
+                return i.width
+            elif region_type in ("HEADER", "TOOL_HEADER"):
+                return i.height
+    return None
+
+
+def get_region_height(context, region_type="TOOLS") -> int:
+    if area := get_region(region_type, context):
+        return area.height
+    return 0
+
+
+def get_region_width(context, region_type="TOOLS") -> int:
+    if area := get_region(region_type, context):
+        return area.width
+    return 0

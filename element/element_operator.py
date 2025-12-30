@@ -5,7 +5,7 @@ from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
 from ..debug import TMP_KMI_SYNC_DEBUG
-from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
+from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.secure_call import secure_call_eval, secure_call_exec
@@ -100,11 +100,22 @@ class ModalProperty:
             return False
 
     def get_header_text(self, properties: dict):
-        def gkn(k):
-            text = self.operator_func.get_rna_type().properties[k].name
-            return bpy.app.translations.pgettext_iface(text)
+        from bpy.app.translations import pgettext_iface as translate
+        def gkn(k, v):
+            prop = self.operator_func.get_rna_type().properties[k]
+            text = prop.name
+            name = bpy.app.translations.pgettext_iface(text)
+            value = v
+            if isinstance(v, str):
+                value = translate(v)
+            if prop.type == "ENUM":  # 处理枚举名称
+                items = from_rna_get_enum_items(prop)
+                for (i, n, d, icon, index) in items:
+                    if v == i:
+                        value = translate(n)
+            return f"{name}:{value}"
 
-        return "  ".join([f"{gkn(k)}:{v}" for k, v in properties.items()])
+        return "    ".join([gkn(k, v) for k, v in properties.items()])
 
 
 class ScriptOperator:

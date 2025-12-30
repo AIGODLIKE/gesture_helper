@@ -2,14 +2,14 @@ from functools import cache
 
 import bpy
 
-from ..debug import DEBUG_CACHE
-
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
+from ..debug import DEBUG_CACHE, DEBUG_MODAL_OPERATOR
 from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
 from ..utils.property import __get_property__, set_property, __set_property__
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
+from ..src.translate import __keymap_translate__
 from bpy.app.translations import pgettext_iface
 
 
@@ -71,9 +71,7 @@ class NumberControl:
         vm = self.number_value_mode
         cp = self.control_property
 
-        ops.set_cursor(context, vm)
-
-        default_value = ops.start_operator_properties.get(cp, self.default_value)
+        default_value = self.default_value
         value = ops.operator_properties.get(cp, default_value)
         delta = ops.value_delta(event, vm)
 
@@ -84,8 +82,10 @@ class NumberControl:
         lv = self.limit_number_value(value)
         if lv == ops.operator_properties.get(cp, None):  # 没有改变
             return False
+        ops.set_cursor(context, vm)
         ops.operator_properties[cp] = lv
-        print("number_mouse_move_execute", cp, default_value, value, delta, lv)
+        if DEBUG_MODAL_OPERATOR:
+            print("number_mouse_move_execute", cp, default_value, value, delta, lv)
         return True
 
 
@@ -257,7 +257,7 @@ class EnumControl:
             text = pgettext_iface("Toggle")
             return f"{text}({a}<->{b})"
         elif em == "CYCLE":
-            return em.title()
+            return pgettext_iface("Cycle Enum")
         return em
 
     # noinspection DuplicatedCode
@@ -392,6 +392,17 @@ class KeymapEvent:
         temp_kmi = self.temp_kmi
         layout.prop(temp_kmi, "type", text="", full_event=True)
         self.sync_type_from_temp_kmi(temp_kmi)
+
+    @property
+    def event_text(self):
+        if self.is_mouse_move_event:
+            text = pgettext_iface("Incremental")
+            value = self.int_incremental_value if self.is_int else round(self.float_incremental_value, 2)
+            key = f"{text}{value}"
+        else:
+            key = __keymap_translate__(self.event_type)
+
+        return f"{key} {self.control_property_explanation}"
 
     @property
     def temp_kmi(self):
