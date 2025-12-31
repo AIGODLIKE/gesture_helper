@@ -69,10 +69,8 @@ class ElementCURE:
             relationship = get_pref().add_element_property.relationship
             active = self.active_element
             if relationship == 'SAME' and active:
-                parent = active.parent_element
                 # 如果没有同级则快进到根
-                if parent:
-                    return parent
+                return active.parent.element
             elif relationship == 'CHILD' and active and active.is_have_add_child:
                 return active.element
             return self.active_gesture.element
@@ -82,7 +80,6 @@ class ElementCURE:
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, _):
-            active = self.active_element
             add = self.collection.add()
             self.collection.update()
             add.cache_clear()
@@ -96,6 +93,9 @@ class ElementCURE:
             if self.pref.add_element_property.add_active_radio:
                 if self.active_element:
                     self.active_element.show_child = True
+                add.cache_clear()
+                add.update_radio()
+            elif self.pref.active_element is None:  # 空的元素时处理,默认选中第一个添加的元素
                 add.cache_clear()
                 add.update_radio()
 
@@ -126,7 +126,20 @@ class ElementCURE:
 
         def execute(self, _):
             self.cache_clear()
-            self.pref.active_element.remove()
+
+            ae = self.pref.active_element
+            is_last = ae.is_last
+            parent = ae.parent
+            index = ae.index
+
+            ae.remove()
+
+            if is_last and index != 0:  # 被删除项是最后一个
+                parent.index_element = index - 1  # 索引-1,保持始终有一个选择的
+                parent.element[parent.index_element].radio = True
+            elif -1 < index < len(parent.element):  # 被删除项是中间的,不需要修改索引值
+                parent.element[index].radio = True
+
             self.cache_clear()
             return {'FINISHED'}
 

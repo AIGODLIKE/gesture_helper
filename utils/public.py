@@ -104,7 +104,7 @@ def get_gesture_extension_items(iteration):
     return extension
 
 
-def update(func):
+def update_effect(func):
     def w(*args, **kwargs):
         self = args[0]
         name = func.__name__
@@ -308,7 +308,7 @@ class PublicUniqueNamePropertyGroup:
                     self.cache_clear()
                     i.name = self.__generate_new_name__(self.__names__, i.name)
 
-    @update
+    @update_effect
     def rename(self):
         if self.__is_check_duplicate_name__:
             self.__fix_duplicate_name__()
@@ -354,7 +354,7 @@ class PublicSortAndRemovePropertyGroup:
         """
         return self == self.collection[0]
 
-    @update
+    @update_effect
     def sort(self, is_next):
         col = self.collection
         gl = len(col)
@@ -373,7 +373,7 @@ class PublicSortAndRemovePropertyGroup:
                 col.move(self.index - 1, self.index)
                 self.index = self.index - 1
 
-    @update
+    @update_effect
     def remove(self):
         self.collection.remove(self.index)
 
