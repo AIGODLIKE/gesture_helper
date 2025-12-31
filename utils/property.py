@@ -1,4 +1,5 @@
-# version = 1.0.2
+# version = 1.0.3
+# 1.0.3: 添加自定义属性导出函数匹配 ___set_properties___ ___properties___
 # 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
 
@@ -42,7 +43,13 @@ def __set_prop__(prop, path, value):
 
 
 def set_property(prop, data: dict):
-    """version"""
+    if func := getattr(prop, "___set_properties___", None):  # 自定义获取的数据
+        func(data)
+    else:
+        __set_property__(prop, data)
+
+
+def __set_property__(prop, data: dict):
     for k, item in data.items():
         pr = getattr(prop, k, None)
         if pr is not None or k in prop.bl_rna.properties:
@@ -95,7 +102,7 @@ def __collection_data__(prop, exclude=(), reversal=False) -> dict:
 
 
 def get_property(prop, exclude=(), reversal=False) -> dict:
-    """version 1.0
+    """
     获取输入的属性内容
     可多选枚举(ENUM FLAG)将转换为列表 list(用于json写入,json 没有 set类型)
     集合信息将转换为字典 index当索引保存  dict
@@ -107,8 +114,15 @@ def get_property(prop, exclude=(), reversal=False) -> dict:
     Returns:
         dict: 反回字典式数据,
     """
-    data = {}
+    if hasattr(prop, "___properties___"):  # 自定义获取的数据
+        if res := getattr(prop, "___properties___", None):
+            if type(res) == dict:
+                return res
+    return __get_property__(prop, exclude, reversal)
 
+
+def __get_property__(prop, exclude=(), reversal=False) -> dict:
+    data = {}
     for pr in prop.bl_rna.properties:
         try:
             identifier = pr.identifier
@@ -122,7 +136,6 @@ def get_property(prop, exclude=(), reversal=False) -> dict:
                 pro = getattr(prop, identifier, None)
                 if pro is None:
                     continue
-
                 if typ == 'POINTER':
                     pro = get_property(pro, exclude, reversal)
                 elif typ == 'COLLECTION':

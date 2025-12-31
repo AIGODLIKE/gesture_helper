@@ -34,6 +34,17 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             layout.label(text=text)
 
     def invoke(self, context, event):
+        if pass_d := self.try_pass_annotations_eraser(context, event):
+            return pass_d
+        if pass_right_mouse := self.try_pass_paint_texture_stencil(context, event):
+            return pass_right_mouse
+
+        if self.operator_gesture is None:
+            context.window_manager.popup_menu(self.__class__.draw_error,
+                                              title=pgettext_iface("Error"),
+                                              icon="INFO")
+            return {'CANCELLED'}
+
         self.register_draw()
         self.init_trajectory()
         self.init_invoke(event)
@@ -41,14 +52,6 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
         print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
               event.value_prev)
-        if self.operator_gesture is None:
-            context.window_manager.popup_menu(self.__class__.draw_error,
-                                              title=pgettext_iface("Error"),
-                                              icon="INFO")
-            return {'CANCELLED'}
-        pass_d = self.try_pass_annotations_eraser(context, event)
-        if pass_d:
-            return pass_d
 
         wm = context.window_manager
         self.timer = wm.event_timer_add(1 / 24, window=context.window)
@@ -59,7 +62,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
     def modal(self, context, event):
         self.trajectory_event_update(context, event)
-        self.init_module(event)
+        self.init_modal(event)
         if self.is_debug:
             print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
         if self.try_immediate_implementation():
@@ -111,7 +114,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
                 if de.is_operator:
                     res = self.try_running_operator(self)
-                    return res
+                    return True
 
     @property
     def mouse_is_in_extension_any_area(self) -> bool:

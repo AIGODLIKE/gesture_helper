@@ -32,6 +32,10 @@ class GestureProperty(bpy.types.PropertyGroup):
                                            default="REGION"
                                            )
 
+    modal_pass_view_rotation: BoolProperty(name='Allow view rotation in modal',
+                                           description="Will occupy the middle key operation",
+                                           default=True,
+                                           )
     @staticmethod
     def draw_gesture_property(layout: bpy.types.UILayout):
         from ..utils.public import get_pref
@@ -45,3 +49,4 @@ class GestureProperty(bpy.types.PropertyGroup):
         col.prop(g, 'immediate_implementation')
         col.prop(g, 'return_distance')
         col.prop(g, 'pass_through_keymap_type')
+        col.prop(g, 'modal_pass_view_rotation')

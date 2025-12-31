@@ -6,6 +6,8 @@ from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
 from ..element import Element
 from ..element import ElementCURE
+from ..element.element_modal_operator import ElementModalOperatorEventItem
+from ..element.element_modal_operator_cure import ElementModalOperatorEventCRUE
 from ..ops.gesture_cure import GestureCURE
 from ..utils.public import PublicProperty
 
@@ -52,8 +54,13 @@ class Gesture(
 
 
 classes_list = (
-    Element,
+    ElementModalOperatorEventItem,
+    ElementModalOperatorEventCRUE.ADD,
+    ElementModalOperatorEventCRUE.COPY,
+    ElementModalOperatorEventCRUE.REMOVE,
+    ElementModalOperatorEventCRUE.SelectControlProperty,
 
+    Element,
     ElementCURE.ADD,
     ElementCURE.SORT,
     ElementCURE.COPY,
@@ -65,7 +72,6 @@ classes_list = (
     ElementCURE.SwitchShowChild,
 
     Gesture,
-
     GestureCURE.ADD,
     GestureCURE.SORT,
     GestureCURE.COPY,

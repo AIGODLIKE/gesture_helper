@@ -1,11 +1,254 @@
 import bpy
 from bpy.app.translations import pgettext, pgettext_n
-from bpy.props import StringProperty, EnumProperty, BoolProperty
+from bpy.props import StringProperty, EnumProperty, BoolProperty, CollectionProperty
+from mathutils import Vector
 
-from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE
+from .element_modal_operator import ElementModalOperatorEventItem
+from ..debug import TMP_KMI_SYNC_DEBUG
+from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.secure_call import secure_call_eval, secure_call_exec
+
+
+class ModalProperty:
+    modal_events_index: bpy.props.IntProperty(name='Modal Event Index', default=-1)
+    modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
+
+    last_modal_operator_property: bpy.props.StringProperty(name='Last Modal Operator Property', default="{}")
+
+    @property
+    def is_not_recommended_as_modal(self):
+        """一部分操作符不建议使用模态来控制
+        列如已经有modal操作写法的操作符
+        移动旋转等操作
+        is_array不推荐使用
+        """
+        if self.operator_is_modal:
+            if self.operator_bl_idname in [
+                "transform.translate",
+                "transform.rotate",
+                "transform.resize",
+            ]:
+                return True
+            if self.operator_func:
+                if rna := self.operator_func.get_rna_type():
+                    for prop in rna.properties:
+                        if getattr(prop, "is_array", False):
+                            return True
+        return False
+
+    @property
+    def active_event(self) -> ElementModalOperatorEventItem | None:
+        """活动事件项"""
+        if len(self.modal_events) > self.modal_events_index and self.modal_events:
+            return self.modal_events[self.modal_events_index]
+        return None
+
+    def __running_by_modal__(self):
+        with bpy.context.temp_override(element=self, gesture=self.parent_gesture):
+            bpy.ops.gesture.element_modal_event("INVOKE_DEFAULT", False)
+
+    def draw_modal_property(self, layout):
+        if self.active_event:
+            self.active_event.draw_modal(layout)
+        else:
+            layout.label(text='No active modal event')
+
+    @property
+    def modal_properties(self):
+        """获取操作符的属性"""
+        try:
+            return secure_call_eval(self.last_modal_operator_property)
+        except Exception as e:
+            print('Properties Error')
+            print(self.name)
+            print(f"bpy.ops.{self.operator_bl_idname}")
+            print(self.last_modal_operator_property)
+            print(e.args)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            self['last_modal_operator_property'] = "{}"
+            return {}
+
+    @property
+    def last_properties(self):
+        """反回上一次的属性
+        没有则反回默认的"""
+        if self.modal_properties:
+            return self.modal_properties
+        return self.properties
+
+    def run_element_modal_event(self, ops, context, event) -> bool:
+        # print("run_element_modal_event", event.type, event.value)
+        if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
+            last_mouse = getattr(ops, "mouse", None)
+            mouse = Vector((event.mouse_x, event.mouse_y))
+            is_change = False
+            for e in self.modal_events:
+                if e.is_mouse_move_event and last_mouse != mouse:
+                    is_change |= e.number_mouse_move_execute(ops, context, event)  # 鼠标事件时不反回
+            if is_change:  # 如果鼠标值移动并且修改了值的
+                ops.start_mouse(event)
+            return is_change  # 修改了值就要更新一下操作符再执行一次
+        else:
+            for e in self.modal_events:
+                if not e.is_mouse_move_event:
+                    if e.modal_execute(ops, context, event):
+                        return True
+            return False
+
+    def get_header_text(self, properties: dict):
+        from bpy.app.translations import pgettext_iface as translate
+        def gkn(k, v):
+            prop = self.operator_func.get_rna_type().properties[k]
+            text = prop.name
+            name = bpy.app.translations.pgettext_iface(text)
+            value = v
+            if isinstance(v, str):
+                value = translate(v)
+            if prop.type == "ENUM":  # 处理枚举名称
+                items = from_rna_get_enum_items(prop)
+                for (i, n, d, icon, index) in items:
+                    if v == i:
+                        value = translate(n)
+            return f"{name}:{value}"
+
+        return "    ".join([gkn(k, v) for k, v in properties.items()])
+
+
+class ScriptOperator:
+    """脚本操作符"""
+    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
+
+    preview_operator_script: BoolProperty(name='Preview Script', default=True)
+
+    def __running_by_script__(self):
+        """运行自定义脚本"""
+        try:
+            res = secure_call_exec(self.operator_script)
+            if res is None:
+                ...
+            elif isinstance(res, str):
+                return res
+
+        except Exception as e:
+            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
+            import traceback
+            traceback.print_stack()
+            traceback.print_exc()
+            print("运行错误,")
+            return e
+
+
+class RunOperatorPropertiesSync:
+    def to_operator_tmp_kmi(self) -> None:
+        """从此元素的属性更新到临时 keymap item"""
+        if not self.is_operator:
+            Exception(f'{self}不是操作符')
+        self.operator_tmp_kmi_properties_clear()
+        set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
+
+    def from_tmp_kmi_operator_update_properties(self) -> None:
+        """从临时 keymap item 更新到属性"""
+        if TMP_KMI_SYNC_DEBUG:
+            print("from_tmp_kmi_operator_update_properties", )
+        temp_kmi_properties = self.operator_tmp_kmi_properties
+        if TMP_KMI_SYNC_DEBUG:
+            print(temp_kmi_properties)
+            print(self.properties)
+        if self.properties != temp_kmi_properties:
+            self['operator_properties'] = str(temp_kmi_properties)
+
+    def operator_tmp_kmi_properties_clear(self):
+        """清空临时 keymap item 属性"""
+        properties = self.operator_tmp_kmi.properties
+        for key in list(properties.keys()):
+            properties.pop(key)
+
+    def update_operator_properties_sync_from_temp_properties(self, _):
+        if self.is_operator:
+            self.from_tmp_kmi_operator_update_properties()
+            self['operator_properties_sync_from_temp_properties'] = False
+
+    def update_operator_properties_sync_to_properties(self, _):
+        if self.is_operator:
+            self.to_operator_tmp_kmi()
+            self['operator_properties_sync_to_properties'] = False
+
+    operator_properties_sync_from_temp_properties: BoolProperty(
+        name='From Prop Update',
+        update=update_operator_properties_sync_from_temp_properties)
+    operator_properties_sync_to_properties: BoolProperty(
+        name='Update To Prop',
+        update=update_operator_properties_sync_to_properties)
+
+    @property
+    def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
+        """操作符临时 keymap item"""
+        from ..utils.public_key import get_temp_kmi_by_id_name
+        return get_temp_kmi_by_id_name(self.operator_bl_idname)
+
+    @property
+    def operator_tmp_kmi_properties(self) -> dict:
+        """操作符临时 keymap item 属性"""
+        from ..utils.public_key import get_kmi_operator_properties
+        properties = get_kmi_operator_properties(self.operator_tmp_kmi)
+        return properties
+
+
+class RunOperator:
+    """Blender操作符"""
+
+    @property
+    def __operator_name__(self) -> str | None:
+        if self.operator_type == "OPERATOR":
+            func = self.operator_func
+            if func:
+                rna = func.get_rna_type()
+                return pgettext(rna.name, rna.translation_context)
+        return None
+
+    @property
+    def __operator_original_name__(self) -> str | None:
+        """原名称"""
+        if self.operator_type == "OPERATOR":
+            func = self.operator_func
+            if func:
+                rna = func.get_rna_type()
+                return pgettext_n(rna.name, rna.translation_context)
+        return None
+
+    def __running_by_bl_idname__(self, operator_properties: str = None):
+        """通过bl_idname运行操作符"""
+        if operator_properties is None:
+            operator_properties = self.operator_properties
+        try:
+            if func := self.operator_func:
+                if isinstance(operator_properties, dict):
+                    prop = operator_properties
+                else:
+                    prop = secure_call_eval(operator_properties)
+
+                func(self.operator_context, True, **prop)
+
+                def g(v):
+                    return f'"{v}"' if type(v) is str else v
+
+                ops_property = ", ".join(
+                    (f"{key}={g(value)}" for key, value in prop.items()))
+                print(
+                    f'running_operator bpy.ops.{self.operator_bl_idname}'
+                    f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
+                    prop
+                )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            traceback.print_stack()
+            print('__running_by_bl_idname__ ERROR', e)
+            return e
 
 
 class OperatorProperty:
@@ -64,26 +307,6 @@ class OperatorProperty:
                                 items=ENUM_OPERATOR_TYPE,
                                 default='OPERATOR'
                                 )
-    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
-
-    preview_operator_script: BoolProperty(name='Preview Script', default=True)
-
-    def update_operator_properties_sync_from_temp_properties(self, _):
-        if self.is_operator:
-            self.from_tmp_kmi_operator_update_properties()
-            self['operator_properties_sync_from_temp_properties'] = False
-
-    def update_operator_properties_sync_to_properties(self, _):
-        if self.is_operator:
-            self.to_operator_tmp_kmi()
-            self['operator_properties_sync_to_properties'] = False
-
-    operator_properties_sync_from_temp_properties: BoolProperty(
-        name='From Prop Update',
-        update=update_operator_properties_sync_from_temp_properties)
-    operator_properties_sync_to_properties: BoolProperty(
-        name='Update To Prop',
-        update=update_operator_properties_sync_to_properties)
 
     # 直接将operator的self传给element,让那个来进行操作
 
@@ -105,20 +328,7 @@ class OperatorProperty:
             return {}
 
     @property
-    def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
-        """操作符临时 keymap item"""
-        from ..utils.public_key import get_temp_kmi_by_id_name
-        return get_temp_kmi_by_id_name(self.operator_bl_idname)
-
-    @property
-    def operator_tmp_kmi_properties(self) -> dict:
-        """操作符临时 keymap item 属性"""
-        from ..utils.public_key import get_kmi_operator_properties
-        properties = get_kmi_operator_properties(self.operator_tmp_kmi)
-        return properties
-
-    @property
-    def operator_func(self) -> 'bpy.types.Operator':
+    def operator_func(self) -> 'bpy.types.Operator | None':
         """获取操作符
 
         Returns:
@@ -129,6 +339,7 @@ class OperatorProperty:
             prefix, suffix = sp
             func = getattr(getattr(bpy.ops, prefix), suffix)
             return func
+        return None
 
     @property
     def __operator_id_name_is_validity__(self) -> bool:
@@ -162,95 +373,30 @@ class OperatorProperty:
             return False
 
 
-class ElementOperator(OperatorProperty):
+class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperator, RunOperatorPropertiesSync):
 
-    def to_operator_tmp_kmi(self) -> None:
-        """从此元素的属性更新到临时 keymap item"""
-        if not self.is_operator:
-            Exception(f'{self}不是操作符')
-        self.operator_tmp_kmi_properties_clear()
-        set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
+    @property
+    def operator_is_script(self):
+        return self.operator_type == "SCRIPT"
 
-    def from_tmp_kmi_operator_update_properties(self) -> None:
-        """从临时 keymap item 更新到属性"""
-        print("from_tmp_kmi_operator_update_properties", )
-        temp_kmi_properties = self.operator_tmp_kmi_properties
-        print(temp_kmi_properties)
-        print(self.properties)
-        if self.properties != temp_kmi_properties:
-            self['operator_properties'] = str(temp_kmi_properties)
+    @property
+    def operator_is_operator(self):
+        return self.operator_type == "OPERATOR"
+
+    @property
+    def operator_is_modal(self):
+        return self.operator_type == "MODAL"
 
     def running_operator(self) -> Exception:
-        """运行此元素的操作符
-        """
-        if self.operator_type == "OPERATOR":
+        """运行此元素的操作符"""
+        if self.operator_is_operator:
             return self.__running_by_bl_idname__()
-        elif self.operator_type == "SCRIPT":
+        elif self.operator_is_script:
             return self.__running_by_script__()
+        elif self.operator_is_modal:
+            return self.__running_by_modal__()
         else:
             return Exception(f'{self}操作符类型错误')
-
-    @property
-    def __operator_name__(self) -> str:
-        if self.operator_type == "OPERATOR":
-            func = self.operator_func
-            if func:
-                rna = func.get_rna_type()
-                return pgettext(rna.name, rna.translation_context)
-
-    @property
-    def __operator_original_name__(self) -> str:
-        """原名称"""
-        if self.operator_type == "OPERATOR":
-            func = self.operator_func
-            if func:
-                rna = func.get_rna_type()
-                return pgettext_n(rna.name, rna.translation_context)
-
-    def __running_by_bl_idname__(self):
-        """通过bl_idname运行操作符
-        """
-        try:
-            prop = secure_call_eval(self.operator_properties)
-            func = self.operator_func
-            if func:
-                func(self.operator_context, True, **prop)
-
-                def g(v):
-                    return f'"{v}"' if type(v) is str else v
-
-                ops_property = ", ".join(
-                    (f"{key}={g(value)}" for key, value in prop.items()))
-                print(
-                    f'running_operator bpy.ops.{self.operator_bl_idname}'
-                    f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
-                )
-        except Exception as e:
-            print('running_operator ERROR', e)
-            return e
-
-    def __running_by_script__(self):
-        """运行自定义脚本"""
-        try:
-            res = secure_call_exec(self.operator_script)
-            if res is None:
-                ...
-            elif isinstance(res, str):
-                return res
-
-        except Exception as e:
-            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
-            print("运行错误,")
-            return e
-
-    def operator_tmp_kmi_properties_clear(self):
-        """清空临时 keymap item 属性"""
-        properties = self.operator_tmp_kmi.properties
-        for key in list(properties.keys()):
-            properties.pop(key)
 
     def __init_operator__(self):
         """添加元素时初始化操作符属性"""
@@ -258,3 +404,15 @@ class ElementOperator(OperatorProperty):
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
         self.operator_properties = r'{}'
+
+    def check_operator_poll(self):
+        if self.operator_is_operator or self.operator_is_modal:
+            # 需要检查是否需要运行操作符
+            poll = self.operator_func.poll()
+            if not poll:
+                context = bpy.context
+                at = context.area.type
+                print(
+                    f"Gesture Poll 失败 {self.parent_gesture} {self.operator_bl_idname} area:{at} mode:{context.mode}")
+            return poll
+        return True

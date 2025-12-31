@@ -1,14 +1,14 @@
 {
-  "time": 1758881096.1482086,
+  "time": 1767061621.370503,
   "blender_version": [
-    4,
     5,
-    3
+    0,
+    0
   ],
   "addon_version": [
     2,
-    1,
-    9
+    2,
+    6
   ],
   "author": "\u5c0f\u840c\u65b0",
   "description": "This is a description",
@@ -260,9 +260,35 @@
                       "element_type": "OPERATOR",
                       "icon": "MOD_SMOOTH",
                       "enabled_icon": true,
-                      "direction": "2",
+                      "modal_events": {
+                        "0": {
+                          "float_incremental_value": 1.0,
+                          "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                          "control_property": "factor"
+                        },
+                        "1": {
+                          "event_type": "WHEELUPMOUSE",
+                          "event_ctrl": false,
+                          "event_alt": false,
+                          "event_shift": false,
+                          "int_incremental_value": 1,
+                          "number_value_mode": "ADD",
+                          "control_property": "repeat"
+                        },
+                        "2": {
+                          "event_type": "WHEELUPMOUSE",
+                          "event_ctrl": false,
+                          "event_alt": false,
+                          "event_shift": false,
+                          "int_incremental_value": 1,
+                          "number_value_mode": "ADD",
+                          "control_property": "repeat"
+                        }
+                      },
+                      "modal_events_index": 1,
                       "operator_bl_idname": "mesh.vertices_smooth",
-                      "operator_properties": "{'factor': 0.5}"
+                      "direction": "2",
+                      "operator_type": "MODAL"
                     },
                     "1": {
                       "name": "Smooth Laplacian",
@@ -346,8 +372,63 @@
                   "element_type": "OPERATOR",
                   "icon": "SNAP_EDGE",
                   "enabled_icon": true,
+                  "modal_events": {
+                    "0": {
+                      "int_incremental_value": 1,
+                      "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                      "control_property": "twist_offset"
+                    },
+                    "1": {
+                      "event_type": "WHEELUPMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "ADD",
+                      "control_property": "number_cuts"
+                    },
+                    "2": {
+                      "event_type": "WHEELDOWNMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "SUBTRACT",
+                      "control_property": "number_cuts"
+                    },
+                    "3": {
+                      "event_type": "C",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "enum_value_mode": "CYCLE",
+                      "enum_reverse": false,
+                      "enum_wrap": true,
+                      "control_property": "type"
+                    },
+                    "4": {
+                      "event_type": "A",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "bool_value_mode": "SWITCH",
+                      "control_property": "use_merge"
+                    },
+                    "5": {
+                      "event_type": "S",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "enum_value_mode": "CYCLE",
+                      "enum_reverse": false,
+                      "enum_wrap": true,
+                      "control_property": "interpolation"
+                    }
+                  },
+                  "modal_events_index": 4,
+                  "operator_bl_idname": "mesh.bridge_edge_loops",
                   "direction": "4",
-                  "operator_bl_idname": "mesh.bridge_edge_loops"
+                  "operator_type": "MODAL"
                 },
                 "1": {
                   "name": "Subdivide",
@@ -408,14 +489,6 @@
                   }
                 },
                 "3": {
-                  "name": "Screw",
-                  "element_type": "OPERATOR",
-                  "icon": "MOD_SCREW",
-                  "enabled_icon": true,
-                  "direction": "6",
-                  "operator_bl_idname": "mesh.screw"
-                },
-                "4": {
                   "name": "Edge Property",
                   "element_type": "CHILD_GESTURE",
                   "icon": "EDGESEL",
@@ -540,7 +613,7 @@
                     }
                   }
                 },
-                "5": {
+                "4": {
                   "name": "Edge Crease",
                   "element_type": "OPERATOR",
                   "icon": "MOD_BEVEL",
@@ -548,7 +621,7 @@
                   "direction": "5",
                   "operator_bl_idname": "transform.edge_bevelweight"
                 },
-                "6": {
+                "5": {
                   "name": "Child_Gesture",
                   "element_type": "CHILD_GESTURE",
                   "direction": "9",
@@ -571,8 +644,58 @@
                       "element_type": "OPERATOR",
                       "operator_bl_idname": "mesh.mark_sharp",
                       "operator_properties": "{'clear': False}"
+                    },
+                    "3": {
+                      "name": "Screw",
+                      "element_type": "OPERATOR",
+                      "icon": "MOD_SCREW",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "mesh.screw"
                     }
                   }
+                },
+                "6": {
+                  "name": "Grid Fill",
+                  "element_type": "OPERATOR",
+                  "icon": "KEY_WINDOWS_FILLED",
+                  "enabled_icon": true,
+                  "modal_events": {
+                    "0": {
+                      "event_type": "WHEELUPMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "ADD",
+                      "control_property": "span"
+                    },
+                    "1": {
+                      "event_type": "WHEELDOWNMOUSE",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "int_incremental_value": 1,
+                      "number_value_mode": "SUBTRACT",
+                      "control_property": "span"
+                    },
+                    "2": {
+                      "int_incremental_value": 1,
+                      "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                      "control_property": "offset"
+                    },
+                    "3": {
+                      "event_type": "A",
+                      "event_ctrl": false,
+                      "event_alt": false,
+                      "event_shift": false,
+                      "bool_value_mode": "SWITCH",
+                      "control_property": "use_interp_simple"
+                    }
+                  },
+                  "modal_events_index": 1,
+                  "operator_bl_idname": "mesh.fill_grid",
+                  "direction": "6",
+                  "operator_type": "MODAL"
                 }
               }
             },
@@ -607,14 +730,6 @@
                   "operator_bl_idname": "mesh.wireframe"
                 },
                 "3": {
-                  "name": "Grid Fill",
-                  "element_type": "OPERATOR",
-                  "icon": "KEY_WINDOWS_FILLED",
-                  "enabled_icon": true,
-                  "direction": "4",
-                  "operator_bl_idname": "mesh.fill_grid"
-                },
-                "4": {
                   "name": "Face Data",
                   "element_type": "CHILD_GESTURE",
                   "icon": "FACESEL",
@@ -667,7 +782,7 @@
                     }
                   }
                 },
-                "5": {
+                "4": {
                   "name": "Extrude Faces",
                   "element_type": "CHILD_GESTURE",
                   "icon": "SELECT_EXTEND",
@@ -688,7 +803,7 @@
                     }
                   }
                 },
-                "6": {
+                "5": {
                   "name": "Face Operator",
                   "element_type": "CHILD_GESTURE",
                   "icon": "PROPERTIES",

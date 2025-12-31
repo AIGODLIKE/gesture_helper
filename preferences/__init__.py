@@ -43,6 +43,7 @@ class GesturePreferences(PublicProperty,
                                    ('PROPERTY', 'Property', ''),
                                    ('DEBUG', 'Debug', '')])
 
+
     def get_gesture_data(self, get_all: bool = False) -> {}:
         from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
         from ..utils.property import get_property

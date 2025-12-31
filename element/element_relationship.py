@@ -8,7 +8,7 @@ from ..utils.public_cache import PublicCache, cache_update_lock
 
 
 @cache
-def get_element_index(element) -> int:
+def get_element_index(element) -> int | None:
     try:
         return element.collection.values().index(element)
     except ValueError:
@@ -123,7 +123,6 @@ class Relationship:
 
 
 class RadioSelect:
-
     @cache_update_lock
     def update_radio(self):
         try:
@@ -143,7 +142,7 @@ class RadioSelect:
                     self.to_operator_tmp_kmi()
         except Exception as e:
             self.cache_clear()
-            print(e.args)
+            print("update_radio Error", e.args)
             import traceback
             traceback.print_exc()
             traceback.print_stack()
@@ -161,7 +160,7 @@ class ElementRelationship(RadioSelect,
     name: StringProperty(name="Name")
 
     def _get_index(self) -> int:
-        return self.parent.index_element
+        return get_element_index(self)
 
     def _set_index(self, value):
         self.parent.index_element = value
@@ -170,10 +169,6 @@ class ElementRelationship(RadioSelect,
         fget=_get_index,
         fset=_set_index,
         doc='通过当前项的index,来设置索引的index值,以及移动项')
-
-    @property
-    def self_index(self):
-        return get_element_index(self)
 
     @property
     def is_root(self):
@@ -200,18 +195,6 @@ class ElementRelationship(RadioSelect,
         """是一个可用的选择结构"""
         return get_available_selected_structure(self) and self.__poll_bool_is_validity__
 
-    def remove_after(self):
-        """删除之后判断索引是否需要偏移"""
-        print('remove_after', self)
-        parent = self.parent
-        index = parent.index_element
-        col = self.collection
-        cl = len(col)
-        if cl:
-            if cl >= index + 1:
-                col[index].radio = True
-            else:
-                col[-1].radio = True
 
     def __init_direction_by_sort__(self):
         """初始化方向按排序"""

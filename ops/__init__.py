@@ -1,5 +1,6 @@
 import bpy
 
+from . import element_modal
 from . import export_import, switch_mode
 from . import gesture
 from . import restore_key
@@ -20,6 +21,8 @@ operator_list = (
     select_icon.RefreshIcons,
     select_icon.ClearHistory,
 
+    element_modal.ElementModal,
+
     switch_ui.SwitchGestureWindow,
 
     set_poll.SetPollExpression,
@@ -34,7 +37,7 @@ operator_list = (
     CreateElementOperator,
     CreatePanelMenu,
     CreateSwitchPanel,
-    
+
     ModalMouseOperator,
 
     export_import.Export,

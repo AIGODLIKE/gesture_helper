@@ -8,6 +8,7 @@ from .panel import unregister as unregister_panel
 operator_list = (
     ui_list.GestureUIList,
     ui_list.ElementUIList,
+    ui_list.ElementModalEventUIList,
     ui_list.ImportPresetUIList,
     menu.GESTURE_MT_add_element_menu
 )

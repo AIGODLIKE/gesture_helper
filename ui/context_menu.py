@@ -3,6 +3,7 @@ from bpy.app.translations import pgettext
 
 from ..ops.qucik_add.create_element_operator import CreateElementOperator
 from ..ops.qucik_add.create_element_property import CreateElementProperty
+from ..utils.public import get_pref
 
 
 class ContextMenu(bpy.types.Menu):
@@ -21,20 +22,22 @@ class ContextMenu(bpy.types.Menu):
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
 
-        button_pointer = getattr(context, "button_pointer", None)
-
         show = not getattr(context, "show_gesture_add_menu", False)
+        button_pointer = getattr(context, "button_pointer", None)
+        button_prop = getattr(context, "button_prop", None)
+        button_operator = getattr(context, "button_operator", None)
 
+        if button_operator and button_operator.bl_rna.identifier.startswith("GESTURE_OT_"):
+            return
         layout = self.layout
 
         if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
             layout.label(text="Dynamic enumeration properties cannot be added!!")
         elif (show_operator or show_property) and show:
-            button_prop = getattr(context, "button_prop", None)
             layout.context_pointer_set('show_gesture_add_menu', self)
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
-
+            layout.enabled = get_pref().active_gesture is not None
             if show_property:
                 layout.operator(
                     CreateElementProperty.bl_idname,
@@ -42,13 +45,15 @@ class ContextMenu(bpy.types.Menu):
                 )
 
             if show_operator:
-                button_operator = getattr(context, "button_operator", None)
                 br = button_operator.bl_rna
                 text = __name_translate__(br.name)
-                layout.operator(
-                    CreateElementOperator.bl_idname,
-                    text=pgettext("Add Operator %s To Gesture") % text
-                )
+                row = layout.column(align=True)
+                rr = row
+                rr.operator_context = "EXEC_DEFAULT"
+                rr.operator(CreateElementOperator.bl_idname, text=pgettext("Add Operator %s To Gesture") % text)
+                rr = row
+                rr.operator_context = "INVOKE_DEFAULT"
+                rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
 
 
 def register():

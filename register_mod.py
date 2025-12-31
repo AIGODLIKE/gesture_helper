@@ -51,10 +51,11 @@ def register():
             traceback.print_stack()
             traceback.print_exc()
             print(e.args, "\n")
-    clear_temp_keymap()
 
+    clear_temp_keymap()
     # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
+    gesture_keymap.GestureKeymap.key_clear_legacy()
 
     bpy.app.timers.register(init_register, first_interval=0.1, persistent=True)
 
@@ -73,3 +74,4 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
+    clear_temp_keymap()

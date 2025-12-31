@@ -80,7 +80,7 @@ class GestureProperty(PublicProperty):
         return False
 
     @property
-    def angle_unsigned(self) -> float:
+    def angle_unsigned(self) -> float | None:
         """当前手势角度无符号"""
         angle = self.angle
         if angle is not None:
@@ -89,6 +89,7 @@ class GestureProperty(PublicProperty):
                 return angle
             else:
                 return 360 + angle
+        return None
 
     @property
     def direction(self) -> int:
@@ -201,11 +202,11 @@ class GestureProperty(PublicProperty):
         return self.is_beyond_threshold_confirm and element and element.is_child_gesture
 
     @property
-    def operator_time(self) -> float:
+    def operator_time(self) -> float | None:
         """操作符时间"""
-        move_time = self.first_mouse_move_time
-        if move_time:
-            return time.time() - self.first_mouse_move_time
+        if move_time := self.first_mouse_move_time:
+            return time.time() - move_time
+        return None
 
     @property
     def is_draw_gesture(self) -> bool:
@@ -230,7 +231,7 @@ class GestureProperty(PublicProperty):
         return tree.find((*self.__mouse_position__, 0))
 
     @property
-    def first_mouse_move_time(self) -> float:
+    def first_mouse_move_time(self) -> float | None:
         """
         鼠标第一次移动的时间
         :return:
@@ -238,6 +239,7 @@ class GestureProperty(PublicProperty):
         move_time = self.trajectory_mouse_move_time
         if len(move_time):
             return move_time[-1]
+        return None
 
     @property
     def last_move_mouse_timeout(self) -> bool:  # 最后移动鼠标超时

@@ -47,7 +47,7 @@ class ElementCURE:
             return cls._pref().active_element is not None
 
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
-        bl_label = 'Add Element item'
+        bl_label = 'Add element item'
         bl_idname = 'gesture.element_add'
         last_element = None
 
@@ -69,10 +69,8 @@ class ElementCURE:
             relationship = get_pref().add_element_property.relationship
             active = self.active_element
             if relationship == 'SAME' and active:
-                parent = active.parent_element
                 # 如果没有同级则快进到根
-                if parent:
-                    return parent
+                return active.parent.element
             elif relationship == 'CHILD' and active and active.is_have_add_child:
                 return active.element
             return self.active_gesture.element
@@ -82,7 +80,6 @@ class ElementCURE:
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, _):
-            active = self.active_element
             add = self.collection.add()
             self.collection.update()
             add.cache_clear()
@@ -98,25 +95,24 @@ class ElementCURE:
                     self.active_element.show_child = True
                 add.cache_clear()
                 add.update_radio()
-            else:
-                # 还是保持默认选择是当前
-                active.update_radio()
+            elif self.pref.active_element is None:  # 空的元素时处理,默认选中第一个添加的元素
+                add.cache_clear()
+                add.update_radio()
 
             self.__class__.last_element = add
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):
-        bl_label = 'Remove gesture item'
+        bl_label = 'Remove element item'
         bl_idname = 'gesture.element_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
+        bl_otions = {'REGISTER', 'UNDO'}
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
                 self.pref.active_gesture.element.clear()
                 self.cache_clear()
-                bpy.ops.wm.save_userpref()
                 return {'FINISHED'}
             elif self.pref.draw_property.element_remove_tips:
                 return operator_invoke_confirm(
@@ -129,14 +125,27 @@ class ElementCURE:
             return self.execute(context)
 
         def execute(self, _):
-            self.pref.active_element.remove()
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
+
+            ae = self.pref.active_element
+            is_last = ae.is_last
+            parent = ae.parent
+            index = ae.index
+
+            ae.remove()
+
+            if is_last and index != 0:  # 被删除项是最后一个
+                parent.index_element = index - 1  # 索引-1,保持始终有一个选择的
+                parent.element[parent.index_element].radio = True
+            elif -1 < index < len(parent.element):  # 被删除项是中间的,不需要修改索引值
+                parent.element[index].radio = True
+
+            self.cache_clear()
             return {'FINISHED'}
 
     class MOVE(ElementPoll):
-        bl_idname = 'gesture.element_move'
         bl_label = 'Move gesture item'
+        bl_idname = 'gesture.element_move'
         move_item = None
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -181,7 +190,6 @@ class ElementCURE:
 
             ElementCURE.MOVE.move_item = self.active_element
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class SORT(ElementPoll):
@@ -193,12 +201,11 @@ class ElementCURE:
         def execute(self, _):
             self.active_element.sort(self.is_next)
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class COPY(ElementPoll):
-        bl_idname = 'gesture.element_copy'
         bl_label = 'Copy gesture item'
+        bl_idname = 'gesture.element_copy'
 
         def execute(self, _):
             self.active_element.copy()
@@ -211,12 +218,11 @@ class ElementCURE:
                 parent.element.move(len(parent.element) - 1, ae.index + 1)
 
             self.cache_clear()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class CUT(ElementPoll):
-        bl_idname = 'gesture.element_cut'
         bl_label = 'Cut gesture item'
+        bl_idname = 'gesture.element_cut'
 
         __cut_data__ = None  # 剪切的数据
 
@@ -268,7 +274,6 @@ class ElementCURE:
                     ae.radio = True
                 self.cache_clear()
                 ElementCURE.CUT.__cut_data__ = None
-                bpy.ops.wm.save_userpref()
                 return {'FINISHED'}
 
             # 选择一个移动项
@@ -280,8 +285,8 @@ class ElementCURE:
             return {'FINISHED'}
 
     class ScriptEdit(ElementPoll):
-        bl_idname = 'gesture.element_operator_script_edit'
         bl_label = 'Edit script'
+        bl_idname = 'gesture.element_operator_script_edit'
 
         # 获取脚本数据块
         def get_text_data(self) -> bpy.types.Text:
@@ -314,8 +319,8 @@ class ElementCURE:
         def poll(cls, context):
             pref = get_pref()
             h = context.space_data.text.gesture_element_hash
-            hashOk = h == str(hash(pref.active_element))
-            return super().poll(context) and hashOk
+            hash_ok = h == str(hash(pref.active_element))
+            return super().poll(context) and hash_ok
 
         @staticmethod
         def register_ui():
@@ -340,7 +345,6 @@ class ElementCURE:
             bpy.data.texts.remove(text)
             self.remove_save_key(context)
             bpy.ops.wm.window_close()
-            bpy.ops.wm.save_userpref()
             return {'FINISHED'}
 
     class SwitchShowChild(ElementPoll):

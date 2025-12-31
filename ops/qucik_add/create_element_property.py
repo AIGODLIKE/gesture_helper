@@ -3,7 +3,7 @@ from bl_ui.properties_paint_common import UnifiedPaintPanel
 from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, BoolProperty
 
-from ...utils.enum import CREATE_ELEMENT_VALUE_MODE_ENUM
+from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
 from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
 from ...utils.public import get_pref, PublicOperator, PublicProperty
 
@@ -33,25 +33,13 @@ class Enum:
                                       getattr(self, "button_prop", None)
                                       )
                               )
-        if button_prop:
-            if button_prop.enum_items:
-                items = button_prop.enum_items
-            elif button_prop.enum_items_static:
-                items = button_prop.enum_items_static
-            elif button_prop.enum_items_static_ui:
-                items = button_prop.enum_items_static_ui
-            else:
-                items = []
+        items = from_rna_get_enum_items(button_prop)
+        if items:
+            if items != OpsProperty.___enum___:
+                OpsProperty.___enum___ = items
         else:
-            items = []
-        it = [(item.identifier, item.name, item.description, item.icon, index)
-              for (index, item) in enumerate(items)]
-        if it:
-            if it != OpsProperty.___enum___:
-                OpsProperty.___enum___ = it
-        else:
-            if OpsProperty.___enum___ != CREATE_ELEMENT_VALUE_MODE_ENUM:
-                OpsProperty.___enum___ = CREATE_ELEMENT_VALUE_MODE_ENUM
+            if OpsProperty.___enum___ != ENUM_NUMBER_VALUE_CHANGE_MODE:
+                OpsProperty.___enum___ = ENUM_NUMBER_VALUE_CHANGE_MODE
         return OpsProperty.___enum___
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -63,7 +51,7 @@ class Enum:
 
 class OpsProperty(Enum):
     boolean_mode: EnumProperty(
-        items=[('SET_TRUE', 'Set to True', ''), ('SET_FALSE', 'Set to False', ''), ('SWITCH', 'Switch', '')],
+        items=ENUM_BOOL_VALUE_CHANGE_MODE,
         name='Boolean Mode',
         options={'HIDDEN', 'SKIP_SAVE'},
     )
@@ -80,7 +68,7 @@ class OpsProperty(Enum):
         # ("COLLECTION", "Collection", ""),
     ])
 
-    value_mode: EnumProperty(items=CREATE_ELEMENT_VALUE_MODE_ENUM, name="Value Mode")
+    value_mode: EnumProperty(items=ENUM_NUMBER_VALUE_CHANGE_MODE, name="Value Mode")
     int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
     float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
     string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")
@@ -123,18 +111,18 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
 
             if self.data_path != "":
                 if prop_type == "BOOLEAN":
-                    self.draw_boolean(context, layout)
+                    self.draw_boolean(layout)
                 elif prop_type == "INT":
-                    self.draw_int(context, layout)
+                    self.draw_int(layout)
                 elif prop_type == "FLOAT":
                     if prop.is_array:
                         layout.label(text="Array property not supported")
                     else:
-                        self.draw_float(context, layout)
+                        self.draw_float(layout)
                 elif prop_type == "STRING":
-                    self.draw_string(context, layout)
+                    self.draw_string(layout)
                 elif prop_type == "ENUM":
-                    self.draw_enum(context, layout)
+                    self.draw_enum(layout)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
@@ -158,7 +146,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 layout.label(text=f"subtype:\t{prop.subtype}")
                 layout.label(text=f"data_path:\t{self.data_path}")
 
-    def draw_boolean(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_boolean(self, layout: bpy.types.UILayout):
         layout.label(text="Set Boolean Value")
         for item in self.rna_type.properties["boolean_mode"].enum_items:  # 绘制添加的布尔模式
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
@@ -166,7 +154,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             ops.data_path = self.data_path
             ops.property_type = "BOOLEAN"
 
-    def draw_int(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_int(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Int Value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
@@ -179,7 +167,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.int_value = self.int_value
         ops.property_type = "INT"
 
-    def draw_float(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_float(self, layout: bpy.types.UILayout):
         layout.label(text="Modify float value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
@@ -192,7 +180,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.float_value = self.float_value
         ops.property_type = "FLOAT"
 
-    def draw_string(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_string(self, layout: bpy.types.UILayout):
         layout.label(text="Modify String")
         layout.separator()
         layout.prop(self, "string_value")
@@ -202,7 +190,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.string_value = self.string_value
         ops.property_type = "STRING"
 
-    def draw_enum(self, context: bpy.types.Context, layout: bpy.types.UILayout):
+    def draw_enum(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Enumeration")
 
         layout.separator()
@@ -219,8 +207,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             b.prop(self, "enum_value_b", expand=True)
         elif self.enum_mode == "SET":
             layout.prop(self, "enum_value_a", expand=True)
-
-        if self.enum_mode == "CYCLE":
+        elif self.enum_mode == "CYCLE":
             layout.separator()
             layout.prop(self, "enum_reverse")
             layout.prop(self, "enum_wrap")
@@ -331,6 +318,7 @@ class Create(Draw):
         :return:
         """
         pref = get_pref()
+        self.cache_clear()
         with pref.add_element_property.active_radio():
             bpy.ops.gesture.element_add(element_type="OPERATOR")
             pt = self.property_type
@@ -379,7 +367,7 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
-        return context.window_manager.invoke_popup(**{'operator': self, 'width': 600})
+        return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
     def execute(self, context) -> set[str]:
         self.clear_info()

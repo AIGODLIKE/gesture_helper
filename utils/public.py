@@ -3,6 +3,7 @@ from os.path import dirname, realpath, join, abspath
 
 import bpy
 from bpy.props import StringProperty, CollectionProperty
+from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
 
@@ -103,7 +104,7 @@ def get_gesture_extension_items(iteration):
     return extension
 
 
-def update(func):
+def update_effect(func):
     def w(*args, **kwargs):
         self = args[0]
         name = func.__name__
@@ -169,6 +170,13 @@ class PublicProperty(PublicCacheFunc):
             for element in act_ges.element_iteration:
                 if element.radio:
                     return element
+        return None
+
+    @property
+    def active_event(self):
+        """反回活动手势的活动元素的活动modal事件"""
+        if self.active_element:
+            return self.active_element.active_event
         return None
 
     @classmethod
@@ -248,7 +256,7 @@ class PublicOperator(bpy.types.Operator):
     def init_invoke(self, event):
         self.event = event
 
-    def init_module(self, event):
+    def init_modal(self, event):
         self.event = event
 
     @property
@@ -300,7 +308,7 @@ class PublicUniqueNamePropertyGroup:
                     self.cache_clear()
                     i.name = self.__generate_new_name__(self.__names__, i.name)
 
-    @update
+    @update_effect
     def rename(self):
         if self.__is_check_duplicate_name__:
             self.__fix_duplicate_name__()
@@ -346,7 +354,7 @@ class PublicSortAndRemovePropertyGroup:
         """
         return self == self.collection[0]
 
-    @update
+    @update_effect
     def sort(self, is_next):
         col = self.collection
         gl = len(col)
@@ -365,6 +373,49 @@ class PublicSortAndRemovePropertyGroup:
                 col.move(self.index - 1, self.index)
                 self.index = self.index - 1
 
-    @update
+    @update_effect
     def remove(self):
         self.collection.remove(self.index)
+
+
+class PublicMouseModal:
+    mouse = None
+
+    def start_mouse(self, event):
+        self.mouse = Vector((event.mouse_x, event.mouse_y))
+
+    @staticmethod
+    def exit():
+        bpy.context.area.header_text_set(None)
+        bpy.context.window.cursor_set("DEFAULT")
+
+    @staticmethod
+    def set_cursor(context, value_mode):
+        if cursor := {
+            "MOUSE_CHANGES_HORIZONTAL": "MOVE_X",
+            "MOUSE_CHANGES_VERTICAL": "MOVE_Y",
+            "MOUSE_CHANGES_ARBITRARY": "SCROLL_XY"}.get(value_mode, None):
+            context.window.cursor_set(cursor)
+
+    def value_delta(self, event, value_mode):
+        input_scale  = 0.01
+        if event.shift:
+            input_scale = 0.001
+
+        delta = self.get_delta(event, value_mode) * input_scale
+        return delta
+
+    def get_delta(self, event, value_mode):
+        if value_mode == "MOUSE_CHANGES_HORIZONTAL":
+            return event.mouse_x - self.mouse.x
+        elif value_mode == "MOUSE_CHANGES_VERTICAL":
+            return event.mouse_y - self.mouse.y
+        elif value_mode == "MOUSE_CHANGES_ARBITRARY":
+            x = event.mouse_x - self.mouse.x
+            y = event.mouse_y - self.mouse.y
+            if x > y:
+                return max(x, y)
+            else:
+                return min(x, y)
+        else:
+            raise ValueError("Invalid value mode: %r" % value_mode)

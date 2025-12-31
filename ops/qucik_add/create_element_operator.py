@@ -1,17 +1,59 @@
 import bpy
 from mathutils import Euler, Vector, Matrix
 
+from ...element.element_cure import ElementCURE
 from ...utils.public import PublicOperator, PublicProperty, get_pref
 
 
-def __from_rna_get_bl_ops_idname__(bl_rna) -> str:
+def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
     identifier = bl_rna.identifier
     if "_OT_" in identifier:
         a, b = identifier.split("_OT_")
         return f"{a.lower()}.{b.lower()}"
+    return None
 
 
-class CreateElementOperator(PublicOperator, PublicProperty):
+class CreateModalOperator:
+    def invoke(self, context, event):
+        self.button_operator = getattr(context, "button_operator", None)
+
+        self.cache_clear()
+        self.execute(context)
+        self.cache_clear()
+
+        last_element = ElementCURE.ADD.last_element
+        last_element.operator_type = "MODAL"
+
+        return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
+
+    def draw(self, context):
+        button_operator = self.button_operator
+
+        bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
+        description = button_operator.bl_rna.description
+
+        layout = self.layout
+        layout.label(text=description)
+        layout.label(text=bl_idname)
+
+        last_element = ElementCURE.ADD.last_element
+        last_element.draw_operator_modal(layout)
+
+        properties = {}
+        for prop in dir(button_operator):
+            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
+                value = getattr(button_operator, prop, None)
+                if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
+                    value = value[:]
+                elif isinstance(value, Matrix):
+                    res = ()
+                    for i in value:
+                        res += (*tuple(i[:]),)
+                    value = res
+                layout.label(text=prop + " " + str(value))
+
+
+class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
     bl_label = 'Create Operator Element'
     bl_idname = 'gesture.create_element_operator'
 
@@ -28,14 +70,13 @@ class CreateElementOperator(PublicOperator, PublicProperty):
         :return:
         """
         pref = get_pref()
-        act = pref.active_element
         with pref.add_element_property.active_radio():
             bpy.ops.gesture.element_add(element_type="OPERATOR")
 
+        # return {"FINISHED"}
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
-        print(f"\n{self.bl_label}\tinvoke\t", bl_idname)
-
+        print(f"\n{self.bl_label}\texecute\t", bl_idname)
         properties = {}
         for prop in dir(button_operator):
             if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
@@ -70,18 +111,11 @@ class CreateElementOperator(PublicOperator, PublicProperty):
                     traceback.print_stack()
 
         pp = ",".join((f"{k}='{v}'" if type(v) is str else f"{k}={v}" for k, v in properties.items()))
-        ae = self.active_element
-        if ae:
-            ae.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
-            if on := ae.__operator_original_name__:
-                ae.name = on
-            print(ae.operator_bl_idname)
-        # if act:
-        #     self.cache_clear()
-        #     print("update_radio act['radio'] = True", act)
-        #     print("pp rr", act.parent_gesture)
-        #     act.radio = True
-        #     self.cache_clear()
-        #     act.update_radio()
-        #     self.cache_clear()
+        last_element = ElementCURE.ADD.last_element
+        if last_element:
+            last_element.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
+            if on := last_element.__operator_original_name__:
+                last_element.name = on
+            print(last_element.operator_bl_idname)
+        self.cache_clear()
         return {"FINISHED"}

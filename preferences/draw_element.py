@@ -7,7 +7,7 @@ from ..utils.public_ui import icon_two
 
 def draw_label(lay: bpy.types.UILayout, label: str) -> bpy.types.UILayout:
     width = bpy.context.region.width
-    if width < 600:
+    if width < 400:
         split = lay.row(align=True)
     else:
         split = lay.split(align=True, factor=0.3)

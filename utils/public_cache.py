@@ -99,9 +99,13 @@ class PublicCache:
             child_iteration.append(child)
             cls.__element_prev_cache__[child] = prev_element
             prev_element = child
-
             child_iteration.extend(PublicCache.from_element_get_data(gesture, child, element, level + 1))
         cls.__element_child_iteration__[element] = child_iteration
+
+        # modal events parent
+        for event in element.modal_events:
+            cls.__element_parent_gesture_cache__[event] = gesture
+            cls.__element_parent_element_cache__[event] = element
         return child_iteration
 
 
@@ -116,6 +120,12 @@ class PublicCacheFunc(PublicCache):
         from ..element import element_relationship
         element_relationship.get_element_index.cache_clear()
         element_relationship.get_available_selected_structure.cache_clear()
+
+    @staticmethod
+    def event_cache_clear():
+        from ..element import element_modal_operator
+        element_modal_operator.get_event_index.cache_clear()
+        element_modal_operator.EnumControl.___enum_items___.clear()
 
     @staticmethod
     def gesture_direction_cache_clear():
@@ -138,6 +148,7 @@ class PublicCacheFunc(PublicCache):
             cls.init_cache()
             cls.gesture_cache_clear()
             cls.element_cache_clear()
+            cls.event_cache_clear()
             cls.gesture_direction_cache_clear()
             cls.gesture_extension_cache_clear()
 
