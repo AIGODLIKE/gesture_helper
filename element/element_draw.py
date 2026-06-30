@@ -2,7 +2,6 @@
 # 预览绘制
 from bpy.app.translations import pgettext_iface
 
-from . import ElementCURE
 from ..ops.set_direction import SetDirection
 from ..utils.public import get_pref
 from ..utils.public_ui import icon_two
@@ -194,9 +193,7 @@ class ElementDraw:
     def draw_operator(self, layout):
         is_operator = self.operator_type == 'OPERATOR'
         is_modal = self.operator_type == "MODAL"
-        is_script = self.operator_type == "SCRIPT"
 
-        preview_script = self.preview_operator_script
         row = layout.row(align=True)
         col = row.column(align=True)
         col.prop(self, 'name')
@@ -210,14 +207,6 @@ class ElementDraw:
             b = col.column(align=True)
             b.alert = not self.__operator_properties_is_validity__
             b.prop(self, 'operator_properties')
-        elif is_script:
-            c = col.column(align=True)
-            c.operator(ElementCURE.ScriptEdit.bl_idname)
-            rr = c.row(align=True)
-            rr.label(text=f'{pgettext_iface("Script word count")}:{len(self.operator_script)}')
-            rr.separator()
-            rr.prop(self, 'preview_operator_script', icon=icon_two(preview_script, style="HIDE"), text='',
-                    emboss=False)
 
         if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
             SetDirection.draw_direction(row.column())
@@ -250,11 +239,6 @@ class ElementDraw:
                     column.label(text='The operator contains array properties and cannot be controlled')
 
             #     self.draw_operator_modal(layout)
-        elif is_script:
-            if preview_script:
-                script_box = layout.box()
-                for i in self.operator_script.split('\n'):
-                    script_box.label(text=i)
 
     def draw_operator_modal(self, layout):
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE

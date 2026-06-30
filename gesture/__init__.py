@@ -67,8 +67,6 @@ classes_list = (
     ElementCURE.CUT,
     ElementCURE.MOVE,
     ElementCURE.REMOVE,
-    ElementCURE.ScriptEdit,
-    ElementCURE.ScriptSave,
     ElementCURE.SwitchShowChild,
 
     Gesture,
@@ -83,10 +81,7 @@ register_classes, unregister_classes = bpy.utils.register_classes_factory(classe
 
 def register():
     register_classes()
-    ElementCURE.ScriptSave.register_ui()
 
 
 def unregister():
     unregister_classes()
-    ElementCURE.ScriptSave.unregister_ui()
-    print()

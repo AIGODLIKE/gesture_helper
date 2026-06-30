@@ -23,18 +23,14 @@ EXPORT_PROPERTY_EXCLUDE = (
     'index_element',
     'operator_properties_sync_to_properties',
     'operator_properties_sync_from_temp_properties',
-    'preview_operator_script',
 )
+
 
 EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
     'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
-    'OPERATOR_SCRIPT': [
-        *EXPORT_PUBLIC_ITEM,
-        *EXPORT_ICON_ITEM,
-        'direction', 'operator_type', 'operator_script', ],
     'OPERATOR_MODAL': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
@@ -64,6 +60,35 @@ EXPORT_PROPERTY_ITEM = {
         'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', ],
     "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
 }
+
+
+def _is_legacy_script_element(element: dict) -> bool:
+    return element.get('operator_type') == 'SCRIPT' or bool(element.get('operator_script'))
+
+
+def _remove_legacy_script_from_tree(elements: dict) -> None:
+    remove_keys = []
+    for key, element in elements.items():
+        nested = element.get('element')
+        if nested:
+            _remove_legacy_script_from_tree(nested)
+        if _is_legacy_script_element(element):
+            print(
+                f"Gesture Helper: removed legacy SCRIPT element "
+                f"'{element.get('name', 'Unknown')}'"
+            )
+            remove_keys.append(key)
+    for key in remove_keys:
+        del elements[key]
+
+
+def sanitize_gesture_import_data(gesture_data: dict) -> dict:
+    """Remove legacy SCRIPT elements from imported gesture data."""
+    for gesture in gesture_data.values():
+        elements = gesture.get('element')
+        if elements:
+            _remove_legacy_script_from_tree(elements)
+    return gesture_data
 
 
 def ymd() -> str:
@@ -165,7 +190,7 @@ class Import(PublicFileOperator):
             from ..gesture import gesture_keymap
 
             data = self.read_json()
-            restore = data['gesture']
+            restore = sanitize_gesture_import_data(data['gesture'])
             __set_prop__(self.pref, 'gesture', restore)
             gesture_keymap.GestureKeymap.key_restart()
 

@@ -7,8 +7,15 @@ maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
 tagline = "Quickly use gestures to run the operator or change properties"
 type = "add-on"
-version = "2.3.0"
+version = "2.3.1"
 tags = ["3D View", "User Interface"]
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    "/.git/",
+    "/*.zip",
+]
 
 [permissions]
 files = "Import/Export Gesture preset"

@@ -57,6 +57,3 @@ TypeError: bpy_struct: item.attr = val: enum "glTF Variants" not found in ('Item
     except IndexError:  # 当前上下文不是3d视图
         return []
 
-
-if __name__ == "__main__":
-    print(get_all_panels(bpy.context))

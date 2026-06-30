@@ -8,7 +8,7 @@ from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
-from ..utils.secure_call import secure_call_eval, secure_call_exec
+from ..utils.secure_call import literal_to_dict
 
 
 class ModalProperty:
@@ -59,7 +59,7 @@ class ModalProperty:
     def modal_properties(self):
         """获取操作符的属性"""
         try:
-            return secure_call_eval(self.last_modal_operator_property)
+            return literal_to_dict(self.last_modal_operator_property)
         except Exception as e:
             print('Properties Error')
             print(self.name)
@@ -116,30 +116,6 @@ class ModalProperty:
             return f"{name}:{value}"
 
         return "    ".join([gkn(k, v) for k, v in properties.items()])
-
-
-class ScriptOperator:
-    """脚本操作符"""
-    operator_script: StringProperty(name='Operator Script', default='print("Emm")')
-
-    preview_operator_script: BoolProperty(name='Preview Script', default=True)
-
-    def __running_by_script__(self):
-        """运行自定义脚本"""
-        try:
-            res = secure_call_exec(self.operator_script)
-            if res is None:
-                ...
-            elif isinstance(res, str):
-                return res
-
-        except Exception as e:
-            print(f"running_operator_script ERROR\t\n{self.operator_script}\n", e)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
-            print("运行错误,")
-            return e
 
 
 class RunOperatorPropertiesSync:
@@ -229,7 +205,7 @@ class RunOperator:
                 if isinstance(operator_properties, dict):
                     prop = operator_properties
                 else:
-                    prop = secure_call_eval(operator_properties)
+                    prop = literal_to_dict(operator_properties)
 
                 func(self.operator_context, True, **prop)
 
@@ -255,9 +231,11 @@ class OperatorProperty:
     def __analysis_operator_properties__(self, properties_string):
         """解析操作符属性"""
         try:
-            ps = f"dict{properties_string}"
+            ps = properties_string.strip()
+            if ps.startswith('(') and ps.endswith(')'):
+                ps = ps[1:-1].strip()
             print("__analysis_operator_properties__\n", ps)
-            properties = secure_call_eval(ps)  # 高危
+            properties = literal_to_dict(ps)
             if properties:
                 self["operator_properties"] = str(properties)
         except Exception as e:
@@ -314,7 +292,7 @@ class OperatorProperty:
     def properties(self):
         """获取操作符的属性"""
         try:
-            return secure_call_eval(self.operator_properties)
+            return literal_to_dict(self.operator_properties)
         except Exception as e:
             print('Properties Error')
             print(self.name)
@@ -361,7 +339,7 @@ class OperatorProperty:
     def __operator_properties_is_validity__(self) -> bool:
         """反回操作符属性是否有效的布尔值"""
         try:
-            secure_call_eval(self.operator_properties)
+            literal_to_dict(self.operator_properties)
             return True
         except Exception as e:
             from ..utils.public import get_debug
@@ -373,11 +351,7 @@ class OperatorProperty:
             return False
 
 
-class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperator, RunOperatorPropertiesSync):
-
-    @property
-    def operator_is_script(self):
-        return self.operator_type == "SCRIPT"
+class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorPropertiesSync):
 
     @property
     def operator_is_operator(self):
@@ -391,8 +365,6 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, ScriptOperat
         """运行此元素的操作符"""
         if self.operator_is_operator:
             return self.__running_by_bl_idname__()
-        elif self.operator_is_script:
-            return self.__running_by_script__()
         elif self.operator_is_modal:
             return self.__running_by_modal__()
         else:

@@ -109,14 +109,12 @@ def get_addon_keymap(keymap: str) -> 'bpy.types.KeyMap':
 
 
 def find_kmi() -> ["bpy.types.KeyMap", "bpy.types.KeyMapItem"]:
-    """查找addon快捷键下的操作符
-    # for kc in [kcs.user, kcs.addon, kcs.default, kcs.active]:
-    """
+    """Find gesture operator keymap items registered by this add-on only."""
     from ..ops.gesture import GestureOperator
     id_name = GestureOperator.bl_idname
     kcs = bpy.context.window_manager.keyconfigs
 
-    for km in [*kcs.addon.keymaps.values(), *kcs.active.keymaps.values()]:
+    for km in kcs.addon.keymaps.values():
         kmi_item = km.keymap_items.find_from_operator(id_name)
         if kmi_item:
             return km, kmi_item

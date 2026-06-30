@@ -153,6 +153,7 @@ class GesturePassThroughKeymap:
 
         area_type = context.area.type
         region_type = context.region.type
+        # Read-only: inspect active keymaps for pass-through, never modify them.
         keymaps = context.window_manager.keyconfigs.active.keymaps
 
         view_type = getattr(context.space_data, "view_type", None)

@@ -1,0 +1,24 @@
+"""Built-in operators replacing removed script element actions."""
+
+import bpy
+
+
+class ClearAllEdgeProperties(bpy.types.Operator):
+    """Clear crease, bevel weight, seam, sharp, and freestyle edge data."""
+
+    bl_idname = "gesture.clear_all_edge_properties"
+    bl_label = "Clear All Edge Properties"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        bpy.ops.transform.edge_crease('EXEC_DEFAULT', value=-1)
+        bpy.ops.transform.edge_bevelweight('EXEC_DEFAULT', value=-1)
+        bpy.ops.mesh.mark_seam(clear=True)
+        bpy.ops.mesh.mark_sharp(clear=True)
+        bpy.ops.mesh.mark_sharp(clear=True, use_verts=True)
+        bpy.ops.mesh.mark_freestyle_edge(clear=True)
+        return {'FINISHED'}

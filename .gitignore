@@ -1,4 +1,5 @@
 .idea
+.cursor
 .vs
 __pycache__
 /backups/*.json

@@ -5,14 +5,14 @@ from bpy.props import StringProperty, EnumProperty
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
 from ..utils.public import by_path_set_value, PublicMouseModal
-from ..utils.secure_call import secure_call_eval
+from ..utils.secure_call import resolve_context_path
 
 
 class StoreValue:
     ___value___ = None
 
     def __store__(self):
-        self.___value___ = secure_call_eval(f'bpy.context.{self.data_path}')
+        self.___value___ = resolve_context_path(bpy.context, self.data_path)
 
     def __restore__(self):
         setattr(self, self.data_path, self.___value___)
@@ -55,7 +55,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
             try:
                 if len(sp) > 1:
                     a, b = sp[:-1], sp[-1]
-                    prop = secure_call_eval(f"bpy.context.{'.'.join(a)}").rna_type.properties[b]
+                    prop = resolve_context_path(bpy.context, '.'.join(a)).rna_type.properties[b]
                     name = pgettext(prop.name)
                     if prop.type == 'INT':
                         return f"{name} %d"
@@ -92,7 +92,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
             by_path_set_value(bpy.context, self.data_path.split("."), value)
             header_text = self.__header_text__
             if header_text:
-                value = secure_call_eval(f"bpy.context.{self.data_path}")
+                value = resolve_context_path(bpy.context, self.data_path)
                 try:
                     if self.___value___ is not None:
                         header_text = header_text % value
