@@ -70,7 +70,7 @@ class GestureDraw:
         GestureDraw.draw_gesture_key(column)
 
     @staticmethod
-    def draw_element(layout: bpy.types.UILayout) -> None:
+    def draw_element(layout: bpy.types.UILayout, *, include_modal: bool = True) -> None:
         from ..ui.ui_list import ElementUIList
 
         pref = get_pref()
@@ -90,7 +90,7 @@ class GestureDraw:
                 ag,
                 'index_element',
             )
-            DrawElement.draw_property(sub_column)
+            DrawElement.draw_property(sub_column, include_modal=include_modal)
 
             DrawElement.draw_element_cure(row)
         else:

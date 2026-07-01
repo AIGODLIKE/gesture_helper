@@ -53,7 +53,7 @@ class GestureElementPanel(bpy.types.Panel, PublicProperty):
     def draw(self, context):
         layout = self.layout
         layout.enabled = self.pref.enabled
-        GestureDraw.draw_element(layout)
+        GestureDraw.draw_element(layout, include_modal=False)
 
 
 class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
