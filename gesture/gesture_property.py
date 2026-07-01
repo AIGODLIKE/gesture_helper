@@ -21,6 +21,10 @@ class GestureProperty(PublicProperty):
 
     def update_index(self, _) -> None:
         """Update element index selection."""
+        from ..utils.selection import is_syncing_selection_indexes
+
+        if is_syncing_selection_indexes():
+            return
         try:
             el = self.element.values()[self.index_element]
             if el and not el.radio:

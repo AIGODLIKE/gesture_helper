@@ -8,9 +8,10 @@ from ..utils.public_ui import icon_two
 
 
 class ElementDraw:
-    def draw_item(self, layout: 'bpy.types.UILayout'):
+    def draw_item(self, layout: 'bpy.types.UILayout', *, _active_element=None):
         pref = get_pref()
         draw = pref.draw_property
+        active = _active_element if _active_element is not None else pref.active_element
 
         layout.context_pointer_set('move_element', self)
         layout.context_pointer_set('cut_element', self)
@@ -37,7 +38,7 @@ class ElementDraw:
             r = right.row()
             r.active = r.enabled = self.is_can_be_cut
             r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
-        self.draw_item_child(column)
+        self.draw_item_child(column, active)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
         if pref is None:
@@ -79,12 +80,12 @@ class ElementDraw:
             layout.prop(self, 'radio', text='', icon='NONE', emboss=False)
         self.draw_icon(layout)
 
-    def draw_item_child(self, layout):
+    def draw_item_child(self, layout, active_element=None):
         if self.show_child and len(self.element):
             child = layout.box().column(align=True)
             child.enabled = self.enabled
             for element in self.element:
-                element.draw_item(child)
+                element.draw_item(child, _active_element=active_element)
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:

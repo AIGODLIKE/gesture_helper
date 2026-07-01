@@ -34,7 +34,8 @@ class ElementUIList(bpy.types.UIList, PublicProperty):
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        item.draw_item(layout.column(align=True))
+        active = self.pref.active_element
+        item.draw_item(layout.column(align=True), _active_element=active)
 
     def draw_filter(self, context, layout):
         from ..element.element_cure import ElementCURE

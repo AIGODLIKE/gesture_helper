@@ -7,7 +7,7 @@ from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
 from .cache_state import CacheState
-from .iteration import iter_elements
+from .selection import resolve_active_element
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 BACKUPS_FOLDER = abspath(join(ADDON_FOLDER, 'backups'))
@@ -171,14 +171,8 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_element(self):
-        """Return active element (live tree walk, avoids stale structure cache)."""
-        act_ges = self.active_gesture
-        if not act_ges or not len(act_ges.element):
-            return None
-        for element in iter_elements(act_ges):
-            if element.radio:
-                return element
-        return None
+        """Return active element (cached per gesture, index-synced)."""
+        return resolve_active_element(self.active_gesture)
 
     @property
     def active_event(self):
