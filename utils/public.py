@@ -6,6 +6,7 @@ from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
+from .iteration import iter_elements
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 BACKUPS_FOLDER = abspath(join(ADDON_FOLDER, 'backups'))
@@ -164,12 +165,13 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_element(self):
-        """Return active element."""
+        """Return active element (live tree walk, avoids stale structure cache)."""
         act_ges = self.active_gesture
-        if act_ges and len(act_ges.element):
-            for element in act_ges.element_iteration:
-                if element.radio:
-                    return element
+        if not act_ges or not len(act_ges.element):
+            return None
+        for element in iter_elements(act_ges):
+            if element.radio:
+                return element
         return None
 
     @property

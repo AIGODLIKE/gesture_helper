@@ -30,7 +30,7 @@ class ElementAddProperty:
     @staticmethod
     @cache_update_lock
     def update_selected_type():
-        PublicCacheFunc.cache_clear()
+        PublicCacheFunc.clear_derived_only()
 
     @property
     def is_selected_structure(self) -> bool:
@@ -202,7 +202,11 @@ class ElementProperty(
     ElementExtension
 ):
     collection: CollectionProperty
-    enabled: BoolProperty(name='Enabled', default=True, update=lambda self, context: self.cache_clear())
+    enabled: BoolProperty(
+        name='Enabled',
+        default=True,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
 
     show_child: BoolProperty(name='Show child', default=False)
     level: IntProperty(name="Element Level", default=0)

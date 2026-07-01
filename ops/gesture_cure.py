@@ -41,10 +41,7 @@ class GestureCURE:
         def execute(self, _):
             pref = self.pref
             add = pref.gesture.add()
-            self.cache_clear()
             add.name = 'Gesture'
-            # if ag := pref.active_gesture:
-            #     ag.to_temp_kmi() # Sync temp KMI on add or deleted shortcut data may leak
             GestureKeymap.key_restart()
             self.cache_clear()
             self.tag_redraw()
@@ -103,5 +100,4 @@ class GestureCURE:
             self.active_gesture.copy()
             self.cache_clear()
             self.pref.gesture[-1].__fix_duplicate_name__()
-            self.cache_clear()
             return {'FINISHED'}
