@@ -1,6 +1,6 @@
 import bpy
 
-from ..utils.public_key import get_kmi_operator_properties
+from .addon_keymap import get_kmi_operator_properties
 
 
 class GesturePassThroughKeymap:

@@ -407,7 +407,7 @@ class KeymapEvent:
     @property
     def temp_kmi(self):
         """临时事件的快捷键"""
-        from ..utils.public_key import get_temp_kmi
+        from ..gesture.temp_keymap import get_temp_kmi
         hs = str(hash(self))
         temp_kmi = get_temp_kmi("modal_event_" + hs, {}, {"type": self.event_type, "value": "PRESS"})
         return temp_kmi

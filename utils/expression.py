@@ -1,4 +1,4 @@
-"""Safe parsing and evaluation without eval/exec."""
+"""Parse poll expressions and operator property literals without eval/exec."""
 
 from __future__ import annotations
 
@@ -80,8 +80,8 @@ def literal_to_dict(value) -> dict:
     raise ValueError(f"Expected dict literal, got {type(parsed)!r}")
 
 
-class _SafeConditionEvaluator:
-    """Evaluate a restricted subset of Python expressions for poll checks."""
+class _ConditionExpressionParser:
+    """Parse a restricted subset of Python expressions for poll checks."""
 
     def __init__(self, names: dict):
         self._names = names
@@ -94,13 +94,13 @@ class _SafeConditionEvaluator:
             'min': min,
         }
 
-    def evaluate(self, expression: str):
+    def parse(self, expression: str):
         if not expression or not expression.strip():
             return True
         tree = ast.parse(expression, mode='eval')
-        return self._eval_node(tree.body)
+        return self._parse_node(tree.body)
 
-    def _eval_node(self, node):
+    def _parse_node(self, node):
         if isinstance(node, ast.Constant):
             return node.value
         if isinstance(node, ast.Name):
@@ -110,36 +110,36 @@ class _SafeConditionEvaluator:
                 return {'True': True, 'False': False, 'None': None}[node.id]
             raise ValueError(f"Name '{node.id}' is not allowed")
         if isinstance(node, ast.Attribute):
-            base = self._eval_node(node.value)
+            base = self._parse_node(node.value)
             return getattr(base, node.attr)
         if isinstance(node, ast.Subscript):
-            base = self._eval_node(node.value)
+            base = self._parse_node(node.value)
             sl = node.slice
             if isinstance(sl, ast.Slice):
-                lower = self._eval_node(sl.lower) if sl.lower else None
-                upper = self._eval_node(sl.upper) if sl.upper else None
-                step = self._eval_node(sl.step) if sl.step else None
+                lower = self._parse_node(sl.lower) if sl.lower else None
+                upper = self._parse_node(sl.upper) if sl.upper else None
+                step = self._parse_node(sl.step) if sl.step else None
                 key = slice(lower, upper, step)
             else:
-                key = self._eval_node(sl)
+                key = self._parse_node(sl)
             return base[key]
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-            return not self._eval_node(node.operand)
+            return not self._parse_node(node.operand)
         if isinstance(node, ast.BoolOp):
             if isinstance(node.op, ast.And):
                 for value in node.values:
-                    if not self._eval_node(value):
+                    if not self._parse_node(value):
                         return False
                 return True
             if isinstance(node.op, ast.Or):
                 for value in node.values:
-                    if self._eval_node(value):
+                    if self._parse_node(value):
                         return True
                 return False
         if isinstance(node, ast.Compare):
-            left = self._eval_node(node.left)
+            left = self._parse_node(node.left)
             for op, comparator in zip(node.ops, node.comparators):
-                right = self._eval_node(comparator)
+                right = self._parse_node(comparator)
                 if not _ALLOWED_COMPARE_OPS[type(op)](left, right):
                     return False
                 left = right
@@ -150,25 +150,25 @@ class _SafeConditionEvaluator:
             func = self._allowed_calls.get(node.func.id)
             if func is None:
                 raise ValueError(f"Function '{node.func.id}' is not allowed")
-            args = [self._eval_node(arg) for arg in node.args]
-            kwargs = {kw.arg: self._eval_node(kw.value) for kw in node.keywords}
+            args = [self._parse_node(arg) for arg in node.args]
+            kwargs = {kw.arg: self._parse_node(kw.value) for kw in node.keywords}
             return func(*args, **kwargs)
         if isinstance(node, ast.List):
-            return [self._eval_node(elt) for elt in node.elts]
+            return [self._parse_node(elt) for elt in node.elts]
         if isinstance(node, ast.Tuple):
-            return tuple(self._eval_node(elt) for elt in node.elts)
+            return tuple(self._parse_node(elt) for elt in node.elts)
         if isinstance(node, ast.Set):
-            return {self._eval_node(elt) for elt in node.elts}
+            return {self._parse_node(elt) for elt in node.elts}
         if isinstance(node, ast.Dict):
             return {
-                self._eval_node(key): self._eval_node(value)
+                self._parse_node(key): self._parse_node(value)
                 for key, value in zip(node.keys, node.values)
             }
         raise ValueError(f"Unsupported expression node: {type(node).__name__}")
 
 
-def safe_eval_condition(expression: str, names: dict | None = None):
+def evaluate_condition(expression: str, names: dict | None = None):
     """Evaluate poll-style boolean expressions without eval/exec."""
     if names is None:
         names = get_condition_names()
-    return _SafeConditionEvaluator(names).evaluate(expression)
+    return _ConditionExpressionParser(names).parse(expression)

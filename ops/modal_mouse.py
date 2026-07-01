@@ -5,7 +5,7 @@ from bpy.props import StringProperty, EnumProperty
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
 from ..utils.public import by_path_set_value, PublicMouseModal
-from ..utils.secure_call import resolve_context_path
+from ..utils.expression import resolve_context_path
 
 
 class StoreValue:

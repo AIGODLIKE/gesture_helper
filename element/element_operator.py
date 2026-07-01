@@ -8,7 +8,7 @@ from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
-from ..utils.secure_call import literal_to_dict
+from ..utils.expression import literal_to_dict
 
 
 class ModalProperty:
@@ -163,13 +163,13 @@ class RunOperatorPropertiesSync:
     @property
     def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
         """操作符临时 keymap item"""
-        from ..utils.public_key import get_temp_kmi_by_id_name
+        from ..gesture.temp_keymap import get_temp_kmi_by_id_name
         return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
     @property
     def operator_tmp_kmi_properties(self) -> dict:
         """操作符临时 keymap item 属性"""
-        from ..utils.public_key import get_kmi_operator_properties
+        from ..gesture.addon_keymap import get_kmi_operator_properties
         properties = get_kmi_operator_properties(self.operator_tmp_kmi)
         return properties
 

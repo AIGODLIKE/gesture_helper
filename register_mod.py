@@ -5,7 +5,7 @@ from .gesture import gesture_keymap
 # from .ops.qucik_add.keymap import GestureQuickAddKeymap
 from .src import translate
 from .utils import public_cache
-from .utils.public_key import clear_temp_keymap
+from .gesture.temp_keymap import clear_temp_keymap
 
 module_list = (
     ui,

@@ -18,12 +18,10 @@ from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.property import set_property, get_kmi_property
 from ..utils.public import get_debug
 from ..utils.public_cache import cache_update_lock
-from ..utils.public_key import get_kmi_operator_properties
-from ..utils.public_key import get_temp_kmi, get_temp_keymap, add_addon_kmi, draw_kmi
+from .addon_keymap import AddonKeymapRegistry, add_addon_kmi, clear_orphan_gesture_kmis
+from .temp_keymap import draw_temp_keymap_item, get_temp_kmi
 
 default_key = {'type': 'RIGHTMOUSE', 'value': 'PRESS'}
-
-__key_data__ = []  # [(keymap:kmi),]
 
 
 class KeymapProperty:
@@ -69,7 +67,7 @@ class GestureKeymap(KeymapProperty):
         return get_kmi_property(self.temp_kmi)
 
     @property
-    def temp_kmi(self) -> 'bpy.types.KeyMapItem':
+    def temp_kmi(self) -> bpy.types.KeyMapItem:
         from ..ops import set_key
         return get_temp_kmi(set_key.OperatorTempModifierKey.bl_idname, {'gesture': self.name})
 
@@ -95,9 +93,7 @@ class GestureKeymap(KeymapProperty):
         set_property(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
-        layout.context_pointer_set('keymap', get_temp_keymap())
-
-        draw_kmi(layout, self.temp_kmi, self.keymaps)
+        draw_temp_keymap_item(layout, self.temp_kmi, self.keymaps)
         if get_debug():
             layout.label(text=str(self.key))
             layout.label(text=str(self.keymaps))
@@ -107,19 +103,18 @@ class GestureKeymap(KeymapProperty):
         self.from_temp_key_update_data()
 
     def key_load(self) -> None:
-        global __key_data__
-        if self.is_enable:
-            kmi_data = self.add_kmi_data
-            if get_debug("key"):
-                content = {k: v for k, v in self.add_kmi_data.items() if k in ("type", "value")}
-                print(f"Add Kmi\t{content} to {self.keymaps}", flush=True)
-            for keymap in self.keymaps:
-                add_addon_kmi(keymap, kmi_data, {"gesture": self.name})
+        if not self.is_enable:
+            return
+        kmi_data = dict(self.add_kmi_data)
+        properties = {"gesture": self.name}
+        if get_debug("key"):
+            content = {k: v for k, v in kmi_data.items() if k in ("type", "value")}
+            print(f"Add Kmi\t{content} to {self.keymaps}", flush=True)
+        for keymap_name in self.keymaps:
+            add_addon_kmi(keymap_name, kmi_data, properties)
 
     @cache_update_lock
     def key_update(self) -> None:
-        # 在keymap被改时更新
-        # 在key被改时更新
         self.key_restart()
         if get_debug('key'):
             caller_name = traceback.extract_stack()[-2][2]
@@ -134,40 +129,25 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_all_unload(cls) -> None:
-        """卸载所有快捷键"""
-        for km, kmi in __key_data__:
-            km.keymap_items.remove(kmi)
-        __key_data__.clear()
+        """卸载所有快捷键（仅使用注册列表）"""
+        AddonKeymapRegistry.clear()
 
     @classmethod
-    def key_clear_legacy(cls):
-        """清理遗留快捷键"""
-        from ..utils.public_key import find_kmi
-
+    def key_clear_legacy(cls) -> int:
+        """清理快捷键，包含遗留项扫描（register/unregister 时调用）"""
         cls.key_all_unload()
-
-        clear_count = 0
-
-        km, kmi = find_kmi()
-        while kmi:
-            if get_debug('key'):
-                print(f"Gesture Remove KMI\t{get_kmi_operator_properties(kmi)}\t{km.name}", flush=True)
-            km.keymap_items.remove(kmi)
-            clear_count += 1
-            if kmi:
-                km, kmi = find_kmi()
-
+        clear_count = clear_orphan_gesture_kmis()
         if get_debug('key'):
             print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
         return clear_count
 
     @classmethod
     def key_restart(cls) -> None:
-        """重置键位"""
-        count = cls.key_clear_legacy()
+        """重置键位（仅通过注册列表卸载后重新加载）"""
+        cls.key_all_unload()
         cls.key_all_load()
         if get_debug('key'):
-            print("Gesture Key Restart", count)
+            print("Gesture Key Restart", AddonKeymapRegistry.entry_count())
             import traceback
             for i in traceback.extract_stack():
                 print(i)
