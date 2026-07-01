@@ -62,21 +62,21 @@ def by_path_set_value(point, data_path: list[str], value) -> None:
 @cache
 def get_gesture_direction_items(iteration):
     direction = {}
-    last_selected_structure = None  # 如果不是连续的选择结构
+    last_selected_structure = None  # Tracks consecutive selection structures
     for item in iteration:
-        if item.is_selected_structure:  # 是选择结构
-            if item.__selected_structure_is_validity__:  # 是可用的选择结构
-                # 是True
+        if item.is_selected_structure:  # Selection structure
+            if item.__selected_structure_is_validity__:  # Valid selection structure
+                # Poll passed
                 poll = (item.is_selected_else or item.poll_bool)
                 if poll and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_direction_items(item.element)
                     direction.update(child)
                     last_selected_structure = item
-            continue  # 不运行后面的
-        elif item.is_child_gesture or item.is_operator:  # 是子项或者是操作符
+            continue  # Skip non-structure handling below
+        elif item.is_child_gesture or item.is_operator:  # Child gesture or operator
             if item.enabled:
                 direction[item.direction] = item
-        if item.enabled:  # 如果不是选择结构并
+        if item.enabled:  # Reset structure chain when enabled
             last_selected_structure = None
     return direction
 
@@ -84,22 +84,22 @@ def get_gesture_direction_items(iteration):
 @cache
 def get_gesture_extension_items(iteration):
     extension = []
-    last_selected_structure = None  # 如果不是连续的选择结构
+    last_selected_structure = None  # Tracks consecutive selection structures
     for item in iteration:
-        if item.is_selected_structure:  # 是选择结构
-            if item.__selected_structure_is_validity__:  # 是可用的选择结构
-                # 是True
+        if item.is_selected_structure:  # Selection structure
+            if item.__selected_structure_is_validity__:  # Valid selection structure
+                # Poll passed
                 poll = (item.is_selected_else or item.poll_bool)
                 if poll and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_extension_items(item.element)
                     extension.extend(child)
                     last_selected_structure = item
-            continue  # 不运行后面的
+            continue  # Skip non-structure handling below
         elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
-            # 是子项或者是操作符
+            # Child gesture, operator, or divider
             if item.enabled:
                 extension.append(item)
-        if item.enabled:  # 如果不是选择结构并
+        if item.enabled:  # Reset structure chain when enabled
             last_selected_structure = None
     return extension
 
@@ -154,7 +154,7 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_gesture(self):
-        """反回活动的手势"""
+        """Return active gesture."""
         try:
             index = getattr(self.pref, "index_gesture", None)
             if index is not None:
@@ -164,7 +164,7 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_element(self):
-        """反回活动的元素"""
+        """Return active element."""
         act_ges = self.active_gesture
         if act_ges and len(act_ges.element):
             for element in act_ges.element_iteration:
@@ -174,22 +174,21 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_event(self):
-        """反回活动手势的活动元素的活动modal事件"""
+        """Return active modal event on active element."""
         if self.active_element:
             return self.active_element.active_event
         return None
 
     @classmethod
     def update_state(cls):
-        """更新临时快捷键的状态
-        操作符"""
+        """Sync temporary keymap state for operators."""
         pref = get_pref()
         ag = pref.active_gesture
         ae = pref.active_element
         try:
             if ag:
                 ag.__fix_duplicate_name__()
-                ag.to_temp_kmi()  # 需要在重命名之后,不然会导致快捷键更新错误
+                ag.to_temp_kmi()  # Must run after rename to avoid keymap sync errors
             if ae:
                 if ae.element_type == "OPERATOR" and ae.operator_type == "OPERATOR":
                     ae.to_operator_tmp_kmi()
@@ -201,13 +200,13 @@ class PublicProperty(PublicCacheFunc):
 
     @staticmethod
     def __tn__(text):
-        """翻译名称"""
+        """Translate display name."""
         from ..src.translate import __name_translate__
         return __name_translate__(text)
 
     @staticmethod
     def __tp__(text):
-        """翻译预设"""
+        """Translate preset name."""
         from ..src.translate import __preset_translate__
         return __preset_translate__(text)
 
@@ -217,35 +216,35 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def __is_move_element__(self) -> bool:
-        """反回是在移动元素模式的布尔值"""
+        """Return whether element move mode is active."""
         return self.__element_move_item__ is not None
 
     @property
     def __element_move_item__(self) -> "Element":
-        """反回移动的element项"""
+        """Return element being moved."""
         from ..element.element_cure import ElementCURE
         return ElementCURE.MOVE.move_item
 
     @property
     def __is_cut_element__(self) -> bool:
-        """反回是在剪切元素模式的布尔值"""
+        """Return whether element cut mode is active."""
         return self.__element_cut_item__ is not None
 
     @property
     def __element_cut_item__(self) -> "Element":
-        """反回剪切的element项"""
+        """Return cut element data."""
         from ..element.element_cure import ElementCURE
         return ElementCURE.CUT.__cut_data__
 
     @staticmethod
     def __get_icon__(key) -> int:
-        """获取icon"""
+        """Get icon id for key."""
         from .icons import Icons
         return Icons.get(key).icon_id
 
     @property
     def ___dict_data___(self) -> dict:
-        """反回当前项的数据"""
+        """Return serializable data for this item."""
         from .property import get_property
         return get_property(self)
 
@@ -277,14 +276,14 @@ class PublicOperator(bpy.types.Operator):
 
 
 class PublicUniqueNamePropertyGroup:
-    """不重复名称"""
+    """Unique name property group."""
 
     names_iteration: list
     __is_check_duplicate_name__ = True
 
     @staticmethod
     def __generate_new_name__(names, new_name):
-        # 检查新名称是否已存在,TIPS 最大999
+        # Ensure unique name; max suffix .999
         if new_name in names:
             base_name = new_name
             count = 1
@@ -334,13 +333,12 @@ class PublicSortAndRemovePropertyGroup:
         ...
 
     index = property(fget=_get_index, fset=_set_index,
-                     doc='通过当前项的index,来设置索引的index值,以及移动项')
+                     doc='Set collection index from item index and move items')
 
     @property
     def is_last(self) -> bool:
         """
-        反回此手势 是否为最后一个的布尔值
-        用于移动手势位置
+        Return whether this item is last in collection (for reordering)
         @rtype: object
         """
         return self == self.collection[-1]
@@ -348,8 +346,7 @@ class PublicSortAndRemovePropertyGroup:
     @property
     def is_first(self) -> bool:
         """
-        反回此手势 是否为第一个的布尔值
-        用于移动手势位置
+        Return whether this item is first in collection (for reordering)
         @return:
         """
         return self == self.collection[0]

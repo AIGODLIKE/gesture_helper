@@ -2,7 +2,7 @@ from ..debug import DEBUG_CACHE
 
 
 def cache_update_lock(func, cache_clear=False):
-    """缓存更新锁"""
+    """Cache update lock decorator."""
     cls = PublicCache
 
     def wap(*args, **kwargs):
@@ -25,12 +25,12 @@ class PublicCache:
     MOVE
     """
 
-    __element_prev_cache__ = {}  # 上一个element
-    __element_child_iteration__ = {}  # 元素子级迭代 {element:[child_element]}
-    __element_parent_element_cache__ = {}  # 父级元素
-    __element_parent_gesture_cache__ = {}  # 父级手势
+    __element_prev_cache__ = {}  # Previous element
+    __element_child_iteration__ = {}  # Child iteration {element: [child_element]}
+    __element_parent_element_cache__ = {}  # Parent element
+    __element_parent_gesture_cache__ = {}  # Parent gesture
 
-    __gesture_element_iteration__ = {}  # 手势子级迭代{gesture:[child_element]}
+    __gesture_element_iteration__ = {}  # Gesture iteration {gesture: [child_element]}
     __is_updatable__ = True
 
     @staticmethod

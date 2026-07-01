@@ -8,7 +8,7 @@ class PreferencesDraw(GestureDraw):
 
     @staticmethod
     def preferences_draw(layout: bpy.types.UILayout):
-        """绘制偏好设置
+        """Draw preferences panel
         """
         pref = get_pref()
         column = layout.column(align=True)
@@ -30,7 +30,7 @@ class PreferencesDraw(GestureDraw):
 
     @staticmethod
     def draw_topbar(layout: 'bpy.types.UILayout'):
-        """绘制顶部栏"""
+        """Draw preferences header bar."""
         pref = get_pref()
         row = layout.row(align=True)
         rr = row.row(align=True)
@@ -46,7 +46,7 @@ class PreferencesDraw(GestureDraw):
     @staticmethod
     def draw_ui_property(layout):
         """
-        桧制属性部分
+        Draw property section
         :param layout:
         :return:
         """
@@ -77,7 +77,7 @@ class PreferencesDraw(GestureDraw):
 
     @staticmethod
     def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':
-        """退出按钮"""
+        """Draw exit button."""
         layout.alert = True
         from ..ops.switch_ui import SwitchGestureWindow
         return layout.operator(SwitchGestureWindow.bl_idname,

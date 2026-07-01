@@ -104,11 +104,11 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
 
     def draw_item(self, layout: 'bpy.types.UILayout', item, data):
 
-        is_parentheses = item.get('parentheses', data.get('parentheses', False))  # 是有小括号
-        prefix = item.get('prefix', data.get('prefix', ''))  # 前缀
-        suffix = item.get('suffix', data.get('suffix', ''))  # 后缀
-        name = item.get('name', 'unknown')  # 名称
-        notation = self.__get_notation__(item.get('notation', data.get('notation')))  # 符号
+        is_parentheses = item.get('parentheses', data.get('parentheses', False))  # Has parentheses
+        prefix = item.get('prefix', data.get('prefix', ''))  # Prefix
+        suffix = item.get('suffix', data.get('suffix', ''))  # Suffix
+        name = item.get('name', 'unknown')  # Name
+        notation = self.__get_notation__(item.get('notation', data.get('notation')))  # Notation
 
         info = item.get('item')
         is_not_str = item.get('not_str', data.get("not_str", False))

@@ -9,24 +9,24 @@ from ..utils.translate import translate_lines_text
 
 
 class ElementCURE:
-    """增删查改"""
+    """CRUD operations for elements."""
 
     @cache_update_lock
     def copy(self):
-        """复制元素"""
+        """Copy element."""
         from ..utils.property import __set_prop__
         __set_prop__(self.parent, 'element', {'0': self.active_element.___dict_data___})
 
     @property
     def is_movable(self) -> bool:
-        """是可以移动到的项目"""
+        """Return whether this item can be moved to."""
 
         move_from = ElementCURE.MOVE.move_item
         if move_from.parent_element == self:
-            # 移动到当前项的父级
+            # Cannot move to current item parent
             return False
         elif self in move_from.element_child_iteration:
-            # 移动到的是被移动的子级
+            # Target is a child of the item being moved
             return False
 
         is_ok = move_from and (self not in list(move_from.element))
@@ -36,7 +36,7 @@ class ElementCURE:
 
     @property
     def is_can_be_cut(self) -> bool:
-        """是可剪切的"""
+        """Return whether this item can be cut."""
         return self.is_child_gesture or self.is_selected_structure
 
     class ElementPoll(PublicProperty, PublicOperator, PublicCacheFunc):
@@ -68,7 +68,7 @@ class ElementCURE:
             relationship = get_pref().add_element_property.relationship
             active = self.active_element
             if relationship == 'SAME' and active:
-                # 如果没有同级则快进到根
+                # If no sibling level, use root collection
                 return active.parent.element
             elif relationship == 'CHILD' and active and active.is_have_add_child:
                 return active.element
@@ -94,7 +94,7 @@ class ElementCURE:
                     self.active_element.show_child = True
                 add.cache_clear()
                 add.update_radio()
-            elif self.pref.active_element is None:  # 空的元素时处理,默认选中第一个添加的元素
+            elif self.pref.active_element is None:  # No active element: select first added item
                 add.cache_clear()
                 add.update_radio()
 
@@ -133,10 +133,10 @@ class ElementCURE:
 
             ae.remove()
 
-            if is_last and index != 0:  # 被删除项是最后一个
-                parent.index_element = index - 1  # 索引-1,保持始终有一个选择的
+            if is_last and index != 0:  # Deleted item was last
+                parent.index_element = index - 1  # Decrement index to keep a selection
                 parent.element[parent.index_element].radio = True
-            elif -1 < index < len(parent.element):  # 被删除项是中间的,不需要修改索引值
+            elif -1 < index < len(parent.element):  # Deleted item was in the middle; index unchanged
                 parent.element[index].radio = True
 
             self.cache_clear()
@@ -176,7 +176,7 @@ class ElementCURE:
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
             elif move_from:
-                # 有移动项,直接移动
+                # Move item already selected; perform move
                 self.move()
                 ae = self.active_element
                 self.cache_clear()
@@ -223,7 +223,7 @@ class ElementCURE:
         bl_label = 'Cut gesture item'
         bl_idname = 'gesture.element_cut'
 
-        __cut_data__ = None  # 剪切的数据
+        __cut_data__ = None  # Cut buffer data
 
         cancel_cut: BoolProperty(default=False, options={'SKIP_SAVE'})
 
@@ -232,7 +232,7 @@ class ElementCURE:
             from ..utils.property import __set_prop__
             cut = ElementCURE.CUT.__cut_data__
 
-            # 移动中
+            # During cut/move paste
             cut_to = getattr(bpy.context, 'cut_element', None)
             if cut_to:
                 __set_prop__(cut_to, 'element', {'0': cut})
@@ -275,7 +275,7 @@ class ElementCURE:
                 ElementCURE.CUT.__cut_data__ = None
                 return {'FINISHED'}
 
-            # 选择一个移动项
+            # Select item to cut
             ae = self.pref.active_element
             ElementCURE.CUT.__cut_data__ = ae.___dict_data___
             ae.remove()

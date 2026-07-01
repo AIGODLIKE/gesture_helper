@@ -5,7 +5,7 @@ from bpy.props import StringProperty
 from ..utils.public import get_debug
 from ..utils.expression import evaluate_condition
 
-poll: str = """poll表达式
+poll: str = """Poll expression template
 {'bpy': bpy,
 'C': bpy.context,
 'D': bpy.data,
@@ -17,10 +17,10 @@ poll: str = """poll表达式
 
 
 class ElementPoll:
+
     @property
     def __try_call_poll_bool__(self) -> bool:
-        """尝试调用poll bool获取值
-        可能会报错"""
+        """Try to evaluate poll bool; may raise."""
         poll_res = evaluate_condition(self.poll_string)
         if get_debug("poll"):
             print(f"poll_bool\t{poll_res}\t{self.poll_string}")
@@ -29,7 +29,7 @@ class ElementPoll:
 
     @property
     def __poll_bool_is_validity__(self) -> bool:
-        """反回poll bool string 是否可用的布尔值"""
+        """Return whether poll bool string is valid."""
         try:
             self.__try_call_poll_bool__
             return True
@@ -46,7 +46,7 @@ class ElementPoll:
 
     @property
     def __poll_exception_info__(self) -> str:
-        """反回poll错误的信息"""
+        """Return poll error message."""
         try:
             self.__try_call_poll_bool__
             return ""
@@ -55,11 +55,7 @@ class ElementPoll:
 
     @property
     def poll_bool(self) -> bool:
-        """反回当前self的poll
-
-        Returns:
-            bool: _description_
-        """
+        """Return current poll evaluation."""
         try:
             return self.__try_call_poll_bool__
         except Exception as e:

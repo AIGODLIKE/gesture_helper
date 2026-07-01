@@ -1,7 +1,7 @@
 import re
 from functools import cache
 
-exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
+exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 import bpy
 
@@ -17,7 +17,7 @@ def is_blender_close() -> bool:
 
 @cache
 def check_china(text):
-    """全部是中文"""
+    """Return True if text is entirely Chinese characters."""
     if not isinstance(text, str):
         return False
     return bool(re.compile(r'[\u4e00-\u9fa5]').findall(text))
@@ -25,7 +25,7 @@ def check_china(text):
 
 @cache
 def including_chinese(text) -> bool:
-    """包含中文"""
+    """Return True if text contains any Chinese characters."""
     if not isinstance(text, str):
         return False
     return bool(re.compile(r'[\u4e00-\u9fff]+').search(text))
@@ -33,22 +33,22 @@ def including_chinese(text) -> bool:
 
 @cache
 def contains_uppercase(s) -> bool:
-    """只要包含大写"""
+    """Return True if text contains any uppercase letter."""
     return any(char.isupper() for char in s)
 
 
 @cache
 def has_special_characters(input_string):
     """
-    检查字符串是否包含字母、数字和下划线之外的字符
+    Check whether the string contains characters other than letters, digits, and underscores.
 
-    参数:
-    input_string (str): 要检查的字符串
+    Args:
+    input_string (str): String to check.
 
-    返回:
-    bool: 如果包含非字母数字和下划线字符返回True，否则返回False
+    Returns:
+    bool: True if non-alphanumeric/underscore characters are present, else False.
     """
-    # 使用正则表达式匹配任何非字母、数字或下划线的字符
+    # Match any character that is not a letter, digit, or underscore
     pattern = r'[^A-Za-z0-9_.]'
     if re.search(pattern, input_string):
         return True

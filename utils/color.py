@@ -32,12 +32,12 @@ def hsv_to_rgb(h, s, v):
 
 
 def linear_to_srgb(c_linear):
-    # 对每个颜色分量进行伽马校正
+    # Apply gamma correction per channel
     c_srgb = np.where(c_linear <= 0.0031308, 12.92 * c_linear, 1.055 * (c_linear ** (1 / 2.4)) - 0.055)
-    return c_srgb  # 假设image是一个linear RGB图像
+    return c_srgb  # Assumes linear RGB input
 
 
 def srgb_to_linear(c_srgb):
-    # 对每个颜色分量进行逆伽马校正
+    # Apply inverse gamma per channel
     c_linear = np.where(c_srgb <= 0.04045, c_srgb / 12.92, ((c_srgb + 0.055) / 1.055) ** 2.4)
     return c_linear

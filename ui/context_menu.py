@@ -8,7 +8,7 @@ from ..utils.public import get_pref
 
 class ContextMenu(bpy.types.Menu):
     bl_label = "Button Context Menu"
-    show_context_menu = False  # 用于在添加后退出面板
+    show_context_menu = False  # Exit panel after add
 
     def draw(self, context):
         self.layout.separator()

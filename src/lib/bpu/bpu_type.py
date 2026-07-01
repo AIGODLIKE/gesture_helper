@@ -30,44 +30,44 @@ class BPUType(Enum):
 
     @property
     def is_separator(self) -> bool:
-        """是分隔"""
+        """Return whether node is a separator."""
         return self.name == "SEPARATOR"
 
     @property
     def is_menu(self) -> bool:
-        """是菜单"""
+        """Return whether node is a menu."""
         return self.name == "MENU"
 
     @property
     def is_layout(self) -> bool:
-        """是布局"""
+        """Return whether node is a layout container."""
         return self.name in ['ROW', 'COLUMN', 'BOX', 'SPLIT']
 
     @property
     def is_parent(self) -> bool:
-        """是父级"""
+        """Return whether node is a parent."""
         return self.name == "PARENT"
 
     @property
     def is_draw_text(self) -> bool:
-        """是需要绘制文字类型"""
+        """Return whether node draws text."""
         return self.name in ['LABEL', 'OPERATOR']
 
     @property
     def is_draw_child(self) -> bool:
-        """是可以绘制子级"""
+        """Return whether node can have children."""
         return self.is_layout or self.is_parent
 
     @property
     def is_horizontal_layout(self) -> bool:
-        """是水平布局
+        """Return whether layout is horizontal
         -----------
         """
         return self.name in ['ROW', 'BOX']
 
     @property
     def is_vertical_layout(self) -> bool:
-        """是垂直布局
+        """Return whether layout is vertical
         ¦
         ¦
         ¦
@@ -78,22 +78,22 @@ class BPUType(Enum):
 
     @property
     def is_draw_item(self) -> bool:
-        """是绘制项"""
+        """Return whether node is a draw item."""
         return self.name in ['LABEL', 'OPERATOR']
 
     @property
     def is_clickable(self) -> bool:
-        """是可点击的"""
+        """Return whether node is clickable."""
         return self.name == 'OPERATOR'
 
     @property
     def is_operator(self) -> bool:
-        """是操作符"""
+        """Return whether node is an operator."""
         return self.name == 'OPERATOR'
 
 
 class Quadrant(Enum):
-    """绘制的象限位置"""
+    """Draw quadrant position."""
     ONE = 1
     TWO = 2
     THREE = 3

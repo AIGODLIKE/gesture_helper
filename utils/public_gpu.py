@@ -47,8 +47,8 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) 
         raise ValueError("Amount of segments must be greater than 0.")
     w = int((width - radius) / 2) - radius / 2
     h = int((height - radius) / 2) - radius / 2
-    # 角度步长，通常以度为单位
-    # 存储顶点坐标的列表
+    # Angle step in degrees
+    # Vertex coordinate list
     vertex = []
     quadrant = [
         (w, h),
@@ -56,19 +56,19 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=10) 
         (-w, -h),
         (w, -h),
     ]
-    angle_step = 360 / (segments * 4)  # 这里选择了8个顶点，可以根据需要调整
+    angle_step = 360 / (segments * 4)  # Segment count; adjust as needed
 
     def qa(qq, a):
         x = qq[0] + radius * math.cos(a)
         y = qq[1] + radius * math.sin(a)
         vertex.append((x, y))
 
-    # 计算顶点坐标
+    # Compute vertex positions
     angle = None
     for i in range(4):
         for j in range(segments):
             index = segments * i + j
-            angle = math.radians(index * angle_step)  # 将角度转换为弧度
+            angle = math.radians(index * angle_step)  # Convert degrees to radians
             qa(quadrant[i], angle)
         qa(quadrant[(i + 1) % 4], angle)
     qa(quadrant[3], angle)
@@ -152,7 +152,7 @@ class PublicGpu:
 
     @staticmethod
     def draw_2d_rectangle(x: int, y: int, x2: int, y2: int, color=(0, 0, 0, 1.0)):
-        """左下角为初始坐标
+        """Origin at bottom-left corner
         ┌────────────────────────────┐
         │                       x2y2 │
         │                            │

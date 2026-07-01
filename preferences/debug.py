@@ -17,7 +17,7 @@ class DebugProperty(bpy.types.PropertyGroup):
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):
         """
-        绘制Debug属性
+        Draw debug properties
         :param layout:
         :return:
         """

@@ -41,7 +41,7 @@ class NumberControl:
 
     @property
     def control_is_number(self):
-        """控制的属性是数字"""
+        """Return whether controlled property is numeric."""
         return self.control_property_type in ["INT", "FLOAT"]
 
     @property
@@ -52,9 +52,7 @@ class NumberControl:
 
     def limit_number_value(self, value):
         """
-        限制数字的值
-        有最大最小值
-        "hard_max", "hard_min", "soft_max", "soft_min"
+        Clamp numeric value to hard_min/hard_max when defined.
         """
         if rna := self.control_property_rna:
             hard_max = getattr(rna, "hard_max", None)
@@ -80,7 +78,7 @@ class NumberControl:
         else:
             value = round(value + delta, 2)
         lv = self.limit_number_value(value)
-        if lv == ops.operator_properties.get(cp, None):  # 没有改变
+        if lv == ops.operator_properties.get(cp, None):  # Unchanged
             return False
         ops.set_cursor(context, vm)
         ops.operator_properties[cp] = lv
@@ -207,7 +205,7 @@ class EnumControl:
          ''),
     ], default="CYCLE")
 
-    ___enum_items___ = {}  # 防止脏数据
+    ___enum_items___ = {}  # Prevent stale enum cache
 
     @property
     def enum_key(self) -> str:
@@ -349,7 +347,7 @@ class KeymapEvent:
     event_shift: bpy.props.BoolProperty(default=False, name="Shift")
 
     def __init_keymap_event__(self):
-        """添加时不重复快捷键"""
+        """Assign unique shortcut key on add."""
         import string
         keymap_list = [i.event_type for i in self.parent_element.modal_events if i != self]
         for j in string.ascii_uppercase:
@@ -360,7 +358,7 @@ class KeymapEvent:
 
     def sync_type_from_temp_kmi(self, kmi):
         if kmi.type != self.event_type:
-            self["event_type"] = all_id.index(kmi.type)  # enum被改为了索引
+            self["event_type"] = all_id.index(kmi.type)  # Store enum as index
             self.update_event_type(None)
 
         if kmi.ctrl != self.event_ctrl:
@@ -381,9 +379,7 @@ class KeymapEvent:
             print("sync_to_temp_kmi error", e)
 
     def draw_event_type(self, layout):
-        """绘制事件的类型
-        用临时kmi
-        并且同步到self.event_type"""
+        """Draw event type via temp KMI and sync to self.event_type."""
         if self.is_mouse_move_event:
             text = pgettext_iface("Incremental")
             value = self.int_incremental_value if self.is_int else round(self.float_incremental_value, 2)
@@ -406,7 +402,7 @@ class KeymapEvent:
 
     @property
     def temp_kmi(self):
-        """临时事件的快捷键"""
+        """Temporary KMI for this event."""
         from ..gesture.temp_keymap import get_temp_kmi
         hs = str(hash(self))
         temp_kmi = get_temp_kmi("modal_event_" + hs, {}, {"type": self.event_type, "value": "PRESS"})
@@ -414,7 +410,7 @@ class KeymapEvent:
 
     @property
     def is_mouse_move_event(self) -> bool:
-        """是否为鼠标移动事件"""
+        """Return whether event uses mouse-move delta."""
         if self.control_is_number:
             return self.number_value_mode in (
                 "MOUSE_CHANGES_HORIZONTAL",
@@ -439,10 +435,10 @@ class EventRelationship(
 
     @cache_update_lock
     def copy(self):
-        """复制元素"""
+        """Copy element."""
         add = self.parent_element.modal_events.add()
         data = self.active_event.___dict_data___
-        add.control_property = self.control_property  # 避免出现enum设置的错误
+        add.control_property = self.control_property  # Avoid enum init errors
         set_property(add, data)
 
     @property
@@ -455,7 +451,7 @@ class EventRelationship(
     def _set_index_(self, value):
         self.parent_element.modal_events_index = value
 
-    index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index_, fset=_set_index_, doc='Set collection index from item index and move items')
 
     @property
     def parent_element(self):
@@ -486,8 +482,7 @@ class ElementModalOperatorEventItem(
     EventRelationship,
 ):
     def update_control_property(self, context):
-        """初始化属性
-        根据需要控制的属性进行初始化"""
+        """Init property defaults from controlled RNA property."""
         if tp := self.control_property_type:
             if default := self.default_value:
                 if tp == "FLOAT":
@@ -505,12 +500,12 @@ class ElementModalOperatorEventItem(
     control_property: bpy.props.StringProperty(name="Control Property", update=update_control_property)
 
     def remove_after(self):
-        """继承了EventRelationship的类,需要在最后一个"""
+        """EventRelationship subclass must be last in MRO."""
         ...
 
     def remove_before(self):
-        if self.is_last and self.index != 0:  # 被删除项是最后一个
-            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+        if self.is_last and self.index != 0:  # Deleted item was last
+            self.index = self.index - 1  # Decrement index to keep a selection
 
     @property
     def control_property_rna(self):
@@ -545,14 +540,14 @@ class ElementModalOperatorEventItem(
 
     @property
     def control_property_explanation(self) -> str:
-        """控制属性解释"""
+        """Human-readable control property summary."""
         if text := getattr(self, f"{self.control_property_type.lower()}_explanation", None):
             return text
         return "Unknown"
 
     @property
     def check_property_is_validity(self) -> bool:
-        """检测属性是否为有效的"""
+        """Return whether control property is valid."""
         pe = self.parent_element
         if pe and pe.__operator_id_name_is_validity__:
             if self.control_property_rna:
@@ -573,7 +568,7 @@ class ElementModalOperatorEventItem(
         self.draw_event_type(row)
 
     def draw_modal(self, layout):
-        """绘制单项属性"""
+        """Draw single modal event property UI."""
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE
         column = layout.column(align=True)
 
@@ -594,7 +589,7 @@ class ElementModalOperatorEventItem(
 
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
-        elif self.control_property_type == "":  # 没输入属性
+        elif self.control_property_type == "":  # No property set
             column.label(text=f"Please enter the control property")
             return
         else:
@@ -611,7 +606,7 @@ class ElementModalOperatorEventItem(
                         row.alert = self.property_is_array
                     row.label(text=name)
                     if self.control_property_type == "ENUM":
-                        # 获取有可能会  current value '256' matches no enum in 'EnumProperty', 'snap_elements', 'default'
+                        # May raise: current value '256' matches no enum in 'EnumProperty', 'snap_elements', 'default'
                         value = getattr(self.control_property_rna, i, None)
                         row.label(text=f"{self.get_enum_name(value)}({value})", translate=False)
                     else:
@@ -654,8 +649,7 @@ class ElementModalOperatorEventItem(
 
     @property
     def ___properties___(self) -> dict:
-        """给获取属性函数用的
-        用于导出时只导出指定的内容"""
+        """Custom export property filter for get_property."""
         keymap = ("event_type", "event_ctrl", "event_alt", "event_shift",)
         include = ("control_property",)
 

@@ -41,7 +41,7 @@ class TempDrawProperty(bpy.types.PropertyGroup):
 
     def update_add_ui_extend_bool_property(self, context):
         name = self.add_ui_extend_bool_property
-        # 如果没有则当场新建一个属性
+        # Create property on window manager if missing
         setattr(
             TempDrawProperty,
             name,

@@ -1,4 +1,4 @@
-# 导入需要显示一些预设
+# Import dialog shows preset options
 import json
 import os
 import time
@@ -92,7 +92,7 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
 
 
 def ymd() -> str:
-    """提取 '年-月-日'"""
+    """Extract Y-M-D date string."""
     now = datetime.now()
 
     year = now.year
@@ -215,7 +215,7 @@ class Import(PublicFileOperator):
     @staticmethod
     def restore():
         """
-        恢复数据
+        Restore data
         """
         try:
             backups_path = get_backups_folder()
@@ -278,7 +278,7 @@ class Export(PublicFileOperator):
             os.makedirs(folder_path)
 
         if os.path.isfile(folder_path) and not self.is_auto_backups:
-            # 选择了一个文件覆盖
+            # User chose to overwrite file
             name = os.path.basename(folder_path)
             folder_path = os.path.dirname(folder_path)
             return os.path.abspath(os.path.join(folder_path, name))
@@ -342,9 +342,8 @@ class Export(PublicFileOperator):
     @staticmethod
     def backups(is_blender_close: bool = False):
         """
-        只在关闭插件时进行操作
-        备份分为两种,
-        一种是关闭插件,一种是关闭Blender
+        Run only when disabling add-on.
+        Two backup modes: disable add-on vs quit Blender
         """
         try:
             is_auto_backups = get_pref().backups_property.auto_backups

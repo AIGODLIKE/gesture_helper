@@ -11,7 +11,7 @@ class BpuDebug:
         return self.parent and self.parent.type.is_menu and self.type.is_menu
 
     def __draw_debug__(self) -> None:
-        """绘制debug层"""
+        """Draw debug overlay."""
         from .bpu_draw import IS_DEBUG_INFO
         if IS_DEBUG_INFO and self.__is_debug__:
             size = 24

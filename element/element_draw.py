@@ -1,5 +1,5 @@
-# 绘制手势
-# 预览绘制
+# Gesture drawing
+# Preview drawing
 from bpy.app.translations import pgettext_iface
 
 from ..ops.set_direction import SetDirection
@@ -53,7 +53,7 @@ class ElementDraw:
         elif self.is_dividing_line:
             row.label(text='', icon_value=pref.__get_icon__("REMOVE"))
 
-        if self.parent_is_extension:  # 下面的展开项不显示图标
+        if self.parent_is_extension:  # Extension children: hide direction icon
             if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
             else:
@@ -108,13 +108,13 @@ class ElementDraw:
             self.draw_edit_icon(column)
             column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
 
-            if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
+            if not self.parent_is_extension:  # Extension menu: hide direction settings
                 SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
         """
         # layout.label(text='gesture gesture_direction_items\t' + str(self.active_gesture.gesture_direction_items))
-        使用blender 绘制此属性时poll会出现错误
+        Drawing this property with Blender UI may cause poll errors
         :param layout:
         :return:
         """
@@ -134,8 +134,7 @@ class ElementDraw:
                 row.prop(self, i, expand=True)
 
     def draw_alert(self, layout):
-        """绘制警告信息
-        如果元素有错误将会显示"""
+        """Draw warning info when the element has errors."""
         from .element_relationship import get_available_selected_structure
         alert_list = []
         if self.is_selected_structure:
@@ -208,7 +207,7 @@ class ElementDraw:
             b.alert = not self.__operator_properties_is_validity__
             b.prop(self, 'operator_properties')
 
-        if not self.parent_is_extension:  # 如果是展开菜单就不显示方向设置
+        if not self.parent_is_extension:  # Extension menu: hide direction settings
             SetDirection.draw_direction(row.column())
 
         if is_operator or is_modal:

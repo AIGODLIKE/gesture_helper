@@ -1,4 +1,4 @@
-# 使用右键创建元素时对应类的数据路径
+# RNA data paths for context-menu element creation
 CREATE_ELEMENT_DATA_PATHS = {
     "View3DShading": "bpy.context.space_data.shading",
     "View3DOverlay": "bpy.context.space_data.overlay",
@@ -57,7 +57,7 @@ CREATE_ELEMENT_DATA_PATHS = {
     "WindowManager": "bpy.context.window_manager",
 }
 
-# 使用右键创建元素笔刷使用的数据
+# Brush data for context-menu element creation
 CREATE_ELEMENT_BRUSH_PATH = {
     # 3D paint settings
     "SCULPT": 'bpy.context.tool_settings.sculpt',

@@ -27,7 +27,7 @@ def from_each_as_title_items(enum):
 
 
 def from_rna_get_enum_items(rna_property):
-    """通过rna获取枚举的所有项"""
+    """Get all enum items from RNA property."""
     if rna_property:
         if rna_property.enum_items:
             items = rna_property.enum_items

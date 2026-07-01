@@ -1,9 +1,9 @@
 """
-每一项手势的快捷键
-不需要去记录每一个快捷键的位置
-只需要记录快捷键用到的数据和空间
-每次开启插件的时候从数据里面当场新建一些快捷键并填入缓存数据
-使用临时快捷键来修改每一个快捷键的位置
+Keymap data for each gesture.
+No need to record each shortcut's position;
+only the shortcut data and keymap spaces are stored.
+On add-on startup, shortcuts are recreated from data and cached.
+Temporary keymaps are used to edit each shortcut's binding.
 """
 
 import json
@@ -51,8 +51,8 @@ class KeymapProperty:
         self[self.__keymaps__] = value
         self.key_update()
 
-    key = property(fget=get_key, fset=set_key, doc='用来存快捷键的键位数据')
-    keymaps = property(fget=get_keymap, fset=set_keymap, doc='用来存快捷键可用的区域')
+    key = property(fget=get_key, fset=set_key, doc='Stores keymap binding data')
+    keymaps = property(fget=get_keymap, fset=set_keymap, doc='Stores keymap spaces where the shortcut is active')
 
     key_string: StringProperty(get=lambda self: json.dumps(self.get_key()),
                                set=lambda self, value: self.set_key(json.loads(value)))
@@ -118,23 +118,23 @@ class GestureKeymap(KeymapProperty):
         self.key_restart()
         if get_debug('key'):
             caller_name = traceback.extract_stack()[-2][2]
-            print("Key Update 被 {} 调用".format(caller_name), self)
+            print("Key Update called by {}".format(caller_name), self)
 
     @classmethod
     def key_all_load(cls) -> None:
-        """加载所有快捷键"""
+        """Load all keymaps."""
         from ..utils.public import get_pref
         for g in get_pref().gesture:
             g.key_load()
 
     @classmethod
     def key_all_unload(cls) -> None:
-        """卸载所有快捷键（仅使用注册列表）"""
+        """Unload all keymaps (registration list only)."""
         AddonKeymapRegistry.clear()
 
     @classmethod
     def key_clear_legacy(cls) -> int:
-        """清理快捷键，包含遗留项扫描（register/unregister 时调用）"""
+        """Clear keymaps, including legacy orphan scan (called on register/unregister)."""
         cls.key_all_unload()
         clear_count = clear_orphan_gesture_kmis()
         if get_debug('key'):
@@ -143,7 +143,7 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_restart(cls) -> None:
-        """重置键位（仅通过注册列表卸载后重新加载）"""
+        """Reset key bindings (unload via registration list, then reload)."""
         cls.key_all_unload()
         cls.key_all_load()
         if get_debug('key'):
@@ -153,7 +153,7 @@ class GestureKeymap(KeymapProperty):
                 print(i)
 
     def restore_key(self):
-        """重置快捷键"""
+        """Reset shortcut to default."""
         self.key = default_key
         kmi = self.temp_kmi
         kmi.map_type = 'KEYBOARD'
@@ -164,7 +164,7 @@ class GestureKeymap(KeymapProperty):
 
     @property
     def __key_str__(self) -> str:
-        """反回快捷键显示的字符"""
+        """Return display string for the shortcut."""
         from ..src.translate import __keymap_translate__
         keymap = self.key
         if keymap:

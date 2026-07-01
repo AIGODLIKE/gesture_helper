@@ -6,10 +6,10 @@ from ..gesture.gesture_point_kd_tree import GesturePointKDTree
 
 
 class GestureHandle:
-    trajectory_mouse_move: []  # 鼠标移动轨迹,在每次移动鼠标时就加上
-    trajectory_mouse_move_time: []  # 鼠标移动时间
-    trajectory_tree: "GesturePointKDTree"  # 轨迹树
-    event_count: 0  # 事件数
+    trajectory_mouse_move: []  # Mouse move trajectory points
+    trajectory_mouse_move_time: []  # Mouse move timestamps
+    trajectory_tree: "GesturePointKDTree"  # Trajectory KD-tree
+    event_count: 0  # Event counter
     draw_trajectory_mouse_move: bool
 
     def __init__(self, *args, **kwargs):
@@ -18,7 +18,7 @@ class GestureHandle:
         self.area = None
 
     def check_return_previous(self):
-        """检查回到之前的手势"""
+        """Check returning to a previous gesture point."""
         point, index, distance = self.find_closest_point
         points_kd_tree = self.trajectory_tree
         scale = bpy.context.preferences.view.ui_scale
@@ -29,7 +29,7 @@ class GestureHandle:
             self.gesture_extension_cache_clear()
 
     def try_running_operator(self, ops):
-        """尝试运行手势"""
+        """Try to run gesture operator(s)."""
 
         def run(i):
             if i.check_operator_poll():
@@ -45,9 +45,9 @@ class GestureHandle:
                     "Operator context error, please ensure that the operator is available in this context")
                 self.report({'ERROR'},
                             f" {tips} {name}->{i.name} bpy.ops.{i.operator_bl_idname}.poll()")
-                # poll失败
+                # poll failed
 
-        # 运行扩展的操作符
+        # Run extension menu operators
         if self.extension_element and len(self.extension_hover):
             last = self.extension_hover[-1]
             for item in last.extension_items:
@@ -62,7 +62,7 @@ class GestureHandle:
         return False
 
     def init_trajectory(self):
-        """初始化轨迹信息"""
+        """Initialize trajectory state."""
         self.event_count = 1
         self.move_count = 1
         self.trajectory_mouse_move = []
@@ -72,7 +72,7 @@ class GestureHandle:
         self.last_mouse_mouse_time = time.time()
 
     def trajectory_event_update(self, context, event):
-        """事件轨迹"""
+        """Update trajectory from modal event."""
         self.area = context.area
         self.screen = context.screen
         if event.type != "TIMER":

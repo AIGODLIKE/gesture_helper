@@ -24,7 +24,7 @@ class GesturePreferences(PublicProperty,
                          PreferencesDraw):
     bl_idname = base_package
 
-    # 项配置
+    # Item export filter config
     gesture: CollectionProperty(type=gesture.Gesture)
     index_gesture: IntProperty(name='Gesture index', update=lambda self, context: self.active_gesture.to_temp_kmi())
 
@@ -65,25 +65,25 @@ class GesturePreferences(PublicProperty,
             else:
                 res.update(filter_dict)
 
-            if 'element' in filter_dict and len(filter_dict['element']) != 0:  # 处理子级
+            if 'element' in filter_dict and len(filter_dict['element']) != 0:  # Filter children
                 exclude = exclude_keywords.copy()
-                if element_type == "CHILD_GESTURE" and filter_dict.get('direction', None) == "9":  # 第9个底部的手势不需要导出方向
+                if element_type == "CHILD_GESTURE" and filter_dict.get('direction', None) == "9":  # Bottom gesture: skip direction export
                     exclude.append("direction")
                 res['element'] = {k: filter_data(v, exclude) for k, v in filter_dict['element'].items()}
 
-            # 清理默认值
-            if "enabled" in res and res['enabled']:  # 默认为开启,不需要导出
+            # Strip default export values
+            if "enabled" in res and res['enabled']:  # Enabled is default; skip export
                 res.pop("enabled")
-            if "enabled_icon" in res and not res['enabled_icon']:  # 如果没启用图标就不导出图标数据
+            if "enabled_icon" in res and not res['enabled_icon']:  # Skip icon when disabled
                 if "enabled_icon" in res:
                     res.pop("enabled_icon")
                 if "icon" in res:
                     res.pop("icon")
-            if "operator_context" in res and res["operator_context"] == "INVOKE_DEFAULT":  # 默认值为INVOKE_DEFAULT
+            if "operator_context" in res and res["operator_context"] == "INVOKE_DEFAULT":  # Default context
                 res.pop("operator_context")
-            if "operator_type" in res and res["operator_type"] == "OPERATOR":  # 默认值为OPERATOR
+            if "operator_type" in res and res["operator_type"] == "OPERATOR":  # Default type
                 res.pop("operator_type")
-            if "operator_properties" in res and res["operator_properties"] == "{}":  # 默认值为{}
+            if "operator_properties" in res and res["operator_properties"] == "{}":  # Default empty props
                 res.pop("operator_properties")
 
             for k in exclude_keywords:

@@ -25,9 +25,9 @@ class OperatorProperties:
 class BpuOperator:
     __mouse_in_area__ = False
 
-    __bl_idname__ = None  # 绘制的bl_idname
+    __bl_idname__ = None  # Draw operator bl_idname
 
-    __operator_properties__: OperatorProperties  # 操作属性
+    __operator_properties__: OperatorProperties  # Operator props
     operator_context = 'INVOKE_DEFAULT'
 
     def __init__(self):
@@ -45,7 +45,7 @@ class BpuOperator:
 
     @property
     def __operator_text__(self) -> str:
-        """获取操作符文本"""
+        """Get operator display text."""
         try:
             fun = self.__operator_func__
             if fun:

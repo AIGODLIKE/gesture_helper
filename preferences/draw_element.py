@@ -81,7 +81,7 @@ class DrawElement:
 
         row = column.row(align=True)
         mr = row.row(align=True)
-        mr.enabled = not mi.is_root  # 不是根级的
+        mr.enabled = not mi.is_root  # Not root level
         mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='Moving to the root level').cancel_move = False
         row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='Cancel move').cancel_move = True
 

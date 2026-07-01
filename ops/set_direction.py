@@ -47,7 +47,7 @@ class SetDirection(bpy.types.Operator):
                 direction = ae.direction
                 row.operator(cls.bl_idname, text='', icon_value=Icons.get(direction).icon_id).direction = direction
                 # row.label(icon_value=Icons.get(ae.direction).icon_id)
-        # 显示底部方向
+        # Show bottom direction
         if active_element and active_element.is_child_gesture:
             bottom = column.row()
             bottom.separator(factor=2)

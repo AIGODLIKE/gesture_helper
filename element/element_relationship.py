@@ -25,23 +25,23 @@ def get_available_selected_structure(element) -> bool:
         else:
             return p
 
-    prev = get_prev(element)  # 上一个,如果上一个是禁用的就拿上一个的上一个
-    prev_type = getattr(prev, 'selected_type', None)  # 上一个类型
+    prev = get_prev(element)  # Previous item; skip disabled predecessors
+    prev_type = getattr(prev, 'selected_type', None)  # Previous item type
 
     if not element.is_selected_structure:
-        # 上一个不是选择结构
+        # Previous item is not a selection structure
         return False
     elif element.is_selected_if:
-        # 上一个是选择结构if
+        # Previous item is selection structure if
         return element.enabled
     elif element.is_selected_elif or element.is_selected_else:
         if prev_type:
-            # 不是 else即正确 并且这个元素是启用的
+            # Valid if previous is not else and this item is enabled
             return not prev.is_selected_else and prev.__selected_structure_is_validity__ and element.enabled
         else:
             return False
     else:
-        Exception('例外', element)
+        Exception('Unexpected selection structure', element)
     return False
 
 
@@ -102,7 +102,7 @@ class Relationship:
 
     @property
     def element_iteration(self):
-        """反回当前手势的所有项"""
+        """Return all items in the current gesture."""
         return PublicCache.__gesture_element_iteration__[self.parent_gesture]
 
     @property
@@ -130,7 +130,7 @@ class RadioSelect:
                 if self.root_parent == element:
                     self.parent_gesture.index_element = index
 
-            if not self.is_root:  # 设置子级手势的索引
+            if not self.is_root:  # Set child gesture index
                 for index, e in enumerate(self.collection):
                     if e == self:
                         self.parent.index_element = index
@@ -138,7 +138,7 @@ class RadioSelect:
             for item in self.radio_iteration:
                 is_select = item == self
                 item['radio'] = is_select
-                if is_select and self.is_operator:  # 是操作符的话就更新一下kmi
+                if is_select and self.is_operator:  # Update KMI when operator is selected
                     self.to_operator_tmp_kmi()
         except Exception as e:
             self.cache_clear()
@@ -168,7 +168,7 @@ class ElementRelationship(RadioSelect,
     index = property(
         fget=_get_index,
         fset=_set_index,
-        doc='通过当前项的index,来设置索引的index值,以及移动项')
+        doc='Set collection index from item index and move items')
 
     @property
     def is_root(self):
@@ -180,9 +180,9 @@ class ElementRelationship(RadioSelect,
 
     @property
     def is_alert(self) -> bool:
-        """是显示警告的UI"""
-        if self.is_selected_structure:  # 选择结构
-            # 是一个可用的选择结构
+        """Return whether warning UI should be shown."""
+        if self.is_selected_structure:  # Selection structure
+            # Valid selection structure
             if self.enabled:
                 return not self.__selected_structure_is_validity__
         elif self.is_operator:
@@ -192,12 +192,12 @@ class ElementRelationship(RadioSelect,
 
     @property
     def __selected_structure_is_validity__(self) -> bool:
-        """是一个可用的选择结构"""
+        """Return whether this is a valid selection structure."""
         return get_available_selected_structure(self) and self.__poll_bool_is_validity__
 
 
     def __init_direction_by_sort__(self):
-        """初始化方向按排序"""
+        """Initialize direction by sort order."""
         ds = list(self.parent_gesture_direction_items.keys())
         for k in range(1, 9):
             s = str(k)

@@ -191,12 +191,12 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
         def get_icon_args(icon_name) -> dict:
             from ..utils.icons import check_icon
 
-            if icon_name in ics and icons is None:  # 先看看有没有在Blender自带的库里面
+            if icon_name in ics and icons is None:  # Check built-in icon set first
                 return {"icon": icon_name}
             elif check_icon(icon_name):
                 icon_value = self.__get_icon__(key=icon_name)
                 return {"icon_value": icon_value}
-            else:  # Error 此图标不存在
+            else:  # Icon not found
                 ...
                 return {}
 

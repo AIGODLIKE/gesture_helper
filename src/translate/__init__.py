@@ -32,7 +32,7 @@ def ___translate_dict___(key: str) -> dict:
 
 
 def __preset_translate__(name: str) -> str:
-    """翻译预设"""
+    """Translate preset names."""
     if bpy.context.preferences.view.use_translate_interface:
         preset = ___translate_dict___("preset")
         return preset[name] if (name in preset) else name
@@ -40,7 +40,7 @@ def __preset_translate__(name: str) -> str:
 
 
 def __name_translate__(name: str) -> str:
-    """翻译名称"""
+    """Translate display names."""
     from ...utils.public import get_pref
     interface = bpy.context.preferences.view.use_translate_interface
     name_translate = get_pref().draw_property.enable_name_translation
@@ -62,7 +62,7 @@ def __name_translate__(name: str) -> str:
 
 
 def __keymap_translate__(string: str) -> str:
-    """翻译快捷键"""
+    """Translate keymap labels."""
     if bpy.context.preferences.view.use_translate_interface:
         keymap = ___translate_dict___("keymap")
         return keymap[string] if (string in keymap) else pgettext(string)
@@ -71,7 +71,7 @@ def __keymap_translate__(string: str) -> str:
 
 
 def __load_json__():
-    """加载翻译数据"""
+    """Load translation JSON data."""
     global __translate__
     for root, dirs, files in os.walk(os.path.dirname(__file__)):
         for file in files:
@@ -87,7 +87,7 @@ def __load_json__():
                                 t = __translate__[language] = dict()
                             t[file[:-5]] = data
                 except Exception as e:
-                    print("加载语言文件失败", e.args, file)
+                    print("Failed to load language file", e.args, file)
 
 
 def get_language_list() -> list:

@@ -19,10 +19,10 @@ def contains_chinese(text):
     return bool(pattern.search(text))
 
 
-IS_DEBUG_DRAW: bool = False  # 绘制
-IS_DEBUG_INFO: bool = False  # 绘制左下角信息
-IS_DEBUG_HAVER: bool = False  # 绘制是否为Haver
-IS_DEBUG_POINT: bool = False  # 绘制线POINT
+IS_DEBUG_DRAW: bool = False  # Draw debug overlay
+IS_DEBUG_INFO: bool = False  # Draw bottom-left debug info
+IS_DEBUG_HAVER: bool = False  # Draw hover state debug
+IS_DEBUG_POINT: bool = False  # Draw debug points/lines
 
 
 class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
@@ -30,7 +30,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         super().__init__(*args, **kwargs)
 
     def __gpu_draw__(self):
-        """gpu绘制主方法"""
+        """Main GPU draw entry."""
         if IS_DEBUG_DRAW:
             # print("__gpu_draw__\n")
             ...
@@ -67,8 +67,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
 
     def __layout__(self) -> None:
         """
-        先测量宽高
-        然后绘制子级
+        Measure size first, then draw children.
         """
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
@@ -96,7 +95,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         self.check_haver()
 
     def __draw_separator__(self, factor=0.95):
-        """绘制分隔符"""
+        """Draw separator."""
         parent = self.parent
         with gpu.matrix.push_pop():
             pt = parent.type
@@ -117,7 +116,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         self.__draw_haver_position_debug__()
 
     def __draw_item__(self) -> None:
-        """绘制项"""
+        """Draw item."""
         if IS_DEBUG_DRAW:
             if self.type.is_prop:
                 ...
@@ -151,7 +150,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             self.__draw_haver_position_debug__()
 
     def __draw_layout__(self) -> None:
-        """绘制layout"""
+        """Draw layout background."""
         with gpu.matrix.push_pop():
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
             self.draw_rounded_rectangle_area(
@@ -175,7 +174,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             )
 
     def __draw_child__(self) -> None:
-        """绘制子级"""
+        """Draw children."""
         with gpu.matrix.push_pop():
             last_offset = Vector((0, 0))
             for child in self.__children__:
@@ -184,9 +183,9 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                 last_offset = child.child_offset(self)
 
     def __draw_haver__(self) -> None:
-        """绘制haver"""
+        """Draw hover highlight."""
         if self.is_draw_haver:
-            # 操作符处理
+            # Operator / menu hover handling
             pm = self.parent.__menu_haver__
             if self.type.is_menu and self.level not in pm:
                 hv = pm.values()
@@ -196,7 +195,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             self.___draw_background_color___(self.__background_haver_color__)
 
     def __draw_active__(self) -> None:
-        """绘制active"""
+        """Draw active highlight."""
         if self.active:
             self.___draw_background_color___(self.__background_active_color__)
 
@@ -218,8 +217,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
 
     def __draw_menu__(self) -> None:
         """
-        如果超过当前区域就画在左边,如果没有就画在右边
-        如果两边都超了
+        Flip menu left if overflowing right; flip right if needed
         """
         self.__draw_item__()
         if self.__menu_id__ in self.parent_top.__menu_haver__.values():
@@ -269,14 +267,14 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
 
     @property
     def __margin_box__(self):
-        """边距框"""
+        """Margin bounding box."""
         height = self.__draw_height__
         width = self.__draw_width__
         return __box_path__(width, height)
 
     @property
     def __bound_box__(self):
-        """边界框"""
+        """Content bounding box."""
         if self.type.is_horizontal_layout:
             return __box_path__(self.__child_sum_width__, self.__child_max_height__)
         elif self.type.is_vertical_layout or self.type.is_parent:
@@ -284,7 +282,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
         return __box_path__(self.__text_width__, self.__text_height__)
 
     def check_haver(self):
-        """检查haver"""
+        """Check hover state."""
         pt = self.parent_top
         if self.type.is_menu and self.__child_menu_is_haver__:
             pt.__layout_haver__.append(self)

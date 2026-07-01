@@ -43,7 +43,7 @@ class BpuOffset:
 
 
 class BpuMeasure(BpuProperty, BpuOffset):
-    # text  不含边距
+    # text size without margin
     __text_width__: int
     __text_height__: int
 
@@ -62,7 +62,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
         self.__text_width__ = -100
         self.__text_height__ = -100
 
-    # 子级总高宽
+    # Total child width/height
     @property
     def __child_sum_width__(self) -> int:
         return sum(self.__child_width_list__)
@@ -84,10 +84,10 @@ class BpuMeasure(BpuProperty, BpuOffset):
         return -100
 
     def __measure__(self) -> None:
-        """测量数据"""
+        """Measure layout data."""
         self.__clear_measure__()
 
-        # 如果是分割线就不测量,使用父级的宽高
+        # Separator uses parent dimensions
         if self.type.is_prop:
             self.__measure_prop__()
         if self.type.is_menu:
@@ -100,22 +100,22 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     def __measure_prop__(self) -> None:
         if self.__property_type__ == "BOOLEAN":
-            if self.only_icon:  # 只显示图标,使用父级的宽高
+            if self.only_icon:  # Icon-only: use parent size
                 ...
-            elif self.text:  # 使用自定义文字
+            elif self.text:  # Custom label text
                 self.__measure_text__(self.text)
-            elif self.__property_name_string__:  # 使用属性的值
+            elif self.__property_name_string__:  # Property value text
                 self.__measure_text__(str(self.__property_name_string__))
 
     def __measure_text__(self, text=None) -> None:
-        """测量文字"""
+        """Measure text size."""
         if not text:
             text = self.__text__
         blf.size(self.font_id, self.font_size)
         (self.__text_width__, self.__text_height__) = blf.dimensions(self.font_id, self.___translation_text___(text))
 
     def __measure_children__(self) -> None:
-        """测量子级"""
+        """Measure children."""
         for child in self.__children__:
             child.__measure__()
             self.__child_height_list__.append(child.__draw_height__)
@@ -131,7 +131,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
                 elif pt.is_vertical_layout:
                     return self.parent.__child_max_width__
             elif self.text or self.__property_name_string__:
-                # 使用文字
+                # Text-based size
                 return self.__text_height__
 
             if pt.is_horizontal_layout:
@@ -150,7 +150,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
                 elif pt.is_vertical_layout:
                     return self.parent.__child_max_height__
             elif self.text or self.__property_name_string__:
-                # 使用文字 一个图标的高度+宽度
+                # Text size: one icon height + width
                 return self.__text_width__ + self.__text_height__ + self.__mt__
             if pt.is_horizontal_layout:
                 return self.parent.__child_max_height__ + self.__text_width__
@@ -160,8 +160,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     @property
     def __draw_height__(self) -> int:
-        """绘制高度
-        只有在绘制layout的时侯才需要此属性"""
+        """Draw height (needed when laying out)."""
         mt = self.__mt__
         if self.type.is_menu:
             return self.__text_height__ + mt
@@ -174,13 +173,12 @@ class BpuMeasure(BpuProperty, BpuOffset):
         elif self.type.is_prop:
             h = self.___draw_height_property___ + mt
             return h
-        # 文字
+        # Text contribution
         return self.__text_height__ + mt
 
     @property
     def __draw_width__(self) -> int:
-        """绘制宽度
-        只有在绘制layout的时侯才需要此属性"""
+        """Draw width (needed when laying out)."""
         mt = self.__mt__
 
         if self.type.is_menu:
@@ -200,17 +198,17 @@ class BpuMeasure(BpuProperty, BpuOffset):
             # print(
             #     f"\t__draw_width__\t{w}\t{self.__property_rna__}\t{self.__property_value__}\t{self.__property_type__}\t{self.__text_width__}")
             return w
-        # 文字
+        # Text contribution
         return self.__text_width__ + mt
 
     @property
     def __draw_size__(self) -> Vector:
-        """绘制大小"""
+        """Draw size (width, height)."""
         return Vector((self.__draw_width__, self.__draw_height__))
 
     def child_offset(self, parent: 'BpuMeasure') -> Vector:
         """
-        子级偏移量
+        Child offset
         :param parent:
         :return:
         """
@@ -224,7 +222,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
             return self.__draw_size__
 
     def parent_offset(self) -> Vector:
-        """父级偏移"""
+        """Parent offset."""
         margin = self.__margin__
         if (self.parent and self.parent.type.is_menu) or self.type.is_menu:
             p = self.parent.layout_margin
@@ -236,14 +234,14 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     @property
     def is_haver(self) -> bool:
-        """是活动项"""
+        """Return whether item is active."""
         offset = self.offset_position if self.type.is_parent else self.__offset__
         start_x, start_y = start = offset + self.parent_top.__quadrant_translate__
         if self.parent is not None:
             pt = self.parent.type
-            if pt.is_horizontal_layout:  # 水平 row
+            if pt.is_horizontal_layout:  # Horizontal row
                 end_x, end_y = start_x + self.__draw_width__, start_y + self.parent.__child_max_height__
-            elif pt.is_vertical_layout or pt.is_parent:  # 垂直 column
+            elif pt.is_vertical_layout or pt.is_parent:  # Vertical column
                 end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
             elif pt.is_menu:
                 end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
@@ -259,7 +257,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     @property
     def __child_menu_is_haver__(self) -> bool:
-        """子级菜单是否在范围内"""
+        """Return whether child menu is in bounds."""
         offset = self.__offset__ + self.___menu_child_offset_position___ if self.parent else self.offset_position
         start_x, start_y = offset + self.parent_top.__quadrant_translate__
         end_x, end_y = (
@@ -274,7 +272,6 @@ class BpuMeasure(BpuProperty, BpuOffset):
 
     @property
     def is_draw_haver(self) -> bool:
-        """是可以绘制haver的
-        只绘制操作符或者子菜单
+        """Return whether hover highlight applies (operators/submenus only)
         """
         return self.is_haver and (self.type.is_clickable or self.type.is_menu)

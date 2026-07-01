@@ -24,7 +24,7 @@ class Gesture(
     def update_name(self):
         self.key_restart()
 
-    # 使用gpu绘制在界面上
+    # Draw gesture overlay with GPU
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
     description: StringProperty(default="This is a gesture...", name="Description")

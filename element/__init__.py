@@ -16,7 +16,7 @@ from ..utils.public import PublicProperty
 from ..utils.public_cache import cache_update_lock
 
 
-# 子元素的删除需要单独处理,是子级的子级,不能直接拿到
+# Nested child deletion handled separately
 class Element(ElementCURE,
               ElementDraw,
               ElementGpuDraw,
@@ -41,7 +41,7 @@ class Element(ElementCURE,
         self.name = "------------"
 
     def ___set_properties___(self, data):
-        """设置操作符属性的时候优先设置operator_bl_idname"""
+        """Set operator_bl_idname before other operator properties."""
         self.operator_bl_idname = data.get("operator_bl_idname", "error operator_bl_idname get")
         __set_property__(self, data)
 

@@ -1,4 +1,4 @@
-# 替换偏好设置ui
+# Replace preferences UI draw
 import bpy
 
 from ..preferences import PreferencesDraw
@@ -6,7 +6,7 @@ from ..preferences import PreferencesDraw
 
 class ReplaceUI:
 
-    # 绘制右边层
+    # Draw right-side layer
     def right_layout(self: bpy.types.Panel, _):
         PreferencesDraw.preferences_draw(self.layout)
 
@@ -26,18 +26,18 @@ class ReplaceUI:
 
 
 class SwitchGestureUi:
-    """设置UI"""
+    """Configure UI override."""
     ui_draw_func = {
         'left': None,
         'right': None,
         'bottom': None,
         'left_button': None,
-        'is_overwrite': False,  # 是被替换了的
+        'is_overwrite': False,  # UI draw was replaced
     }
 
     @classmethod
     def switch(cls):
-        """切换两种状态"""
+        """Toggle between original and custom UI."""
         is_overwrite = cls.ui_draw_func['is_overwrite']
         if is_overwrite:
             cls.reduction_ui()
@@ -47,12 +47,12 @@ class SwitchGestureUi:
 
     @classmethod
     def refresh_layout(cls):
-        """刷新界面"""
+        """Redraw all areas."""
         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP')
 
     @classmethod
     def overwrite_ui(cls):
-        """重写ui"""
+        """Override UI draw function."""
         data = cls.ui_draw_func
         if not data['is_overwrite']:
             data['is_overwrite'] = True
@@ -64,7 +64,7 @@ class SwitchGestureUi:
 
     @classmethod
     def set_layout_func(cls):
-        """设置活动Layout的绘制方法"""
+        """Set active layout draw method."""
         bpy.types.USERPREF_PT_addons.draw = ReplaceUI.right_layout
         bpy.types.USERPREF_PT_navigation_bar.draw = ReplaceUI.left_layout
         bpy.types.USERPREF_HT_header.draw = ReplaceUI.bottom_layout
@@ -72,7 +72,7 @@ class SwitchGestureUi:
 
     @classmethod
     def reduction_ui(cls):
-        """还原ui"""
+        """Restore original UI draw."""
         data = cls.ui_draw_func
         if data['is_overwrite']:
             data['is_overwrite'] = False

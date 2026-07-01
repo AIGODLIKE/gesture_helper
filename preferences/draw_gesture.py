@@ -99,7 +99,7 @@ class GestureDraw:
     @staticmethod
     def draw_ui_gesture(layout):
         """
-        绘制手势部分
+        Draw gesture section
         :param layout:
         :return:
         """
@@ -110,7 +110,7 @@ class GestureDraw:
         column = layout.column()
         split = column.split()
 
-        if draw_property.element_show_left_side:  # 绘制属性在左侧
+        if draw_property.element_show_left_side:  # Property panel on left
             box = split.box()
             if active:
                 active.draw_item_property(box)
@@ -124,7 +124,7 @@ class GestureDraw:
     def draw_gesture(layout: bpy.types.UILayout):
         pref = get_pref()
         act = pref.active_gesture
-        if act:  # 绘制属性在左侧
+        if act:  # Property panel on left
             GestureDraw.draw_gesture_item(layout)
         else:
             layout.box().label(text='Add or select a gesture')

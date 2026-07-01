@@ -21,8 +21,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         return f"BpuLayout{self.type, self.__text__, self.level}"  # self.__measure__
 
     def __child_layout__(self, layout_type: BPUType) -> "BpuLayout":
-        """布局
-        绘制及测量时根据布局类型 计算方法"""
+        """Layout container; measure/draw depends on layout type."""
         layout = BpuLayout()
         layout.type = layout_type
         layout.font_id = self.font_id
@@ -44,27 +43,27 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         return layout
 
     def label(self, text="Hollow Word", alert=False):
-        """标签"""
+        """Add label."""
         lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
         if alert:
             lab.__text_normal_color__ = lab.__background_alert_color__
 
     def row(self) -> "BpuLayout":
-        """行"""
+        """Add row."""
         return self.__child_layout__(BPUType.ROW)
 
     def column(self) -> "BpuLayout":
-        """列"""
+        """Add column."""
         return self.__child_layout__(BPUType.COLUMN)
 
     def separator(self, show_line=True) -> None:
-        """分割"""
+        """Add split."""
         sep = self.__child_layout__(BPUType.SEPARATOR)
         sep.__show_separator_line__ = show_line
 
     def menu(self, text, menu_id="menu") -> "BpuLayout":
-        """菜单"""
+        """Add menu."""
         if text is None:
             import traceback
             traceback.print_exc()

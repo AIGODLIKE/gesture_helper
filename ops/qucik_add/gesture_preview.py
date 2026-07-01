@@ -45,13 +45,13 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     @property
     def is_draw_gesture(self) -> bool:
-        """是绘制手势的布尔值"""
+        """Return whether to draw gesture preview."""
         if self.draw_trajectory_mouse_move:
             return True
         return self.last_move_mouse_timeout
 
     def __sync_gesture__(self):
-        """同步手势名称"""
+        """Sync gesture name from preview."""
         ag = self.pref.active_gesture
         if ag and self.gesture != ag.name:
             self.gesture = ag.name
@@ -109,7 +109,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     def modal_event(self, event):
         """
-        TODO 空格移动界面
+        TODO: space key moves UI
         :param event:
         :return:
         """

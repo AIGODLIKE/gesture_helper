@@ -138,7 +138,7 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
 
         bpy.ops.ed.undo_push(message="Gesture Element Modal")
 
-        # 进入模态时要运行一次
+        # Run once when entering modal
         self.element.__running_by_bl_idname__(json.dumps(self.operator_properties))
         self.start_hud(context)
         self.start_mouse(event)
@@ -149,11 +149,11 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
     def modal(self, context, event):
         self.init_modal(event)
         pref = get_pref()
-        if self.last_running_time > 1 / 60:  # 至少60fps才会流畅
+        if self.last_running_time > 1 / 60:  # Target 60 FPS
             text = bpy.app.translations.pgettext_iface("Running operators consumes too much time")
             self.report({'ERROR'}, f"{text} {self.last_running_time}s")
             return self.exit(context, event)
-        if event.type == "LEFTMOUSE" and event.value == "PRESS":  # 确认
+        if event.type == "LEFTMOUSE" and event.value == "PRESS":  # Confirm
             self.finished(context)
             return self.exit(context, event)
 
@@ -199,5 +199,5 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         return {"FINISHED"}
 
     def finished(self, context):
-        """运行完成,将更改的属性保存到数据中,下次调用此操作符的时候沿用上一次的数据"""
+        """On finish, save changed properties for next operator invoke."""
         self.element.last_modal_operator_property = json.dumps(self.operator_properties)

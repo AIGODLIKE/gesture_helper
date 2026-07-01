@@ -35,7 +35,7 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
     def _set_index_(self, value: int) -> None:
         get_pref().index_gesture = value
 
-    index = property(fget=_get_index_, fset=_set_index_, doc='通过当前项的index,来设置索引的index值,以及移动项')
+    index = property(fget=_get_index_, fset=_set_index_, doc='Set collection index from item index and move items')
 
     @property
     def collection(self):
@@ -53,8 +53,8 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
         return get_gesture_direction_items(self.element)
 
     def remove_before(self):
-        if self.is_last and self.index != 0:  # 被删除项是最后一个
-            self.index = self.index - 1  # 索引-1,保持始终有一个所选项
+        if self.is_last and self.index != 0:  # Deleted item was last
+            self.index = self.index - 1  # Decrement index to keep a selection
 
     @cache_update_lock
     def rename_before(self):

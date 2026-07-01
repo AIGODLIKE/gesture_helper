@@ -6,34 +6,34 @@ from .bpu_type import BPUType, Quadrant
 
 
 class BpuProperty(BpuColor):
-    type: BPUType = BPUType.UNKNOWN  # 类型
-    parent: "BpuLayout" = None  # 父级
+    type: BPUType = BPUType.UNKNOWN  # Node type
+    parent: "BpuLayout" = None  # Parent layout
 
     __quadrant__: Quadrant = Quadrant.ONE
 
-    __show_separator_line__: bool  # 显示分割线
-    __menu_id__: str  # 菜单Id
+    __show_separator_line__: bool  # Draw separator line
+    __menu_id__: str  # Menu id
 
-    level: int = 0  # 绘制的层级
+    level: int = 0  # Draw nesting level
 
-    offset_position: Vector  # 偏移位置
-    mouse_position: Vector  # 鼠标位置
+    offset_position: Vector  # Layout offset
+    mouse_position: Vector  # Mouse position
 
-    text: str = None  # 绘制的文字 label operator
-    font_id: int = 0  # 绘制的文字字体
-    font_color = (1, 1, 1, 1)  # 字体颜色
-    font_size = 50  # 字体大小
+    text: str = None  # Label/operator text
+    font_id: int = 0  # Font id
+    font_color = (1, 1, 1, 1)  # Font color
+    font_size = 50  # Font size
 
-    text_margin = 8  # 文字的间距
-    layout_margin = 20  # 布局间距
-    __menu_haver__ = dict()  # 菜单的Haver
-    __layout_haver__ = list()  # 布局Haver
-    __layout_haver_histories__ = list()  # 布局Haver历史
+    text_margin = 8  # Text margin
+    layout_margin = 20  # Layout margin
+    __menu_haver__ = dict()  # Menu hover state
+    __layout_haver__ = list()  # Layout hover stack
+    __layout_haver_histories__ = list()  # Layout hover history
 
-    active = False  # 是活动项
-    alert = False  # 警告
+    active = False  # Active item
+    alert = False  # Alert styling
 
-    # 属性
+    # Property metadata
     __property_data__ = None
     __property_rna__ = None
     __property_value__ = None
@@ -68,7 +68,7 @@ class BpuProperty(BpuColor):
 
     @property
     def __quadrant_translate__(self) -> Vector:
-        """象限偏移"""
+        """Quadrant offset."""
         w, h = self.__draw_size__
         if self.__quadrant__ == Quadrant.ONE:
             return Vector([0, 0])
@@ -91,12 +91,12 @@ class BpuProperty(BpuColor):
 
     @property
     def ___property_translation_context___(self):
-        """属性的翻译上下文"""
+        """Property translation context."""
         return self.__property_rna__.translation_context
 
     @property
     def ___translation_context___(self):
-        """翻译上下文"""
+        """Translation context."""
         if self.__property_rna__:
             return self.___property_translation_context___
         elif self.type.is_operator:
@@ -104,7 +104,7 @@ class BpuProperty(BpuColor):
         return "*"
 
     def ___translation_text___(self, text: str) -> str:
-        """翻译文本"""
+        """Translated text."""
         return text
         if not self.translate:
             return text
@@ -119,7 +119,7 @@ class BpuProperty(BpuColor):
 
     @property
     def __text__(self):
-        """获取绘制的文字"""
+        """Get text to draw."""
         if self.text:
             return self.text
         if self.__property_name_string__:
@@ -131,7 +131,7 @@ class BpuProperty(BpuColor):
 
     @property
     def parent_top(self):
-        """反回顶级的父级"""
+        """Return root parent layout."""
         if self.parent:
             if self.parent.parent_top:
                 return self.parent.parent_top
@@ -142,17 +142,17 @@ class BpuProperty(BpuColor):
 
     @property
     def __layout_margin_vector__(self) -> Vector:
-        """间隔的Vector"""
+        """Spacing as Vector."""
         return Vector((self.layout_margin, self.layout_margin))
 
     @property
     def __lmt__(self):
-        """间隔"""
+        """Spacing value."""
         return self.layout_margin * 2
 
     @property
     def __margin_vector__(self) -> Vector:
-        """间隔的Vector"""
+        """Spacing as Vector."""
         return Vector((self.__margin__, self.__margin__))
 
     @property
@@ -163,7 +163,7 @@ class BpuProperty(BpuColor):
 
     @property
     def __margin__(self) -> int:
-        """间隔"""
+        """Spacing value."""
         if self.type.is_parent:
             return self.layout_margin
         elif self.type.is_layout:
@@ -176,11 +176,11 @@ class BpuProperty(BpuColor):
     def __mt__(self):
         return self.__margin__ * 2
 
-    __draw_children__ = []  # 绘制子级
-    __temp_children__ = []  # 添加时的临时子级
+    __draw_children__ = []  # Children to draw
+    __temp_children__ = []  # Temporary children while building
 
     def __clear_children__(self) -> None:
-        """清理子级"""
+        """Clear child layouts."""
         self.__draw_children__ = []
         self.__temp_children__ = []
         self.__layout_haver__ = []
@@ -194,10 +194,10 @@ class BpuProperty(BpuColor):
 
     @property
     def is_layout(self) -> bool:
-        """是layout类型"""
+        """Return whether node is a layout."""
         return self.type.is_layout
 
     @property
     def is_draw_child(self) -> bool:
-        """是可以绘制子级"""
+        """Return whether node can have children."""
         return self.__children__ and self.type.is_draw_child

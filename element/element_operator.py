@@ -19,10 +19,9 @@ class ModalProperty:
 
     @property
     def is_not_recommended_as_modal(self):
-        """一部分操作符不建议使用模态来控制
-        列如已经有modal操作写法的操作符
-        移动旋转等操作
-        is_array不推荐使用
+        """Some operators should not use modal control.
+        e.g. operators that already implement modal (transform, etc.).
+        Properties with is_array are not recommended.
         """
         if self.operator_is_modal:
             if self.operator_bl_idname in [
@@ -40,7 +39,7 @@ class ModalProperty:
 
     @property
     def active_event(self) -> ElementModalOperatorEventItem | None:
-        """活动事件项"""
+        """Active modal event item."""
         if len(self.modal_events) > self.modal_events_index and self.modal_events:
             return self.modal_events[self.modal_events_index]
         return None
@@ -57,7 +56,7 @@ class ModalProperty:
 
     @property
     def modal_properties(self):
-        """获取操作符的属性"""
+        """Get operator property dict."""
         try:
             return literal_to_dict(self.last_modal_operator_property)
         except Exception as e:
@@ -74,8 +73,7 @@ class ModalProperty:
 
     @property
     def last_properties(self):
-        """反回上一次的属性
-        没有则反回默认的"""
+        """Return last-used properties, or defaults if none."""
         if self.modal_properties:
             return self.modal_properties
         return self.properties
@@ -88,10 +86,10 @@ class ModalProperty:
             is_change = False
             for e in self.modal_events:
                 if e.is_mouse_move_event and last_mouse != mouse:
-                    is_change |= e.number_mouse_move_execute(ops, context, event)  # 鼠标事件时不反回
-            if is_change:  # 如果鼠标值移动并且修改了值的
+                    is_change |= e.number_mouse_move_execute(ops, context, event)  # Mouse delta path
+            if is_change:  # Value changed via mouse move
                 ops.start_mouse(event)
-            return is_change  # 修改了值就要更新一下操作符再执行一次
+            return is_change  # Re-run operator after value change
         else:
             for e in self.modal_events:
                 if not e.is_mouse_move_event:
@@ -108,7 +106,7 @@ class ModalProperty:
             value = v
             if isinstance(v, str):
                 value = translate(v)
-            if prop.type == "ENUM":  # 处理枚举名称
+            if prop.type == "ENUM":  # Resolve enum display name
                 items = from_rna_get_enum_items(prop)
                 for (i, n, d, icon, index) in items:
                     if v == i:
@@ -120,14 +118,14 @@ class ModalProperty:
 
 class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
-        """从此元素的属性更新到临时 keymap item"""
+        """Sync element properties to temp KMI."""
         if not self.is_operator:
-            Exception(f'{self}不是操作符')
+            Exception(f'{self} is not an operator')
         self.operator_tmp_kmi_properties_clear()
         set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
-        """从临时 keymap item 更新到属性"""
+        """Sync temp KMI properties to element."""
         if TMP_KMI_SYNC_DEBUG:
             print("from_tmp_kmi_operator_update_properties", )
         temp_kmi_properties = self.operator_tmp_kmi_properties
@@ -138,7 +136,7 @@ class RunOperatorPropertiesSync:
             self['operator_properties'] = str(temp_kmi_properties)
 
     def operator_tmp_kmi_properties_clear(self):
-        """清空临时 keymap item 属性"""
+        """Clear temp KMI operator properties."""
         properties = self.operator_tmp_kmi.properties
         for key in list(properties.keys()):
             properties.pop(key)
@@ -162,20 +160,20 @@ class RunOperatorPropertiesSync:
 
     @property
     def operator_tmp_kmi(self) -> 'bpy.types.KeyMapItem':
-        """操作符临时 keymap item"""
+        """Temp KMI for operator preview."""
         from ..gesture.temp_keymap import get_temp_kmi_by_id_name
         return get_temp_kmi_by_id_name(self.operator_bl_idname)
 
     @property
     def operator_tmp_kmi_properties(self) -> dict:
-        """操作符临时 keymap item 属性"""
+        """Temp KMI operator property dict."""
         from ..gesture.addon_keymap import get_kmi_operator_properties
         properties = get_kmi_operator_properties(self.operator_tmp_kmi)
         return properties
 
 
 class RunOperator:
-    """Blender操作符"""
+    """Blender operator element mixin."""
 
     @property
     def __operator_name__(self) -> str | None:
@@ -188,7 +186,7 @@ class RunOperator:
 
     @property
     def __operator_original_name__(self) -> str | None:
-        """原名称"""
+        """Original untranslated operator name."""
         if self.operator_type == "OPERATOR":
             func = self.operator_func
             if func:
@@ -197,7 +195,7 @@ class RunOperator:
         return None
 
     def __running_by_bl_idname__(self, operator_properties: str = None):
-        """通过bl_idname运行操作符"""
+        """Run operator by bl_idname."""
         if operator_properties is None:
             operator_properties = self.operator_properties
         try:
@@ -229,7 +227,7 @@ class RunOperator:
 
 class OperatorProperty:
     def __analysis_operator_properties__(self, properties_string):
-        """解析操作符属性"""
+        """Parse operator property string."""
         try:
             ps = properties_string.strip()
             if ps.startswith('(') and ps.endswith(')'):
@@ -246,8 +244,7 @@ class OperatorProperty:
 
     @cache_update_lock
     def update_operator(self) -> None:
-        """规范设置操作符  bpy.ops.mesh.primitive_plane_add() >> mesh.primitive_plane_add
-        掐头去尾
+        """Normalize operator id: bpy.ops.mesh.primitive_plane_add() -> mesh.primitive_plane_add
         bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
         bpy.ops.transform.translate(value=(0.109431, 2.16517, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'INCREMENT'}, use_snap_project=False, snap_target='CLOSEST', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
         """
@@ -261,7 +258,7 @@ class OperatorProperty:
                     self[key] = value[:-2]
                 else:
                     index = value.index('(')
-                    self[key] = value[:index]  # 将后面的切掉
+                    self[key] = value[:index]  # Strip call suffix
                     self.__analysis_operator_properties__(value[index:])
             self.to_operator_tmp_kmi()
 
@@ -286,11 +283,11 @@ class OperatorProperty:
                                 default='OPERATOR'
                                 )
 
-    # 直接将operator的self传给element,让那个来进行操作
+    # Operator self passed to element for execution
 
     @property
     def properties(self):
-        """获取操作符的属性"""
+        """Get operator property dict."""
         try:
             return literal_to_dict(self.operator_properties)
         except Exception as e:
@@ -307,7 +304,7 @@ class OperatorProperty:
 
     @property
     def operator_func(self) -> 'bpy.types.Operator | None':
-        """获取操作符
+        """Get operator callable
 
         Returns:
             bpy.types.Operator: _description_
@@ -321,7 +318,7 @@ class OperatorProperty:
 
     @property
     def __operator_id_name_is_validity__(self) -> bool:
-        """反回操作符id_name是否有效的布尔值"""
+        """Return whether operator bl_idname is valid."""
         try:
             fun = self.operator_func
             fun.get_rna_type()
@@ -337,7 +334,7 @@ class OperatorProperty:
 
     @property
     def __operator_properties_is_validity__(self) -> bool:
-        """反回操作符属性是否有效的布尔值"""
+        """Return whether operator_properties string is valid."""
         try:
             literal_to_dict(self.operator_properties)
             return True
@@ -362,16 +359,16 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
         return self.operator_type == "MODAL"
 
     def running_operator(self) -> Exception:
-        """运行此元素的操作符"""
+        """Run this element operator."""
         if self.operator_is_operator:
             return self.__running_by_bl_idname__()
         elif self.operator_is_modal:
             return self.__running_by_modal__()
         else:
-            return Exception(f'{self}操作符类型错误')
+            return Exception(f'{self} invalid operator type')
 
     def __init_operator__(self):
-        """添加元素时初始化操作符属性"""
+        """Init operator defaults when element is added."""
         self.__init_direction_by_sort__()
         self.operator_context = 'INVOKE_DEFAULT'
         self.operator_bl_idname = 'mesh.primitive_monkey_add'
@@ -379,12 +376,12 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
 
     def check_operator_poll(self):
         if self.operator_is_operator or self.operator_is_modal:
-            # 需要检查是否需要运行操作符
+            # Check operator poll before run
             poll = self.operator_func.poll()
             if not poll:
                 context = bpy.context
                 at = context.area.type
                 print(
-                    f"Gesture Poll 失败 {self.parent_gesture} {self.operator_bl_idname} area:{at} mode:{context.mode}")
+                    f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname} area:{at} mode:{context.mode}")
             return poll
         return True

@@ -17,7 +17,7 @@ def add_all_preset():
 
 
 class GestureCURE:
-    """手势项 增删查改"""
+    """CRUD operations for gestures."""
     from ..utils.public import PublicOperator, PublicProperty
 
     class GesturePoll(PublicOperator, PublicProperty):
@@ -44,7 +44,7 @@ class GestureCURE:
             self.cache_clear()
             add.name = 'Gesture'
             # if ag := pref.active_gesture:
-            #     ag.to_temp_kmi() # 如果在添加时不将快捷键同步到临时快捷键，会同步被删的快捷键数据
+            #     ag.to_temp_kmi() # Sync temp KMI on add or deleted shortcut data may leak
             GestureKeymap.key_restart()
             self.cache_clear()
             self.tag_redraw()

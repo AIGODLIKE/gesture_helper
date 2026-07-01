@@ -28,7 +28,7 @@ def from_text_get_dimensions(text, size):
 
 @cache
 def get_position(direction, radius):
-    angle = math.radians((int(direction) - 1) * 45)  # 将角度转换为弧度
+    angle = math.radians((int(direction) - 1) * 45)  # Convert degrees to radians
     return Vector((radius * math.cos(angle), radius * math.sin(angle)))
 
 
@@ -69,7 +69,7 @@ class ElementGpuProperty:
         is_ops = self.operator_bl_idname == 'wm.context_toggle'
         is_operator_type = self.operator_type == "OPERATOR"
         if not self.is_operator or not is_operator_type:
-            # 不是操作符或是脚本运行
+            # Not operator or script run path
             return False
         elif not is_ops:
             return False
@@ -81,7 +81,7 @@ class ElementGpuProperty:
 
     @property
     def get_operator_wm_context_toggle_property_bool(self) -> [bool]:
-        """获取操作符 wm.context_toggle 的布尔值"""
+        """Return wm.context_toggle operator bool from data_path."""
         if 'data_path' in self.properties:
             return context_path_validate(bpy.context, self.properties['data_path'])
         return False
@@ -89,7 +89,7 @@ class ElementGpuProperty:
     @property
     def text_color(self):
         """
-        文字颜色
+        Text color
         :return:
         """
         draw = self.draw_property
@@ -98,7 +98,7 @@ class ElementGpuProperty:
     @property
     def background_color(self):
         """
-        背景颜色
+        Background color
         :return:
         """
         draw = self.draw_property
@@ -132,14 +132,14 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     @property
     def extension_items(self) -> dict['GestureElement']:
         """
-        扩展项 就是底部
+        Extension items (bottom menu)
         :return:
         """
         return get_gesture_extension_items(self.element)
 
     def draw_gpu_item(self, ops):
         """
-        布局
+        Layout metrics
 
         4 3 2
         5   1
@@ -191,27 +191,27 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
 
     def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
-        """通过对每种不同的文字偏移实现绘制位置正确"""
+        """Apply text offset per script type for alignment."""
         with gpu.matrix.push_pop():
             w, h = self.text_dimensions
             text = self.text
             special_characters = has_special_characters(text)
-            if including_chinese(text):  # 中文
+            if including_chinese(text):  # CJK text
                 offset = [0, h * 0.158]
-            elif "_" in text and not special_characters:  # 有下划线在文字内
+            elif "_" in text and not special_characters:  # Underscore in text
                 offset = [0, h * 0.325]
-            elif has_special_characters(text):  # 特殊字符
+            elif has_special_characters(text):  # Special characters
                 offset = [0, h * 0.1]
-            else:  # 只有英文
-                if contains_uppercase(text):  # 包含大写
+            else:  # Latin text
+                if contains_uppercase(text):  # Has uppercase
                     offset = [0, h * .09]
-                elif bool(re.search(r'j', text)):  # 小写的j是上下都有
+                elif bool(re.search(r'j', text)):  # Lowercase j spans ascender/descender
                     offset = [0, h * .2]
-                elif bool(re.search(r'[tidfhklb]*', text)):  # 上部分
+                elif bool(re.search(r'[tidfhklb]*', text)):  # Mostly ascender height
                     offset = [0, h * .2]
-                elif bool(re.search(r'[qypg]*', text)):  # 下部分
+                elif bool(re.search(r'[qypg]*', text)):  # Mostly descender height
                     offset = [0, h * .2]
-                else:  # 中部 weruopaszxcvnm
+                else:  # Mid-height letters
                     offset = [0, h * 0.355]
             if fix_offset:
                 gpu.matrix.translate(offset)
@@ -358,7 +358,7 @@ class ElementGpuExtensionItem:
                 wi, hi = self.max_dimensions
 
                 if item.is_dividing_line:
-                    # 活动项颜色
+                    # Active item color
                     color = linear_to_srgb(np.array(self.draw_property.dividing_line_color, dtype=np.float32))
                     hs = self.dividing_line_height / 2
                     with gpu.matrix.push_pop():

@@ -5,7 +5,7 @@ import gpu
 
 
 def from_image_file_path_load_texture(file_path):
-    """可以直接使用图标的像素，但是只有32像素
+    """Use icon pixels directly (32px only)
     icons = bl_ext.user_default.gesture_helper.utils.icons.icons
     i = icons.get('uv')
     buffer = gpu.types.Buffer('FLOAT',len(i.icon_pixels_float),i.icon_pixels_float)

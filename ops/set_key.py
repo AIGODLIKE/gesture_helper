@@ -17,7 +17,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         return get_pref().active_gesture.keymaps
 
     def invoke(self, context, _):
-        if self.add_keymap:  # 添加项
+        if self.add_keymap:  # Add keymap item
             if self.add_keymap in OperatorSetKeyMaps.__temp_selected_keymaps__:
                 OperatorSetKeyMaps.__temp_selected_keymaps__.remove(self.add_keymap)
             else:

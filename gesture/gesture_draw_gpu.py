@@ -19,7 +19,7 @@ class DrawDebug(PublicGpu):
 
     def __gpu_draw_debug__(self):
         """
-        Bug pool 失效
+        Debug overlay (poll may fail when drawn via Blender UI).
          data.append('direction_items:' + str({i: v.name for i, v in self.direction_items.items()}))
          data.append('direction_element:' + str(self.direction_element))
         :return:
@@ -98,7 +98,7 @@ class GestureGpuDraw(DrawDebug):
     __temp_debug_draw_class__ = {}
 
     def __gpu_draw__(self):
-        """绘制主入口"""
+        """Main GPU draw entry."""
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
@@ -149,7 +149,7 @@ class GestureGpuDraw(DrawDebug):
 
     @classmethod
     def unregister_draw(cls):
-        """取消绘制"""
+        """Cancel GPU draw handler."""
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 c.draw_handler_remove(value, key)
@@ -161,7 +161,7 @@ class GestureGpuDraw(DrawDebug):
         cls.tag_redraw()
 
     def gpu_draw_trajectory_mouse_move(self):
-        """绘制轨迹鼠标移动的线"""
+        """Draw mouse-move trajectory line."""
         draw = self.draw_property
         color = draw.trajectory_mouse_color
         scale = bpy.context.preferences.view.ui_scale
@@ -169,7 +169,7 @@ class GestureGpuDraw(DrawDebug):
         self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
-        """绘制手势的轨迹线"""
+        """Draw gesture trajectory polyline."""
         draw = self.draw_property
         scale = bpy.context.preferences.view.ui_scale
         color = draw.trajectory_gesture_color
@@ -177,12 +177,12 @@ class GestureGpuDraw(DrawDebug):
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_point(self):
-        """绘制手势的轨迹点"""
+        """Draw gesture trajectory points."""
         tree = self.trajectory_tree
         self.draw_2d_points(tree.points_list)
 
     def gpu_draw_last_item_name(self):
-        """绘制最后一个元素名称"""
+        """Draw last element label."""
         scale = bpy.context.preferences.view.ui_scale
         tree = self.trajectory_tree
         size = self.pref.draw_property.gesture_point_name_size * scale
@@ -222,7 +222,7 @@ class GestureGpuDraw(DrawDebug):
                 return
 
     def gpu_draw_gesture(self):
-        """绘制手势"""
+        """Draw gesture overlay."""
         gp = self.gesture_property
         scale = bpy.context.preferences.view.ui_scale
         self.extension_rollback()
@@ -265,7 +265,7 @@ class GestureGpuDraw(DrawDebug):
                 x1, y1, x2, y2 = item
 
     def gpu_draw_direction_element(self):
-        """绘制活动方向元素名称"""
+        """Draw active direction element label."""
         element = self.direction_element
         scale = bpy.context.preferences.view.ui_scale
 

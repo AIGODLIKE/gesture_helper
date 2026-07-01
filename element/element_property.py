@@ -19,7 +19,7 @@ class ElementAddProperty:
 
     @property
     def is_have_add_child(self) -> bool:
-        """是可添加的子级
+        """Return whether child items can be added
         @return: bool
         """
         pref = get_pref()
@@ -67,9 +67,7 @@ class ElementIcon:
 
     @property
     def is_have_icon(self):
-        """是可以显示图标的类型
-        只有操作符和子手势可以显示图标
-        """
+        """Return whether icon display is supported (operators and child gestures only)."""
         return self.is_operator or self.is_child_gesture
 
     @property
@@ -79,28 +77,28 @@ class ElementIcon:
 
     @property
     def icon_is_validity(self) -> bool:
-        """图标是有效的"""
+        """Return whether the icon identifier is valid."""
         return self.icon in self.all_icons
 
     @property
     def is_show_icon(self) -> bool:
-        """是可以显示图标的"""
+        """Return whether icon should be shown."""
         return self.enabled_icon and self.icon_is_validity
 
     @property
     def is_draw_icon(self):
-        """是绘制图标"""
-        if self.is_draw_context_toggle_operator_bool:  # 绘制鼠标切换按钮
+        """Return whether to draw the icon."""
+        if self.is_draw_context_toggle_operator_bool:  # Draw context-toggle operator icon
             return self.draw_property.element_draw_property_toggle_icon
         return self.is_have_icon and self.is_show_icon
 
     @property
     def is_draw_child_icon(self):
-        """是绘制子级的标识图标"""
+        """Return whether to draw child gesture badge icon."""
         return get_pref().draw_property.element_draw_child_icon and self.is_child_gesture
 
 
-# 显示的属性, 不用Blender那些, 使用自已的参数
+# Display properties using custom parameters, not Blender defaults
 class ElementDirectionProperty:
     direction: EnumProperty(
         name='Direction',
@@ -115,7 +113,7 @@ class ElementDirectionProperty:
 
 class ElementExtension:
     @property
-    def parent_is_extension(self) -> bool:  # 父级是扩展项,就是底部的菜单
+    def parent_is_extension(self) -> bool:  # Parent is extension item (bottom menu)
         pe = self.parent_element
         if pe:
             if pe.parent_is_extension:
@@ -126,7 +124,7 @@ class ElementExtension:
 
     @property
     def extension_by_child_is_hover(self) -> bool:
-        """此项是显示为扩展子级并且是hover悬停"""
+        """Return whether extension child is hovered."""
         ops = getattr(self, "ops", None)
         area = getattr(self, "extension_by_child_draw_area", None)
         if ops and area:
@@ -145,9 +143,7 @@ class ElementExtension:
 
     @property
     def mouse_is_in_extension_area(self) -> bool:
-        """鼠标是在扩展区域的
-        当前扩展的子级绘制区域
-        """
+        """Return whether mouse is inside extension child draw area."""
         if item := getattr(self, "extension_draw_area", None):
             x1, y1, x2, y2 = item
             x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
@@ -156,9 +152,7 @@ class ElementExtension:
 
     @property
     def mouse_is_in_extension_vertical_outside_area(self) -> bool:
-        """鼠标是在扩展区域外的
-        当前扩展的子级绘制区域
-        """
+        """Return whether mouse is outside extension area vertically."""
         if item := getattr(self, "extension_draw_area", None):
             w, h = self.extension_dimensions
             x1, y1, x2, y2 = item
@@ -174,8 +168,7 @@ class ElementExtension:
 
     @property
     def mouse_is_in_extension_vertical_area(self) -> bool:
-        """鼠标是在扩展垂直区域
-        """
+        """Return whether mouse is in extension vertical band."""
         if item := getattr(self, "extension_draw_area", None):
             x1, y1, x2, y2 = item
             x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
@@ -186,7 +179,7 @@ class ElementExtension:
     @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
         """
-        鼠标在区域外部并且是最后一个
+        Return whether mouse is outside extension area on the right (last item).
         """
         if extension_hover := getattr(self.ops, "extension_hover", None):
             is_last = len(extension_hover) > 1 and extension_hover[-1] == self

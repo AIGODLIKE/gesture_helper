@@ -24,10 +24,10 @@ class Enum:
         name='枚举模式',
         options={'HIDDEN', 'SKIP_SAVE'})
 
-    ___enum___ = []  # 防止脏数据
+    ___enum___ = []  # Prevent stale enum cache
 
     def __get_enum__(self, context):
-        """获取枚举"""
+        """Get enum items for property."""
         button_prop = getattr(CreateElementProperty, "button_prop",
                               getattr(context, "button_prop",
                                       getattr(self, "button_prop", None)
@@ -80,13 +80,13 @@ class OpsProperty(Enum):
 
     @classmethod
     def clear_info(cls):
-        """清理信息"""
+        """Clear cached context info."""
         cls.button_pointer = None
         cls.button_prop = None
 
     @classmethod
     def from_context_get_info(cls, context) -> None:
-        """从上下文获取信息"""
+        """Load info from current context."""
         cls.button_pointer = getattr(context, "button_pointer", None)
         cls.button_prop = getattr(context, "button_prop", None)
 
@@ -148,7 +148,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
 
     def draw_boolean(self, layout: bpy.types.UILayout):
         layout.label(text="Set Boolean Value")
-        for item in self.rna_type.properties["boolean_mode"].enum_items:  # 绘制添加的布尔模式
+        for item in self.rna_type.properties["boolean_mode"].enum_items:  # Draw boolean add modes
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
             ops.boolean_mode = item.identifier
             ops.data_path = self.data_path
@@ -339,7 +339,7 @@ class Create(Draw):
 
     @property
     def __prop_name__(self) -> str:
-        """属性名称"""
+        """Property display name."""
         bp = self.button_prop
         if bp.type == "ENUM":
             if self.enum_mode == "SET":
@@ -383,17 +383,17 @@ class CreateElementProperty(Create):
         return {'FINISHED', "RUNNING_MODAL"}
 
     def copy_data_path(self) -> None:
-        """复制数据路径"""
+        """Copy RNA data path to clipboard."""
         pointer_name = self.button_pointer.__class__.__name__
         prop_identifier = self.button_prop.identifier
         id_data_type = type(self.button_pointer.id_data)
         if id_data_type is bpy.types.Mesh:
             self.data_path = f"bpy.context.object.data.{prop_identifier}"
             return
-        elif id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":  # 是文本编辑器
+        elif id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":  # Text editor
             self.data_path = f"bpy.context.space_data.text.{prop_identifier}"
             return
-        elif pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # 工作台渲染
+        elif pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # Properties editor
             self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
             return
         elif pointer_name in CREATE_ELEMENT_DATA_PATHS:
@@ -405,7 +405,7 @@ class CreateElementProperty(Create):
                 self.data_path = f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.{prop_identifier}"
                 return
 
-        # 使用Blender操作符
+        # Use Blender operator
         cp = bpy.ops.ui.copy_data_path_button
         if cp.poll():
             cp(full_path=True)
@@ -419,7 +419,7 @@ class CreateElementProperty(Create):
             self.string_value = getattr(self.button_pointer, prop.identifier, "")
 
     def update_data(self, layout, context):
-        """更新数据"""
+        """Update property from context."""
         pointer = self.button_pointer
         if pointer:
             layout.context_pointer_set('button_pointer', pointer)

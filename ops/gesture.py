@@ -1,5 +1,5 @@
-# 显示操作符,
-# 切换
+# Display operator,
+# toggle
 
 import bpy
 from bpy.app.translations import pgettext_iface
@@ -108,7 +108,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         wm.event_timer_remove(self.timer)
 
     def try_immediate_implementation(self):
-        """尝试立即执行操作"""
+        """Try to run operator immediately."""
         if self.gesture_property.immediate_implementation:
             de = self.direction_element
             if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:

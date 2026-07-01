@@ -1,14 +1,14 @@
 # version = 1.0.3
-# 1.0.3: 添加自定义属性导出函数匹配 ___set_properties___ ___properties___
+# 1.0.3: custom export via ___set_properties___ / ___properties___
 # 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
-exclude_items = {'rna_type', 'bl_idname', 'srna'}  # 排除项
+exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
 
 import bpy
 from mathutils import Euler, Vector, Matrix
 
 
 def __set_collection_data__(prop, data):
-    """设置集合值
+    """Set collection property values
 
     Args:
         prop (_type_): _description_
@@ -20,7 +20,7 @@ def __set_collection_data__(prop, data):
 
 
 def __set_prop__(prop, path, value):
-    """设置单个属性"""
+    """Set a single property value."""
     pr = getattr(prop, path, None)
     if pr is not None or path in prop.bl_rna.properties:
         pro = prop.bl_rna.properties[path]
@@ -31,7 +31,7 @@ def __set_prop__(prop, path, value):
             elif typ == 'COLLECTION':
                 __set_collection_data__(pr, value)
             elif typ == 'ENUM' and pro.is_enum_flag:
-                # 可多选枚举
+                # Multi-select enum (ENUM FLAG)
                 setattr(prop, path, set(value))
             else:
                 setattr(prop, path, value)
@@ -43,7 +43,7 @@ def __set_prop__(prop, path, value):
 
 
 def set_property(prop, data: dict):
-    if func := getattr(prop, "___set_properties___", None):  # 自定义获取的数据
+    if func := getattr(prop, "___set_properties___", None):  # Custom property getter/setter hook
         func(data)
     else:
         __set_property__(prop, data)
@@ -57,8 +57,7 @@ def __set_property__(prop, data: dict):
 
 
 def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties', props) -> None:
-    """注入operator property
-    在绘制项时需要使用此方法
+    """Inject operator properties into KMI (use when drawing items)
     set operator property
     self.operator_property:
     """
@@ -74,7 +73,7 @@ def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties'
         pr = props[pro]
         if hasattr(properties, pro):
             if pr is tuple:
-                # 阵列参数
+                # Array property values
                 _for_set_prop(properties, pro, pr)
             else:
                 try:
@@ -84,7 +83,7 @@ def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties'
 
 
 def __collection_data__(prop, exclude=(), reversal=False) -> dict:
-    """获取输入集合属性的内容
+    """Get collection property contents
 
     Args:
         prop (_type_): _description_
@@ -103,18 +102,18 @@ def __collection_data__(prop, exclude=(), reversal=False) -> dict:
 
 def get_property(prop, exclude=(), reversal=False) -> dict:
     """
-    获取输入的属性内容
-    可多选枚举(ENUM FLAG)将转换为列表 list(用于json写入,json 没有 set类型)
-    集合信息将转换为字典 index当索引保存  dict
+    Get property contents for export.
+    ENUM FLAG values become lists (JSON has no set type).
+    Collections become dicts keyed by index
 
     Args:
-        prop (bl_property): 输入blender的属性内容
-        exclude (tuple): 排除内容
-        reversal (bool): 反转排除内容,如果为True,则只搜索exclude
+        prop (bl_property): Blender property to read
+        exclude (tuple): identifiers to exclude/include
+        reversal (bool): if True, only include identifiers in exclude
     Returns:
-        dict: 反回字典式数据,
+        dict: exported property data,
     """
-    if hasattr(prop, "___properties___"):  # 自定义获取的数据
+    if hasattr(prop, "___properties___"):  # Custom property getter/setter hook
         if res := getattr(prop, "___properties___", None):
             if type(res) == dict:
                 return res
@@ -141,7 +140,7 @@ def __get_property__(prop, exclude=(), reversal=False) -> dict:
                 elif typ == 'COLLECTION':
                     pro = __collection_data__(pro, exclude, reversal)
                 elif typ == 'ENUM' and pr.is_enum_flag:
-                    # 可多选枚举
+                    # Multi-select enum (ENUM FLAG)
                     pro = list(pro)
                 elif typ == 'FLOAT' and pr.subtype == 'COLOR':
                     # color

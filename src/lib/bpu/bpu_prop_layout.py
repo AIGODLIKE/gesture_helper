@@ -21,7 +21,7 @@ class BpuPropLayout(BpuMeasure):
         self.__draw_haver_position_debug__()
 
     def ___draw_boolean_property___(self) -> None:
-        """绘制布尔属性"""
+        """Draw boolean property."""
         color = (.5, 0, 0, 1)
         h = self.__text_height__
         from .bpu_draw import __box_path__

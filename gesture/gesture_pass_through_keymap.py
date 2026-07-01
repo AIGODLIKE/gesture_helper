@@ -39,7 +39,7 @@ class GesturePassThroughKeymap:
         # NLA Tracks
 
         "SPREADSHEET": "Spreadsheet Generic",
-        "TEXT_EDITOR": "Text",  # 文本编辑器
+        "TEXT_EDITOR": "Text",  # Text editor
         "CONSOLE": "Console",
         "INFO": "Info",
         "OUTLINER": "Outliner",
@@ -69,10 +69,10 @@ class GesturePassThroughKeymap:
     image_ui_mode_map = {
         "VIEW": "Image",
         "PAINT": "Image Paint",
-        "MASK": "Mask Editing",  # TODO 使用情况需确定
+        "MASK": "Mask Editing",  # TODO: usage needs confirmation
     }
     pass_through_ui_idname = (
-        # 菜单
+        # Menus
         'wm.call_menu',
         'wm.call_panel',
         'wm.call_menu_pie',
@@ -80,16 +80,16 @@ class GesturePassThroughKeymap:
     pass_through_idname = (
         *pass_through_ui_idname,
         'wm.context_toggle',
-        'buttons.context_menu',  # 属性菜单
+        'buttons.context_menu',  # Property context menu
 
-        'object.delete',  # 删除
-        'outliner.operation',  # 大纲
-        'object.move_to_collection',  # 集合
+        'object.delete',  # Delete
+        'outliner.operation',  # Outliner
+        'object.move_to_collection',  # Collection
 
         'nla.tracks_add',
         'nla.actionclip_add',
 
-        # 选择
+        # Selection
         'view3d.localview',
         'view3d.select_circle',
         'view3d.select_box',
@@ -125,7 +125,7 @@ class GesturePassThroughKeymap:
         'clip.graph_select_all_markers',
         'object.select_hierarchy',
 
-        'wm.tool_set_by_id',  # w切换工具
+        'wm.tool_set_by_id',  # W key tool switch
 
         'view3d.edit_mesh_extrude_move_normal',
         'mesh.rip_move',
@@ -180,7 +180,7 @@ class GesturePassThroughKeymap:
             elif mode == "MASK":
                 keys.append("Clip Editor")
         elif area_type == "IMAGE_EDITOR":
-            # 图片或是UV
+            # Image or UV editor
             ut = context.area.ui_type
             ui_mode = getattr(context.space_data, "ui_mode", None)
             if ut == "UV":
@@ -208,7 +208,7 @@ class GesturePassThroughKeymap:
         return [key for key in self.operator_gesture.keymaps if key in region_keys]
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> None:
-        """尝试透传按键事件
+        """Try to pass through key events.
         :param context:bpy.types.Ccontext
         :param event:bpy.types.Event
         :return:None
@@ -227,7 +227,7 @@ class GesturePassThroughKeymap:
             if key in keymaps.keys():
                 km = keymaps[key]
 
-                match_kmis = []  # 匹配到的快捷键列表
+                match_kmis = []  # Matched keymap items
                 for item in km.keymap_items:
                     et = item.type == event.type
                     if item.idname in self.pass_through_idname and et and item.active:
@@ -239,21 +239,21 @@ class GesturePassThroughKeymap:
                             match_kmis.append(item)
                 ml = len(match_kmis)
 
-                # 搜索查看用户是否自已改了快捷键,如果改了快捷键将会出现在keymaps.user
+                # Check if user modified shortcuts (user overrides appear in keymaps.user)
                 if key in user_keymaps:
                     for index, match_kmi in enumerate(match_kmis):
                         for kmi in user_keymaps[key].keymap_items:
                             props_ok = get_kmi_operator_properties(kmi) == get_kmi_operator_properties(match_kmi)
                             if kmi.idname == match_kmi.idname and props_ok:
                                 if kmi.is_user_modified:
-                                    # print("找到一个被用户改了的快捷键来替换", kmi)
+                                    # print("Found user-modified shortcut to replace", kmi)
                                     match_kmis[index] = kmi
 
-                if ml == 1:  # 只匹配到一个键
+                if ml == 1:  # Only one key matched
                     kmi = match_kmis[0]
-                    if kmi.active:  # 只有当快捷键启用时才处理
+                    if kmi.active:  # Process only when shortcut is active
                         if self.try_pass_set_cursor3d_location(context, event, kmi):
-                            # print("shift右键鼠标单击 设置游标处理")
+                            # print("Shift+right-click cursor placement")
                             return
                         ok = try_operator_pass_through_right(kmi)
                         if ok:
@@ -263,9 +263,9 @@ class GesturePassThroughKeymap:
                 elif key in (
                         "Object Mode",
                         "Mesh",
-                        "Outliner",  # 为大纲视图单独处理事件
+                        "Outliner",  # Handle Outliner events separately
                 ):
-                    # 以下都是有多个操作符的
+                    # Multiple operators matched below
                     #         "object.delete",
                     #         "object.select_all",
                     #         "mesh.select_all",
@@ -281,7 +281,7 @@ class GesturePassThroughKeymap:
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
-        """尝试跳过注释橡皮擦事件
+        """Try to skip annotation eraser events
         GESTURE_OT_operator     modal   PRESS   D       prev RIGHTMOUSE PRESS   get_key:
         GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
         GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
@@ -299,7 +299,7 @@ class GesturePassThroughKeymap:
 
     @staticmethod
     def try_pass_paint_texture_stencil(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
-        """尝试跳过纹理绘制镂板事件
+        """Try to skip texture paint stencil events
         GESTURE_OT_operator     modal   PRESS   D       prev RIGHTMOUSE PRESS   get_key:
         GESTURE_OT_operator     modal   NOTHING MOUSEMOVE       prev D PRESS    get_key:
         GESTURE_OT_operator     modal   PRESS   D       prev D PRESS    get_key:
@@ -318,7 +318,7 @@ class GesturePassThroughKeymap:
 
     def try_pass_set_cursor3d_location(self, context: bpy.types.Context, event: bpy.types.Event,
                                        kmi: bpy.types.KeyMapItem) -> bool:
-        """尝试透传设置3D视图的鼠标位置"""
+        """Try to pass through 3D view cursor placement."""
         if (
                 event.shift and
                 not event.ctrl and
@@ -328,7 +328,7 @@ class GesturePassThroughKeymap:
                 kmi.idname == "transform.translate"
         ):
             if get_kmi_operator_properties(kmi) == {'release_confirm': True, 'cursor_transform': True}:
-                # shift右键鼠标单击
+                # Shift+right-click
                 if context.area.type == "VIEW_3D":
                     bpy.ops.view3d.cursor3d('INVOKE_DEFAULT', True)
                     return True
@@ -341,14 +341,14 @@ def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
     #     if "name" in prop:
     #         name = prop["name"]
     #         draw_cls = getattr(bpy.types, name, None)
-    #         # 如果能找到则说明这个是系统的绘制方法
+    #         # If found, this is a system draw method
     #         if draw_cls is None:
     #             return False
     #         return draw_cls.poll()
     #     else:
     #         return False
     # getattr(bpy.types, "VIEW3D_MT_edit_mesh_delete", None)
-    # TODO("删除键如果在物体模式下没有这个键位，那么在物体模式下会显示编辑模式的菜单,这个是由MP7引发的问题,MP7有替换删除快捷键")
+    # TODO("If delete key is missing in Object Mode, Edit Mode menu may appear; caused by MP7 replacing delete shortcut")
 
     prefix, suffix = kmi.idname.split('.')
     func = getattr(getattr(bpy.ops, prefix), suffix)
@@ -358,7 +358,7 @@ def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
 
 
 def try_operator_pass_through_right(kmi: bpy.types.KeyMapItem, operator_context='INVOKE_DEFAULT') -> bool:
-    """尝试穿透操作符,如果穿透了反回Ture"""
+    """Try to pass through operator; returns True if pass-through succeeded."""
     try:
         if not check_kmi_pass_through(kmi):
             return False
