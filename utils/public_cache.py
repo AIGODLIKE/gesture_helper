@@ -34,6 +34,10 @@ class PublicCache:
 
     __gesture_element_iteration__ = {}  # Gesture iteration {gesture: [child_element]}
     __is_updatable__ = True
+    __structure_generation__ = 0
+    __derived_generation__ = 0
+    __structure_generation__ = 0
+    __derived_generation__ = 0
 
     @staticmethod
     def cache_clear_data():
@@ -143,6 +147,7 @@ class PublicCacheFunc(PublicCache):
     def clear_derived_only():
         """Invalidate direction/extension/validity caches without rebuilding structure."""
         cls = PublicCacheFunc
+        PublicCache.__derived_generation__ += 1
         cls.element_cache_clear()
         cls.gesture_direction_cache_clear()
         cls.gesture_extension_cache_clear()
@@ -154,6 +159,8 @@ class PublicCacheFunc(PublicCache):
     @staticmethod
     def _cache_clear_impl():
         cls = PublicCacheFunc
+        PublicCache.__structure_generation__ += 1
+        PublicCache.__derived_generation__ += 1
         if DEBUG_CACHE:
             print("cache_clear")
         cls.init_cache()

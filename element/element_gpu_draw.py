@@ -14,6 +14,7 @@ from ..utils import including_chinese, has_special_characters, contains_uppercas
 from ..utils.color import linear_to_srgb
 from ..utils.gpu import get_now_2d_offset_position
 from ..utils.public import get_pref, get_gesture_extension_items
+from ..utils.public_cache import PublicCache
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
 
@@ -130,12 +131,18 @@ class ElementGpuProperty:
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     @property
-    def extension_items(self) -> dict['GestureElement']:
-        """
-        Extension items (bottom menu)
-        :return:
-        """
-        return get_gesture_extension_items(self.element)
+    def extension_items(self) -> list:
+        """Extension items (bottom menu), memoized per modal draw generation."""
+        ops = getattr(self, 'ops', None)
+        derived_gen = PublicCache.__derived_generation__
+        if ops is not None:
+            cache = getattr(ops, '_gpu_extension_items_cache', None)
+            if cache is not None and cache[0] is self and cache[1] == derived_gen:
+                return cache[2]
+        items = get_gesture_extension_items(self.element)
+        if ops is not None:
+            ops._gpu_extension_items_cache = (self, derived_gen, items)
+        return items
 
     def draw_gpu_item(self, ops):
         """
