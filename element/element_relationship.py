@@ -125,20 +125,30 @@ class Relationship:
 class RadioSelect:
     @cache_update_lock
     def update_radio(self):
-        try:
-            for (index, element) in enumerate(self.parent_gesture.element):
-                if self.root_parent == element:
-                    self.parent_gesture.index_element = index
+        gesture = self.parent_gesture
+        if gesture is None:
+            self.cache_clear()
+            gesture = self.parent_gesture
+        if gesture is None:
+            return
 
-            if not self.is_root:  # Set child gesture index
-                for index, e in enumerate(self.collection):
-                    if e == self:
-                        self.parent.index_element = index
+        try:
+            for (index, element) in enumerate(gesture.element):
+                if self.root_parent == element:
+                    gesture.index_element = index
+
+            if not self.is_root:
+                collection = self.collection
+                if collection is not None:
+                    for index, e in enumerate(collection):
+                        if e == self:
+                            self.parent.index_element = index
+                            break
 
             for item in self.radio_iteration:
                 is_select = item == self
                 item['radio'] = is_select
-                if is_select and self.is_operator:  # Update KMI when operator is selected
+                if is_select and self.is_operator:
                     self.to_operator_tmp_kmi()
         except Exception as e:
             self.cache_clear()
@@ -151,7 +161,10 @@ class RadioSelect:
 
     @property
     def radio_iteration(self):
-        return self.parent_gesture.element_iteration
+        gesture = self.parent_gesture
+        if gesture is None:
+            return []
+        return gesture.element_iteration
 
 
 class ElementRelationship(RadioSelect,

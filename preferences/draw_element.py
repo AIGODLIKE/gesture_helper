@@ -48,7 +48,7 @@ class DrawElement:
         column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
     @staticmethod
-    def draw_property(layout: 'bpy.types.UILayout') -> None:
+    def draw_property(layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
         pref = get_pref()
         active_element = pref.active_element
         prop = pref.draw_property
@@ -61,7 +61,7 @@ class DrawElement:
                 DrawElement.draw_move_element(layout)
             elif not prop.element_show_left_side:
                 active_element.draw_alert(layout)
-                active_element.draw_item_property(layout)
+                active_element.draw_item_property(layout, include_modal=include_modal)
             if get_debug():
                 active_element.draw_debug(layout)
         else:

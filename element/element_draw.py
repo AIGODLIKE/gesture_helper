@@ -86,7 +86,7 @@ class ElementDraw:
                 element.draw_item(child)
             child.separator()
 
-    def draw_item_property(self, layout: 'bpy.types.UILayout') -> None:
+    def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression
             icon = self.pref.__get_icon__(self.selected_type)
@@ -101,6 +101,8 @@ class ElementDraw:
             row.prop(self, 'selected_type', expand=True)
         elif self.is_operator:
             self.draw_operator(layout)
+            if include_modal and self.operator_is_modal:
+                self.draw_operator_modal(layout)
         elif self.is_child_gesture:
             row = layout.row(align=True)
             column = row.column()
@@ -236,8 +238,6 @@ class ElementDraw:
                     column.alert = True
                     column.label(text='Not recommended as modal operator', icon='ERROR')
                     column.label(text='The operator contains array properties and cannot be controlled')
-
-            #     self.draw_operator_modal(layout)
 
     def draw_operator_modal(self, layout):
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE
