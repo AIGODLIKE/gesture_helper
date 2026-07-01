@@ -19,7 +19,7 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
     @property
     def element_iteration(self):
         from ..utils.public_cache import PublicCache
-        return PublicCache.__gesture_element_iteration__[self]
+        return PublicCache.__gesture_element_iteration__.get(self, [])
 
     @property
     def collection_iteration(self) -> list:

@@ -59,38 +59,46 @@ class Relationship:
     def root_parent(self):
         if self.is_root:
             return self
-        else:
-            return self.parent_element.root_parent
+        parent_element = self.parent_element
+        if parent_element is None:
+            return self
+        return parent_element.root_parent
 
     @property
     def parent_element(self):
-        if self not in PublicCache.__element_parent_element_cache__:
+        cache = PublicCache.__element_parent_element_cache__
+        if self not in cache:
             self.init_cache()
             if DEBUG_CACHE:
-                print("parent_element key error", self, self not in PublicCache.__element_parent_element_cache__,
-                      PublicCache.__element_parent_element_cache__.get(self))
+                print("parent_element key error", self, self not in cache,
+                      cache.get(self))
                 print("\tw")
-                for k, v in PublicCache.__element_parent_element_cache__.items():
+                for k, v in cache.items():
                     print("\t", k, v)
-        return PublicCache.__element_parent_element_cache__[self]
+        return cache.get(self)
 
     @property
     def parent_gesture(self):
-        if self not in PublicCache.__element_parent_gesture_cache__:
+        cache = PublicCache.__element_parent_gesture_cache__
+        if self not in cache:
             self.init_cache()
             if DEBUG_CACHE:
-                print("parent_gesture key error", self, self not in PublicCache.__element_parent_gesture_cache__,
-                      PublicCache.__element_parent_gesture_cache__.get(self))
+                print("parent_gesture key error", self, self not in cache,
+                      cache.get(self))
                 print("\ts")
-                for k, v in PublicCache.__element_parent_gesture_cache__.items():
+                for k, v in cache.items():
                     print("\t", k, v)
-        return PublicCache.__element_parent_gesture_cache__.get(self)
+        return cache.get(self)
 
     @property
     def collection_iteration(self) -> list:
+        gesture = self.parent_gesture
+        if gesture is None:
+            return []
         items = []
-        for element in self.parent_gesture.element:
-            items.extend(PublicCache.__element_child_iteration__[element])
+        child_cache = PublicCache.__element_child_iteration__
+        for element in gesture.element:
+            items.extend(child_cache.get(element, []))
         return items
 
     @property
@@ -98,17 +106,22 @@ class Relationship:
         pe = self.parent_element
         if pe:
             return pe.element
-        else:
-            return self.parent_gesture.element
+        gesture = self.parent_gesture
+        if gesture is None:
+            return None
+        return gesture.element
 
     @property
     def element_iteration(self):
         """Return all items in the current gesture."""
-        return PublicCache.__gesture_element_iteration__[self.parent_gesture]
+        gesture = self.parent_gesture
+        if gesture is None:
+            return []
+        return PublicCache.__gesture_element_iteration__.get(gesture, [])
 
     @property
     def prev_element(self):
-        return PublicCache.__element_prev_cache__[self]
+        return PublicCache.__element_prev_cache__.get(self)
 
     @property
     def gesture_direction_items(self):
@@ -120,7 +133,7 @@ class Relationship:
 
     @property
     def element_child_iteration(self):
-        return PublicCache.__element_child_iteration__[self]
+        return PublicCache.__element_child_iteration__.get(self, [])
 
 
 class RadioSelect:
@@ -190,17 +203,31 @@ class ElementRelationship(RadioSelect,
 
     @property
     def is_root(self):
-        return self in self.parent_gesture.element.values()
+        gesture = self.parent_gesture
+        if gesture is None:
+            return False
+        return self in gesture.element.values()
 
     @property
     def names_iteration(self):
-        return self.parent_gesture.element_iteration
+        gesture = self.parent_gesture
+        if gesture is None:
+            return []
+        return gesture.element_iteration
+
+    @property
+    def is_list_alert(self) -> bool:
+        """Lightweight alert flag for UIList rows (skips poll evaluation)."""
+        if self.is_selected_structure and self.enabled:
+            return not get_available_selected_structure(self)
+        if self.is_operator and self.operator_type == "OPERATOR":
+            return not self.__operator_id_name_is_validity__
+        return False
 
     @property
     def is_alert(self) -> bool:
         """Return whether warning UI should be shown."""
-        if self.is_selected_structure:  # Selection structure
-            # Valid selection structure
+        if self.is_selected_structure:
             if self.enabled:
                 return not self.__selected_structure_is_validity__
         elif self.is_operator:

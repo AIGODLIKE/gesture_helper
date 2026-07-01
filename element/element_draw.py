@@ -18,7 +18,7 @@ class ElementDraw:
         column = layout.column(align=True)
 
         split = column.split(factor=draw.element_split_factor)
-        split.alert = self.is_alert
+        split.alert = self.is_list_alert
         self.draw_item_left(split.row(align=True), pref)
 
         right = split.row(align=True).split(factor=0.4)
