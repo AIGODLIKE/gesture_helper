@@ -123,6 +123,18 @@ class Relationship:
 
 
 class RadioSelect:
+    @staticmethod
+    def _live_element_iteration(gesture):
+        items = []
+
+        def walk(parent):
+            for element in parent.element:
+                items.append(element)
+                walk(element)
+
+        walk(gesture)
+        return items
+
     @cache_update_lock
     def update_radio(self):
         gesture = self.parent_gesture
@@ -145,7 +157,7 @@ class RadioSelect:
                             self.parent.index_element = index
                             break
 
-            for item in self.radio_iteration:
+            for item in self._live_element_iteration(gesture):
                 is_select = item == self
                 item['radio'] = is_select
                 if is_select and self.is_operator:
@@ -164,7 +176,7 @@ class RadioSelect:
         gesture = self.parent_gesture
         if gesture is None:
             return []
-        return gesture.element_iteration
+        return self._live_element_iteration(gesture)
 
 
 class ElementRelationship(RadioSelect,

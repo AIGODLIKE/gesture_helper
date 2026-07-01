@@ -132,6 +132,7 @@ class ElementCURE:
             index = ae.index
 
             ae.remove()
+            self.cache_clear()
 
             if is_last and index != 0:  # Deleted item was last
                 parent.index_element = index - 1  # Decrement index to keep a selection
@@ -282,6 +283,7 @@ class ElementCURE:
             parent = ae.parent
             index = ae.index
             ae.remove()
+            self.cache_clear()
 
             if is_last and index != 0:
                 parent.index_element = index - 1
