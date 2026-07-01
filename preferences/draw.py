@@ -39,7 +39,7 @@ class PreferencesDraw(GestureDraw):
         rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
-        # from ..ops.qucik_add.gesture_preview import GesturePreview
+        # from ..ops.quick_add.gesture_preview import GesturePreview
         # row.operator_context = "INVOKE_DEFAULT"
         # row.operator(GesturePreview.bl_idname, icon=get_adapter_blender_icon("RNA_ADD"), text=GesturePreview.bl_label)
 

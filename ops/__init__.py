@@ -11,11 +11,11 @@ from . import set_poll
 from . import switch_ui
 from .modal_mouse import ModalMouseOperator
 from .clear_edge_properties import ClearAllEdgeProperties
-from .qucik_add.create_element_operator import CreateElementOperator
-from .qucik_add.create_element_property import CreateElementProperty
-from .qucik_add.create_panel_menu import CreatePanelMenu
-from .qucik_add.create_switch_panel import CreateSwitchPanel
-from .qucik_add.gesture_preview import GesturePreview
+from .quick_add.create_element_operator import CreateElementOperator
+from .quick_add.create_element_property import CreateElementProperty
+from .quick_add.create_panel_menu import CreatePanelMenu
+from .quick_add.create_switch_panel import CreateSwitchPanel
+from .quick_add.gesture_preview import GesturePreview
 
 operator_list = (
     select_icon.SelectIcon,

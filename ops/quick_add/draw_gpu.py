@@ -1,4 +1,4 @@
-from ...ops.qucik_add.show_tips import GestureShowTips
+from ...ops.quick_add.show_tips import GestureShowTips
 from ...src.lib.bpu import BpuLayout, Quadrant
 
 

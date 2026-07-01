@@ -1,8 +1,8 @@
 import bpy
 from bpy.app.translations import pgettext
 
-from ..ops.qucik_add.create_element_operator import CreateElementOperator
-from ..ops.qucik_add.create_element_property import CreateElementProperty
+from ..ops.quick_add.create_element_operator import CreateElementOperator
+from ..ops.quick_add.create_element_property import CreateElementProperty
 from ..utils.public import get_pref
 
 
