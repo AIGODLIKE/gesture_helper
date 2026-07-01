@@ -36,8 +36,6 @@ class PublicCache:
     __is_updatable__ = True
     __structure_generation__ = 0
     __derived_generation__ = 0
-    __structure_generation__ = 0
-    __derived_generation__ = 0
 
     @staticmethod
     def cache_clear_data():
@@ -159,6 +157,13 @@ class PublicCacheFunc(PublicCache):
     @staticmethod
     def _cache_clear_impl():
         cls = PublicCacheFunc
+        from .selection import clear_active_element_cache
+        from .public import get_pref
+
+        pref = get_pref()
+        for gesture in pref.gesture:
+            clear_active_element_cache(gesture)
+
         PublicCache.__structure_generation__ += 1
         PublicCache.__derived_generation__ += 1
         if DEBUG_CACHE:

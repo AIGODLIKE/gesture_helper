@@ -95,20 +95,21 @@ class ElementCURE:
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, _):
-            add = self.collection.add()
-            self.collection.update()
-            add.element_type = self.element_type
-            add.selected_type = self.selected_type
-            add.__init_element__()
-            add.name = self.add_name
-            self.cache_clear()
+            with CacheState.batch():
+                add = self.collection.add()
+                self.collection.update()
+                add.element_type = self.element_type
+                add.selected_type = self.selected_type
+                add.__init_element__()
+                add.name = self.add_name
+                self.cache_clear()
 
-            if self.pref.add_element_property.add_active_radio:
-                if self.active_element:
-                    self.active_element.show_child = True
-                add.update_radio()
-            elif self.pref.active_element is None:
-                add.update_radio()
+                if self.pref.add_element_property.add_active_radio:
+                    if self.active_element:
+                        self.active_element.show_child = True
+                    add.update_radio()
+                elif self.pref.active_element is None:
+                    add.update_radio()
 
             self.__class__.last_element = add
             return {'FINISHED'}
@@ -199,8 +200,9 @@ class ElementCURE:
         is_next: BoolProperty()
 
         def execute(self, _):
-            self.active_element.sort(self.is_next)
-            self.cache_clear()
+            with CacheState.batch():
+                self.active_element.sort(self.is_next)
+                self.cache_clear()
             return {'FINISHED'}
 
     class COPY(ElementPoll):

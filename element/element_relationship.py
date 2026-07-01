@@ -4,6 +4,7 @@ from bpy.props import BoolProperty, StringProperty
 
 from ..debug import DEBUG_CACHE
 from ..utils.iteration import iter_elements
+from ..utils.selection import apply_radio_selection
 from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items
 from ..utils.public_cache import PublicCache, cache_update_lock
 
@@ -151,24 +152,9 @@ class RadioSelect:
             return
 
         try:
-            for (index, element) in enumerate(gesture.element):
-                if self.root_parent == element:
-                    gesture.index_element = index
-
-            if not self.is_root:
-                collection = self.collection
-                if collection is not None:
-                    for index, e in enumerate(collection):
-                        if e == self:
-                            self.parent.index_element = index
-                            break
-
-            for item in self._live_element_iteration(gesture):
-                is_select = item == self
-                if item.radio != is_select:
-                    item['radio'] = is_select
-                if is_select and self.is_operator:
-                    self.to_operator_tmp_kmi()
+            apply_radio_selection(self)
+            if self.is_operator:
+                self.to_operator_tmp_kmi()
         except Exception as e:
             self.cache_clear()
             print("update_radio Error", e.args)
