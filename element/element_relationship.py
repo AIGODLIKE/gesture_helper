@@ -3,7 +3,8 @@ from functools import cache
 from bpy.props import BoolProperty, StringProperty
 
 from ..debug import DEBUG_CACHE
-from ..utils.public import (PublicSortAndRemovePropertyGroup, get_gesture_direction_items)
+from ..utils.iteration import iter_elements
+from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items
 from ..utils.public_cache import PublicCache, cache_update_lock
 
 
@@ -125,15 +126,7 @@ class Relationship:
 class RadioSelect:
     @staticmethod
     def _live_element_iteration(gesture):
-        items = []
-
-        def walk(parent):
-            for element in parent.element:
-                items.append(element)
-                walk(element)
-
-        walk(gesture)
-        return items
+        return list(iter_elements(gesture))
 
     @cache_update_lock
     def update_radio(self):

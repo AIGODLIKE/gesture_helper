@@ -164,11 +164,9 @@ class Import(PublicFileOperator):
         self.gesture_import()
         self.cache_clear()
         self.update_state()
-        self.cache_clear()
         Import.preset = {}
         GestureKeymap.key_restart()
         bpy.ops.wm.save_userpref()
-        self.cache_clear()
         return {'FINISHED'}
 
     def draw(self, _):

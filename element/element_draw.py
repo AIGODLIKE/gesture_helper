@@ -19,7 +19,7 @@ class ElementDraw:
 
         split = column.split(factor=draw.element_split_factor)
         split.alert = self.is_alert
-        self.draw_item_left(split.row(align=True))
+        self.draw_item_left(split.row(align=True), pref)
 
         right = split.row(align=True).split(factor=0.4)
         self.draw_item_right(right)
@@ -39,8 +39,9 @@ class ElementDraw:
             r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
         self.draw_item_child(column)
 
-    def draw_item_left(self, layout: 'bpy.types.UILayout'):
-        pref = get_pref()
+    def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
+        if pref is None:
+            pref = get_pref()
         row = layout.row()
         if pref.draw_property.element_show_enabled_button:
             row.prop(self, 'enabled', text='')

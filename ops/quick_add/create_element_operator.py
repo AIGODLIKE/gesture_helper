@@ -16,10 +16,7 @@ def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
 class CreateModalOperator:
     def invoke(self, context, event):
         self.button_operator = getattr(context, "button_operator", None)
-
-        self.cache_clear()
         self.execute(context)
-        self.cache_clear()
 
         last_element = ElementCURE.ADD.last_element
         last_element.operator_type = "MODAL"

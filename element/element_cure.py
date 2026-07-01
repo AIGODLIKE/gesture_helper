@@ -81,21 +81,17 @@ class ElementCURE:
         def execute(self, _):
             add = self.collection.add()
             self.collection.update()
-            add.cache_clear()
-
             add.element_type = self.element_type
             add.selected_type = self.selected_type
             add.__init_element__()
-            add.cache_clear()
             add.name = self.add_name
+            self.cache_clear()
 
             if self.pref.add_element_property.add_active_radio:
                 if self.active_element:
                     self.active_element.show_child = True
-                add.cache_clear()
                 add.update_radio()
-            elif self.pref.active_element is None:  # No active element: select first added item
-                add.cache_clear()
+            elif self.pref.active_element is None:
                 add.update_radio()
 
             self.__class__.last_element = add
@@ -124,8 +120,6 @@ class ElementCURE:
             return self.execute(context)
 
         def execute(self, _):
-            self.cache_clear()
-
             ae = self.pref.active_element
             is_last = ae.is_last
             parent = ae.parent
@@ -134,13 +128,12 @@ class ElementCURE:
             ae.remove()
             self.cache_clear()
 
-            if is_last and index != 0:  # Deleted item was last
-                parent.index_element = index - 1  # Decrement index to keep a selection
+            if is_last and index != 0:
+                parent.index_element = index - 1
                 parent.element[parent.index_element].radio = True
-            elif -1 < index < len(parent.element):  # Deleted item was in the middle; index unchanged
+            elif -1 < index < len(parent.element):
                 parent.element[index].radio = True
 
-            self.cache_clear()
             return {'FINISHED'}
 
     class MOVE(ElementPoll):
@@ -177,14 +170,10 @@ class ElementCURE:
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
             elif move_from:
-                # Move item already selected; perform move
                 self.move()
                 ae = self.active_element
-                self.cache_clear()
                 if ae:
                     ae.radio = True
-
-                self.cache_clear()
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
 
@@ -268,11 +257,8 @@ class ElementCURE:
             elif cut:
                 self.cut()
                 ae = self.active_element
-                self.cache_clear()
                 if ae:
-                    self.cache_clear()
                     ae.radio = True
-                self.cache_clear()
                 ElementCURE.CUT.__cut_data__ = None
                 return {'FINISHED'}
 
@@ -291,7 +277,6 @@ class ElementCURE:
             elif -1 < index < len(parent.element):
                 parent.element[index].radio = True
 
-            self.cache_clear()
             return {'FINISHED'}
 
     class SwitchShowChild(ElementPoll):
@@ -300,6 +285,7 @@ class ElementCURE:
 
         def execute(self, context):
             value = not self.pref.active_element.show_child
-            for i in self.pref.active_gesture.element_iteration:
+            from ..utils.iteration import iter_elements
+            for i in iter_elements(self.pref.active_gesture):
                 i.show_child = value
             return {"FINISHED"}

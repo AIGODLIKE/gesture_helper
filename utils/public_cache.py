@@ -1,4 +1,5 @@
 from ..debug import DEBUG_CACHE
+from .cache_state import CacheState
 
 
 def cache_update_lock(func, cache_clear=False):
@@ -12,6 +13,7 @@ def cache_update_lock(func, cache_clear=False):
             cls.__is_updatable__ = True
             if cache_clear:
                 PublicCacheFunc.cache_clear()
+            CacheState.flush_after_lock()
             return func_return
 
     return wap
@@ -138,19 +140,38 @@ class PublicCacheFunc(PublicCache):
         get_gesture_extension_items.cache_clear()
 
     @staticmethod
+    def clear_derived_only():
+        """Invalidate direction/extension/validity caches without rebuilding structure."""
+        cls = PublicCacheFunc
+        cls.element_cache_clear()
+        cls.gesture_direction_cache_clear()
+        cls.gesture_extension_cache_clear()
+
+    def clear_derived_cache(self):
+        """Instance helper for property update callbacks."""
+        self.clear_derived_only()
+
+    @staticmethod
+    def _cache_clear_impl():
+        cls = PublicCacheFunc
+        if DEBUG_CACHE:
+            print("cache_clear")
+        cls.init_cache()
+        cls.gesture_cache_clear()
+        cls.element_cache_clear()
+        cls.event_cache_clear()
+        cls.gesture_direction_cache_clear()
+        cls.gesture_extension_cache_clear()
+        if DEBUG_CACHE:
+            print("")
+
+    @staticmethod
     def cache_clear():
         cls = PublicCacheFunc
-        if cls.__is_updatable__:
-            if DEBUG_CACHE:
-                print("cache_clear")
-            from .public import get_pref
-            get_pref.cache_clear()
-            cls.init_cache()
-            cls.gesture_cache_clear()
-            cls.element_cache_clear()
-            cls.event_cache_clear()
-            cls.gesture_direction_cache_clear()
-            cls.gesture_extension_cache_clear()
-
-            if DEBUG_CACHE:
-                print("")
+        if not cls.__is_updatable__:
+            CacheState.mark_structure_dirty()
+            CacheState._lock_deferred = True
+            return
+        if not CacheState.request_structure_clear():
+            return
+        cls._cache_clear_impl()
