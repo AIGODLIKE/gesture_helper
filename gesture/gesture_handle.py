@@ -25,8 +25,22 @@ class GestureHandle:
         return_distance = self.gesture_property.return_distance * scale
         if (distance < return_distance) and (index + 1 != len(points_kd_tree.child_element)):
             points_kd_tree.remove(index)
-            self.gesture_direction_cache_clear()
-            self.gesture_extension_cache_clear()
+            self.invalidate_derived_caches(force=True)
+
+    def _derived_invalidation_key(self):
+        """Cache key for derived direction/extension data."""
+        return self._direction_items_context_id()
+
+    def invalidate_derived_caches(self, *, force=False):
+        """Clear direction/extension caches only when modal context actually changed."""
+        key = self._derived_invalidation_key()
+        if not force and getattr(self, '_derived_cache_key', None) == key:
+            return
+        self._derived_cache_key = key
+        self._direction_items_memo = None
+        self._gpu_extension_items_cache = None
+        self.gesture_direction_cache_clear()
+        self.gesture_extension_cache_clear()
 
     def try_running_operator(self, ops):
         """Try to run gesture operator(s)."""
@@ -70,6 +84,8 @@ class GestureHandle:
         self.trajectory_tree = GesturePointKDTree()
         self.draw_trajectory_mouse_move = False
         self.last_mouse_mouse_time = time.time()
+        self._derived_cache_key = None
+        self._direction_items_memo = None
 
     def trajectory_event_update(self, context, event):
         """Update trajectory from modal event."""
@@ -93,16 +109,14 @@ class GestureHandle:
                 if self.is_have_extension_item and self.direction_element.direction == "7":
                     if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
                         self.trajectory_tree.append(self.direction_element, emp)
-                        self.gesture_direction_cache_clear()
-                        self.gesture_extension_cache_clear()
+                        self.invalidate_derived_caches()
                 else:
                     self.trajectory_tree.append(self.direction_element, emp)
-                    self.gesture_direction_cache_clear()
-                    self.gesture_extension_cache_clear()
+                    self.invalidate_derived_caches()
             if self.is_draw_gesture:
                 self.check_return_previous()
         self.tag_redraw()
 
     @property
     def is_have_extension_item(self) -> bool:
-        return self.is_draw_gesture and "9" in self.direction_items
+        return self.is_draw_gesture and "9" in self._raw_direction_items_dict()

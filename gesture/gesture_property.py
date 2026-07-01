@@ -23,7 +23,7 @@ class GestureProperty(PublicProperty):
         """Update element index selection."""
         try:
             el = self.element.values()[self.index_element]
-            if el:
+            if el and not el.radio:
                 el.radio = True
         except IndexError:
             ...
@@ -91,6 +91,26 @@ class GestureProperty(PublicProperty):
                 return 360 + angle
         return None
 
+    def _direction_items_context_id(self):
+        """Identity of the gesture tree level used for direction slot lookup."""
+        tree = self.trajectory_tree
+        last_element = tree.last_element if len(tree) else None
+        if last_element is not None:
+            return id(last_element)
+        og = self.operator_gesture
+        return id(og) if og is not None else None
+
+    def _raw_direction_items_dict(self):
+        """Direction slot map without memo (safe during cache key / extension checks)."""
+        tree = self.trajectory_tree
+        last_element = tree.last_element if len(tree) else None
+        og = self.operator_gesture
+        if last_element:
+            return last_element.gesture_direction_items
+        if og:
+            return og.gesture_direction_items
+        return {}
+
     @property
     def direction(self) -> int:
         """Current gesture direction (1-9)."""
@@ -103,7 +123,7 @@ class GestureProperty(PublicProperty):
         if self.is_have_extension_item and self.is_beyond_extension_offset_distance:
             # Adjust direction when mouse is in extension zone
             if d in (6, 8):
-                bottom = self.direction_items.get("9", None)
+                bottom = self._raw_direction_items_dict().get("9", None)
                 if bottom and bottom.mouse_is_in_extension_vertical_area or len(self.extension_hover) > 1:
                     return 7
         return d
@@ -122,28 +142,22 @@ class GestureProperty(PublicProperty):
 
     @property
     def direction_items(self) -> dict[str, 'GestureElement']:
-        """
-        Direction elements (9 slots); later duplicates win
-        :return:
-        """
+        """Direction elements (9 slots); later duplicates win."""
+        if not self.is_draw_gpu:
+            return self._raw_direction_items_dict()
 
-        def get_direction(item):
-            element = item.trajectory_tree.last_element
-            og = item.operator_gesture
-            if element:
-                return element.gesture_direction_items
-            elif og:
-                return og.gesture_direction_items
-            else:
-                return {}
+        from ..utils.public_cache import PublicCache
+        key = (
+            self._direction_items_context_id(),
+            PublicCache.__derived_generation__,
+        )
+        memo = getattr(self, '_direction_items_memo', None)
+        if memo is not None and memo[0] == key:
+            return memo[1]
 
-        items = get_direction(self)
-        if not len(items):
-            self.gesture_direction_cache_clear()
-            self.gesture_extension_cache_clear()
-            return get_direction(self)
-        else:
-            return items
+        items = self._raw_direction_items_dict()
+        self._direction_items_memo = (key, items)
+        return items
 
     @property
     def extension_element(self):

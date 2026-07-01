@@ -188,6 +188,8 @@
   "Cut Content Will Be Lost": "剪切的内容将会丢失",
   "Save Script Data %s Ctrl + S": "保存脚本数据 %s Ctrl + S",
   "Gesture Timeout(ms)": "手势超时(ms)",
+  "Modal Operator Target FPS": "模态操作符目标帧率",
+  "Report an error when one modal operator step takes longer than one frame at this rate": "当单次模态操作符耗时超过该帧率对应的一帧时间时报告错误",
   "Gesture Radius": "手势半径",
   "Show Gesture Keymap": "显示手势项快捷键",
   "Return Previous Gesture Distance": "返回上一个手势的距离",
