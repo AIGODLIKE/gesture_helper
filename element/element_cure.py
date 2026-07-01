@@ -278,8 +278,17 @@ class ElementCURE:
             # Select item to cut
             ae = self.pref.active_element
             ElementCURE.CUT.__cut_data__ = ae.___dict_data___
+            is_last = ae.is_last
+            parent = ae.parent
+            index = ae.index
             ae.remove()
-            print(ae, self.active_element, ElementCURE.CUT.__cut_data__)
+
+            if is_last and index != 0:
+                parent.index_element = index - 1
+                parent.element[parent.index_element].radio = True
+            elif -1 < index < len(parent.element):
+                parent.element[index].radio = True
+
             self.cache_clear()
             return {'FINISHED'}
 
