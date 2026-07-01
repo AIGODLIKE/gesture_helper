@@ -48,30 +48,60 @@ class PublicCache:
         cls.__gesture_element_iteration__.clear()
 
     @staticmethod
+    def _from_collection(gest, item):
+        cls = PublicCache
+        element_iteration = []
+        prev_element = None
+        for element in item.element:
+            if DEBUG_CACHE:
+                print("from_collection", element)
+            element_iteration.append(element)
+            cls.__element_prev_cache__[element] = prev_element
+            prev_element = element
+            element_iteration.extend(cls.from_element_get_data(gest, element, None, 0))
+        return element_iteration
+
+    @staticmethod
+    def _refresh_element_collections(gesture):
+        def update_list_clear(pe):
+            pe.element.update()
+            for el in pe.element:
+                el.element.update()
+                update_list_clear(el)
+
+        gesture.element.update()
+        update_list_clear(gesture)
+
+    @staticmethod
+    def purge_gesture(gesture):
+        """Remove structure cache entries belonging to *gesture*."""
+        cls = PublicCache
+        stale = [
+            key for key, owner in cls.__element_parent_gesture_cache__.items()
+            if owner == gesture
+        ]
+        for key in stale:
+            cls.__element_prev_cache__.pop(key, None)
+            cls.__element_child_iteration__.pop(key, None)
+            cls.__element_parent_element_cache__.pop(key, None)
+            cls.__element_parent_gesture_cache__.pop(key, None)
+        cls.__gesture_element_iteration__.pop(gesture, None)
+
+    @staticmethod
+    def rebuild_gesture(gesture):
+        """Rebuild structure cache for a single gesture."""
+        cls = PublicCache
+        cls.purge_gesture(gesture)
+        cls._refresh_element_collections(gesture)
+        cls.__gesture_element_iteration__[gesture] = cls._from_collection(gesture, gesture)
+
+    @staticmethod
     def init_cache():
         from .public import get_pref
         pref = get_pref()
 
         cls = PublicCache
         cls.cache_clear_data()
-
-        def from_collection(gest, item):
-            element_iteration = []
-            prev_element = None
-            for element in item.element:
-                if DEBUG_CACHE:
-                    print("from_collection", element)
-                element_iteration.append(element)
-                cls.__element_prev_cache__[element] = prev_element
-                prev_element = element
-                element_iteration.extend(cls.from_element_get_data(gest, element, None, 0))
-            return element_iteration
-
-        def update_list_clear(pe):
-            pe.element.update()
-            for el in pe.element:
-                el.element.update()
-                update_list_clear(el)
 
         if DEBUG_CACHE:
             print("init_cache")
@@ -80,9 +110,7 @@ class PublicCache:
         for gesture in pref.gesture:
             if DEBUG_CACHE:
                 print("gesture", gesture)
-            gesture.element.update()
-            update_list_clear(gesture)
-            cls.__gesture_element_iteration__[gesture] = from_collection(gesture, gesture)
+            cls.rebuild_gesture(gesture)
         if DEBUG_CACHE:
             print("")
 
@@ -142,6 +170,15 @@ class PublicCacheFunc(PublicCache):
         get_gesture_extension_items.cache_clear()
 
     @staticmethod
+    def clear_derived_lru_caches():
+        cls = PublicCacheFunc
+        cls.gesture_cache_clear()
+        cls.element_cache_clear()
+        cls.event_cache_clear()
+        cls.gesture_direction_cache_clear()
+        cls.gesture_extension_cache_clear()
+
+    @staticmethod
     def clear_derived_only():
         """Invalidate direction/extension/validity caches without rebuilding structure."""
         cls = PublicCacheFunc
@@ -153,6 +190,49 @@ class PublicCacheFunc(PublicCache):
     def clear_derived_cache(self):
         """Instance helper for property update callbacks."""
         self.clear_derived_only()
+
+    @staticmethod
+    def _structure_changed_impl(*gestures):
+        from .selection import clear_active_element_cache
+
+        PublicCache.__structure_generation__ += 1
+        PublicCache.__derived_generation__ += 1
+        for gesture in gestures:
+            clear_active_element_cache(gesture)
+            PublicCacheFunc.rebuild_gesture(gesture)
+        PublicCacheFunc.clear_derived_lru_caches()
+
+    @staticmethod
+    def ensure_gesture_structure(gesture):
+        """Rebuild *gesture* structure cache immediately (safe under update lock)."""
+        if gesture is not None:
+            PublicCacheFunc.rebuild_gesture(gesture)
+
+    @staticmethod
+    def ensure_item_structure(item):
+        """Rebuild structure cache for the gesture that owns *item*."""
+        from .iteration import find_owning_gesture
+
+        gesture = find_owning_gesture(item)
+        if gesture is not None:
+            PublicCacheFunc.rebuild_gesture(gesture)
+        else:
+            PublicCacheFunc._cache_clear_impl()
+
+    @staticmethod
+    def structure_changed(gesture=None):
+        """Rebuild structure cache for *gesture*, or the full tree if None."""
+        cls = PublicCacheFunc
+        if not cls.__is_updatable__:
+            CacheState.mark_structure_dirty(gesture)
+            CacheState._lock_deferred = True
+            return
+        if not CacheState.request_structure_clear(gesture):
+            return
+        if gesture is None:
+            cls._cache_clear_impl()
+        else:
+            cls._structure_changed_impl(gesture)
 
     @staticmethod
     def _cache_clear_impl():
@@ -169,21 +249,18 @@ class PublicCacheFunc(PublicCache):
         if DEBUG_CACHE:
             print("cache_clear")
         cls.init_cache()
-        cls.gesture_cache_clear()
-        cls.element_cache_clear()
-        cls.event_cache_clear()
-        cls.gesture_direction_cache_clear()
-        cls.gesture_extension_cache_clear()
+        cls.clear_derived_lru_caches()
         if DEBUG_CACHE:
             print("")
 
     @staticmethod
     def cache_clear():
+        """Full structure rebuild (register, import, multi-gesture changes)."""
         cls = PublicCacheFunc
         if not cls.__is_updatable__:
-            CacheState.mark_structure_dirty()
+            CacheState.mark_structure_dirty(None)
             CacheState._lock_deferred = True
             return
-        if not CacheState.request_structure_clear():
+        if not CacheState.request_structure_clear(None):
             return
         cls._cache_clear_impl()

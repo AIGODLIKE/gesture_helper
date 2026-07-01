@@ -135,6 +135,29 @@ class PublicProperty(PublicCacheFunc):
         """Batch structural cache invalidation until the block exits."""
         return CacheState.batch()
 
+    def _gesture_for_cache(self, gesture=None):
+        if gesture is not None:
+            return gesture
+        try:
+            element = self.active_element
+            if element is not None:
+                return element.parent_gesture
+        except AttributeError:
+            ...
+        try:
+            return self.active_gesture
+        except AttributeError:
+            ...
+        return None
+
+    def structure_changed(self, gesture=None):
+        """Rebuild structure cache for the active or given gesture."""
+        PublicCacheFunc.structure_changed(self._gesture_for_cache(gesture))
+
+    def cache_clear(self, gesture=None):
+        """Rebuild structure cache (single gesture when context is available)."""
+        self.structure_changed(gesture)
+
     @property
     def pref(self):
         return self._pref()
@@ -306,7 +329,8 @@ class PublicUniqueNamePropertyGroup:
         if len(names) != len(set(names)):
             for i in self.names_iteration:
                 if self.__names__.count(i.name) > 1:
-                    self.cache_clear()
+                    gesture = getattr(i, 'parent_gesture', None)
+                    self.structure_changed(gesture)
                     i.name = self.__generate_new_name__(self.__names__, i.name)
 
     @update_effect

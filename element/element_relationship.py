@@ -6,7 +6,7 @@ from ..debug import DEBUG_CACHE
 from ..utils.iteration import iter_elements
 from ..utils.selection import apply_radio_selection
 from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items
-from ..utils.public_cache import PublicCache, cache_update_lock
+from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
 
 
 @cache
@@ -69,8 +69,8 @@ class Relationship:
     def parent_element(self):
         cache = PublicCache.__element_parent_element_cache__
         if self not in cache:
-            self.init_cache()
-            if DEBUG_CACHE:
+            PublicCacheFunc.ensure_item_structure(self)
+            if DEBUG_CACHE and self not in cache:
                 print("parent_element key error", self, self not in cache,
                       cache.get(self))
                 print("\tw")
@@ -82,8 +82,8 @@ class Relationship:
     def parent_gesture(self):
         cache = PublicCache.__element_parent_gesture_cache__
         if self not in cache:
-            self.init_cache()
-            if DEBUG_CACHE:
+            PublicCacheFunc.ensure_item_structure(self)
+            if DEBUG_CACHE and self not in cache:
                 print("parent_gesture key error", self, self not in cache,
                       cache.get(self))
                 print("\ts")
@@ -118,7 +118,10 @@ class Relationship:
         gesture = self.parent_gesture
         if gesture is None:
             return []
-        return PublicCache.__gesture_element_iteration__.get(gesture, [])
+        cached = PublicCache.__gesture_element_iteration__.get(gesture)
+        if cached is not None:
+            return cached
+        return list(iter_elements(gesture))
 
     @property
     def prev_element(self):
@@ -130,7 +133,10 @@ class Relationship:
 
     @property
     def parent_gesture_direction_items(self):
-        return self.parent.gesture_direction_items
+        parent = self.parent
+        if parent is None:
+            return {}
+        return parent.gesture_direction_items
 
     @property
     def element_child_iteration(self):
@@ -146,7 +152,7 @@ class RadioSelect:
     def update_radio(self):
         gesture = self.parent_gesture
         if gesture is None:
-            self.cache_clear()
+            PublicCacheFunc.ensure_item_structure(self)
             gesture = self.parent_gesture
         if gesture is None:
             return
@@ -156,7 +162,7 @@ class RadioSelect:
             if self.is_operator:
                 self.to_operator_tmp_kmi()
         except Exception as e:
-            self.cache_clear()
+            PublicCacheFunc.ensure_item_structure(self)
             print("update_radio Error", e.args)
             import traceback
             traceback.print_exc()
@@ -236,3 +242,4 @@ class ElementRelationship(RadioSelect,
             if s not in ds:
                 self.direction = s
                 return
+        self.direction = '8'

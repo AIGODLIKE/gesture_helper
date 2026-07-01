@@ -19,3 +19,19 @@ def iter_elements(root, *, include_root=False):
 def iter_element_children(element):
     """Depth-first pre-order over *element*'s subtree (excluding *element*)."""
     yield from iter_elements(element)
+
+
+def find_owning_gesture(item):
+    """Return the gesture PropertyGroup that owns *item*."""
+    from .public import get_pref
+
+    for gesture in get_pref().gesture:
+        if item == gesture:
+            return gesture
+        for element in iter_elements(gesture):
+            if element == item:
+                return gesture
+            for event in element.modal_events:
+                if event == item:
+                    return gesture
+    return None
