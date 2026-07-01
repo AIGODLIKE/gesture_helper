@@ -2,7 +2,6 @@ import bpy
 
 from . import ops, ui, props, preferences
 from .gesture import gesture_keymap
-# from .ops.qucik_add.keymap import GestureQuickAddKeymap
 from .src import translate
 from .utils import public_cache
 from .gesture.temp_keymap import clear_temp_keymap
@@ -53,7 +52,6 @@ def register():
             print(e.args, "\n")
 
     clear_temp_keymap()
-    # GestureQuickAddKeymap.register()
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
 
@@ -66,7 +64,6 @@ def unregister():
     from .ops.export_import import Export
 
     public_cache.PublicCacheFunc.cache_clear()
-    # GestureQuickAddKeymap.unregister()
     get_pref().preferences_backups()
     Export.backups(is_blender_close())
     gesture_keymap.GestureKeymap.key_clear_legacy()
