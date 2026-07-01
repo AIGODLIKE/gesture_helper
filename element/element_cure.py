@@ -83,26 +83,41 @@ class ElementCURE:
         def collection(self):
             relationship = get_pref().add_element_property.relationship
             active = self.active_element
+            gesture = self.active_gesture
+            if gesture and active and active.collection is None:
+                PublicCacheFunc.ensure_gesture_structure(gesture)
             if relationship == 'SAME' and active:
-                # If no sibling level, use root collection
-                return active.parent.element
+                target = active.collection
+                if target is not None:
+                    return target
+                if gesture and active.is_root:
+                    return gesture.element
             elif relationship == 'CHILD' and active and active.is_have_add_child:
                 return active.element
-            return self.active_gesture.element
+            if gesture:
+                return gesture.element
+            return None
 
         @property
         def add_name(self):
             return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
 
         def execute(self, _):
+            gesture = self.active_gesture
+            if gesture is None:
+                return {'CANCELLED'}
+            target = self.collection
+            if target is None:
+                return {'CANCELLED'}
             with CacheState.batch():
-                add = self.collection.add()
-                self.collection.update()
+                add = target.add()
+                target.update()
+                PublicCacheFunc.ensure_gesture_structure(gesture)
                 add.element_type = self.element_type
                 add.selected_type = self.selected_type
                 add.__init_element__()
                 add.name = self.add_name
-                self.cache_clear()
+                self.cache_clear(gesture=gesture)
 
                 if self.pref.add_element_property.add_active_radio:
                     if self.active_element:
@@ -123,8 +138,9 @@ class ElementCURE:
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
-                self.pref.active_gesture.element.clear()
-                self.cache_clear()
+                gesture = self.pref.active_gesture
+                gesture.element.clear()
+                self.cache_clear(gesture=gesture)
                 return {'FINISHED'}
             elif self.pref.draw_property.element_remove_tips:
                 return operator_invoke_confirm(
@@ -138,12 +154,13 @@ class ElementCURE:
 
         def execute(self, _):
             ae = self.pref.active_element
+            gesture = ae.parent_gesture
             is_last = ae.is_last
             parent = ae.parent
             index = ae.index
 
             ae.remove()
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
             _select_sibling_after_remove(ae, parent, index, is_last)
 
             return {'FINISHED'}
@@ -160,6 +177,7 @@ class ElementCURE:
             from ..utils.property import get_property, __set_prop__
             move_to = getattr(bpy.context, 'move_element', None)
             move_from = ElementCURE.MOVE.move_item
+            gesture = move_from.parent_gesture if move_from else None
 
             if move_from:
                 move_data = get_property(move_from)
@@ -168,7 +186,7 @@ class ElementCURE:
                 else:
                     __set_prop__(move_from.parent_gesture, 'element', {'0': move_data})
                 move_from.remove()
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
 
         @property
         def other(self):
@@ -176,9 +194,10 @@ class ElementCURE:
 
         def execute(self, _):
             move_from = ElementCURE.MOVE.move_item
+            gesture = self.active_gesture
 
             if self.cancel_move:
-                self.cache_clear()
+                self.cache_clear(gesture=gesture)
                 ElementCURE.MOVE.move_item = None
                 return {'FINISHED'}
             elif move_from:
@@ -190,7 +209,7 @@ class ElementCURE:
                 return {'FINISHED'}
 
             ElementCURE.MOVE.move_item = self.active_element
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
             return {'FINISHED'}
 
     class SORT(ElementPoll):
@@ -200,9 +219,10 @@ class ElementCURE:
         is_next: BoolProperty()
 
         def execute(self, _):
+            gesture = self.active_gesture
             with CacheState.batch():
                 self.active_element.sort(self.is_next)
-                self.cache_clear()
+                self.cache_clear(gesture=gesture)
             return {'FINISHED'}
 
     class COPY(ElementPoll):
@@ -210,9 +230,10 @@ class ElementCURE:
         bl_idname = 'gesture.element_copy'
 
         def execute(self, _):
+            gesture = self.active_gesture
             with CacheState.batch():
                 self.active_element.copy()
-                self.cache_clear()
+                self.cache_clear(gesture=gesture)
 
                 ae = self.active_element
                 if ae:
@@ -235,6 +256,7 @@ class ElementCURE:
         def cut(self):
             from ..utils.property import __set_prop__
             cut = ElementCURE.CUT.__cut_data__
+            gesture = self.active_gesture
 
             # During cut/move paste
             cut_to = getattr(bpy.context, 'cut_element', None)
@@ -242,7 +264,7 @@ class ElementCURE:
                 __set_prop__(cut_to, 'element', {'0': cut})
             else:
                 __set_prop__(self.active_gesture, 'element', {'0': cut})
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
 
         @classmethod
         def poll(cls, context):
@@ -278,12 +300,13 @@ class ElementCURE:
 
             # Select item to cut
             ae = self.pref.active_element
+            gesture = ae.parent_gesture
             ElementCURE.CUT.__cut_data__ = ae.___dict_data___
             is_last = ae.is_last
             parent = ae.parent
             index = ae.index
             ae.remove()
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
             _select_sibling_after_remove(ae, parent, index, is_last)
 
             return {'FINISHED'}

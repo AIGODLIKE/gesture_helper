@@ -13,7 +13,8 @@ from .element_property import ElementProperty
 from .element_relationship import ElementRelationship
 from ..utils.property import __set_property__
 from ..utils.public import PublicProperty
-from ..utils.public_cache import cache_update_lock
+from ..utils.public_cache import cache_update_lock, PublicCacheFunc
+from ..utils.iteration import find_owning_gesture
 
 
 # Nested child deletion handled separately
@@ -35,6 +36,9 @@ class Element(ElementCURE,
 
     @cache_update_lock
     def __init_element__(self):
+        gesture = find_owning_gesture(self)
+        if gesture is not None:
+            PublicCacheFunc.ensure_gesture_structure(gesture)
         getattr(self, f'__init_{self.element_type.lower()}__')()
 
     def __init_dividing_line__(self):

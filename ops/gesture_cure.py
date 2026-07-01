@@ -43,7 +43,7 @@ class GestureCURE:
             add = pref.gesture.add()
             add.name = 'Gesture'
             GestureKeymap.key_restart()
-            self.cache_clear()
+            self.structure_changed(add)
             self.tag_redraw()
             return {'FINISHED'}
 
@@ -88,8 +88,9 @@ class GestureCURE:
         is_next: BoolProperty()
 
         def execute(self, _):
+            gesture = self.pref.active_gesture
             self.pref.active_gesture.sort(self.is_next)
-            self.cache_clear()
+            self.structure_changed(gesture)
             return {'FINISHED'}
 
     class COPY(GesturePoll):
@@ -97,7 +98,8 @@ class GestureCURE:
         bl_label = 'Copy gesture'
 
         def execute(self, _):
+            gesture = self.active_gesture
             self.active_gesture.copy()
-            self.cache_clear()
+            self.structure_changed(gesture)
             self.pref.gesture[-1].__fix_duplicate_name__()
             return {'FINISHED'}

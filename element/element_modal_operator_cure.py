@@ -1,5 +1,6 @@
 import bpy
 
+from ..utils.cache_state import CacheState
 from ..utils.public import PublicProperty
 from ..utils.public_cache import PublicCache
 
@@ -52,10 +53,11 @@ class ElementModalOperatorEventCRUE:
             if self.control_property == "":
                 return {'FINISHED'}
             element = self.active_element
+            gesture = element.parent_gesture
             new = element.modal_events.add()
             new.control_property = self.control_property
             new.__init_modal__()
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
             return {"FINISHED"}
 
     class COPY(ModalPoll):
@@ -70,14 +72,14 @@ class ElementModalOperatorEventCRUE:
 
         def execute(self, context):
             element = self.pref.active_element
-            element.active_event.copy()
-
-            self.cache_clear()
-            ae = element.active_event
-            if ae:
-                parent = ae.parent_element
-                parent.modal_events.move(len(parent.modal_events) - 1, ae.index + 1)
-            self.cache_clear()
+            gesture = element.parent_gesture
+            with CacheState.batch():
+                element.active_event.copy()
+                self.cache_clear(gesture=gesture)
+                ae = element.active_event
+                if ae:
+                    parent = ae.parent_element
+                    parent.modal_events.move(len(parent.modal_events) - 1, ae.index + 1)
             return {"FINISHED"}
 
     class REMOVE(ModalPoll):
@@ -95,16 +97,18 @@ class ElementModalOperatorEventCRUE:
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
                 element = self.pref.active_element
+                gesture = element.parent_gesture
                 element.modal_events.clear()
-                self.cache_clear()
+                self.cache_clear(gesture=gesture)
                 return {'FINISHED'}
             return self.execute(context)
 
         def execute(self, context):
             element = self.pref.active_element
+            gesture = element.parent_gesture
             active = element.active_event
             active.remove()
-            self.cache_clear()
+            self.cache_clear(gesture=gesture)
             return {"FINISHED"}
 
     class SelectControlProperty(ModalPoll):
