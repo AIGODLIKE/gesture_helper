@@ -5,7 +5,23 @@ from .element_property import ElementAddProperty
 from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import PublicProperty, PublicOperator, get_pref
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
+from ..utils.cache_state import CacheState
 from ..utils.translate import translate_lines_text
+
+
+def _select_sibling_after_remove(element, parent, index, is_last):
+    """Restore selection after removing *element* from *parent*."""
+    if not len(parent.element):
+        return
+    was_root = element.is_root
+    if is_last and index != 0:
+        parent.index_element = index - 1
+        if not was_root:
+            parent.element[parent.index_element].radio = True
+    elif -1 < index < len(parent.element):
+        sibling = parent.element[index]
+        if not sibling.radio:
+            sibling.radio = True
 
 
 class ElementCURE:
@@ -127,12 +143,7 @@ class ElementCURE:
 
             ae.remove()
             self.cache_clear()
-
-            if is_last and index != 0:
-                parent.index_element = index - 1
-                parent.element[parent.index_element].radio = True
-            elif -1 < index < len(parent.element):
-                parent.element[index].radio = True
+            _select_sibling_after_remove(ae, parent, index, is_last)
 
             return {'FINISHED'}
 
@@ -197,16 +208,17 @@ class ElementCURE:
         bl_idname = 'gesture.element_copy'
 
         def execute(self, _):
-            self.active_element.copy()
-            self.cache_clear()
+            with CacheState.batch():
+                self.active_element.copy()
+                self.cache_clear()
 
-            ae = self.active_element
-            if ae:
-                ae.radio = True
-                parent = ae.parent
-                parent.element.move(len(parent.element) - 1, ae.index + 1)
+                ae = self.active_element
+                if ae:
+                    if not ae.radio:
+                        ae.radio = True
+                    parent = ae.parent
+                    parent.element.move(len(parent.element) - 1, ae.index + 1)
 
-            self.cache_clear()
             return {'FINISHED'}
 
     class CUT(ElementPoll):
@@ -270,12 +282,7 @@ class ElementCURE:
             index = ae.index
             ae.remove()
             self.cache_clear()
-
-            if is_last and index != 0:
-                parent.index_element = index - 1
-                parent.element[parent.index_element].radio = True
-            elif -1 < index < len(parent.element):
-                parent.element[index].radio = True
+            _select_sibling_after_remove(ae, parent, index, is_last)
 
             return {'FINISHED'}
 

@@ -165,7 +165,8 @@ class RadioSelect:
 
             for item in self._live_element_iteration(gesture):
                 is_select = item == self
-                item['radio'] = is_select
+                if item.radio != is_select:
+                    item['radio'] = is_select
                 if is_select and self.is_operator:
                     self.to_operator_tmp_kmi()
         except Exception as e:

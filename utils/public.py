@@ -6,6 +6,7 @@ from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
+from .cache_state import CacheState
 from .iteration import iter_elements
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
@@ -128,6 +129,11 @@ class PublicProperty(PublicCacheFunc):
     @staticmethod
     def _pref():
         return get_pref()
+
+    @classmethod
+    def mutation_batch(cls):
+        """Batch structural cache invalidation until the block exits."""
+        return CacheState.batch()
 
     @property
     def pref(self):
