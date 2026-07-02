@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from bpy.props import StringProperty
 
-from ..utils.public import get_debug
+from ..utils.debug_util import debug_print, debug_trace_stack, debug_traceback
 from ..utils.expression import evaluate_condition
 
 poll: str = """Poll expression template
@@ -45,9 +45,7 @@ class ElementPoll:
     def __try_call_poll_bool__(self) -> bool:
         """Try to evaluate poll bool; may raise."""
         poll_res = evaluate_condition(self.poll_string)
-        if get_debug("poll"):
-            print(f"poll_bool\t{poll_res}\t{self.poll_string}")
-            print()
+        debug_print(f"poll_bool\t{poll_res}\t{self.poll_string}", key='poll')
         return poll_res
 
     @property
@@ -57,14 +55,11 @@ class ElementPoll:
             self.__try_call_poll_bool__
             return True
         except Exception as e:
-            if get_debug("poll"):
-                print("poll_bool_is_validity")
-                print(self.poll_string)
-                print(e.args)
-                import traceback
-                traceback.print_stack()
-                traceback.print_exc()
-                print()
+            debug_print("poll_bool_is_validity", key='poll')
+            debug_print(self.poll_string, key='poll')
+            debug_print(e.args, key='poll')
+            debug_trace_stack(key='poll')
+            debug_traceback(key='poll')
             return False
 
     @property
@@ -81,11 +76,8 @@ class ElementPoll:
         """Return current poll evaluation."""
         try:
             return self.__try_call_poll_bool__
-        except Exception as e:
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+        except Exception:
+            debug_traceback(key='poll')
             return False
 
     def update_poll_string(self, context):

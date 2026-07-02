@@ -1,5 +1,6 @@
 from ...ops.quick_add.show_tips import GestureShowTips
 from ...src.lib.bpu import BpuLayout, Quadrant
+from ...utils.debug_util import debug_print
 
 
 class DrawGpu:
@@ -42,7 +43,7 @@ class DrawGpu:
                 if tips.check_event(event):
                     return {'FINISHED'}
         except Exception as e:
-            print(e.args)
+            debug_print(e.args, key='gpu')
             import traceback
             traceback.print_exc()
             traceback.print_stack()

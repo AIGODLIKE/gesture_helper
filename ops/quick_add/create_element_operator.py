@@ -2,7 +2,7 @@ import bpy
 from mathutils import Euler, Vector, Matrix
 
 from ...element.element_cure import ElementCURE
-from ...utils.public import PublicOperator, PublicProperty, get_pref
+from ...utils.public import PublicOperator, PublicProperty, get_pref, debug_print
 
 
 def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
@@ -52,7 +52,7 @@ class CreateModalOperator:
 
 class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
     bl_label = 'Create Operator Element'
-    bl_idname = 'gesture.create_element_operator'
+    bl_idname = 'wm.gesture_create_element_operator'
 
     @classmethod
     def poll(cls, context):
@@ -71,12 +71,12 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
         """
         pref = get_pref()
         with pref.add_element_property.active_radio():
-            bpy.ops.gesture.element_add(element_type="OPERATOR")
+            bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
 
         # return {"FINISHED"}
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
-        print(f"\n{self.bl_label}\texecute\t", bl_idname)
+        debug_print(f"\n{self.bl_label}\texecute\t", bl_idname, key='operator')
         properties = {}
         for prop in dir(button_operator):
             if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
@@ -92,7 +92,7 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
 
                 try:
                     p = button_operator.bl_rna.properties[prop]
-                    print(prop, p.type, value)
+                    debug_print(prop, p.type, value, key='operator')
                     if p.type not in ("POINTER", "COLLECTION"):
                         if getattr(p, "is_array", False):
                             default = p.default_array[:]
@@ -102,10 +102,10 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
                             else:
                                 default = p.default
                         if default != value:
-                            print("default != value", default)
+                            debug_print("default != value", default, key='operator')
                             properties[prop] = value
                 except Exception as e:
-                    print(e.args)
+                    debug_print(e.args, key='operator')
                     import traceback
                     traceback.print_exc()
                     traceback.print_stack()
@@ -116,6 +116,6 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
             last_element.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
             if on := last_element.__operator_original_name__:
                 last_element.name = on
-            print(last_element.operator_bl_idname)
+            debug_print(last_element.operator_bl_idname, key='operator')
         self.cache_clear()
         return {"FINISHED"}

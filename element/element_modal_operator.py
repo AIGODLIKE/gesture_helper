@@ -4,7 +4,7 @@ import bpy
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
-from ..utils.public import get_debug
+from ..utils.public import get_debug, debug_print
 from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
 from ..utils.property import __get_property__, set_property, __set_property__
@@ -82,8 +82,7 @@ class NumberControl:
             return False
         ops.set_cursor(context, vm)
         ops.operator_properties[cp] = lv
-        if get_debug('modal'):
-            print("number_mouse_move_execute", cp, default_value, value, delta, lv)
+        debug_print("number_mouse_move_execute", cp, default_value, value, delta, lv, key='modal')
         return True
 
 
@@ -183,7 +182,7 @@ class BoolControl:
         bm = self.bool_value_mode
         op = ops.operator_properties
         key = self.control_property
-        print(f"\tcall boolean_execute\t{self.bool_value_mode}\t{op}\t{key}")
+        debug_print(f"\tcall boolean_execute\t{self.bool_value_mode}\t{op}\t{key}", key='modal')
         if bm == "SET_TRUE":
             op[key] = True
         elif bm == "SET_FALSE":
@@ -318,7 +317,7 @@ class EnumControl:
             orig_value = enums[0]
         orig_index = enums.index(orig_value)
 
-        print("cycle_enum_value", orig_value, orig_index, is_reverse, is_wrap, len(enums), enums)
+        debug_print("cycle_enum_value", orig_value, orig_index, is_reverse, is_wrap, len(enums), enums, key='modal')
         if is_reverse:
             if orig_index == 0:
                 advance_enum = enums[-1] if is_wrap else enums[0]
@@ -376,7 +375,7 @@ class KeymapEvent:
             temp_kmi.shift = self.event_shift
             temp_kmi.alt = self.event_alt
         except TypeError as e:
-            print("sync_to_temp_kmi error", e)
+            debug_print("sync_to_temp_kmi error", e, key='modal')
 
     def draw_event_type(self, layout):
         """Draw event type via temp KMI and sync to self.event_type."""
@@ -458,11 +457,15 @@ class EventRelationship(
         if self not in PublicCache.__element_parent_element_cache__:
             self.init_cache()
             if get_debug('cache'):
-                print("parent_element key error", self, self not in PublicCache.__element_parent_element_cache__,
-                      PublicCache.__element_parent_element_cache__.get(self))
-                print("\tw")
+                debug_print(
+                    "parent_element key error", self,
+                    self not in PublicCache.__element_parent_element_cache__,
+                    PublicCache.__element_parent_element_cache__.get(self),
+                    key='modal',
+                )
+                debug_print("\tw", key='modal')
                 for k, v in PublicCache.__element_parent_element_cache__.items():
-                    print("\t", k, v)
+                    debug_print("\t", k, v, key='modal')
         return PublicCache.__element_parent_element_cache__[self]
 
 
@@ -640,7 +643,7 @@ class ElementModalOperatorEventItem(
         """
         if self.check_event(event):
             if execute_func := getattr(self, f"{self.control_property_type.lower()}_execute", None):
-                print(f"\texecute_func {execute_func} {self.control_property_type.lower()} {self.control_property}")
+                debug_print(f"\texecute_func {execute_func} {self.control_property_type.lower()} {self.control_property}", key='modal')
                 execute_func(ops)
                 return True
 
@@ -693,5 +696,5 @@ class ElementModalOperatorEventItem(
                 try:
                     setattr(self, k, data.pop(k))
                 except Exception as e:
-                    print("load_keymap error", e.args)
+                    debug_print("load_keymap error", e.args, key='modal')
         return data

@@ -6,7 +6,7 @@ from ...utils.public import PublicProperty
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     bl_label = 'Switch Panel Opterator'
-    bl_idname = 'gesture.create_switch_panel'
+    bl_idname = 'wm.gesture_create_switch_panel'
 
     panel_name: bpy.props.StringProperty()
     filter: bpy.props.StringProperty(options={"TEXTEDIT_UPDATE"}, name="Filter")
@@ -25,7 +25,7 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         if self.panel_name == "":
             return {"FINISHED"}
         from ...element.element_cure import ElementCURE
-        bpy.ops.gesture.element_add(element_type="OPERATOR")
+        bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
         last = ElementCURE.ADD.last_element
         last.operator_bl_idname = f'bpy.ops.wm.context_set_string(data_path="area.regions[5].active_panel_category", value="{self.panel_name}")'
         last.name = self.panel_name

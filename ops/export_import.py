@@ -21,7 +21,7 @@ from ..utils.backups import (
     PREFERENCES_EXPORT_EXTENSION,
     resolve_backups_folder,
 )
-from ..utils.public import PublicOperator, PublicProperty, get_pref
+from ..utils.public import PublicOperator, PublicProperty, get_pref, debug_print
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = (
@@ -82,9 +82,10 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
         if nested:
             _remove_legacy_script_from_tree(nested)
         if _is_legacy_script_element(element):
-            print(
+            debug_print(
                 f"Gesture Helper: removed legacy SCRIPT element "
-                f"'{element.get('name', 'Unknown')}'"
+                f"'{element.get('name', 'Unknown')}'",
+                key='export_import',
             )
             remove_keys.append(key)
     for key in remove_keys:
@@ -148,7 +149,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 
 class Import(PublicFileOperator):
     bl_label = 'Import gesture'
-    bl_idname = 'gesture.gesture_import'
+    bl_idname = 'wm.gesture_import'
     @property
     def preset_items(self):
         from ..utils.preset import get_preset_gesture_list
@@ -161,7 +162,6 @@ class Import(PublicFileOperator):
         self.cache_clear()
         self.update_state()
         GestureKeymap.key_restart()
-        bpy.ops.wm.save_userpref()
         return {'FINISHED'}
 
     def draw(self, _):
@@ -200,9 +200,9 @@ class Import(PublicFileOperator):
             self.report({'INFO'}, text)
         except Exception as e:
             self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='export_import')
+            debug_traceback(key='export_import')
 
     def read_json(self):
         with open(self.filepath, 'r') as file:
@@ -210,28 +210,32 @@ class Import(PublicFileOperator):
 
     @staticmethod
     def restore():
-        """Import the best matching gesture backup on first add-on init."""
+        """Import the best matching gesture backup when preferences are empty."""
         try:
+            pref = get_pref()
+            if len(pref.gesture) > 0:
+                log_backup("restore: skipped, gestures already configured")
+                return
             log_backup("restore: searching gesture backup")
             backup_file = find_gesture_backup_for_restore()
             if backup_file is None:
                 log_backup("restore: no gesture backup file found")
                 return
             log_backup(f"restore: importing <- {backup_file}")
-            bpy.ops.gesture.gesture_import(
+            bpy.ops.wm.gesture_import(
                 filepath=backup_file,
                 run_execute=True,
             )
             log_backup("restore: import finished")
         except Exception as e:
             log_backup(f"restore failed: {e}")
-            import traceback
-            traceback.print_exc()
+            from ..utils.debug_util import debug_traceback
+            debug_traceback(key='export_import')
 
 
 class Export(PublicFileOperator):
     bl_label = 'Export gesture'
-    bl_idname = 'gesture.export'
+    bl_idname = 'wm.gesture_export'
 
     description: StringProperty(name='Description', default='This is a description')
     is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
@@ -414,7 +418,7 @@ class Export(PublicFileOperator):
 
 
 class ExportPreferences(bpy.types.Operator, ExportHelper):
-    bl_idname = "gesture.export_preferences"
+    bl_idname = "wm.gesture_export_preferences"
     bl_label = "Export Preferences"
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
@@ -428,13 +432,13 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
-            print(e.args)
+            debug_print(e.args, key='export_import')
             self.report({'ERROR'}, pgettext_iface("Export error, please check path %s") % self.filepath)
         return {"FINISHED"}
 
 
 class ImportPreferences(bpy.types.Operator, ImportHelper):
-    bl_idname = "gesture.import_preferences"
+    bl_idname = "wm.gesture_import_preferences"
     bl_label = "Import Preferences"
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
@@ -472,7 +476,7 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
             import traceback
             traceback.print_stack()
             traceback.print_exc()
-            print(e.args)
+            debug_print(e.args, key='export_import')
             self.report(
                 {'ERROR'},
                 pgettext_iface("Import error, please select preference settings file"),

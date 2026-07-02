@@ -5,7 +5,7 @@ import blf
 import bpy
 import gpu
 
-from ..utils.public import get_debug
+from ..utils.public import get_debug, debug_print
 from ..utils import get_region_height, get_region_width
 from ..utils.public import PublicOperator, get_pref, PublicMouseModal
 from ..utils.public_gpu import PublicGpu
@@ -105,7 +105,7 @@ class KeymapTips(PublicGpu):
             self.__temp_draw__ = bpy.types.SpaceView3D.draw_handler_add(self.draw_keymap_tips, (), "WINDOW",
                                                                         'POST_PIXEL')
         except Exception as e:
-            print(e.args)
+            debug_print(e.args, key='modal')
             import traceback
             traceback.print_exc()
             traceback.print_stack()
@@ -116,7 +116,7 @@ class KeymapTips(PublicGpu):
 
 
 class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
-    bl_idname = 'gesture.element_modal_event'
+    bl_idname = 'wm.gesture_element_modal_event'
     bl_label = 'Element Modal'
     bl_options = {'MACRO', 'GRAB_CURSOR', 'DEPENDS_ON_CURSOR'}
 
@@ -140,8 +140,7 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         self.gesture = getattr(context, "gesture", None)
         self.element = getattr(context, "element", None)
         self.operator_properties = getattr(self.element, "last_properties", None)
-        if get_debug('modal'):
-            print(self.bl_idname, self.gesture, self.element, self.operator_properties)
+        debug_print(self.bl_idname, self.gesture, self.element, self.operator_properties, key='modal')
 
         bpy.ops.ed.undo_push(message="Gesture Element Modal")
 
@@ -171,25 +170,21 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
                 return {'PASS_THROUGH'}
         if self.is_right_mouse or event.type == "ESC":
             if bpy.ops.ed.undo.poll():
-                if get_debug('modal'):
-                    print("esc undo")
+                debug_print("esc undo", key='modal')
                 bpy.ops.ed.undo()
             return self.exit(context, event)
         if event.type not in ("TIMER_REPORT",):
             element = self.element
             if element.run_element_modal_event(self, context, event):
                 if bpy.ops.ed.undo.poll():
-                    if get_debug('modal'):
-                        print("undo")
+                    debug_print("undo", key='modal')
                     bpy.ops.ed.undo()
                 start_time = time.time()
                 operator_properties = self.operator_properties
-                if get_debug('modal'):
-                    print("__running_by_bl_idname__", operator_properties)
+                debug_print("__running_by_bl_idname__", operator_properties, key='modal')
                 element.__running_by_bl_idname__(operator_properties)
                 self.last_running_time = time.time() - start_time
-                if get_debug('modal'):
-                    print("last_running_time", self.last_running_time)
+                debug_print("last_running_time", self.last_running_time, key='modal')
                 self.update_header_text(context)
                 return {'RUNNING_MODAL'}
         return {'RUNNING_MODAL'}

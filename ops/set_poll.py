@@ -7,7 +7,7 @@ from ..utils.public import PublicOperator, PublicProperty
 
 class SetPollExpression(PublicProperty, PublicOperator, PollData):
     bl_label = 'Setting Conditional Expressions'
-    bl_idname = 'gesture.set_poll_expression'
+    bl_idname = 'wm.gesture_set_poll_expression'
 
     is_not: BoolProperty(name='Invert', description='It can be interpreted as an inverse')
 

@@ -6,11 +6,11 @@ from .draw_gpu import DrawGpu
 from ...gesture import GestureProperty
 from ...gesture.gesture_draw_gpu import GestureGpuDraw
 from ...gesture.gesture_handle import GestureHandle
-from ...utils.public import PublicOperator
+from ...utils.public import PublicOperator, debug_print
 
 
 class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty):
-    bl_idname = "gesture.preview"
+    bl_idname = "wm.gesture_preview"
     bl_label = "Gesture preview"
     is_preview_mode = False
 
@@ -60,7 +60,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
             self.gesture = ag.name
             tree = self.trajectory_tree
             if len(tree) >= 2:
-                print(tree)
+                debug_print(tree, key='modal')
             #     tree.remove(1)
             #     print(tree)
             #     ...

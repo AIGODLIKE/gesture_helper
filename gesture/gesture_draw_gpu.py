@@ -137,13 +137,13 @@ class GestureGpuDraw(DrawDebug):
                     debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
                                                                    'POST_PIXEL')
                 except Exception as e:
-                    from ..utils.public import get_debug
-                    if get_debug():
-                        print(e.args)
-                        print(space)
-                        import traceback
-                        traceback.print_exc()
-                        traceback.print_stack()
+                    from ..utils.public import get_debug, debug_print
+                    from ..utils.debug_util import debug_traceback, debug_trace_stack
+                    debug_print(e.args, key='gpu')
+                    if get_debug('gpu'):
+                        debug_print(space, key='gpu')
+                        debug_traceback(key='gpu')
+                        debug_trace_stack(key='gpu')
 
             GestureGpuDraw.__temp_draw_class__[cls] = sub_class
             GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class

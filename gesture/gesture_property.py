@@ -34,7 +34,7 @@ class GestureProperty(PublicProperty):
         except IndexError:
             ...
 
-    index_element: IntProperty(name='索引', update=update_index, options={"HIDDEN"})
+    index_element: IntProperty(name='Index', update=update_index, options={"HIDDEN"})
 
     enabled: BoolProperty(
         default=True,

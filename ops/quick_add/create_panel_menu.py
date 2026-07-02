@@ -9,7 +9,7 @@ from ...utils.public import PublicOperator, PublicProperty, get_pref, poll_messa
 
 class CreatePanelMenu(PublicOperator, PublicProperty):
     bl_label = 'Create Panel Menu'
-    bl_idname = 'gesture.create_panel_menu'
+    bl_idname = 'wm.gesture_create_panel_menu'
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])
     create_id_name: StringProperty()
@@ -27,7 +27,7 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
         pref = get_pref()
         self.cache_clear()
         with pref.add_element_property.active_radio():
-            bpy.ops.gesture.element_add(element_type="OPERATOR")
+            bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
             ae = self.active_element
             if self.type == "PANEL":
                 ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'

@@ -9,7 +9,7 @@ def add_all_preset():
     from ..utils.preset import get_preset_gesture_list
     count = 0
     for k, v in get_preset_gesture_list().items():
-        bpy.ops.gesture.gesture_import(
+        bpy.ops.wm.gesture_import(
             filepath=v,
             run_execute=True,
         )
@@ -27,9 +27,9 @@ class GestureCURE:
             return poll_message_active_gesture(cls)
 
     class ADD(PublicOperator, PublicProperty):
-        bl_idname = 'gesture.gesture_add'
+        bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
-        bl_description = 'Ctrl Alt Shift + Click: Add all preset gesture!!!'
+        bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
 
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
@@ -48,19 +48,29 @@ class GestureCURE:
             return {'FINISHED'}
 
     class REMOVE(GesturePoll):
-        bl_idname = 'gesture.gesture_remove'
+        bl_idname = 'wm.gesture_remove'
         bl_label = 'Remove gesture'
-        bl_description = 'Ctrl Alt Shift + Click: Remove all gesture!!!'
+        bl_description = (
+            'Hold Ctrl+Alt+Shift while clicking to remove all gestures. '
+            'You will be asked to confirm. Use Ctrl+Z to undo.'
+        )
         bl_options = {'REGISTER', 'UNDO'}
+
+        bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
-                self.pref.gesture.clear()
-                self.cache_clear()
-                GestureKeymap.key_restart()
-                return {'FINISHED'}
-            elif self.pref.draw_property.gesture_remove_tips:
+                self.bulk_remove = True
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Remove all gestures?",
+                    message="This removes every gesture. You can undo with Ctrl+Z.",
+                )
+            self.bulk_remove = False
+            if self.pref.draw_property.gesture_remove_tips:
                 return operator_invoke_confirm(
                     self,
                     event,
@@ -71,6 +81,12 @@ class GestureCURE:
             return self.execute(context)
 
         def execute(self, _):
+            if self.bulk_remove:
+                self.pref.gesture.clear()
+                self.cache_clear()
+                GestureKeymap.key_restart()
+                self.bulk_remove = False
+                return {'FINISHED'}
             pref = self.pref
             act = pref.active_gesture
             act.remove()
@@ -82,7 +98,7 @@ class GestureCURE:
             return {'FINISHED'}
 
     class SORT(GesturePoll):
-        bl_idname = 'gesture.gesture_sort'
+        bl_idname = 'wm.gesture_sort'
         bl_label = 'Sort gesture'
 
         is_next: BoolProperty()
@@ -94,7 +110,7 @@ class GestureCURE:
             return {'FINISHED'}
 
     class COPY(GesturePoll):
-        bl_idname = 'gesture.gesture_copy'
+        bl_idname = 'wm.gesture_copy'
         bl_label = 'Copy gesture'
 
         def execute(self, _):

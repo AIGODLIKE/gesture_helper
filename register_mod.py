@@ -33,7 +33,8 @@ def init_register():
         prop = getattr(pref, 'other_property', None)
         if prop and not prop.init_addon:
             prop.init_addon = True
-            Import.restore()
+            if len(pref.gesture) == 0:
+                Import.restore()
 
     public_cache.PublicCacheFunc.cache_clear()
     clear_all_active_element_caches(pref)

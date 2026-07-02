@@ -68,7 +68,7 @@ class ElementCURE:
 
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
         bl_label = 'Add element item'
-        bl_idname = 'gesture.element_add'
+        bl_idname = 'wm.gesture_element_add'
         last_element = None
 
         @classmethod
@@ -136,18 +136,28 @@ class ElementCURE:
 
     class REMOVE(ElementPoll):
         bl_label = 'Remove element item'
-        bl_idname = 'gesture.element_remove'
-        bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
+        bl_idname = 'wm.gesture_element_remove'
+        bl_description = (
+            'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture. '
+            'You will be asked to confirm. Use Ctrl+Z to undo.'
+        )
         bl_options = {'REGISTER', 'UNDO'}
+
+        bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
-                gesture = self.pref.active_gesture
-                gesture.element.clear()
-                self.cache_clear(gesture=gesture)
-                return {'FINISHED'}
-            elif self.pref.draw_property.element_remove_tips:
+                self.bulk_remove = True
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Remove all elements?",
+                    message="This removes every element in the active gesture. You can undo with Ctrl+Z.",
+                )
+            self.bulk_remove = False
+            if self.pref.draw_property.element_remove_tips:
                 return operator_invoke_confirm(
                     self,
                     event,
@@ -158,6 +168,12 @@ class ElementCURE:
             return self.execute(context)
 
         def execute(self, _):
+            if self.bulk_remove:
+                gesture = self.pref.active_gesture
+                gesture.element.clear()
+                self.cache_clear(gesture=gesture)
+                self.bulk_remove = False
+                return {'FINISHED'}
             ae = self.pref.active_element
             gesture = ae.parent_gesture
             is_last = ae.is_last
@@ -172,7 +188,7 @@ class ElementCURE:
 
     class MOVE(ElementPoll):
         bl_label = 'Move gesture item'
-        bl_idname = 'gesture.element_move'
+        bl_idname = 'wm.gesture_element_move'
         move_item = None
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -222,7 +238,7 @@ class ElementCURE:
 
     class SORT(ElementPoll):
         bl_label = 'Sort gesture item'
-        bl_idname = 'gesture.element_sort'
+        bl_idname = 'wm.gesture_element_sort'
 
         is_next: BoolProperty()
 
@@ -235,7 +251,7 @@ class ElementCURE:
 
     class COPY(ElementPoll):
         bl_label = 'Copy gesture item'
-        bl_idname = 'gesture.element_copy'
+        bl_idname = 'wm.gesture_element_copy'
 
         def execute(self, _):
             from ..utils.selection import clear_active_element_cache, enforce_single_selection
@@ -260,7 +276,7 @@ class ElementCURE:
 
     class CUT(ElementPoll):
         bl_label = 'Cut gesture item'
-        bl_idname = 'gesture.element_cut'
+        bl_idname = 'wm.gesture_element_cut'
 
         __cut_data__ = None  # Cut buffer data
 
@@ -329,7 +345,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class SwitchShowChild(ElementPoll):
-        bl_idname = 'gesture.element_switch_show_child'
+        bl_idname = 'wm.gesture_element_switch_show_child'
         bl_label = 'Switch show child'
 
         def execute(self, context):

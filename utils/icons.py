@@ -36,13 +36,14 @@ def check_icon(icon_identifier: str) -> bool:
 
 
 def fix_icon_pixels(key, icon):
+    from .debug_util import debug_print
     global fix_icons
     if key not in fix_icons:
         fix_icons[key] = 0
 
     if fix_icons[key] == 10:
         icon.reload()
-        print("fix_icon_pixels", key, icon)
+        debug_print("fix_icon_pixels", key, icon, key='operator')
         fix_icons[key] += 1
     else:
         fix_icons[key] += 1
