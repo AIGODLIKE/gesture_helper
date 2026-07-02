@@ -21,7 +21,13 @@ from ..utils.backups import (
     PREFERENCES_EXPORT_EXTENSION,
     resolve_backups_folder,
 )
-from ..utils.public import PublicOperator, PublicProperty, get_pref, debug_print
+from ..utils.public import (
+    PublicOperator,
+    PublicProperty,
+    get_pref,
+    debug_print,
+    poll_addon_preferences,
+)
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = (
@@ -135,6 +141,10 @@ class PublicFileOperator(PublicOperator, PublicProperty):
             i.selected = value
 
     selected_all: BoolProperty(name='Select all', get=__get_all__, set=__set_all__)
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
 
     def invoke(self, context, _):
         if self.run_execute:
@@ -313,6 +323,8 @@ class Export(PublicFileOperator):
 
     def invoke(self, context, event):
         self.is_invoke = True
+        if not self.run_execute and not self.preset_show and not (self.filepath or "").strip():
+            self.filepath = self.file_path
         return super().invoke(context, event)
 
     def execute(self, _):
@@ -423,6 +435,22 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
 
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    def invoke(self, context, event):
+        from ..utils.backups import (
+            PREFERENCES_BACKUP_FILENAME,
+            get_default_backups_folder,
+        )
+
+        if not (self.filepath or "").strip():
+            self.filepath = os.path.join(
+                get_default_backups_folder(), PREFERENCES_BACKUP_FILENAME)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
     def execute(self, context):
         from ..utils.public import get_pref
         from bpy.app.translations import pgettext_iface
@@ -447,6 +475,10 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
         options={'HIDDEN'},
         maxlen=255,
     )
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
 
     def invoke(self, context, event):
         from ..utils.backups import (
