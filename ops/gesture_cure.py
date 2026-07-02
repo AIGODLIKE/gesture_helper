@@ -2,7 +2,12 @@ import bpy
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
-from ..utils.public import PublicOperator, PublicProperty, poll_message_active_gesture
+from ..utils.public import (
+    PublicOperator,
+    PublicProperty,
+    poll_addon_preferences,
+    poll_message_active_gesture,
+)
 
 
 def add_all_preset():
@@ -30,6 +35,10 @@ class GestureCURE:
         bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
         bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+
+        @classmethod
+        def poll(cls, context):
+            return poll_addon_preferences(cls)
 
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:

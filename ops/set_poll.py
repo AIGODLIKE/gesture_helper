@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 
 from ..utils.poll_data import PollData
-from ..utils.public import PublicOperator, PublicProperty
+from ..utils.public import PublicOperator, PublicProperty, poll_message_active_element
 
 
 class SetPollExpression(PublicProperty, PublicOperator, PollData):
@@ -17,6 +17,11 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         options={'HIDDEN', 'SKIP_SAVE'}
     )
     clear: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
+
+    @classmethod
+    def poll(cls, context):
+        return poll_message_active_element(cls)
+
     ___notation___ = {
         '==': '!=',
         "is": 'not is',

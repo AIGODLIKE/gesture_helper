@@ -3,7 +3,13 @@ from bpy.props import BoolProperty
 
 from .element_property import ElementAddProperty
 from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
-from ..utils.public import PublicProperty, PublicOperator, get_pref, poll_message_active_element
+from ..utils.public import (
+    PublicProperty,
+    PublicOperator,
+    get_pref,
+    poll_message_active_element,
+    poll_message_active_gesture,
+)
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 from ..utils.cache_state import CacheState
 from ..utils.translate import translate_lines_text
@@ -70,6 +76,10 @@ class ElementCURE:
         bl_label = 'Add element item'
         bl_idname = 'wm.gesture_element_add'
         last_element = None
+
+        @classmethod
+        def poll(cls, context):
+            return poll_message_active_gesture(cls)
 
         @classmethod
         def description(cls, context, properties):

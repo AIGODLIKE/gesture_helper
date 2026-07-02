@@ -12,6 +12,13 @@ class SwitchGestureWindow(PublicOperator):
                                options={'SKIP_SAVE'})
     window_fullscreen_toggle: BoolProperty()
 
+    @classmethod
+    def poll(cls, context):
+        if context.window_manager is None:
+            cls.poll_message_set("Window manager unavailable")
+            return False
+        return True
+
     def execute(self, context):
         if self.popup_window:
             bpy.ops.screen.userpref_show()

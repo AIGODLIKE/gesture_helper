@@ -14,7 +14,18 @@ ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 PRESET_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
 
 
+def poll_addon_preferences(cls) -> bool:
+    try:
+        get_pref()
+    except (KeyError, AttributeError):
+        cls.poll_message_set("Add-on is not enabled")
+        return False
+    return True
+
+
 def poll_message_active_gesture(cls) -> bool:
+    if not poll_addon_preferences(cls):
+        return False
     if get_pref().active_gesture is None:
         cls.poll_message_set("No active gesture")
         return False
@@ -22,6 +33,8 @@ def poll_message_active_gesture(cls) -> bool:
 
 
 def poll_message_active_element(cls) -> bool:
+    if not poll_addon_preferences(cls):
+        return False
     if get_pref().active_element is None:
         cls.poll_message_set("No active element")
         return False

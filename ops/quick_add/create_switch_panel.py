@@ -1,7 +1,7 @@
 import bpy
 
 from ...utils.panel import get_3d_panels_by_context, get_panels_by_context
-from ...utils.public import PublicProperty
+from ...utils.public import PublicProperty, poll_message_active_gesture
 
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
@@ -11,6 +11,10 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     panel_name: bpy.props.StringProperty()
     filter: bpy.props.StringProperty(options={"TEXTEDIT_UPDATE"}, name="Filter")
     panels = []
+
+    @classmethod
+    def poll(cls, context):
+        return poll_message_active_gesture(cls)
 
     def invoke(self, context, event):
         """source\blender\makesrna\intern\rna_screen.cc L348"""

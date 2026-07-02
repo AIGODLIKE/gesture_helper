@@ -1,7 +1,13 @@
 import bpy
 from bpy.props import EnumProperty, StringProperty
 
-from ..utils.public import PublicOperator, get_pref, PublicProperty, debug_print
+from ..utils.public import (
+    PublicOperator,
+    get_pref,
+    PublicProperty,
+    debug_print,
+    poll_message_active_gesture,
+)
 from ..utils.public_ui import icon_two
 
 # Matches default gesture keymaps and other frequent 3D Viewport contexts.
@@ -35,6 +41,10 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     __dialog_keymap_hierarchy__ = None
     __filtered_keymap_hierarchy__ = []
     add_keymap: StringProperty(options={'SKIP_SAVE'})
+
+    @classmethod
+    def poll(cls, context):
+        return poll_message_active_gesture(cls)
 
     def _update_keymap_filter(self, _context):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter

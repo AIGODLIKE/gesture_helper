@@ -232,6 +232,10 @@ class RefreshIcons(bpy.types.Operator):
     bl_idname = "wm.gesture_refresh_icons"
     bl_label = "Refresh Icons"
 
+    @classmethod
+    def poll(cls, context):
+        return poll_message_active_element(cls)
+
     def execute(self, context):
         from ..utils.icons import Icons
         Icons.reload_icons()
@@ -241,6 +245,10 @@ class RefreshIcons(bpy.types.Operator):
 class ClearHistory(bpy.types.Operator):
     bl_idname = "wm.gesture_clear_icons_history"
     bl_label = "Clear History"
+
+    @classmethod
+    def poll(cls, context):
+        return poll_message_active_element(cls)
 
     def execute(self, context):
         HISTORY.clear()
