@@ -9,6 +9,7 @@ tagline = "Quickly use gestures to run the operator or change properties"
 type = "add-on"
 version = "2.3.2"
 tags = ["3D View", "User Interface"]
+website = "https://github.com/AIGODLIKE/gesture_helper"
 support = "https://github.com/AIGODLIKE/gesture_helper/issues"
 
 [build]
