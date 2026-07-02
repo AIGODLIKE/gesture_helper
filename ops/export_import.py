@@ -18,6 +18,7 @@ from ..utils.backups import (
     close_backup_filename,
     find_gesture_backup_for_restore,
     log_backup,
+    PREFERENCES_EXPORT_EXTENSION,
     resolve_backups_folder,
 )
 from ..utils.public import PublicOperator, PublicProperty, get_pref
@@ -416,7 +417,7 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
     bl_idname = "gesture.export_preferences"
     bl_label = "Export Preferences"
 
-    filename_ext = ".gesture_preferences"
+    filename_ext = PREFERENCES_EXPORT_EXTENSION
 
     def execute(self, context):
         from ..utils.public import get_pref
@@ -436,14 +437,47 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
     bl_idname = "gesture.import_preferences"
     bl_label = "Import Preferences"
 
+    filename_ext = PREFERENCES_EXPORT_EXTENSION
+    filter_glob: bpy.props.StringProperty(
+        default="*.gesture_preference;*.*",
+        options={'HIDDEN'},
+        maxlen=255,
+    )
+
+    def invoke(self, context, event):
+        from ..utils.backups import (
+            PREFERENCES_BACKUP_FILENAME,
+            get_default_backups_folder,
+        )
+
+        self.filepath = os.path.join(get_default_backups_folder(), PREFERENCES_BACKUP_FILENAME)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
     def execute(self, context):
+        from bpy.app.translations import pgettext_iface
         from ..utils.public import get_pref
+
+        filepath = (self.filepath or "").strip()
+        if not filepath:
+            self.report({'ERROR'}, pgettext_iface("Please select a preferences backup file"))
+            return {'CANCELLED'}
+
         try:
-            get_pref().preferences_restore(self.filepath)
+            get_pref().preferences_restore(filepath)
+        except ValueError as e:
+            self.report({'ERROR'}, pgettext_iface(str(e)))
+            return {'CANCELLED'}
         except Exception as e:
             import traceback
             traceback.print_stack()
             traceback.print_exc()
             print(e.args)
-            self.report({'ERROR'}, "Import error, please select preference settings file")
+            self.report(
+                {'ERROR'},
+                pgettext_iface("Import error, please select preference settings file"),
+            )
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, pgettext_iface("Preferences imported successfully"))
         return {"FINISHED"}
