@@ -43,6 +43,9 @@ def init_register():
 
 def register():
     from .utils.public import get_pref
+    from .utils import icons
+
+    icons.Icons.register()
 
     for module in module_list:
         module.register()

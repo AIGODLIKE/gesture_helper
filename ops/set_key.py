@@ -32,12 +32,26 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
     __temp_selected_keymaps__ = []  # static
     __session_keymap_filter__ = 'COMMON'
+    __dialog_keymap_hierarchy__ = None
     add_keymap: StringProperty(options={'SKIP_SAVE'})
 
     def _update_keymap_filter(self, _context):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
+        self._rebuild_filtered_hierarchy()
         if self.keymap_filter == 'COMMON':
             OperatorSetKeyMaps._ensure_common_default_expansion()
+
+    def _rebuild_filtered_hierarchy(self) -> None:
+        items = (
+            getattr(self, "keymap_hierarchy", None)
+            or OperatorSetKeyMaps.__dialog_keymap_hierarchy__
+        )
+        if items is None:
+            self.filtered_keymap_hierarchy = []
+            return
+        self.filtered_keymap_hierarchy = OperatorSetKeyMaps._filter_keymap_hierarchy(
+            items, self.keymap_filter,
+        )
 
     keymap_filter: EnumProperty(
         name='Keymap list',
@@ -80,9 +94,11 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             return {'FINISHED'}
 
         from bl_keymap_utils import keymap_hierarchy
-        self.keymap_hierarchy = keymap_hierarchy.generate()
+        OperatorSetKeyMaps.__dialog_keymap_hierarchy__ = keymap_hierarchy.generate()
+        self.keymap_hierarchy = OperatorSetKeyMaps.__dialog_keymap_hierarchy__
         OperatorSetKeyMaps.__temp_selected_keymaps__ = self.active_gesture_keymaps
         self.keymap_filter = OperatorSetKeyMaps.__session_keymap_filter__
+        self._rebuild_filtered_hierarchy()
         if self.keymap_filter == 'COMMON':
             OperatorSetKeyMaps._ensure_common_default_expansion()
         return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
@@ -99,58 +115,62 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         header.label(text="Keymap list", icon='KEYINGSET')
         row = box.row(align=True)
         row.scale_y = 1.1
-        row.prop(self, "keymap_filter", expand=True)
+        row.prop_enum(self, "keymap_filter", 'COMMON', text="Common", icon='SOLO_ON')
+        row.prop_enum(self, "keymap_filter", 'ALL', text="All", icon='PRESET')
 
     def draw(self, _):
-        self.keymap_filter = OperatorSetKeyMaps.__session_keymap_filter__
-        layout = self.layout.column()
-        layout.emboss = "NORMAL"
+        OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
+        self._rebuild_filtered_hierarchy()
+        layout = self.layout.column(align=True)
         layout.label(text=self.pref.active_gesture.name)
         self.draw_keymap_filter(layout)
         layout.separator()
-        row = layout.row()
-        row.emboss = 'NONE'
-        self.draw_keymaps(row.column(align=True).box(), self.keymap_hierarchy)
-        self.draw_selected_keymap(row.column(align=True).box())
+        layout.emboss = "NONE"
+        split = layout.split(factor=0.65)
+        left_col = split.column(align=True)
+        right_col = split.column(align=True)
+        self.draw_keymaps(left_col, self.filtered_keymap_hierarchy)
+        self.draw_selected_keymap(right_col)
 
     @classmethod
-    def _has_common_keymap(cls, items) -> bool:
-        for name, _, _, child in items:
-            if name in COMMON_GESTURE_KEYMAPS:
-                return True
-            if child and cls._has_common_keymap(child):
-                return True
-        return False
+    def _filter_keymap_hierarchy(cls, items, filter_mode: str):
+        if filter_mode == 'ALL':
+            return list(items)
 
-    def _keymap_visible(self, name: str, child) -> bool:
-        if self.keymap_filter == 'ALL':
-            return True
-        if name in COMMON_GESTURE_KEYMAPS:
-            return True
-        return self._has_common_keymap(child)
+        filtered = []
+        for item in items:
+            name, space_type, window_type, child = item
+            filtered_child = cls._filter_keymap_hierarchy(child, filter_mode) if child else []
+            if name in COMMON_GESTURE_KEYMAPS or filtered_child:
+                filtered.append((name, space_type, window_type, filtered_child))
+        return filtered
 
     def draw_selected_keymap(self, layout):
-        for name in OperatorSetKeyMaps.__temp_selected_keymaps__:
+        selected = OperatorSetKeyMaps.__temp_selected_keymaps__
+        if not selected:
+            row = layout.row()
+            row.enabled = False
+            row.label(text="—", icon='BLANK1')
+            return
+        for name in selected:
             text = bpy.app.translations.pgettext(name)
             layout.operator(self.bl_idname, icon='RESTRICT_SELECT_OFF', text=text).add_keymap = name
 
     def draw_keymaps(self, layout, items):
         keymaps = bpy.context.window_manager.keyconfigs.default.keymaps
         for name, space_type, window_type, child in items:
-            if not self._keymap_visible(name, child):
-                continue
             keymap = keymaps.get(name, None)
             if keymap:
-                column = layout.column()
+                column = layout.column(align=True)
                 row = column.row(align=True)
                 row.label(text=keymap.name)
                 show_child = getattr(keymap, 'show_expanded_items', False)
 
-                if len(child):
+                if child:
                     row.prop(keymap, 'show_expanded_items', text='')
                 select_icon = icon_two(name in OperatorSetKeyMaps.__temp_selected_keymaps__, 'RESTRICT_SELECT')
                 row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = keymap.name
-                if show_child:
+                if show_child and child:
                     self.draw_keymaps(column.box().column(align=True), child)
 
 
