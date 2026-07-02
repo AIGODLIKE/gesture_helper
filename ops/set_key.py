@@ -123,10 +123,9 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         layout.label(text=self.pref.active_gesture.name)
         self.draw_keymap_filter(layout)
         layout.separator()
-        layout.emboss = "NONE"
         split = layout.split(factor=0.65)
-        left_col = split.column(align=True)
-        right_col = split.column(align=True)
+        left_col = split.box().column(align=True)
+        right_col = split.box().column(align=True)
         self.draw_keymaps(left_col, OperatorSetKeyMaps.__filtered_keymap_hierarchy__)
         self.draw_selected_keymap(right_col)
 
@@ -144,6 +143,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         return filtered
 
     def draw_selected_keymap(self, layout):
+        layout.emboss = "NONE"
         selected = OperatorSetKeyMaps.__temp_selected_keymaps__
         if not selected:
             row = layout.row()
@@ -155,6 +155,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             layout.operator(self.bl_idname, icon='RESTRICT_SELECT_OFF', text=text).add_keymap = name
 
     def draw_keymaps(self, layout, items):
+        layout.emboss = "NONE"
         keymaps = bpy.context.window_manager.keyconfigs.default.keymaps
         for name, space_type, window_type, child in items:
             keymap = keymaps.get(name, None)
