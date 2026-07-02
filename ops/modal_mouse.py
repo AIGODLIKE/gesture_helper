@@ -15,7 +15,7 @@ class StoreValue:
         self.___value___ = resolve_context_path(bpy.context, self.data_path)
 
     def __restore__(self):
-        setattr(self, self.data_path, self.___value___)
+        by_path_set_value(bpy.context, self.data_path.split("."), self.___value___)
 
 
 class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):

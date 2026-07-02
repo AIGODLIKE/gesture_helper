@@ -20,7 +20,6 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.timer = None
         self.points_list = None
         self.mouse_position = None
         self.__difference_mouse__ = None
@@ -74,11 +73,11 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.offset_position = self.start_mouse_position
 
         self.init_trajectory()
+        self._schedule_gesture_timeout_timer()
         self.trajectory_event_update(context, event)
         self.register_draw()
 
         wm = context.window_manager
-        self.timer = wm.event_timer_add(1 / 5, window=context.window)
         wm.modal_handler_add(self)
         GesturePreview.is_preview_mode = True
 
@@ -144,11 +143,11 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     def __exit_modal__(self):
         self.unregister_draw()
-
-        wm = bpy.context.window_manager
-        wm.event_timer_remove(self.timer)
+        self._cancel_gesture_timeout_timer()
 
         from .create_panel_menu import unregister
         unregister()
-        for area in bpy.context.screen.areas:
-            area.tag_redraw()
+        window = getattr(bpy.context, 'window', None)
+        if window is not None and window.screen is not None:
+            for area in window.screen.areas:
+                area.tag_redraw()

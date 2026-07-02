@@ -18,9 +18,6 @@ def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
             icons.load(name.lower(), file_path, 'IMAGE', force_reload=True)
             icons_map[icon_type].append(name)
 
-            from .texture import from_image_file_path_load_texture
-            from_image_file_path_load_texture(file_path)
-
 
 def get_all_icons() -> list[str]:
     global icons_map

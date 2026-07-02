@@ -46,7 +46,10 @@ def has_special_characters(input_string):
 
 
 def get_region(region_type, context=None) -> "None|bpy.types.Region":
-    area = bpy.context.area if context is None else context.area
+    ctx = bpy.context if context is None else context
+    area = getattr(ctx, 'area', None)
+    if area is None:
+        return None
     for region in area.regions:
         if region.type == region_type:
             return region

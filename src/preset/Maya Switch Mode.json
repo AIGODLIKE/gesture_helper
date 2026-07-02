@@ -36,7 +36,7 @@
                   "icon": "VERTEXSEL",
                   "enabled_icon": true,
                   "direction": "5",
-                  "operator_bl_idname": "gesture.switch_mode",
+                  "operator_bl_idname": "wm.gesture_switch_mode",
                   "operator_properties": "{'select_mode': {'VERT'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "1": {
@@ -45,7 +45,7 @@
                   "icon": "EDGESEL",
                   "enabled_icon": true,
                   "direction": "3",
-                  "operator_bl_idname": "gesture.switch_mode",
+                  "operator_bl_idname": "wm.gesture_switch_mode",
                   "operator_properties": "{'select_mode': {'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "2": {
@@ -54,21 +54,21 @@
                   "icon": "FACESEL",
                   "enabled_icon": true,
                   "direction": "7",
-                  "operator_bl_idname": "gesture.switch_mode",
+                  "operator_bl_idname": "wm.gesture_switch_mode",
                   "operator_properties": "{'select_mode': {'FACE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "3": {
                   "name": "Only Vertex & Edge",
                   "element_type": "OPERATOR",
                   "direction": "6",
-                  "operator_bl_idname": "gesture.switch_mode",
+                  "operator_bl_idname": "wm.gesture_switch_mode",
                   "operator_properties": "{'select_mode': {'VERT', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "4": {
                   "name": "Multiplicity",
                   "element_type": "OPERATOR",
                   "direction": "8",
-                  "operator_bl_idname": "gesture.switch_mode",
+                  "operator_bl_idname": "wm.gesture_switch_mode",
                   "operator_properties": "{'select_mode': {'VERT', 'FACE', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "5": {

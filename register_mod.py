@@ -15,6 +15,26 @@ module_list = (
 )
 
 _load_post_handler = None
+_deferred_init_done = False
+
+
+def _register_load_post_handler():
+    global _load_post_handler
+    if _load_post_handler is not None:
+        return
+    _load_post_handler = _on_load_post
+    bpy.app.handlers.load_post.append(_load_post_handler)
+
+
+def _unregister_load_post_handler():
+    global _load_post_handler
+    if _load_post_handler is None:
+        return
+    try:
+        bpy.app.handlers.load_post.remove(_load_post_handler)
+    except ValueError:
+        ...
+    _load_post_handler = None
 
 
 def _sync_addon_state():
@@ -59,6 +79,7 @@ def init_register():
                 Import.restore()
 
     _sync_addon_state()
+    _register_load_post_handler()
 
 
 def register():
@@ -75,10 +96,10 @@ def register():
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
 
-    global _load_post_handler
-    _load_post_handler = _on_load_post
-    bpy.app.handlers.load_post.append(_load_post_handler)
-    bpy.app.timers.register(init_register, first_interval=0.1)
+    global _deferred_init_done
+    if not _deferred_init_done:
+        _deferred_init_done = True
+        init_register()
 
 
 def unregister():
@@ -87,13 +108,9 @@ def unregister():
     from .utils.selection import clear_all_active_element_caches
     from .ops.export_import import Export
 
-    global _load_post_handler
-    if _load_post_handler is not None:
-        try:
-            bpy.app.handlers.load_post.remove(_load_post_handler)
-        except ValueError:
-            ...
-        _load_post_handler = None
+    _unregister_load_post_handler()
+    global _deferred_init_done
+    _deferred_init_done = False
 
     pref = get_pref()
     clear_all_active_element_caches(pref)

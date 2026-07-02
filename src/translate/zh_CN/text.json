@@ -244,6 +244,7 @@
   "Exec Region Preview": "执行区域预览",
   "Exec Area": "执行区域(Area)",
   "Operator context error, please ensure that the operator is available in this context": "操作符上下文错误,请确保操作符在此上下文中可用",
+  "Operator not found, please check the operator id in gesture settings": "操作符未找到,请在手势设置中检查操作符 id",
   "Left": "左",
   "Right": "右",
   "Top": "上",
