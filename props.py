@@ -23,25 +23,11 @@ class TempDrawProperty(bpy.types.PropertyGroup):
         delattr(bpy.types.WindowManager, cls.key)
 
     @classmethod
-    def from_name_get_id(cls, name: str):
-        return name.lower().replace(' ', '_').replace(':', '').replace(',', '').replace('(', '').replace(')', '')
-
-    @classmethod
-    def temp_prop(cls, name) -> bpy.types.PropertyGroup:
-        prop = cls.temp_wm_prop()
-        identity = cls.from_name_get_id(name)
-        p = getattr(prop, identity, None)
-        if not p:
-            prop.add_ui_extend_bool_property = identity
-        return prop
-
-    @classmethod
     def temp_wm_prop(cls):
         return getattr(bpy.context.window_manager, cls.key, None)
 
     def update_add_ui_extend_bool_property(self, context):
         name = self.add_ui_extend_bool_property
-        # Create property on window manager if missing
         setattr(
             TempDrawProperty,
             name,
@@ -78,11 +64,9 @@ def __set_gesture_index__(self, value):
 
 def register():
     TempDrawProperty.register_property()
-    bpy.types.Text.gesture_element_hash = StringProperty()
     bpy.types.WindowManager.gesture_index = IntProperty(get=__get_gesture_index__, set=__set_gesture_index__)
 
 
 def unregister():
     TempDrawProperty.unregister_property()
-    del bpy.types.Text.gesture_element_hash
     del bpy.types.WindowManager.gesture_index

@@ -20,8 +20,6 @@ class PreferencesDraw(GestureDraw):
             sub_column.enabled = pref.enabled
 
         getattr(pref, f'draw_ui_{pref.show_page.lower()}')(sub_column)
-        # draw_ui_property
-        # draw_ui_gesture
 
     @staticmethod
     def draw_ui_debug(layout: 'bpy.types.UILayout'):
@@ -39,9 +37,6 @@ class PreferencesDraw(GestureDraw):
         rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
-        # from ..ops.quick_add.gesture_preview import GesturePreview
-        # row.operator_context = "INVOKE_DEFAULT"
-        # row.operator(GesturePreview.bl_idname, icon=get_adapter_blender_icon("RNA_ADD"), text=GesturePreview.bl_label)
 
     @staticmethod
     def draw_ui_property(layout):

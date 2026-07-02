@@ -179,9 +179,3 @@ def get_kmi_property(kmi):
         )
     )
 
-
-def get_property_enum_items(cls, prop_name) -> list:
-    res = []
-    for item in cls.properties[prop_name].enum_items:
-        res.append((item.identifier, item.name, item.description))
-    return res

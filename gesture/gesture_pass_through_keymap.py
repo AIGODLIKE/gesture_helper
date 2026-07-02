@@ -223,7 +223,6 @@ class GesturePassThroughKeymap:
 
         debug_print("try_pass_through_keymap keys", keys, key='key')
         user_keymaps = kc.user.keymaps
-        # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
             if key in keymaps.keys():
                 km = keymaps[key]
@@ -247,19 +246,15 @@ class GesturePassThroughKeymap:
                             props_ok = get_kmi_operator_properties(kmi) == get_kmi_operator_properties(match_kmi)
                             if kmi.idname == match_kmi.idname and props_ok:
                                 if kmi.is_user_modified:
-                                    # print("Found user-modified shortcut to replace", kmi)
                                     match_kmis[index] = kmi
 
                 if ml == 1:  # Only one key matched
                     kmi = match_kmis[0]
                     if kmi.active:  # Process only when shortcut is active
                         if self.try_pass_set_cursor3d_location(context, event, kmi):
-                            # print("Shift+right-click cursor placement")
                             return
                         ok = try_operator_pass_through_right(kmi)
                         if ok:
-                            # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                            # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                             return
                 elif key in (
                         "Object Mode",
@@ -274,8 +269,6 @@ class GesturePassThroughKeymap:
                         if kmi.active:
                             ok = try_operator_pass_through_right(kmi)
                             if ok:
-                                # print(f"Try pass through keymap\t{GestureOperator.bl_idname}")
-                                # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                                 return
                 else:
                     debug_print(f"else\t{key}\t{[i.idname for i in match_kmis]}", key='key')
@@ -336,21 +329,6 @@ class GesturePassThroughKeymap:
 
 
 def check_kmi_pass_through(kmi: bpy.types.KeyMapItem) -> bool:
-    # idname = kmi.idname
-    # if idname in GesturePassThroughKeymap.pass_through_ui_idname:
-    #     prop = get_kmi_operator_properties(kmi)
-    #     if "name" in prop:
-    #         name = prop["name"]
-    #         draw_cls = getattr(bpy.types, name, None)
-    #         # If found, this is a system draw method
-    #         if draw_cls is None:
-    #             return False
-    #         return draw_cls.poll()
-    #     else:
-    #         return False
-    # getattr(bpy.types, "VIEW3D_MT_edit_mesh_delete", None)
-    # TODO("If delete key is missing in Object Mode, Edit Mode menu may appear; caused by MP7 replacing delete shortcut")
-
     prefix, suffix = kmi.idname.split('.')
     func = getattr(getattr(bpy.ops, prefix), suffix)
     if not func.poll():

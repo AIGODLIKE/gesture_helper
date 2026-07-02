@@ -110,16 +110,6 @@ class GestureGpuDraw(DrawDebug):
         if self.is_draw_gpu:
             self.gpu_draw_gesture()
 
-    @staticmethod
-    def refresh_space():
-        return list(getattr(bpy.types, i) for i in dir(bpy.types) if 'Space' in i)
-
-    @classmethod
-    def space_subclasses(cls):
-        cls.refresh_space()
-        sub = bpy.types.Space.__subclasses__()
-        return sub
-
     def register_draw(self):
         """
         bpy.types.Region.bl_rna.properties['type'].enum_items_static
