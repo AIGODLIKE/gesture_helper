@@ -102,12 +102,12 @@ def ymd() -> str:
 
 
 def get_backups_folder(user_custom_path: bool = True) -> str:
-    from ..utils.public import BACKUPS_FOLDER
+    from ..utils.public import get_backups_folder_default
     prop = get_pref().backups_property
 
-    folder_path = BACKUPS_FOLDER
+    folder_path = get_backups_folder_default()
     if prop.enabled_backups_to_specified_path and user_custom_path:
-        if os.path.isdir(prop.backups_path):
+        if prop.backups_path and os.path.isdir(prop.backups_path):
             folder_path = prop.backups_path
     return folder_path
 
@@ -344,8 +344,10 @@ class Export(PublicFileOperator):
         Two backup modes: disable add-on vs quit Blender
         """
         try:
+            from ..utils.public import get_debug
             is_auto_backups = get_pref().backups_property.auto_backups
-            print(f"Gesture Auto Backups\tis_blender_close:{is_blender_close}\tis_auto_backups:{is_auto_backups}")
+            if get_debug('export_import'):
+                print(f"Gesture Auto Backups\tis_blender_close:{is_blender_close}\tis_auto_backups:{is_auto_backups}")
             bpy.ops.gesture.export(
                 'EXEC_DEFAULT',
                 filepath='',

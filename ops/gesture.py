@@ -23,6 +23,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         self.extension_hover = []
         self.screen = None
         self.area = None
+        self.timer = None
 
     def draw_error(self, __):
         layout = self.layout
@@ -50,8 +51,9 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         self.init_invoke(event)
         self.cache_clear()
 
-        print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
-              event.value_prev)
+        if self.is_debug:
+            print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
+                  event.value_prev)
 
         wm = context.window_manager
         self.timer = wm.event_timer_add(1 / 24, window=context.window)
@@ -104,8 +106,9 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
     def __exit_modal__(self):
         self.unregister_draw()
-        wm = bpy.context.window_manager
-        wm.event_timer_remove(self.timer)
+        if self.timer is not None:
+            bpy.context.window_manager.event_timer_remove(self.timer)
+            self.timer = None
 
     def try_immediate_implementation(self):
         """Try to run operator immediately."""

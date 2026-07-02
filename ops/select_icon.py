@@ -7,7 +7,7 @@ import os
 import bpy
 from bpy.props import StringProperty, BoolProperty
 
-from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER
+from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER, poll_message_active_element
 
 CUSTOM_ICON_FOLDER = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
 
@@ -87,7 +87,7 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
 
     @classmethod
     def poll(cls, context):
-        return get_pref().active_element is not None
+        return poll_message_active_element(cls)
 
     def invoke(self, context, event):
         self.update_icons(context)

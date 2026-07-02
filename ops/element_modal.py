@@ -127,14 +127,21 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
     def poll(cls, context):
         gesture = getattr(context, "gesture", None)
         element = getattr(context, "element", None)
-        return gesture and element and element.operator_is_modal
+        if not gesture or not element:
+            cls.poll_message_set("Modal operator requires gesture and element context")
+            return False
+        if not element.operator_is_modal:
+            cls.poll_message_set("Element is not a modal operator")
+            return False
+        return True
 
     def invoke(self, context, event):
         self.init_invoke(event)
         self.gesture = getattr(context, "gesture", None)
         self.element = getattr(context, "element", None)
         self.operator_properties = getattr(self.element, "last_properties", None)
-        print(self.bl_idname, self.gesture, self.element, self.operator_properties)
+        if DEBUG_MODAL_OPERATOR:
+            print(self.bl_idname, self.gesture, self.element, self.operator_properties)
 
         bpy.ops.ed.undo_push(message="Gesture Element Modal")
 

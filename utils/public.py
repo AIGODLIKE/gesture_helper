@@ -1,4 +1,5 @@
 from functools import cache
+import os
 from os.path import dirname, realpath, join, abspath
 
 import bpy
@@ -10,8 +11,34 @@ from .cache_state import CacheState
 from .selection import resolve_active_element
 
 ADDON_FOLDER = dirname(dirname(realpath(__file__)))
-BACKUPS_FOLDER = abspath(join(ADDON_FOLDER, 'backups'))
 PRESET_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
+
+
+def get_extension_user_folder() -> str:
+    from .. import __package__ as base_package
+    path = bpy.utils.extension_path_user(base_package)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def get_backups_folder_default() -> str:
+    path = abspath(join(get_extension_user_folder(), 'backups'))
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def poll_message_active_gesture(cls) -> bool:
+    if get_pref().active_gesture is None:
+        cls.poll_message_set("No active gesture")
+        return False
+    return True
+
+
+def poll_message_active_element(cls) -> bool:
+    if get_pref().active_element is None:
+        cls.poll_message_set("No active element")
+        return False
+    return True
 
 TRANSLATE_ID = "gesture"
 TRANSLATE_KEY = TRANSLATE_ID + "_keymap"

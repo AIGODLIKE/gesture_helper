@@ -120,7 +120,7 @@ class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """Sync element properties to temp KMI."""
         if not self.is_operator:
-            Exception(f'{self} is not an operator')
+            raise TypeError(f'{self} is not an operator')
         self.operator_tmp_kmi_properties_clear()
         set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
 

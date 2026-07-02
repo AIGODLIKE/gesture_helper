@@ -96,6 +96,7 @@ class DrawDebug(PublicGpu):
 class GestureGpuDraw(DrawDebug):
     __temp_draw_class__ = {}
     __temp_debug_draw_class__ = {}
+    __modal_draw_count__ = 0
 
     def __gpu_draw__(self):
         """Main GPU draw entry."""
@@ -123,33 +124,40 @@ class GestureGpuDraw(DrawDebug):
         """
         bpy.types.Region.bl_rna.properties['type'].enum_items_static
         """
-        if not GestureGpuDraw.__temp_draw_class__:
-            # for cls in self.space_subclasses():
-            space = bpy.context.space_data
-            if space:
-                cls = space.rna_type
-                sub_class = {}
-                debug_class = {}
-                for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
-                    try:
-                        sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
-                        debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
-                                                                       'POST_PIXEL')
-                    except Exception as e:
+        space = bpy.context.space_data
+        if not space:
+            return
+        cls = space.rna_type
+        if cls not in GestureGpuDraw.__temp_draw_class__:
+            sub_class = {}
+            debug_class = {}
+            for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
+                try:
+                    sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
+                    debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
+                                                                   'POST_PIXEL')
+                except Exception as e:
+                    from ..utils.public import get_debug
+                    if get_debug():
                         print(e.args)
                         print(space)
                         import traceback
                         traceback.print_exc()
                         traceback.print_stack()
 
-                GestureGpuDraw.__temp_draw_class__[cls] = sub_class
-                GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
+            GestureGpuDraw.__temp_draw_class__[cls] = sub_class
+            GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 
-                self.tag_redraw()
+        GestureGpuDraw.__modal_draw_count__ += 1
+        self.tag_redraw()
 
     @classmethod
     def unregister_draw(cls):
-        """Cancel GPU draw handler."""
+        """Cancel GPU draw handler when the last modal session ends."""
+        GestureGpuDraw.__modal_draw_count__ = max(0, GestureGpuDraw.__modal_draw_count__ - 1)
+        if GestureGpuDraw.__modal_draw_count__ > 0:
+            cls.tag_redraw()
+            return
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 c.draw_handler_remove(value, key)
