@@ -148,15 +148,10 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 class Import(PublicFileOperator):
     bl_label = 'Import gesture'
     bl_idname = 'gesture.gesture_import'
-    preset = {}
-
     @property
     def preset_items(self):
         from ..utils.preset import get_preset_gesture_list
-        if len(Import.preset):
-            return Import.preset
-        Import.preset = get_preset_gesture_list()
-        return Import.preset
+        return get_preset_gesture_list()
 
     def execute(self, _):
         if self.preset_show:
@@ -164,7 +159,6 @@ class Import(PublicFileOperator):
         self.gesture_import()
         self.cache_clear()
         self.update_state()
-        Import.preset = {}
         GestureKeymap.key_restart()
         bpy.ops.wm.save_userpref()
         return {'FINISHED'}
