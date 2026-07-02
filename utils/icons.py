@@ -9,6 +9,8 @@ fix_icons = {}
 
 def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
     global icons_map
+    if not os.path.isdir(icon_folder_path):
+        return
     for file in os.listdir(icon_folder_path):
         is_png = file.lower().endswith('.png')
         file_path = os.path.abspath(os.path.join(icon_folder_path, file))
@@ -23,11 +25,13 @@ def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
 
 def get_all_icons() -> list[str]:
     global icons_map
+    Icons._ensure_registered()
     return icons_map['ADDON'] + icons_map['BLENDER'] + icons_map['CUSTOM']
 
 
 def get_blender_icons() -> list[str]:
     global icons_map
+    Icons._ensure_registered()
     return icons_map['BLENDER']
 
 
@@ -68,6 +72,8 @@ class Icons:
     @staticmethod
     def register():
         global icons, icons_map
+        if icons is not None:
+            return
         icons = bpy.utils.previews.new()
         icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         from ..utils.public import ADDON_FOLDER
@@ -82,14 +88,19 @@ class Icons:
         load_from_folder(icon_folder, "CUSTOM")
 
     @staticmethod
+    def _ensure_registered() -> None:
+        if icons is None:
+            Icons.register()
+
+    @staticmethod
     def get(key):
         global icons
-        icon = icons[key.lower()]
-        # fix_icon_pixels(key, icon)
-        return icon
+        Icons._ensure_registered()
+        return icons[key.lower()]
 
     @staticmethod
     def get_all_blender_icon() -> list[str]:
+        Icons._ensure_registered()
         return icons_map['BLENDER']
 
     @staticmethod
