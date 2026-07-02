@@ -14,8 +14,11 @@ class DrawDebug(PublicGpu):
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
 
-        if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
-            self.__gpu_draw_debug__()
+        try:
+            if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
+                self.__gpu_draw_debug__()
+        except ReferenceError:
+            ...
 
     def __gpu_draw_debug__(self):
         """
@@ -104,11 +107,14 @@ class GestureGpuDraw(DrawDebug):
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
 
-        if len(bpy.context.screen.areas) > 8:
-            if bpy.context.area != self.area:
-                return
-        if self.is_draw_gpu:
-            self.gpu_draw_gesture()
+        try:
+            if len(bpy.context.screen.areas) > 8:
+                if bpy.context.area != self.area:
+                    return
+            if self.is_draw_gpu:
+                self.gpu_draw_gesture()
+        except ReferenceError:
+            ...
 
     def register_draw(self):
         """

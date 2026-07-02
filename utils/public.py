@@ -52,7 +52,10 @@ def get_pref():
 
 def tag_redraw():
     """redraw interface"""
-    for area in bpy.context.window.screen.areas:
+    window = getattr(bpy.context, 'window', None)
+    if window is None or window.screen is None:
+        return
+    for area in window.screen.areas:
         area.tag_redraw()
 
 

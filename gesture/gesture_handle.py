@@ -16,6 +16,36 @@ class GestureHandle:
         super().__init__(*args, **kwargs)
         self.screen = None
         self.area = None
+        self._gesture_timeout_timer = None
+
+    def _cancel_gesture_timeout_timer(self):
+        timer = getattr(self, '_gesture_timeout_timer', None)
+        if timer is None:
+            return
+        try:
+            bpy.app.timers.unregister(timer)
+        except ValueError:
+            ...
+        self._gesture_timeout_timer = None
+
+    def _schedule_gesture_timeout_timer(self):
+        self._cancel_gesture_timeout_timer()
+        if getattr(self, 'draw_trajectory_mouse_move', False):
+            return
+        timeout = self.pref.gesture_property.timeout / 1000
+        if timeout <= 0:
+            return
+
+        def _on_timeout():
+            self._gesture_timeout_timer = None
+            try:
+                self.tag_redraw()
+            except (AttributeError, ReferenceError):
+                ...
+            return None
+
+        self._gesture_timeout_timer = _on_timeout
+        bpy.app.timers.register(_on_timeout, first_interval=timeout)
 
     def check_return_previous(self):
         """Check returning to a previous gesture point."""
@@ -46,20 +76,33 @@ class GestureHandle:
         """Try to run gesture operator(s)."""
 
         def run(i):
+            from bpy.app.translations import pgettext_iface
+
+            if i.operator_is_operator or i.operator_is_modal:
+                if i.operator_func is None:
+                    gesture_name = pgettext_iface(self.operator_gesture.name)
+                    tips = pgettext_iface(
+                        "Operator not found, please check the operator id in gesture settings")
+                    ops.report(
+                        {'ERROR'},
+                        f"{tips} {gesture_name} -> {i.name_translate} bpy.ops.{i.operator_bl_idname}",
+                    )
+                    return
+
             if i.check_operator_poll():
                 error = i.running_operator()
                 if error is not None:
-                    from bpy.app.translations import pgettext_iface
                     ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
                     return
                 ops.report({'INFO'}, i.name_translate)
             else:
-                name = bpy.app.translations.pgettext_iface(self.operator_gesture.name)
-                tips = bpy.app.translations.pgettext_iface(
+                gesture_name = pgettext_iface(self.operator_gesture.name)
+                tips = pgettext_iface(
                     "Operator context error, please ensure that the operator is available in this context")
-                self.report({'ERROR'},
-                            f" {tips} {name}->{i.name} bpy.ops.{i.operator_bl_idname}.poll()")
-                # poll failed
+                ops.report(
+                    {'ERROR'},
+                    f"{tips} {gesture_name} -> {i.name_translate} bpy.ops.{i.operator_bl_idname}.poll()",
+                )
 
         # Run extension menu operators
         if self.extension_element and len(self.extension_hover):
@@ -95,6 +138,7 @@ class GestureHandle:
             self.move_count += 1
         if event.type == "MOUSEMOVE":
             self.last_mouse_mouse_time = time.time()
+            self._schedule_gesture_timeout_timer()
         self.event_count += 1
         emp = self.__mouse_position__
         if self.event_count > 2:

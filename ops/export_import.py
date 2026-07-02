@@ -277,18 +277,11 @@ class Export(PublicFileOperator):
 
     @property
     def export_data(self):
-        from .. import ADDON_VERSION
-        data = {
-            'time': time.time(),
-            'blender_version': bpy.app.version,
-            'addon_version': ADDON_VERSION,
-
-            'author': self.pref.draw_property.author,
-            'description': self.description,
-
-            'gesture': self.pref.get_gesture_data(self.is_auto_backups or self.is_close_backups)
-        }
-        return data
+        return self._build_export_data(
+            self.pref,
+            all_gestures=self.is_auto_backups or self.is_close_backups,
+            description=self.description,
+        )
 
     def draw(self, _):
         layout = self.layout
@@ -444,14 +437,15 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         from ..utils.public import get_pref
         from bpy.app.translations import pgettext_iface
+        from ..utils.debug_util import debug_trace_stack, debug_traceback
         try:
             get_pref().preferences_backups(self.filepath)
         except Exception as e:
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            debug_trace_stack(key='export_import')
+            debug_traceback(key='export_import')
             debug_print(e.args, key='export_import')
             self.report({'ERROR'}, pgettext_iface("Export error, please check path %s") % self.filepath)
+            return {'CANCELLED'}
         return {"FINISHED"}
 
 

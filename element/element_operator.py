@@ -11,6 +11,13 @@ from ..utils.public_cache import cache_update_lock
 from ..utils.expression import literal_to_dict
 
 
+def resolve_operator_bl_idname(bl_idname: str) -> str:
+    """Map legacy gesture.* operator ids to wm.gesture_*."""
+    if bl_idname.startswith('gesture.'):
+        return 'wm.gesture_' + bl_idname.split('.', 1)[1]
+    return bl_idname
+
+
 class ModalProperty:
     modal_events_index: bpy.props.IntProperty(name='Modal Event Index', default=-1)
     modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
@@ -316,12 +323,22 @@ class OperatorProperty:
         Returns:
             bpy.types.Operator: _description_
         """
-        sp = self.operator_bl_idname.split('.')
-        if len(sp) == 2:
-            prefix, suffix = sp
-            func = getattr(getattr(bpy.ops, prefix), suffix)
-            return func
-        return None
+        bl_idname = resolve_operator_bl_idname(self.operator_bl_idname)
+        sp = bl_idname.split('.')
+        if len(sp) != 2:
+            return None
+        prefix, suffix = sp
+        ops_module = getattr(bpy.ops, prefix, None)
+        if ops_module is None:
+            return None
+        func = getattr(ops_module, suffix, None)
+        if func is None:
+            return None
+        try:
+            func.get_rna_type()
+        except (AttributeError, RuntimeError, TypeError, KeyError):
+            return None
+        return func
 
     @property
     def __operator_id_name_is_validity__(self) -> bool:
@@ -385,7 +402,14 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
                     key='operator',
                 )
                 return False
-            poll = func.poll()
+            try:
+                poll = func.poll()
+            except (AttributeError, KeyError):
+                debug_print(
+                    f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname}: operator not found",
+                    key='operator',
+                )
+                return False
             if not poll:
                 context = bpy.context
                 at = context.area.type

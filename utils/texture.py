@@ -1,23 +1,4 @@
-import os
-
-import bpy
 import gpu
-from ..utils.debug_util import debug_print
-
-
-def from_image_file_path_load_texture(file_path):
-    """Load PNG icon into GPU texture cache (32px icons)."""
-    name = os.path.basename(file_path)[:-4].lower()
-    try:
-        image = bpy.data.images.load(file_path)
-        Texture.texture_list[name] = gpu.texture.from_image(image)
-        bpy.data.images.remove(image)
-
-    except Exception as e:
-        debug_print(e.args, key='operator')
-        import traceback
-        traceback.print_exc()
-        traceback.print_stack()
 
 
 class Texture:

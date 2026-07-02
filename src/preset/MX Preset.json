@@ -642,7 +642,7 @@
                           "icon": "PARTICLE_PATH",
                           "enabled_icon": true,
                           "direction": "6",
-                          "operator_bl_idname": "gesture.modal_mouse_operator"
+                          "operator_bl_idname": "wm.gesture_modal_mouse_operator"
                         },
                         "2": {
                           "name": "Wireframe Opacity",
@@ -650,7 +650,7 @@
                           "icon": "MOD_OPACITY",
                           "enabled_icon": true,
                           "direction": "8",
-                          "operator_bl_idname": "gesture.modal_mouse_operator"
+                          "operator_bl_idname": "wm.gesture_modal_mouse_operator"
                         }
                       }
                     }

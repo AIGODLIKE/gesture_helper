@@ -232,7 +232,7 @@
           "icon": "PANEL_CLOSE",
           "enabled_icon": true,
           "direction": "6",
-          "operator_bl_idname": "gesture.clear_all_edge_properties"
+          "operator_bl_idname": "wm.gesture_clear_all_edge_properties"
         }
       },
       "description": "Set edge properties to quickly add or clean up"
