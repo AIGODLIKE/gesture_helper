@@ -378,8 +378,14 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
 
     def check_operator_poll(self):
         if self.operator_is_operator or self.operator_is_modal:
-            # Check operator poll before run
-            poll = self.operator_func.poll()
+            func = self.operator_func
+            if func is None:
+                debug_print(
+                    f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname}: invalid operator",
+                    key='operator',
+                )
+                return False
+            poll = func.poll()
             if not poll:
                 context = bpy.context
                 at = context.area.type
