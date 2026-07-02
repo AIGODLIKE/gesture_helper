@@ -111,6 +111,8 @@ class Icons:
 
         icons = None
         icons_map = None
+        from .texture import Texture
+        Texture.clear()
 
     @staticmethod
     def reload_icons() -> None:

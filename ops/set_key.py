@@ -33,24 +33,23 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     __temp_selected_keymaps__ = []  # static
     __session_keymap_filter__ = 'COMMON'
     __dialog_keymap_hierarchy__ = None
+    __filtered_keymap_hierarchy__ = []
     add_keymap: StringProperty(options={'SKIP_SAVE'})
 
     def _update_keymap_filter(self, _context):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
-        self._rebuild_filtered_hierarchy()
+        OperatorSetKeyMaps._rebuild_filtered_hierarchy()
         if self.keymap_filter == 'COMMON':
             OperatorSetKeyMaps._ensure_common_default_expansion()
 
-    def _rebuild_filtered_hierarchy(self) -> None:
-        items = (
-            getattr(self, "keymap_hierarchy", None)
-            or OperatorSetKeyMaps.__dialog_keymap_hierarchy__
-        )
+    @classmethod
+    def _rebuild_filtered_hierarchy(cls) -> None:
+        items = cls.__dialog_keymap_hierarchy__
         if items is None:
-            self.filtered_keymap_hierarchy = []
+            cls.__filtered_keymap_hierarchy__ = []
             return
-        self.filtered_keymap_hierarchy = OperatorSetKeyMaps._filter_keymap_hierarchy(
-            items, self.keymap_filter,
+        cls.__filtered_keymap_hierarchy__ = cls._filter_keymap_hierarchy(
+            items, cls.__session_keymap_filter__,
         )
 
     keymap_filter: EnumProperty(
@@ -95,10 +94,9 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
         from bl_keymap_utils import keymap_hierarchy
         OperatorSetKeyMaps.__dialog_keymap_hierarchy__ = keymap_hierarchy.generate()
-        self.keymap_hierarchy = OperatorSetKeyMaps.__dialog_keymap_hierarchy__
         OperatorSetKeyMaps.__temp_selected_keymaps__ = self.active_gesture_keymaps
         self.keymap_filter = OperatorSetKeyMaps.__session_keymap_filter__
-        self._rebuild_filtered_hierarchy()
+        OperatorSetKeyMaps._rebuild_filtered_hierarchy()
         if self.keymap_filter == 'COMMON':
             OperatorSetKeyMaps._ensure_common_default_expansion()
         return context.window_manager.invoke_props_dialog(**{'operator': self, 'width': 600})
@@ -120,7 +118,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
     def draw(self, _):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
-        self._rebuild_filtered_hierarchy()
+        OperatorSetKeyMaps._rebuild_filtered_hierarchy()
         layout = self.layout.column(align=True)
         layout.label(text=self.pref.active_gesture.name)
         self.draw_keymap_filter(layout)
@@ -129,7 +127,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         split = layout.split(factor=0.65)
         left_col = split.column(align=True)
         right_col = split.column(align=True)
-        self.draw_keymaps(left_col, self.filtered_keymap_hierarchy)
+        self.draw_keymaps(left_col, OperatorSetKeyMaps.__filtered_keymap_hierarchy__)
         self.draw_selected_keymap(right_col)
 
     @classmethod

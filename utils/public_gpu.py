@@ -100,6 +100,8 @@ def get_indices_from_vertex(vertex):
 class PublicGpu:
     @staticmethod
     def draw_image(position, height, width, texture):
+        if texture is None:
+            return
         gpu.state.blend_set('ALPHA')
         gpu.state.depth_test_set('ALWAYS')
         with gpu.matrix.push_pop():
