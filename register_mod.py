@@ -14,12 +14,34 @@ module_list = (
     translate,
 )
 
+_load_post_handler = None
+
+
+def _sync_addon_state():
+    """Refresh caches and keymap sync after file load or deferred init."""
+    from .utils.public import get_pref
+    from .utils.selection import clear_all_active_element_caches
+
+    get_pref.cache_clear()
+    pref = get_pref()
+    public_cache.PublicCacheFunc.cache_clear()
+    clear_all_active_element_caches(pref)
+    pref.update_state()
+
+
+def _on_load_post(_dummy):
+    try:
+        _sync_addon_state()
+    except (KeyError, AttributeError, RuntimeError):
+        ...
+    return None
+
 
 def init_register():
     from .ops.export_import import Import
     from .utils.public import get_pref
     from .utils import icons
-    from .utils.selection import clear_all_active_element_caches, suppress_radio_updates
+    from .utils.selection import suppress_radio_updates
     from .ui.panel import register as register_panel
 
     get_pref.cache_clear()
@@ -36,9 +58,7 @@ def init_register():
             if len(pref.gesture) == 0:
                 Import.restore()
 
-    public_cache.PublicCacheFunc.cache_clear()
-    clear_all_active_element_caches(pref)
-    pref.update_state()
+    _sync_addon_state()
 
 
 def register():
@@ -55,6 +75,9 @@ def register():
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
 
+    global _load_post_handler
+    _load_post_handler = _on_load_post
+    bpy.app.handlers.load_post.append(_load_post_handler)
     bpy.app.timers.register(init_register, first_interval=0.1)
 
 
@@ -63,6 +86,14 @@ def unregister():
     from .utils.public import get_pref
     from .utils.selection import clear_all_active_element_caches
     from .ops.export_import import Export
+
+    global _load_post_handler
+    if _load_post_handler is not None:
+        try:
+            bpy.app.handlers.load_post.remove(_load_post_handler)
+        except ValueError:
+            ...
+        _load_post_handler = None
 
     pref = get_pref()
     clear_all_active_element_caches(pref)

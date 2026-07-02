@@ -89,13 +89,12 @@ class GestureProperty(PublicProperty):
     def angle_unsigned(self) -> float | None:
         """Current gesture angle (unsigned)."""
         angle = self.angle
-        if angle is not None:
-            aa = abs(angle)
-            if aa == angle:
-                return angle
-            else:
-                return 360 + angle
-        return None
+        if angle is False or angle is None:
+            return None
+        aa = abs(angle)
+        if aa == angle:
+            return angle
+        return 360 + angle
 
     def _direction_items_context_id(self):
         """Identity of the gesture tree level used for direction slot lookup."""
@@ -121,7 +120,7 @@ class GestureProperty(PublicProperty):
     def direction(self) -> int:
         """Current gesture direction (1-9)."""
         angle = self.angle_unsigned
-        if angle is bool:
+        if angle is None:
             return False
         if angle > 337.5:
             return 1
