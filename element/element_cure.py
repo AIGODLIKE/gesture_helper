@@ -30,8 +30,11 @@ class ElementCURE:
     @cache_update_lock
     def copy(self):
         """Copy element."""
-        from ..utils.property import __set_prop__
-        __set_prop__(self.parent, 'element', {'0': self.active_element.___dict_data___})
+        from ..utils.property import get_property, __set_prop__
+        from ..utils.selection import strip_radio_from_copy_data
+
+        data = strip_radio_from_copy_data(get_property(self))
+        __set_prop__(self.parent, 'element', {'0': data})
 
     @property
     def is_movable(self) -> bool:
@@ -230,17 +233,23 @@ class ElementCURE:
         bl_idname = 'gesture.element_copy'
 
         def execute(self, _):
-            gesture = self.active_gesture
-            with CacheState.batch():
-                self.active_element.copy()
-                self.cache_clear(gesture=gesture)
+            from ..utils.selection import clear_active_element_cache, enforce_single_selection
 
-                ae = self.active_element
-                if ae:
-                    if not ae.radio:
-                        ae.radio = True
-                    parent = ae.parent
-                    parent.element.move(len(parent.element) - 1, ae.index + 1)
+            gesture = self.active_gesture
+            source = self.active_element
+            if gesture is None or source is None:
+                return {'CANCELLED'}
+            parent = source.parent
+            index_before = len(parent.element)
+            with CacheState.batch():
+                source.copy()
+                PublicCacheFunc.ensure_gesture_structure(gesture)
+                clear_active_element_cache(gesture)
+                if index_before < len(parent.element):
+                    duplicate = parent.element[index_before]
+                    enforce_single_selection(duplicate)
+                    parent.element.move(len(parent.element) - 1, duplicate.index)
+                self.cache_clear(gesture=gesture)
 
             return {'FINISHED'}
 

@@ -1,6 +1,7 @@
 """Element selection helpers (index chain + session cache)."""
 
 from .iteration import iter_elements
+from .public_cache import PublicCache, PublicCacheFunc
 
 _ACTIVE_ATTR = '_gh_active_element'
 _SYNC_INDEX = False
@@ -75,6 +76,49 @@ def resolve_active_element(gesture):
     return None
 
 
+def strip_radio_from_copy_data(data):
+    """Remove radio flags from exported element data (and nested children)."""
+    if not isinstance(data, dict):
+        return data
+    data.pop('radio', None)
+    children = data.get('element')
+    if isinstance(children, dict):
+        for child in children.values():
+            strip_radio_from_copy_data(child)
+    return data
+
+
+def enforce_single_selection(element):
+    """Select only *element*, clearing all other radios without re-entrant updates."""
+    if element is None:
+        return
+
+    gesture = element.parent_gesture
+    if gesture is None:
+        PublicCacheFunc.ensure_item_structure(element)
+        gesture = element.parent_gesture
+    if gesture is None:
+        return
+
+    PublicCache._suppress_radio_update = True
+    try:
+        for item in iter_elements(gesture):
+            if item != element and item.radio:
+                item['radio'] = False
+        if not element.radio:
+            element['radio'] = True
+        sync_selection_indexes(element)
+        _expand_ancestors(element)
+        setattr(gesture, _ACTIVE_ATTR, element)
+    finally:
+        PublicCache._suppress_radio_update = False
+
+
+def select_element(element):
+    """Make *element* the sole selected item in its gesture."""
+    enforce_single_selection(element)
+
+
 def apply_radio_selection(element):
     """Select *element* with minimal RNA writes (clear previous + set new)."""
     gesture = element.parent_gesture
@@ -85,25 +129,4 @@ def apply_radio_selection(element):
         clear_active_element_cache(gesture)
         return
 
-    sync_selection_indexes(element)
-    _expand_ancestors(element)
-
-    prev = getattr(gesture, _ACTIVE_ATTR, None)
-    cleared = False
-    if prev is not None and prev != element:
-        try:
-            if prev.radio:
-                prev['radio'] = False
-                cleared = True
-        except (ReferenceError, AttributeError):
-            prev = None
-
-    if not cleared and prev != element:
-        for item in iter_elements(gesture):
-            if item.radio and item != element:
-                item['radio'] = False
-
-    if not element.radio:
-        element['radio'] = True
-
-    setattr(gesture, _ACTIVE_ATTR, element)
+    enforce_single_selection(element)

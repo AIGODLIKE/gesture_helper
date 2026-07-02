@@ -98,8 +98,15 @@ class GestureCURE:
         bl_label = 'Copy gesture'
 
         def execute(self, _):
-            gesture = self.active_gesture
-            self.active_gesture.copy()
-            self.structure_changed(gesture)
-            self.pref.gesture[-1].__fix_duplicate_name__()
+            source = self.active_gesture
+            source_index = source.index_element if source and len(source.element) else 0
+            source.copy()
+            new_gesture = self.pref.gesture[-1]
+            self.structure_changed(new_gesture)
+            new_gesture.__fix_duplicate_name__()
+            if len(new_gesture.element):
+                from ..utils.selection import enforce_single_selection
+
+                idx = min(source_index, len(new_gesture.element) - 1)
+                enforce_single_selection(new_gesture.element[idx])
             return {'FINISHED'}
