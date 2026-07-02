@@ -4,7 +4,7 @@ from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
-from ..utils.public import by_path_set_value, PublicMouseModal
+from ..utils.public import by_path_set_value, PublicMouseModal, debug_print
 from ..utils.expression import resolve_context_path
 
 
@@ -23,12 +23,12 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
     from bl_operators.wm import WM_OT_context_modal_mouse
     scripts/startup/bl_operators/wm.py
     """
-    bl_idname = 'gesture.modal_mouse_operator'
+    bl_idname = 'wm.gesture_modal_mouse_operator'
     bl_label = 'Mouse Modal Modify Value'
     bl_options = {'GRAB_CURSOR', 'BLOCKING', 'UNDO', 'INTERNAL'}
 
     data_path: StringProperty(
-        name="数据路径",
+        name="Data Path",
         options={'SKIP_SAVE'},
     )
     header_text: StringProperty(
@@ -69,7 +69,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
 
     def invoke(self, context, event):
         self.__store__()
-        print("invoke", self.bl_idname, self.___value___, self.data_path)
+        debug_print("invoke", self.bl_idname, self.___value___, self.data_path, key='modal')
         if self.___value___ is None:
             return {'CANCELLED'}
         else:

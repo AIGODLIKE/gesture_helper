@@ -1,6 +1,7 @@
 import bpy
 
 from .addon_keymap import get_kmi_operator_properties
+from ..utils.debug_util import debug_print
 
 
 class GesturePassThroughKeymap:
@@ -189,7 +190,7 @@ class GesturePassThroughKeymap:
                 if ui_mode and ui_mode in self.image_ui_mode_map:
                     keys.append(self.image_ui_mode_map.get(ui_mode))
             keys.append("Image Generic")
-            print(ut, ui_mode)
+            debug_print(ut, ui_mode, key='key')
         if mk is not None:
             keys.append(mk)
         else:
@@ -220,7 +221,7 @@ class GesturePassThroughKeymap:
         kc = context.window_manager.keyconfigs
         keymaps = kc.active.keymaps
 
-        print("try_pass_through_keymap keys", keys)
+        debug_print("try_pass_through_keymap keys", keys, key='key')
         user_keymaps = kc.user.keymaps
         # print(f"event\t{keys}\t", event.type, event.shift, event.ctrl, event.alt, self.event_count)
         for key in keys:
@@ -277,7 +278,7 @@ class GesturePassThroughKeymap:
                                 # print(f"Origin Key\t{key}\t{kmi.idname}", ok)
                                 return
                 else:
-                    print(f"else\t{key}\t{[i.idname for i in match_kmis]}")
+                    debug_print(f"else\t{key}\t{[i.idname for i in match_kmis]}", key='key')
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
@@ -369,12 +370,12 @@ def try_operator_pass_through_right(kmi: bpy.types.KeyMapItem, operator_context=
 
         prop = get_kmi_operator_properties(kmi)
         op_re = func(operator_context, True, **prop)
-        print(f"\tcall {kmi.idname}\t{prop}\t{op_re}")
+        debug_print(f"\tcall {kmi.idname}\t{prop}\t{op_re}", key='key')
         # import traceback
         # traceback.print_stack()
         return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
     except Exception as e:
-        print(f"try_operator_pass_through_right Error\t{e.args}")
+        debug_print(f"try_operator_pass_through_right Error\t{e.args}", key='key')
         import traceback
         traceback.print_exc()
         traceback.print_stack()

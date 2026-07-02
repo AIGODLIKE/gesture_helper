@@ -1,5 +1,7 @@
 import bpy
 
+from bpy.props import BoolProperty
+
 from ..utils.cache_state import CacheState
 from ..utils.public import PublicProperty, poll_message_active_element
 from ..utils.public_cache import PublicCache
@@ -22,8 +24,8 @@ class ElementModalOperatorEventCRUE:
 
     class ADD(ModalPoll):
         bl_label = 'Add modal event item'
-        bl_idname = 'gesture.element_modal_add'
-        bl_description = 'Ctrl Alt Shift + Click: Add all item!!!'
+        bl_idname = 'wm.gesture_element_modal_add'
+        bl_description = 'Hold Ctrl+Alt+Shift while clicking to add modal events for every operator property'
         control_property: bpy.props.StringProperty(name="Control Property")
 
         def invoke(self, context, event):
@@ -69,7 +71,7 @@ class ElementModalOperatorEventCRUE:
 
     class COPY(ModalPoll):
         bl_label = 'Copy element modal item'
-        bl_idname = 'gesture.element_modal_copy'
+        bl_idname = 'wm.gesture_element_modal_copy'
 
         @classmethod
         def poll(cls, context):
@@ -91,9 +93,14 @@ class ElementModalOperatorEventCRUE:
 
     class REMOVE(ModalPoll):
         bl_label = 'Remove element modal item'
-        bl_idname = 'gesture.element_modal_remove'
-        bl_description = 'Ctrl Alt Shift + Click: Remove all modal item!!!'
+        bl_idname = 'wm.gesture_element_modal_remove'
+        bl_description = (
+            'Hold Ctrl+Alt+Shift while clicking to remove all modal events. '
+            'You will be asked to confirm. Use Ctrl+Z to undo.'
+        )
         bl_options = {'REGISTER', 'UNDO'}
+
+        bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
         @classmethod
         def poll(cls, context):
@@ -102,15 +109,27 @@ class ElementModalOperatorEventCRUE:
             return super().poll(context) and ae.active_event is not None
 
         def invoke(self, context, event):
+            from ..utils.adapter import operator_invoke_confirm
             if event.ctrl and event.alt and event.shift:
+                self.bulk_remove = True
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Remove all modal events?",
+                    message="This removes every modal event on the active element. You can undo with Ctrl+Z.",
+                )
+            self.bulk_remove = False
+            return self.execute(context)
+
+        def execute(self, context):
+            if self.bulk_remove:
                 element = self.pref.active_element
                 gesture = element.parent_gesture
                 element.modal_events.clear()
                 self.cache_clear(gesture=gesture)
+                self.bulk_remove = False
                 return {'FINISHED'}
-            return self.execute(context)
-
-        def execute(self, context):
             element = self.pref.active_element
             gesture = element.parent_gesture
             active = element.active_event
@@ -120,7 +139,7 @@ class ElementModalOperatorEventCRUE:
 
     class SelectControlProperty(ModalPoll):
         bl_label = 'Select Control Property'
-        bl_idname = 'gesture.select_control_property'
+        bl_idname = 'wm.gesture_select_control_property'
         control_property: bpy.props.StringProperty(name="Control Property")
 
         def invoke(self, context, event):

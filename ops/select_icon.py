@@ -30,7 +30,7 @@ def get_num_cols(num_icons):
 
 
 class SelectIcon(bpy.types.Operator, PublicProperty):
-    bl_idname = 'gesture.select_icon'
+    bl_idname = 'wm.gesture_select_icon'
     bl_label = 'Select Icon'
     filtered_icons = []
 
@@ -229,7 +229,7 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
 
 
 class RefreshIcons(bpy.types.Operator):
-    bl_idname = "gesture.refresh_icons"
+    bl_idname = "wm.gesture_refresh_icons"
     bl_label = "Refresh Icons"
 
     def execute(self, context):
@@ -239,7 +239,7 @@ class RefreshIcons(bpy.types.Operator):
 
 
 class ClearHistory(bpy.types.Operator):
-    bl_idname = "gesture.clear_icons_history"
+    bl_idname = "wm.gesture_clear_icons_history"
     bl_label = "Clear History"
 
     def execute(self, context):

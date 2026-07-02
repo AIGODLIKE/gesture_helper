@@ -2,6 +2,7 @@ import os
 
 import bpy
 import gpu
+from ..utils.debug_util import debug_print
 
 
 def from_image_file_path_load_texture(file_path):
@@ -19,7 +20,7 @@ def from_image_file_path_load_texture(file_path):
         bpy.data.images.remove(image)
 
     except Exception as e:
-        print(e.args)
+        debug_print(e.args, key='operator')
         import traceback
         traceback.print_exc()
         traceback.print_stack()

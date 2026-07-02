@@ -5,7 +5,7 @@ from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, 
 
 from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
 from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
-from ...utils.public import get_pref, PublicOperator, PublicProperty
+from ...utils.public import get_pref, PublicOperator, PublicProperty, debug_print
 
 
 class Enum:
@@ -21,7 +21,7 @@ class Enum:
             ('PIE', 'Pie Menu',
              'Using the bpy.ops.wm.context_pie_enum operator Use the pie menu to display the enumeration (up to 8 items)'),
         ],
-        name='枚举模式',
+        name='Enum mode',
         options={'HIDDEN', 'SKIP_SAVE'})
 
     ___enum___ = []  # Prevent stale enum cache
@@ -320,7 +320,7 @@ class Create(Draw):
         pref = get_pref()
         self.cache_clear()
         with pref.add_element_property.active_radio():
-            bpy.ops.gesture.element_add(element_type="OPERATOR")
+            bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
             pt = self.property_type
             if pt == "BOOLEAN":
                 self.create_boolean()
@@ -352,7 +352,7 @@ class Create(Draw):
 
 class CreateElementProperty(Create):
     bl_label = 'Create Property Element'
-    bl_idname = 'gesture.create_element_property'
+    bl_idname = 'wm.gesture_create_element_property'
 
     button_pointer = None
     button_prop = None
@@ -381,7 +381,7 @@ class CreateElementProperty(Create):
         name = self.button_pointer.__class__.__name__
         identifier = self.button_prop.identifier
 
-        print("\nexecute", self.data_path, name, identifier, )
+        debug_print("\nexecute", self.data_path, name, identifier, key='operator')
         self.create()
         return {'FINISHED', "RUNNING_MODAL"}
 
@@ -413,7 +413,7 @@ class CreateElementProperty(Create):
         if cp.poll():
             cp(full_path=True)
             clipboard = bpy.context.window_manager.clipboard
-            print("use clipboard", clipboard)
+            debug_print("use clipboard", clipboard, key='operator')
             self.data_path = clipboard
 
     def init_string(self):

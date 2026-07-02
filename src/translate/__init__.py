@@ -1,13 +1,18 @@
-import ast
 import json
 import os.path
-import re
 
 import bpy
 from bpy.app.translations import pgettext
 
+from ...utils.debug_util import debug_print
+
 __translate__ = {}
 __language_list__ = []
+
+# Folder name under src/translate/ -> Blender locale id
+_LOCALE_ALIASES = {
+    "zh_CN": "zh_HANS",
+}
 
 
 def ___translate_id___() -> str:
@@ -40,24 +45,22 @@ def __preset_translate__(name: str) -> str:
 
 
 def __name_translate__(name: str) -> str:
-    """Translate display names."""
+    """Translate display names via add-on JSON + Blender translation contexts."""
     from ...utils.public import get_pref
+
     interface = bpy.context.preferences.view.use_translate_interface
     name_translate = get_pref().draw_property.enable_name_translation
     if interface and name_translate:
         translate_dict = ___translate_dict___("ALL")
-        from bpy.app.translations import pgettext
         if name in translate_dict:
             return translate_dict[name]
-        else:
-            pn = pgettext(name)
-            if pn != name:
-                return pn
-            else:
-                for i in bpy.app.translations.contexts:
-                    text = pgettext(name, i)
-                    if name != text:
-                        return text
+        pn = pgettext(name)
+        if pn != name:
+            return pn
+        for i in bpy.app.translations.contexts:
+            text = pgettext(name, i)
+            if name != text:
+                return text
     return name
 
 
@@ -66,56 +69,66 @@ def __keymap_translate__(string: str) -> str:
     if bpy.context.preferences.view.use_translate_interface:
         keymap = ___translate_dict___("keymap")
         return keymap[string] if (string in keymap) else pgettext(string)
-    else:
-        return string
+    return string
 
 
 def __load_json__():
-    """Load translation JSON data."""
+    """Load translation JSON from locale subfolders."""
     global __translate__
-    for root, dirs, files in os.walk(os.path.dirname(__file__)):
+    for root, _, files in os.walk(os.path.dirname(__file__)):
         for file in files:
-            if file.endswith('.json'):
-                try:
-                    language = os.path.basename(root)
-                    with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        if data:
-                            if language in __translate__:
-                                t = __translate__[language]
-                            else:
-                                t = __translate__[language] = dict()
-                            t[file[:-5]] = data
-                except Exception as e:
-                    print("Failed to load language file", e.args, file)
+            if not file.endswith('.json'):
+                continue
+            try:
+                language = os.path.basename(root)
+                with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                if not data:
+                    continue
+                bucket = __translate__.setdefault(language, {})
+                bucket[file[:-5]] = data
+            except Exception as e:
+                debug_print("Failed to load language file", e.args, file, key='operator')
 
 
-def get_language_list() -> list:
-    """
-    Traceback (most recent call last):
-  File "<blender_console>", line 1, in <module>
-TypeError: bpy_struct: item.attr = val: enum "a" not found in ('DEFAULT', 'en_US', 'es', 'ja_JP', 'sk_SK', 'vi_VN', 'zh_HANS', 'ar_EG', 'de_DE', 'fr_FR', 'it_IT', 'ko_KR', 'pt_BR', 'pt_PT', 'ru_RU', 'uk_UA', 'zh_TW', 'ab', 'ca_AD', 'cs_CZ', 'eo', 'eu_EU', 'fa_IR', 'ha', 'he_IL', 'hi_IN', 'hr_HR', 'hu_HU', 'id_ID', 'ky_KG', 'nl_NL', 'pl_PL', 'sr_RS', 'sr_RS@latin', 'sv_SE', 'th_TH', 'tr_TR')
-    """
+def get_language_list() -> tuple[str, ...]:
+    """Return locale ids supported by the current Blender build."""
     try:
-        bpy.context.preferences.view.language = ""
-    except TypeError as e:
-        matches = re.findall(r'\(([^()]*)\)', e.args[-1])
-        return ast.literal_eval(f"({matches[-1]})")
+        prop = bpy.context.preferences.bl_rna.properties['view'].properties['language']
+        return tuple(
+            item.identifier for item in prop.enum_items
+            if item.identifier != 'DEFAULT'
+        )
+    except Exception:
+        return ('en_US', 'zh_HANS')
+
+
+def _resolve_locale(folder_name: str, supported: tuple[str, ...]) -> str | None:
+    """Map a translation folder name to a locale Blender accepts."""
+    if folder_name in supported:
+        return folder_name
+    alias = _LOCALE_ALIASES.get(folder_name)
+    if alias and alias in supported:
+        return alias
+    return None
 
 
 def register():
     global __translate__
     __load_json__()
     from .helper import TranslationHelper
-    all_language = get_language_list()
-    for language, translate_dict in __translate__.items():
-        for k, v in translate_dict.items():
-            if language not in all_language:
-                if language == "zh_CN":
-                    language = "zh_HANS"
-                elif language == "zh_HANS":
-                    language = "zh_CN"
-            ti = TranslationHelper(f"Gesture_{language}_{k}", v, lang=language)
+
+    supported = get_language_list()
+    for folder_name, translate_dict in __translate__.items():
+        locale = _resolve_locale(folder_name, supported)
+        if locale is None:
+            debug_print(
+                f"Skipping translations for unsupported locale folder: {folder_name}",
+                key='operator',
+            )
+            continue
+        for category, strings in translate_dict.items():
+            ti = TranslationHelper(f"Gesture_{locale}_{category}", strings, lang=locale)
             ti.register()
             __language_list__.append(ti)
 
@@ -123,5 +136,6 @@ def register():
 def unregister():
     global __translate__
     __translate__.clear()
-    for language in __language_list__:
-        language.unregister()
+    for helper in __language_list__:
+        helper.unregister()
+    __language_list__.clear()

@@ -1,4 +1,5 @@
 import bpy
+from ....utils.debug_util import debug_print
 
 
 class OperatorProperties:
@@ -53,10 +54,10 @@ class BpuOperator:
                 if rn:
                     return rn.name
         except Exception as e:
-            print(f"__operator_text__ ERROR\t\n{self.__bl_idname__}\n", e)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            debug_print(f"__operator_text__ ERROR\t\n{self.__bl_idname__}\n", e, key='operator')
+            from ....utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
 
     def running_operator(self):
         try:
@@ -69,9 +70,13 @@ class BpuOperator:
 
                 ops_property = ", ".join(
                     (f"{key}={g(value)}" for key, value in self.__operator_properties__.items()))
-                print(
+                debug_print(
                     f'running_operator bpy.ops.{self.__bl_idname__}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
+                    key='operator',
                 )
         except Exception as e:
-            print('running_operator ERROR', e)
+            from ....utils.debug_util import debug_traceback, debug_trace_stack
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
+            debug_print('running_operator ERROR', e, key='operator')

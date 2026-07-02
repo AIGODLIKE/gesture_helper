@@ -8,7 +8,7 @@ from ..utils.translate import translate_lines_text
 
 
 class SetDirection(bpy.types.Operator):
-    bl_idname = 'gesture.set_direction'
+    bl_idname = 'wm.gesture_set_direction'
     bl_label = 'Set direction'
 
     direction: StringProperty()

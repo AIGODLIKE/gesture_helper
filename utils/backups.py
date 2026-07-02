@@ -173,7 +173,8 @@ def blender_close_backup_filename(mode: str) -> str:
 
 
 def log_backup(message: str) -> None:
-    print(f"[Gesture Helper Backup] {message}")
+    from .debug_util import debug_print
+    debug_print(f"[Gesture Helper Backup] {message}", key='export_import')
 
 
 def _gesture_backup_files(folder: str) -> list[str]:

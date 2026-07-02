@@ -48,6 +48,11 @@ def get_debug(key=None) -> bool:
     return _get_debug(key)
 
 
+def debug_print(*args, key=None, **kwargs) -> None:
+    from .debug_util import debug_print as _debug_print
+    _debug_print(*args, key=key, **kwargs)
+
+
 def by_path_set_value(point, data_path: list[str], value) -> None:
     """
     by_path_set_value(bpy, data_path: ['context','scene','render','resolution_x'], 10)
@@ -57,7 +62,7 @@ def by_path_set_value(point, data_path: list[str], value) -> None:
     bpy.context.scene.render.resolution_x = 10
     """
     if len(data_path) == 0 or point is None:
-        print("by_path_set_value set value Error", point, data_path, value)
+        debug_print("by_path_set_value set value Error", point, data_path, value, key='operator')
     elif len(data_path) == 1:
         setattr(point, data_path[0], value)
     else:
@@ -221,7 +226,7 @@ class PublicProperty(PublicCacheFunc):
                 if ae.element_type == "OPERATOR" and ae.operator_type == "OPERATOR":
                     ae.to_operator_tmp_kmi()
         except Exception as e:
-            print('update_state Error', e.args)
+            debug_print('update_state Error', e.args, key='operator')
             import traceback
             traceback.print_stack()
             traceback.print_exc()
@@ -345,8 +350,8 @@ class PublicUniqueNamePropertyGroup:
             update_name()
 
     name: StringProperty(
-        name='名称',
-        description='不允许名称重复,如果名称重复则编号 e.g .001 .002 .999 支持重命名到999',
+        name='Name',
+        description='Must be unique; duplicates are auto-suffixed (.001, .002, up to .999)',
         update=lambda self, context: self.rename()
     )
 

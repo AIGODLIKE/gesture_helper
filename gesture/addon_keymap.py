@@ -5,6 +5,13 @@ from __future__ import annotations
 import bpy
 from mathutils import Euler, Matrix, Vector
 
+from ..utils.debug_util import debug_print
+
+_GESTURE_OPERATOR_IDNAMES = frozenset({
+    "wm.gesture_operator",
+    "gesture.operator",  # legacy
+})
+
 
 class AddonKeymapRegistry:
     """Track keymap items created by this add-on for list-based unload."""
@@ -73,15 +80,20 @@ def get_kmi_operator_properties(kmi: bpy.types.KeyMapItem) -> dict:
             ]:
                 del_key.append(item)
             else:
-                print('Unknown operator property type', typ, dictionary[item])
+                debug_print('Unknown operator property type', typ, dictionary[item], key='key')
                 del_key.append(item)
     for i in del_key:
         dictionary.pop(i)
     return dictionary
 
 
-def get_addon_keymap(keymap: str) -> bpy.types.KeyMap:
-    kc = bpy.context.window_manager.keyconfigs
+def get_addon_keymap(keymap: str) -> bpy.types.KeyMap | None:
+    wm = getattr(bpy.context, "window_manager", None)
+    if wm is None:
+        return None
+    kc = wm.keyconfigs
+    if kc is None:
+        return None
     keymaps = kc.addon.keymaps.get(keymap)
     if keymaps is not None:
         return keymaps
@@ -112,8 +124,10 @@ def add_addon_kmi(
         keymap_name: str,
         kmi_data: dict,
         properties: dict,
-) -> tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]:
+) -> tuple[bpy.types.KeyMap, bpy.types.KeyMapItem] | None:
     keymap = get_addon_keymap(keymap_name)
+    if keymap is None:
+        return None
     kmi_data = {k: v for k, v in kmi_data.items() if k in _KMI_DATA_KEYS}
 
     kmi = keymap.keymap_items.new(**kmi_data)
@@ -124,16 +138,18 @@ def add_addon_kmi(
 
 def clear_orphan_gesture_kmis() -> int:
     """One-time cleanup for legacy KMIs not tracked in the registry."""
-    from ..ops.gesture import GestureOperator
-
-    id_name = GestureOperator.bl_idname
-    kcs = bpy.context.window_manager.keyconfigs
+    wm = getattr(bpy.context, "window_manager", None)
+    if wm is None:
+        return 0
+    kcs = wm.keyconfigs
+    if kcs is None:
+        return 0
     registered = {id(kmi) for _, kmi in AddonKeymapRegistry._entries}
     clear_count = 0
 
     for km in kcs.addon.keymaps.values():
         for kmi in list(km.keymap_items):
-            if kmi.idname != id_name:
+            if kmi.idname not in _GESTURE_OPERATOR_IDNAMES:
                 continue
             if id(kmi) in registered:
                 continue

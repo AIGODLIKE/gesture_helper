@@ -27,3 +27,25 @@ def get_debug(key=None) -> bool:
         'extension': prop.debug_extension,
     }
     return flags.get(kl, True)
+
+
+def debug_print(*args, key=None, **kwargs) -> None:
+    """Print only when the matching debug flag is enabled."""
+    if get_debug(key):
+        print(*args, **kwargs)
+
+
+def debug_traceback(key=None) -> None:
+    """Print stack trace only when debug is enabled."""
+    if not get_debug(key):
+        return
+    import traceback
+    traceback.print_exc()
+
+
+def debug_trace_stack(key=None) -> None:
+    """Print stack only when debug is enabled."""
+    if not get_debug(key):
+        return
+    import traceback
+    traceback.print_stack()

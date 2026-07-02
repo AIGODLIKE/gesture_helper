@@ -15,7 +15,7 @@ from bpy.props import StringProperty
 from idprop.types import IDPropertyGroup
 
 from ..utils.property import set_property, get_kmi_property
-from ..utils.public import get_debug
+from ..utils.public import get_debug, debug_print
 from ..utils.public_cache import cache_update_lock
 from .addon_keymap import AddonKeymapRegistry, add_addon_kmi, clear_orphan_gesture_kmis
 from .temp_keymap import draw_temp_keymap_item, get_temp_kmi
@@ -79,17 +79,15 @@ class GestureKeymap(KeymapProperty):
     def from_temp_key_update_data(self) -> None:
         data = self.temp_kmi_data
         if self.key != data:
-            if get_debug('kmi'):
-                print(f"from_temp_key_update_data")
-                print(self.key)
-                print(data)
+            debug_print("from_temp_key_update_data", key='key')
+            debug_print(self.key, key='key')
+            debug_print(data, key='key')
             self.key = data
             self.key_restart()
 
     def to_temp_kmi(self) -> None:
         key = ",".join(list(f"{k.title()}={v}" for k, v in self.key.items()))
-        if get_debug('key'):
-            print(f'Gesture -> Temp kmi {self.name} (%s)' % key)
+        debug_print(f'Gesture -> Temp kmi {self.name} (%s)' % key, key='key')
         set_property(self.temp_kmi, self.key)
 
     def draw_key(self, layout) -> None:
@@ -109,7 +107,7 @@ class GestureKeymap(KeymapProperty):
         properties = {"gesture": self.name}
         if get_debug("key"):
             content = {k: v for k, v in kmi_data.items() if k in ("type", "value")}
-            print(f"Add Kmi\t{content} to {self.keymaps}", flush=True)
+            debug_print(f"Add Kmi\t{content} to {self.keymaps}", flush=True, key='key')
         for keymap_name in self.keymaps:
             add_addon_kmi(keymap_name, kmi_data, properties)
 
@@ -118,7 +116,7 @@ class GestureKeymap(KeymapProperty):
         self.key_restart()
         if get_debug('key'):
             caller_name = traceback.extract_stack()[-2][2]
-            print("Key Update called by {}".format(caller_name), self)
+            debug_print("Key Update called by {}".format(caller_name), self, key='key')
 
     @classmethod
     def key_all_load(cls) -> None:
@@ -138,7 +136,7 @@ class GestureKeymap(KeymapProperty):
         cls.key_all_unload()
         clear_count = clear_orphan_gesture_kmis()
         if get_debug('key'):
-            print("Gesture Clear Legacy Keymap count", clear_count, flush=True)
+            debug_print("Gesture Clear Legacy Keymap count", clear_count, flush=True, key='key')
         return clear_count
 
     @classmethod
@@ -147,10 +145,9 @@ class GestureKeymap(KeymapProperty):
         cls.key_all_unload()
         cls.key_all_load()
         if get_debug('key'):
-            print("Gesture Key Restart", AddonKeymapRegistry.entry_count())
-            import traceback
+            debug_print("Gesture Key Restart", AddonKeymapRegistry.entry_count(), key='key')
             for i in traceback.extract_stack():
-                print(i)
+                debug_print(i, key='key')
 
     def restore_key(self):
         """Reset shortcut to default."""

@@ -1,12 +1,12 @@
 import bpy
 from bpy.props import StringProperty
 
-from ..utils.public import PublicOperator, get_pref, PublicProperty
+from ..utils.public import PublicOperator, get_pref, PublicProperty, debug_print
 from ..utils.public_ui import icon_two
 
 
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
-    bl_idname = 'gesture.set_key_maps'
+    bl_idname = 'wm.gesture_set_key_maps'
     bl_label = 'Set keymaps'
 
     __temp_selected_keymaps__ = []  # static
@@ -34,8 +34,8 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
     def execute(self, _):
         self.active_gesture.keymaps = self.__class__.__temp_selected_keymaps__
-        print(self.bl_idname, "execute", self.active_gesture.keymaps)
-        return {'FINISHED', "RUNNING_MODAL"}
+        debug_print(self.bl_idname, "execute", self.active_gesture.keymaps, key='key')
+        return {'FINISHED'}
 
     def draw(self, _):
         layout = self.layout.column()
@@ -71,7 +71,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 
 
 class OperatorTempModifierKey(bpy.types.Operator):
-    bl_idname = 'gesture.temp_kmi'
+    bl_idname = 'wm.gesture_temp_kmi'
     bl_label = 'Temp Kmi Key Gesture Helper'
 
     gesture: StringProperty()

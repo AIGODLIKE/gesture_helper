@@ -1,4 +1,5 @@
 import bpy
+from ...utils.debug_util import debug_print, debug_traceback, debug_trace_stack
 
 
 class TranslationHelper:
@@ -16,10 +17,9 @@ class TranslationHelper:
         try:
             bpy.app.translations.register(self.name, self.translations_dict)
         except ValueError as e:
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            debug_print(e.args, key='operator')
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
 
     def unregister(self):
         bpy.app.translations.unregister(self.name)

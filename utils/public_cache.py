@@ -1,5 +1,6 @@
 from .cache_state import CacheState
 from .debug_util import get_debug
+from ..utils.debug_util import debug_print
 
 
 def cache_update_lock(func, cache_clear=False):
@@ -54,8 +55,7 @@ class PublicCache:
         element_iteration = []
         prev_element = None
         for element in item.element:
-            if get_debug('cache'):
-                print("from_collection", element)
+            debug_print("from_collection", element, key='cache')
             element_iteration.append(element)
             cls.__element_prev_cache__[element] = prev_element
             prev_element = element
@@ -104,16 +104,13 @@ class PublicCache:
         cls = PublicCache
         cls.cache_clear_data()
 
-        if get_debug('cache'):
-            print("init_cache")
+        debug_print("init_cache", key='cache')
 
         pref.gesture.update()
         for gesture in pref.gesture:
-            if get_debug('cache'):
-                print("gesture", gesture)
+            debug_print("gesture", gesture, key='cache')
             cls.rebuild_gesture(gesture)
-        if get_debug('cache'):
-            print("")
+        debug_print("", key='cache')
 
     @staticmethod
     def from_element_get_data(gesture, element, parent_element, level):
@@ -122,10 +119,12 @@ class PublicCache:
         cls.__element_parent_element_cache__[element] = parent_element
         element.level = level
         if get_debug('cache'):
-            print("from_element_get_data", gesture, element, parent_element, level,
-                  element in cls.__element_parent_element_cache__,
-                  element in cls.__element_parent_gesture_cache__,
-                  )
+            debug_print(
+                "from_element_get_data", gesture, element, parent_element, level,
+                element in cls.__element_parent_element_cache__,
+                element in cls.__element_parent_gesture_cache__,
+                key='cache',
+            )
         child_iteration = []
         prev_element = None
         for child in element.element:
@@ -247,12 +246,10 @@ class PublicCacheFunc(PublicCache):
 
         PublicCache.__structure_generation__ += 1
         PublicCache.__derived_generation__ += 1
-        if get_debug('cache'):
-            print("cache_clear")
+        debug_print("cache_clear", key='cache')
         cls.init_cache()
         cls.clear_derived_lru_caches()
-        if get_debug('cache'):
-            print("")
+        debug_print("", key='cache')
 
     @staticmethod
     def cache_clear():

@@ -1,6 +1,6 @@
 import bpy
 
-from ....utils.public import tag_redraw
+from ....utils.public import tag_redraw, debug_print
 
 
 class BpuRegister:
@@ -30,7 +30,7 @@ class BpuRegister:
                             identifier,
                             'POST_PIXEL')
                     except Exception as e:
-                        print(e.args)
+                        debug_print(e.args, key='operator')
             self.__draw_class__[i] = sub_class
         tag_redraw()
 

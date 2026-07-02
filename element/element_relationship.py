@@ -4,7 +4,7 @@ from bpy.props import BoolProperty, StringProperty
 
 from ..utils.iteration import iter_elements
 from ..utils.selection import apply_radio_selection, _element_is_live
-from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items, get_debug
+from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items, get_debug, debug_print
 from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
 
 
@@ -70,11 +70,13 @@ class Relationship:
         if self not in cache:
             PublicCacheFunc.ensure_item_structure(self)
             if get_debug('cache') and self not in cache:
-                print("parent_element key error", self, self not in cache,
-                      cache.get(self))
-                print("\tw")
+                debug_print(
+                    "parent_element key error", self, self not in cache,
+                    cache.get(self), key='cache',
+                )
+                debug_print("\tw", key='cache')
                 for k, v in cache.items():
-                    print("\t", k, v)
+                    debug_print("\t", k, v, key='cache')
         return cache.get(self)
 
     @property
@@ -83,11 +85,13 @@ class Relationship:
         if self not in cache:
             PublicCacheFunc.ensure_item_structure(self)
             if get_debug('cache') and self not in cache:
-                print("parent_gesture key error", self, self not in cache,
-                      cache.get(self))
-                print("\ts")
+                debug_print(
+                    "parent_gesture key error", self, self not in cache,
+                    cache.get(self), key='cache',
+                )
+                debug_print("\ts", key='cache')
                 for k, v in cache.items():
-                    print("\t", k, v)
+                    debug_print("\t", k, v, key='cache')
         return cache.get(self)
 
     @property
@@ -167,7 +171,7 @@ class RadioSelect:
                 self.to_operator_tmp_kmi()
         except Exception as e:
             PublicCacheFunc.ensure_item_structure(self)
-            print("update_radio Error", e.args)
+            debug_print("update_radio Error", e.args, key='cache')
             import traceback
             traceback.print_exc()
             traceback.print_stack()

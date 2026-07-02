@@ -7,6 +7,7 @@ import bpy
 from mathutils import Euler, Vector, Matrix
 
 from .public_cache import PublicCache
+from ..utils.debug_util import debug_print
 
 
 def __set_collection_data__(prop, data):
@@ -40,7 +41,7 @@ def __set_prop__(prop, path, value):
             else:
                 setattr(prop, path, value)
         except Exception as e:
-            print('ERROR', typ, pro, value, e)
+            debug_print('ERROR', typ, pro, value, e, key='operator')
             import traceback
             traceback.print_stack()
             traceback.print_exc()
@@ -71,7 +72,7 @@ def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties'
             try:
                 getattr(prop, pro)[index] = j
             except Exception as e:
-                print(e.args)
+                debug_print(e.args, key='operator')
 
     for pro in props:
         pr = props[pro]
@@ -83,7 +84,7 @@ def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties'
                 try:
                     setattr(properties, pro, props[pro])
                 except Exception as e:
-                    print(e.args)
+                    debug_print(e.args, key='operator')
 
 
 def __collection_data__(prop, exclude=(), reversal=False) -> dict:
@@ -159,8 +160,8 @@ def __get_property__(prop, exclude=(), reversal=False) -> dict:
 
                 data[identifier] = pro
         except Exception as e:
-            print(prop, pr)
-            print(e.args)
+            debug_print(prop, pr, key='operator')
+            debug_print(e.args, key='operator')
             import traceback
             traceback.print_exc()
     return data

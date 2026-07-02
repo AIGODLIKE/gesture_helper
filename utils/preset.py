@@ -1,4 +1,5 @@
 import os
+from ..utils.debug_util import debug_print
 
 DEBUG_ONLY_PRESET_NAMES = frozenset({"Example Preset"})
 
@@ -22,5 +23,5 @@ def get_preset_gesture_list(*, include_debug_only: bool | None = None) -> dict[s
                     continue
                 items[name] = path
     except Exception as e:
-        print(e.args)
+        debug_print(e.args, key='export_import')
     return items

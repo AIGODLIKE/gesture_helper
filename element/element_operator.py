@@ -5,7 +5,7 @@ from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
-from ..utils.public import get_debug
+from ..utils.public import get_debug, debug_print
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.expression import literal_to_dict
@@ -46,7 +46,7 @@ class ModalProperty:
 
     def __running_by_modal__(self):
         with bpy.context.temp_override(element=self, gesture=self.parent_gesture):
-            bpy.ops.gesture.element_modal_event("INVOKE_DEFAULT", False)
+            bpy.ops.wm.gesture_element_modal_event("INVOKE_DEFAULT", False)
 
     def draw_modal_property(self, layout):
         if self.active_event:
@@ -60,14 +60,14 @@ class ModalProperty:
         try:
             return literal_to_dict(self.last_modal_operator_property)
         except Exception as e:
-            print('Properties Error')
-            print(self.name)
-            print(f"bpy.ops.{self.operator_bl_idname}")
-            print(self.last_modal_operator_property)
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from ..utils.debug_util import debug_traceback, debug_trace_stack
+            debug_print('Properties Error', key='operator')
+            debug_print(self.name, key='operator')
+            debug_print(f"bpy.ops.{self.operator_bl_idname}", key='operator')
+            debug_print(self.last_modal_operator_property, key='operator')
+            debug_print(e.args, key='operator')
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
             self['last_modal_operator_property'] = "{}"
             return {}
 
@@ -126,12 +126,15 @@ class RunOperatorPropertiesSync:
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """Sync temp KMI properties to element."""
-        if get_debug('kmi'):
-            print("from_tmp_kmi_operator_update_properties", )
+        if not get_debug('operator'):
+            temp_kmi_properties = self.operator_tmp_kmi_properties
+            if self.properties != temp_kmi_properties:
+                self['operator_properties'] = str(temp_kmi_properties)
+            return
+        debug_print("from_tmp_kmi_operator_update_properties", key='operator')
         temp_kmi_properties = self.operator_tmp_kmi_properties
-        if get_debug('kmi'):
-            print(temp_kmi_properties)
-            print(self.properties)
+        debug_print(temp_kmi_properties, key='operator')
+        debug_print(self.properties, key='operator')
         if self.properties != temp_kmi_properties:
             self['operator_properties'] = str(temp_kmi_properties)
 
@@ -212,16 +215,17 @@ class RunOperator:
 
                 ops_property = ", ".join(
                     (f"{key}={g(value)}" for key, value in prop.items()))
-                print(
+                debug_print(
                     f'running_operator bpy.ops.{self.operator_bl_idname}'
                     f'("{self.operator_context}"{", " + ops_property if ops_property else ops_property})',
-                    prop
+                    prop,
+                    key='operator',
                 )
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            traceback.print_stack()
-            print('__running_by_bl_idname__ ERROR', e)
+            from ..utils.debug_util import debug_traceback, debug_trace_stack
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
+            debug_print('__running_by_bl_idname__ ERROR', e, key='operator')
             return e
 
 
@@ -232,15 +236,15 @@ class OperatorProperty:
             ps = properties_string.strip()
             if ps.startswith('(') and ps.endswith(')'):
                 ps = ps[1:-1].strip()
-            print("__analysis_operator_properties__\n", ps)
+            debug_print("__analysis_operator_properties__\n", ps, key='operator')
             properties = literal_to_dict(ps)
             if properties:
                 self["operator_properties"] = str(properties)
         except Exception as e:
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            debug_print(e.args, key='operator')
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
 
     @cache_update_lock
     def update_operator(self) -> None:
@@ -267,7 +271,7 @@ class OperatorProperty:
     def update_operator_properties(self) -> None:
         if not self.operator_is_operator:
             return
-        print("update_operator_properties:", self.operator_properties)
+        debug_print("update_operator_properties:", self.operator_properties, key='operator')
         self.to_operator_tmp_kmi()
 
     operator_bl_idname: StringProperty(name='Operator bl_idname',
@@ -294,14 +298,14 @@ class OperatorProperty:
         try:
             return literal_to_dict(self.operator_properties)
         except Exception as e:
-            print('Properties Error')
-            print(self.name)
-            print(f"bpy.ops.{self.operator_bl_idname}")
-            print(self.operator_properties)
-            print(e.args)
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_print('Properties Error', key='operator')
+            debug_print(self.name, key='operator')
+            debug_print(f"bpy.ops.{self.operator_bl_idname}", key='operator')
+            debug_print(self.operator_properties, key='operator')
+            debug_print(e.args, key='operator')
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
             self['operator_properties'] = "{}"
             return {}
 
@@ -327,12 +331,10 @@ class OperatorProperty:
             fun.get_rna_type()
             return fun is not None
         except Exception as e:
-            from ..utils.public import get_debug
-            if get_debug("operator"):
-                print(e.args)
-                import traceback
-                traceback.print_stack()
-                traceback.print_exc()
+            debug_print(e.args, key='operator')
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
             return False
 
     @property
@@ -342,12 +344,10 @@ class OperatorProperty:
             literal_to_dict(self.operator_properties)
             return True
         except Exception as e:
-            from ..utils.public import get_debug
-            if get_debug("operator"):
-                print(e.args)
-                import traceback
-                traceback.print_stack()
-                traceback.print_exc()
+            debug_print(e.args, key='operator')
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
             return False
 
 
@@ -361,14 +361,13 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
     def operator_is_modal(self):
         return self.operator_type == "MODAL"
 
-    def running_operator(self) -> Exception:
-        """Run this element operator."""
+    def running_operator(self) -> BaseException | None:
+        """Run this element operator; return an exception on failure."""
         if self.operator_is_operator:
             return self.__running_by_bl_idname__()
-        elif self.operator_is_modal:
+        if self.operator_is_modal:
             return self.__running_by_modal__()
-        else:
-            return Exception(f'{self} invalid operator type')
+        return RuntimeError(f'{self!s} invalid operator type')
 
     def __init_operator__(self):
         """Init operator defaults when element is added."""
@@ -384,7 +383,10 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
             if not poll:
                 context = bpy.context
                 at = context.area.type
-                print(
-                    f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname} area:{at} mode:{context.mode}")
+                debug_print(
+                    f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname} "
+                    f"area:{at} mode:{context.mode}",
+                    key='operator',
+                )
             return poll
         return True

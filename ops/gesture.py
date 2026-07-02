@@ -9,11 +9,11 @@ from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..gesture.gesture_handle import GestureHandle
 from ..gesture.gesture_pass_through_keymap import GesturePassThroughKeymap
-from ..utils.public import PublicOperator
+from ..utils.public import PublicOperator, debug_print
 
 
 class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, ):
-    bl_idname = 'gesture.operator'
+    bl_idname = 'wm.gesture_operator'
     bl_label = 'Gesture Operator'
     gesture: StringProperty()
     extension_hover = []
@@ -51,22 +51,23 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         self.init_invoke(event)
         self.cache_clear()
 
-        if self.is_debug:
-            print("invoke", self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev,
-                  event.value_prev)
+        debug_print(
+            "invoke", self.bl_idname,
+            f"\tmodal\t{event.value}\t{event.type}",
+            "\tprev", event.type_prev, event.value_prev,
+            key='modal',
+        )
 
         wm = context.window_manager
         self.timer = wm.event_timer_add(1 / 24, window=context.window)
         wm.modal_handler_add(self)
-        if self.is_debug:
-            print(self.bl_idname, event.type, event.value)
+        debug_print(self.bl_idname, event.type, event.value, key='modal')
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
         self.trajectory_event_update(context, event)
         self.init_modal(event)
-        if self.is_debug:
-            print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev)
+        debug_print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev, key='modal')
         if self.try_immediate_implementation():
             self.__exit_modal__()
             return {"FINISHED"}
@@ -79,9 +80,12 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         ops = self.try_running_operator(self)
 
         if self.is_debug:
-            print('ops', ops)
-            print(self.is_draw_gesture, self.is_beyond_threshold_confirm, self.is_draw_gpu, self.is_beyond_threshold)
-            print()
+            debug_print('ops', ops, key='modal')
+            debug_print(
+                self.is_draw_gesture, self.is_beyond_threshold_confirm,
+                self.is_draw_gpu, self.is_beyond_threshold,
+                key='modal',
+            )
 
         if not ops:
             if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
@@ -92,12 +96,19 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                     mode = getattr(context.space_data, "mode", None)
 
                     region_type = bpy.context.region.type
-                    print(f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}')
-                    print(f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}")
-                    print(f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}")
+                    debug_print(
+                        f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}',
+                        key='modal',
+                    )
+                    debug_print(
+                        f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}",
+                        key='modal',
+                    )
+                    debug_print(
+                        f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}",
+                        key='modal',
+                    )
                 self.try_pass_through_keymap(context, event)
-                if self.is_debug:
-                    print()
                 return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
         return {'FINISHED'}
 
