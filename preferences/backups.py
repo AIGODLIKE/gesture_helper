@@ -7,6 +7,7 @@ from bpy.props import BoolProperty, StringProperty, EnumProperty
 from ..utils.backups import (
     get_default_backups_folder,
     get_preferences_backup_path,
+    load_preferences_backup_file,
     log_backup,
     resolve_backups_folder,
     resolve_preferences_backup_path,
@@ -104,15 +105,31 @@ class BackupsPreferences:
     def preferences_restore(self, file_path=None):
         from ..utils.public import get_pref
 
-        if not file_path:
+        auto_restore = file_path is None
+        if auto_restore:
             file_path = resolve_preferences_backup_path()
+        else:
+            file_path = file_path.strip()
+            if not file_path:
+                raise ValueError("Please select a preferences backup file")
+
         if not file_path or not os.path.isfile(file_path):
-            log_backup("preferences restore skipped: file not found")
-            return
+            if auto_restore:
+                log_backup("preferences restore skipped: file not found")
+                return
+            raise ValueError("Preferences backup file not found")
+
+        try:
+            data = load_preferences_backup_file(file_path)
+        except ValueError as e:
+            log_backup(f"preferences restore failed: {e}")
+            if auto_restore:
+                return
+            raise
+
         log_backup(f"preferences restore <- {file_path}")
         from ..utils.selection import suppress_radio_updates
 
-        with open(file_path, "r", encoding="utf-8") as file:
-            with suppress_radio_updates():
-                set_property(get_pref(), json.loads(file.read()))
+        with suppress_radio_updates():
+            set_property(get_pref(), data)
         log_backup("preferences restore ok")
