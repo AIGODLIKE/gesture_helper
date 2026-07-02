@@ -14,19 +14,6 @@ ADDON_FOLDER = dirname(dirname(realpath(__file__)))
 PRESET_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
 
 
-def get_extension_user_folder() -> str:
-    from .. import __package__ as base_package
-    path = bpy.utils.extension_path_user(base_package)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
-def get_backups_folder_default() -> str:
-    path = abspath(join(get_extension_user_folder(), 'backups'))
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
 def poll_message_active_gesture(cls) -> bool:
     if get_pref().active_gesture is None:
         cls.poll_message_set("No active gesture")
@@ -57,19 +44,8 @@ def tag_redraw():
 
 
 def get_debug(key=None) -> bool:
-    """by key get debug"""
-    prop = get_pref().debug_property
-    if prop.debug_mode and key:
-        kl = key.lower()
-        if kl == 'key':
-            return prop.debug_key
-        elif kl == 'export_import':
-            return prop.debug_export_import
-        elif kl == "poll":
-            return prop.debug_poll
-        elif kl == "operator":
-            return prop.debug_operator
-    return prop.debug_mode
+    from .debug_util import get_debug as _get_debug
+    return _get_debug(key)
 
 
 def by_path_set_value(point, data_path: list[str], value) -> None:

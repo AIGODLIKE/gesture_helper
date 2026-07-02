@@ -4,7 +4,7 @@ import bpy
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
-from ..debug import DEBUG_CACHE, DEBUG_MODAL_OPERATOR
+from ..utils.public import get_debug
 from ..utils.public_cache import cache_update_lock, PublicCache
 from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
 from ..utils.property import __get_property__, set_property, __set_property__
@@ -82,7 +82,7 @@ class NumberControl:
             return False
         ops.set_cursor(context, vm)
         ops.operator_properties[cp] = lv
-        if DEBUG_MODAL_OPERATOR:
+        if get_debug('modal'):
             print("number_mouse_move_execute", cp, default_value, value, delta, lv)
         return True
 
@@ -457,7 +457,7 @@ class EventRelationship(
     def parent_element(self):
         if self not in PublicCache.__element_parent_element_cache__:
             self.init_cache()
-            if DEBUG_CACHE:
+            if get_debug('cache'):
                 print("parent_element key error", self, self not in PublicCache.__element_parent_element_cache__,
                       PublicCache.__element_parent_element_cache__.get(self))
                 print("\tw")

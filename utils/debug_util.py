@@ -1,0 +1,29 @@
+"""Debug flags from add-on preferences (no imports from public_cache)."""
+
+
+def get_debug(key=None) -> bool:
+    """Return debug flag from preferences; optional *key* selects a sub-flag."""
+    try:
+        from .public import get_pref
+        prop = get_pref().debug_property
+    except (KeyError, AttributeError, ImportError):
+        return False
+    if not prop.debug_mode:
+        return False
+    if not key:
+        return True
+    kl = key.lower()
+    flags = {
+        'key': prop.debug_key,
+        'kmi': prop.debug_kmi_sync,
+        'kmi_sync': prop.debug_kmi_sync,
+        'draw_gpu': prop.debug_draw_gpu_mode,
+        'gpu': prop.debug_draw_gpu_mode,
+        'export_import': prop.debug_export_import,
+        'operator': prop.debug_operator,
+        'modal': prop.debug_modal,
+        'poll': prop.debug_poll,
+        'cache': prop.debug_cache,
+        'extension': prop.debug_extension,
+    }
+    return flags.get(kl, True)

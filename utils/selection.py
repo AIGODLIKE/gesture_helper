@@ -1,10 +1,46 @@
 """Element selection helpers (index chain + session cache)."""
 
+from contextlib import contextmanager
+
 from .iteration import iter_elements
 from .public_cache import PublicCache, PublicCacheFunc
 
 _ACTIVE_ATTR = '_gh_active_element'
 _SYNC_INDEX = False
+
+
+@contextmanager
+def suppress_radio_updates():
+    """Batch RNA writes without re-entrant radio update callbacks."""
+    prev = PublicCache._suppress_radio_update
+    PublicCache._suppress_radio_update = True
+    try:
+        yield
+    finally:
+        PublicCache._suppress_radio_update = prev
+
+
+def _element_is_live(element) -> bool:
+    """Return whether *element* is still attached to its collection."""
+    try:
+        collection = element.collection
+        if collection is None:
+            return False
+        return element in collection.values()
+    except (ReferenceError, AttributeError, TypeError):
+        return False
+
+
+def clear_all_active_element_caches(pref=None):
+    """Drop cached active-element pointers on every gesture."""
+    if pref is None:
+        from .public import get_pref
+        pref = get_pref()
+    gestures = getattr(pref, 'gesture', None)
+    if gestures is None:
+        return
+    for gesture in gestures:
+        clear_active_element_cache(gesture)
 
 
 def is_syncing_selection_indexes():
@@ -90,7 +126,7 @@ def strip_radio_from_copy_data(data):
 
 def enforce_single_selection(element):
     """Select only *element*, clearing all other radios without re-entrant updates."""
-    if element is None:
+    if element is None or not _element_is_live(element):
         return
 
     gesture = element.parent_gesture
@@ -100,18 +136,17 @@ def enforce_single_selection(element):
     if gesture is None:
         return
 
-    PublicCache._suppress_radio_update = True
-    try:
+    with suppress_radio_updates():
         for item in iter_elements(gesture):
-            if item != element and item.radio:
+            if item == element or not _element_is_live(item):
+                continue
+            if item.radio:
                 item['radio'] = False
         if not element.radio:
             element['radio'] = True
         sync_selection_indexes(element)
         _expand_ancestors(element)
         setattr(gesture, _ACTIVE_ATTR, element)
-    finally:
-        PublicCache._suppress_radio_update = False
 
 
 def select_element(element):
@@ -121,6 +156,9 @@ def select_element(element):
 
 def apply_radio_selection(element):
     """Select *element* with minimal RNA writes (clear previous + set new)."""
+    if not _element_is_live(element):
+        return
+
     gesture = element.parent_gesture
     if gesture is None:
         return

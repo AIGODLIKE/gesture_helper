@@ -12,6 +12,14 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
 from ..utils.property import __set_prop__
+from ..utils.backups import (
+    backup_date_string,
+    blender_close_backup_filename,
+    close_backup_filename,
+    find_gesture_backup_for_restore,
+    log_backup,
+    resolve_backups_folder,
+)
 from ..utils.public import PublicOperator, PublicProperty, get_pref
 from ..utils.public_cache import cache_update_lock
 
@@ -83,33 +91,25 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
 
 
 def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Remove legacy SCRIPT elements from imported gesture data."""
+    """Remove legacy SCRIPT elements and radio flags from imported gesture data."""
+    from ..utils.selection import strip_radio_from_copy_data
+
     for gesture in gesture_data.values():
         elements = gesture.get('element')
         if elements:
             _remove_legacy_script_from_tree(elements)
+            for child in elements.values():
+                strip_radio_from_copy_data(child)
     return gesture_data
 
 
 def ymd() -> str:
     """Extract Y-M-D date string."""
-    now = datetime.now()
-
-    year = now.year
-    month = now.month
-    day = now.day
-    return f"{year}-{month:02d}-{day:02d}"
+    return backup_date_string()
 
 
 def get_backups_folder(user_custom_path: bool = True) -> str:
-    from ..utils.public import get_backups_folder_default
-    prop = get_pref().backups_property
-
-    folder_path = get_backups_folder_default()
-    if prop.enabled_backups_to_specified_path and user_custom_path:
-        if prop.backups_path and os.path.isdir(prop.backups_path):
-            folder_path = prop.backups_path
-    return folder_path
+    return resolve_backups_folder(allow_custom=user_custom_path)
 
 
 class PublicFileOperator(PublicOperator, PublicProperty):
@@ -187,9 +187,12 @@ class Import(PublicFileOperator):
         try:
             from ..gesture import gesture_keymap
 
+            from ..utils.selection import suppress_radio_updates
+
             data = self.read_json()
             restore = sanitize_gesture_import_data(data['gesture'])
-            __set_prop__(self.pref, 'gesture', restore)
+            with suppress_radio_updates():
+                __set_prop__(self.pref, 'gesture', restore)
             gesture_keymap.GestureKeymap.key_restart()
 
             auth = data['author']
@@ -212,25 +215,23 @@ class Import(PublicFileOperator):
 
     @staticmethod
     def restore():
-        """
-        Restore data
-        """
+        """Import the best matching gesture backup on first add-on init."""
         try:
-            backups_path = get_backups_folder()
-            print("try restore", backups_path)
-            if os.path.isdir(backups_path):
-                key = f"Gesture Close Addon Backups {ymd()}.json"
-                if key in os.listdir(backups_path):
-                    print("check restore file", backups_path)
-                    bpy.ops.gesture.gesture_import(
-                        # 'EXEC_DEFAULT',
-                        filepath=os.path.join(backups_path, key),
-                        run_execute=True,
-                    )
-            else:
-                print("try load gesture config, not found backups folder")
+            log_backup("restore: searching gesture backup")
+            backup_file = find_gesture_backup_for_restore()
+            if backup_file is None:
+                log_backup("restore: no gesture backup file found")
+                return
+            log_backup(f"restore: importing <- {backup_file}")
+            bpy.ops.gesture.gesture_import(
+                filepath=backup_file,
+                run_execute=True,
+            )
+            log_backup("restore: import finished")
         except Exception as e:
-            print("try auto restore error", e.args)
+            log_backup(f"restore failed: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 class Export(PublicFileOperator):
@@ -246,42 +247,34 @@ class Export(PublicFileOperator):
         self.is_invoke = False
 
     @property
-    def file_string(self):
-        string = datetime.fromtimestamp(time.time())
-        mode = self.pref.backups_property.backups_file_mode
-        if self.is_auto_backups:
-            if mode == "ADDON_UNREGISTER":
-                string = f"Auto Backups {string}"
-            elif mode == "ADDON_UNREGISTER_DAY":
-                string = f"Auto Backups {ymd()}"
-            elif mode == "ONLY_ONE":
-                string = "Auto Backups"
-        if self.is_close_backups:
-            string = f"Close Addon Backups {ymd()}"
-        return string
-
-    @property
     def file_path(self):
         folder_path = self.filepath
-        name = "Gesture"
 
         if self.is_invoke and folder_path.endswith('.json'):
             return os.path.abspath(folder_path)
 
-        elif self.is_auto_backups or self.is_close_backups:
-            folder_path = get_backups_folder(not self.is_close_backups)
-            return os.path.abspath(os.path.join(folder_path, f'{name} {self.file_string}.json'.replace(':', ' ')))
+        if self.is_close_backups:
+            folder_path = resolve_backups_folder()
+            return os.path.abspath(os.path.join(folder_path, close_backup_filename()))
+
+        if self.is_auto_backups:
+            folder_path = resolve_backups_folder()
+            mode = self.pref.backups_property.backups_file_mode
+            return os.path.abspath(os.path.join(
+                folder_path, blender_close_backup_filename(mode)))
+
+        if not folder_path:
+            folder_path = resolve_backups_folder()
 
         if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            os.makedirs(folder_path, exist_ok=True)
 
-        if os.path.isfile(folder_path) and not self.is_auto_backups:
-            # User chose to overwrite file
-            name = os.path.basename(folder_path)
-            folder_path = os.path.dirname(folder_path)
-            return os.path.abspath(os.path.join(folder_path, name))
-        else:
-            return os.path.abspath(os.path.join(folder_path, f'Gesture {datetime.now()}.json'.replace(':', ' ')))
+        if os.path.isfile(folder_path):
+            return os.path.abspath(folder_path)
+
+        return os.path.abspath(
+            os.path.join(folder_path, f'Gesture {datetime.now()}.json'.replace(':', ' '))
+        )
 
     @property
     def export_data(self):
@@ -324,41 +317,104 @@ class Export(PublicFileOperator):
         return super().invoke(context, event)
 
     def execute(self, _):
+        automatic = self.is_auto_backups or self.is_close_backups
         if len(self.pref.gesture) == 0:
+            if automatic:
+                log_backup("skipped: no gestures configured")
             return {'CANCELLED'}
-        elif not len(self.export_data['gesture']):
-            self.report({'WARNING'}, "Export Item Not Selected")
+
+        gesture_data = self.export_data['gesture']
+        if not len(gesture_data):
+            if automatic:
+                log_backup("skipped: gesture export data is empty")
+            else:
+                self.report({'WARNING'}, "Export Item Not Selected")
+            return {'CANCELLED'}
+
+        path = self.file_path
+        self.write_json_file()
+        if automatic:
+            log_backup(f"saved {len(gesture_data)} gesture(s) -> {path}")
         else:
-            self.write_json_file()
-            self.report({'INFO'}, pgettext("Export Finished! %s") % self.file_path)
+            self.report({'INFO'}, pgettext("Export Finished! %s") % path)
         return {'FINISHED'}
 
     def write_json_file(self):
-        with open(self.file_path, 'w') as file:
+        path = self.file_path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
             json.dump(self.export_data, file, ensure_ascii=True, indent=2)
 
     @staticmethod
+    def _build_export_data(pref, *, all_gestures: bool, description: str = 'auto_backups') -> dict:
+        from .. import ADDON_VERSION
+        return {
+            'time': time.time(),
+            'blender_version': bpy.app.version,
+            'addon_version': ADDON_VERSION,
+            'author': pref.draw_property.author,
+            'description': description,
+            'gesture': pref.get_gesture_data(all_gestures),
+        }
+
+    @staticmethod
+    def _automatic_backup_path(is_blender_close: bool) -> str:
+        folder_path = resolve_backups_folder()
+        if is_blender_close:
+            pref = get_pref()
+            mode = pref.backups_property.backups_file_mode
+            return os.path.abspath(os.path.join(
+                folder_path, blender_close_backup_filename(mode)))
+        return os.path.abspath(os.path.join(folder_path, close_backup_filename()))
+
+    @classmethod
+    def run_automatic_backup(cls, is_blender_close: bool = False) -> str | None:
+        pref = get_pref()
+        prop = pref.backups_property
+        folder = resolve_backups_folder()
+        log_backup(
+            f"start blender_close={is_blender_close} "
+            f"auto_backups={prop.auto_backups} folder={folder}"
+        )
+        if not prop.auto_backups:
+            log_backup("skipped: auto_backups is disabled")
+            return None
+        if is_blender_close:
+            if not prop.backup_on_blender_close:
+                log_backup("skipped: backup_on_blender_close is disabled")
+                return None
+        elif not prop.backup_on_disable_addon:
+            log_backup("skipped: backup_on_disable_addon is disabled")
+            return None
+        if not len(pref.gesture):
+            log_backup("skipped: no gestures")
+            return None
+
+        export_data = cls._build_export_data(
+            pref,
+            all_gestures=True,
+            description='auto_backups',
+        )
+        gesture_data = export_data.get('gesture', {})
+        if not gesture_data:
+            log_backup("skipped: export data empty")
+            return None
+
+        path = cls._automatic_backup_path(is_blender_close)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            json.dump(export_data, file, ensure_ascii=True, indent=2)
+        log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
+        return path
+
+    @staticmethod
     def backups(is_blender_close: bool = False):
-        """
-        Run only when disabling add-on.
-        Two backup modes: disable add-on vs quit Blender
-        """
+        """Export gesture backup when the add-on is disabled."""
         try:
-            from ..utils.public import get_debug
-            is_auto_backups = get_pref().backups_property.auto_backups
-            if get_debug('export_import'):
-                print(f"Gesture Auto Backups\tis_blender_close:{is_blender_close}\tis_auto_backups:{is_auto_backups}")
-            bpy.ops.gesture.export(
-                'EXEC_DEFAULT',
-                filepath='',
-                description='auto_backups',
-                is_auto_backups=is_auto_backups,
-                is_close_backups=not is_blender_close,
-            )
+            Export.run_automatic_backup(is_blender_close)
         except Exception as e:
-            print("try auto backups error", e.args)
+            log_backup(f"failed: {e}")
             import traceback
-            traceback.print_stack()
             traceback.print_exc()
 
 

@@ -11,17 +11,19 @@ from ..utils.translate import translate_lines_text
 
 def _select_sibling_after_remove(element, parent, index, is_last):
     """Restore selection after removing *element* from *parent*."""
+    from ..utils.selection import select_element
+
     if not len(parent.element):
         return
     was_root = element.is_root
     if is_last and index != 0:
         parent.index_element = index - 1
         if not was_root:
-            parent.element[parent.index_element].radio = True
+            select_element(parent.element[parent.index_element])
     elif -1 < index < len(parent.element):
         sibling = parent.element[index]
         if not sibling.radio:
-            sibling.radio = True
+            select_element(sibling)
 
 
 class ElementCURE:
@@ -178,16 +180,19 @@ class ElementCURE:
         @cache_update_lock
         def move(self):
             from ..utils.property import get_property, __set_prop__
+            from ..utils.selection import strip_radio_from_copy_data, suppress_radio_updates
+
             move_to = getattr(bpy.context, 'move_element', None)
             move_from = ElementCURE.MOVE.move_item
             gesture = move_from.parent_gesture if move_from else None
 
             if move_from:
-                move_data = get_property(move_from)
-                if move_to:
-                    __set_prop__(move_to, 'element', {'0': move_data})
-                else:
-                    __set_prop__(move_from.parent_gesture, 'element', {'0': move_data})
+                move_data = strip_radio_from_copy_data(get_property(move_from))
+                with suppress_radio_updates():
+                    if move_to:
+                        __set_prop__(move_to, 'element', {'0': move_data})
+                    else:
+                        __set_prop__(move_from.parent_gesture, 'element', {'0': move_data})
                 move_from.remove()
             self.cache_clear(gesture=gesture)
 
@@ -264,16 +269,19 @@ class ElementCURE:
         @cache_update_lock
         def cut(self):
             from ..utils.property import __set_prop__
+            from ..utils.selection import select_element, suppress_radio_updates
+
             cut = ElementCURE.CUT.__cut_data__
             gesture = self.active_gesture
 
             # During cut/move paste
             cut_to = getattr(bpy.context, 'cut_element', None)
-            if cut_to:
-                __set_prop__(cut_to, 'element', {'0': cut})
-            else:
-                __set_prop__(self.active_gesture, 'element', {'0': cut})
+            target = cut_to if cut_to else self.active_gesture
+            with suppress_radio_updates():
+                __set_prop__(target, 'element', {'0': cut})
             self.cache_clear(gesture=gesture)
+            if len(target.element):
+                select_element(target.element[-1])
 
         @classmethod
         def poll(cls, context):
@@ -301,16 +309,16 @@ class ElementCURE:
                 return {'FINISHED'}
             elif cut:
                 self.cut()
-                ae = self.active_element
-                if ae:
-                    ae.radio = True
                 ElementCURE.CUT.__cut_data__ = None
                 return {'FINISHED'}
 
             # Select item to cut
             ae = self.pref.active_element
             gesture = ae.parent_gesture
-            ElementCURE.CUT.__cut_data__ = ae.___dict_data___
+            from ..utils.property import get_property
+            from ..utils.selection import strip_radio_from_copy_data
+
+            ElementCURE.CUT.__cut_data__ = strip_radio_from_copy_data(get_property(ae))
             is_last = ae.is_last
             parent = ae.parent
             index = ae.index

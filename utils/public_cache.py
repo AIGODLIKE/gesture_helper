@@ -1,5 +1,5 @@
-from ..debug import DEBUG_CACHE
 from .cache_state import CacheState
+from .debug_util import get_debug
 
 
 def cache_update_lock(func, cache_clear=False):
@@ -54,7 +54,7 @@ class PublicCache:
         element_iteration = []
         prev_element = None
         for element in item.element:
-            if DEBUG_CACHE:
+            if get_debug('cache'):
                 print("from_collection", element)
             element_iteration.append(element)
             cls.__element_prev_cache__[element] = prev_element
@@ -104,15 +104,15 @@ class PublicCache:
         cls = PublicCache
         cls.cache_clear_data()
 
-        if DEBUG_CACHE:
+        if get_debug('cache'):
             print("init_cache")
 
         pref.gesture.update()
         for gesture in pref.gesture:
-            if DEBUG_CACHE:
+            if get_debug('cache'):
                 print("gesture", gesture)
             cls.rebuild_gesture(gesture)
-        if DEBUG_CACHE:
+        if get_debug('cache'):
             print("")
 
     @staticmethod
@@ -121,7 +121,7 @@ class PublicCache:
         cls.__element_parent_gesture_cache__[element] = gesture
         cls.__element_parent_element_cache__[element] = parent_element
         element.level = level
-        if DEBUG_CACHE:
+        if get_debug('cache'):
             print("from_element_get_data", gesture, element, parent_element, level,
                   element in cls.__element_parent_element_cache__,
                   element in cls.__element_parent_gesture_cache__,
@@ -247,11 +247,11 @@ class PublicCacheFunc(PublicCache):
 
         PublicCache.__structure_generation__ += 1
         PublicCache.__derived_generation__ += 1
-        if DEBUG_CACHE:
+        if get_debug('cache'):
             print("cache_clear")
         cls.init_cache()
         cls.clear_derived_lru_caches()
-        if DEBUG_CACHE:
+        if get_debug('cache'):
             print("")
 
     @staticmethod

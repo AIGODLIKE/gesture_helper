@@ -4,8 +4,8 @@ from bpy.props import StringProperty, EnumProperty, BoolProperty, CollectionProp
 from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
-from ..debug import TMP_KMI_SYNC_DEBUG
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
+from ..utils.public import get_debug
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.expression import literal_to_dict
@@ -119,17 +119,17 @@ class ModalProperty:
 class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """Sync element properties to temp KMI."""
-        if not self.is_operator:
-            raise TypeError(f'{self} is not an operator')
+        if not self.is_operator or not self.operator_is_operator:
+            return
         self.operator_tmp_kmi_properties_clear()
         set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """Sync temp KMI properties to element."""
-        if TMP_KMI_SYNC_DEBUG:
+        if get_debug('kmi'):
             print("from_tmp_kmi_operator_update_properties", )
         temp_kmi_properties = self.operator_tmp_kmi_properties
-        if TMP_KMI_SYNC_DEBUG:
+        if get_debug('kmi'):
             print(temp_kmi_properties)
             print(self.properties)
         if self.properties != temp_kmi_properties:
@@ -260,10 +260,13 @@ class OperatorProperty:
                     index = value.index('(')
                     self[key] = value[:index]  # Strip call suffix
                     self.__analysis_operator_properties__(value[index:])
-            self.to_operator_tmp_kmi()
+            if self.operator_is_operator:
+                self.to_operator_tmp_kmi()
 
     @cache_update_lock
     def update_operator_properties(self) -> None:
+        if not self.operator_is_operator:
+            return
         print("update_operator_properties:", self.operator_properties)
         self.to_operator_tmp_kmi()
 
