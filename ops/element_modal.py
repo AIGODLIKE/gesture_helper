@@ -5,7 +5,7 @@ import blf
 import bpy
 import gpu
 
-from ..debug import DEBUG_MODAL_OPERATOR
+from ..utils.public import get_debug
 from ..utils import get_region_height, get_region_width
 from ..utils.public import PublicOperator, get_pref, PublicMouseModal
 from ..utils.public_gpu import PublicGpu
@@ -140,7 +140,7 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         self.gesture = getattr(context, "gesture", None)
         self.element = getattr(context, "element", None)
         self.operator_properties = getattr(self.element, "last_properties", None)
-        if DEBUG_MODAL_OPERATOR:
+        if get_debug('modal'):
             print(self.bl_idname, self.gesture, self.element, self.operator_properties)
 
         bpy.ops.ed.undo_push(message="Gesture Element Modal")
@@ -171,7 +171,7 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
                 return {'PASS_THROUGH'}
         if self.is_right_mouse or event.type == "ESC":
             if bpy.ops.ed.undo.poll():
-                if DEBUG_MODAL_OPERATOR:
+                if get_debug('modal'):
                     print("esc undo")
                 bpy.ops.ed.undo()
             return self.exit(context, event)
@@ -179,16 +179,16 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
             element = self.element
             if element.run_element_modal_event(self, context, event):
                 if bpy.ops.ed.undo.poll():
-                    if DEBUG_MODAL_OPERATOR:
+                    if get_debug('modal'):
                         print("undo")
                     bpy.ops.ed.undo()
                 start_time = time.time()
                 operator_properties = self.operator_properties
-                if DEBUG_MODAL_OPERATOR:
+                if get_debug('modal'):
                     print("__running_by_bl_idname__", operator_properties)
                 element.__running_by_bl_idname__(operator_properties)
                 self.last_running_time = time.time() - start_time
-                if DEBUG_MODAL_OPERATOR:
+                if get_debug('modal'):
                     print("last_running_time", self.last_running_time)
                 self.update_header_text(context)
                 return {'RUNNING_MODAL'}

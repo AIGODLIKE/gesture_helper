@@ -2,10 +2,9 @@ from functools import cache
 
 from bpy.props import BoolProperty, StringProperty
 
-from ..debug import DEBUG_CACHE
 from ..utils.iteration import iter_elements
-from ..utils.selection import apply_radio_selection
-from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items
+from ..utils.selection import apply_radio_selection, _element_is_live
+from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items, get_debug
 from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
 
 
@@ -70,7 +69,7 @@ class Relationship:
         cache = PublicCache.__element_parent_element_cache__
         if self not in cache:
             PublicCacheFunc.ensure_item_structure(self)
-            if DEBUG_CACHE and self not in cache:
+            if get_debug('cache') and self not in cache:
                 print("parent_element key error", self, self not in cache,
                       cache.get(self))
                 print("\tw")
@@ -83,7 +82,7 @@ class Relationship:
         cache = PublicCache.__element_parent_gesture_cache__
         if self not in cache:
             PublicCacheFunc.ensure_item_structure(self)
-            if DEBUG_CACHE and self not in cache:
+            if get_debug('cache') and self not in cache:
                 print("parent_gesture key error", self, self not in cache,
                       cache.get(self))
                 print("\ts")
@@ -152,6 +151,8 @@ class RadioSelect:
     def update_radio(self):
         if PublicCache._suppress_radio_update:
             return
+        if not _element_is_live(self):
+            return
 
         gesture = self.parent_gesture
         if gesture is None:
@@ -162,7 +163,7 @@ class RadioSelect:
 
         try:
             apply_radio_selection(self)
-            if self.is_operator:
+            if self.is_operator and self.operator_is_operator:
                 self.to_operator_tmp_kmi()
         except Exception as e:
             PublicCacheFunc.ensure_item_structure(self)

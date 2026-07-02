@@ -6,6 +6,8 @@ exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
 import bpy
 from mathutils import Euler, Vector, Matrix
 
+from .public_cache import PublicCache
+
 
 def __set_collection_data__(prop, data):
     """Set collection property values
@@ -30,6 +32,8 @@ def __set_prop__(prop, path, value):
                 set_property(pr, value)
             elif typ == 'COLLECTION':
                 __set_collection_data__(pr, value)
+            elif typ == 'BOOL' and path == 'radio' and PublicCache._suppress_radio_update:
+                return
             elif typ == 'ENUM' and pro.is_enum_flag:
                 # Multi-select enum (ENUM FLAG)
                 setattr(prop, path, set(value))
