@@ -5,14 +5,12 @@ import bpy
 from bpy.props import BoolProperty, StringProperty, EnumProperty
 
 from ..utils.property import set_property, get_property
-from ..utils.public import BACKUPS_FOLDER
 
 
 class BackupsProperty(bpy.types.PropertyGroup):
-    from ..utils.public import ADDON_FOLDER
     auto_backups: BoolProperty(
         name='Enable auto backups',
-        description='Automatically save the data every time you log out of the plugin to avoid data loss due to misuse, the path of the autosave is in the “auto_backups” folder of the plugin path.',
+        description='Automatically save gesture data when the add-on is disabled or Blender closes. Default folder is the extension user data directory.',
         default=True,
     )
     enabled_backups_to_specified_path: BoolProperty(
@@ -24,7 +22,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
         name='Backup path',
         description='Backup Configuration to a Specified Path',
         subtype='DIR_PATH',
-        default=os.path.join(ADDON_FOLDER, 'auto_backups')
+        default="",
     )
     backups_file_mode: EnumProperty(
         name="Backup mode",
@@ -56,22 +54,30 @@ class BackupsProperty(bpy.types.PropertyGroup):
 
 
 class BackupsPreferences:
-    __preferences_backups_path__ = os.path.join(BACKUPS_FOLDER, 'preferences')
+    @staticmethod
+    def _preferences_backups_path() -> str:
+        from ..utils.public import get_backups_folder_default
+        path = os.path.join(get_backups_folder_default(), 'preferences')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        return path
 
     def preferences_backups(self, export_path=None):
+        from ..utils.public import get_debug
         if not export_path:
-            export_path = self.__preferences_backups_path__
+            export_path = self._preferences_backups_path()
         data = get_property(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
-        print("Gesture Backups Preferences", export_path)
+        if get_debug('export_import'):
+            print("Gesture Backups Preferences", export_path)
         with open(export_path, "w") as file:
             file.write(json.dumps(data, ensure_ascii=True, indent=2))
 
     def preferences_restore(self, file_path=None):
+        from ..utils.public import get_pref, get_debug
         if not file_path:
-            file_path = self.__preferences_backups_path__
+            file_path = self._preferences_backups_path()
         if os.path.exists(file_path):
             with open(file_path, "r") as file:
-                from ..utils.public import get_pref
                 data = json.loads(file.read())
-                print("Gesture Restore Preferences")
+                if get_debug('export_import'):
+                    print("Gesture Restore Preferences")
                 set_property(get_pref(), data)

@@ -57,7 +57,10 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
     @classmethod
     def poll(cls, context):
         button_operator = getattr(context, "button_operator", None)
-        return button_operator is not None
+        if button_operator is None:
+            cls.poll_message_set("Right-click an operator button in the UI")
+            return False
+        return True
 
     def execute(self, context):
         """

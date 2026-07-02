@@ -15,7 +15,7 @@ def get_element_index(element) -> int | None:
         return element.collection.values().index(element)
     except ValueError:
         ...
-    return -1
+    return None
 
 
 @cache
@@ -43,7 +43,7 @@ def get_available_selected_structure(element) -> bool:
         else:
             return False
     else:
-        Exception('Unexpected selection structure', element)
+        raise ValueError(f'Unexpected selection structure: {element}')
     return False
 
 

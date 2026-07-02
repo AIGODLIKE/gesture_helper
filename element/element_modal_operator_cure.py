@@ -1,7 +1,7 @@
 import bpy
 
 from ..utils.cache_state import CacheState
-from ..utils.public import PublicProperty
+from ..utils.public import PublicProperty, poll_message_active_element
 from ..utils.public_cache import PublicCache
 
 
@@ -9,9 +9,16 @@ class ElementModalOperatorEventCRUE:
     class ModalPoll(bpy.types.Operator, PublicProperty, PublicCache):
         @classmethod
         def poll(cls, context):
-            pref = cls._pref()
-            ae = pref.active_element
-            return ae is not None and ae.is_operator and ae.operator_is_modal
+            if not poll_message_active_element(cls):
+                return False
+            ae = cls._pref().active_element
+            if not ae.is_operator:
+                cls.poll_message_set("Active element is not an operator")
+                return False
+            if not ae.operator_is_modal:
+                cls.poll_message_set("Active element is not a modal operator")
+                return False
+            return True
 
     class ADD(ModalPoll):
         bl_label = 'Add modal event item'
@@ -86,7 +93,7 @@ class ElementModalOperatorEventCRUE:
         bl_label = 'Remove element modal item'
         bl_idname = 'gesture.element_modal_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all modal item!!!'
-        bl_otions = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER', 'UNDO'}
 
         @classmethod
         def poll(cls, context):

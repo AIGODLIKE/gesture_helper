@@ -22,34 +22,21 @@ def init_register():
     from .ui.panel import register as register_panel
 
     pref = get_pref()
-    try:
+    register_panel()
+    icons.Icons.register()
 
-        register_panel()
-        icons.Icons.register()
+    pref.update_state()
+    pref.preferences_restore()
 
-        pref.update_state()
-        pref.preferences_restore()
-
-        prop = getattr(pref, 'other_property', None)
-        if prop and not prop.init_addon:
-            prop.init_addon = True
-            Import.restore()
-    except Exception as e:
-        import traceback
-        traceback.print_stack()
-        traceback.print_exc()
-        print(e.args)
+    prop = getattr(pref, 'other_property', None)
+    if prop and not prop.init_addon:
+        prop.init_addon = True
+        Import.restore()
 
 
 def register():
     for module in module_list:
-        try:
-            module.register()
-        except Exception as e:
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
-            print(e.args, "\n")
+        module.register()
 
     clear_temp_keymap()
     public_cache.PublicCacheFunc.cache_clear()

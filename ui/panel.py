@@ -70,7 +70,13 @@ class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
     def poll(cls, context):
         pref = get_pref()
         active = pref.active_element
-        return active and active.operator_is_modal
+        if active is None:
+            cls.poll_message_set("No active element")
+            return False
+        if not active.operator_is_modal:
+            cls.poll_message_set("Active element is not a modal operator")
+            return False
+        return True
 
     def draw(self, context):
         get_pref().active_element.draw_operator_modal(self.layout)

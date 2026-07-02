@@ -1,6 +1,6 @@
-import os
+"""Developer toggles; enable via add-on preferences debug panel."""
 
-IS_DEBUG = os.environ.get("USERNAME") in ("EM1", "emm", "32099")
+IS_DEBUG = False
 DEBUG_CACHE = False
 DEBUG_MODAL_OPERATOR = False
 

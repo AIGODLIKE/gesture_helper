@@ -3,7 +3,7 @@ from bpy.props import StringProperty
 
 from ..utils.enum import ENUM_GESTURE_DIRECTION
 from ..utils.icons import Icons
-from ..utils.public import get_pref
+from ..utils.public import get_pref, poll_message_active_element
 from ..utils.translate import translate_lines_text
 
 
@@ -22,8 +22,7 @@ class SetDirection(bpy.types.Operator):
 
     @classmethod
     def poll(cls, _):
-        pref = get_pref()
-        return pref.active_element
+        return poll_message_active_element(cls)
 
     def execute(self, _):
         get_pref().active_element.direction = self.direction

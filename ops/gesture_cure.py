@@ -2,6 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
+from ..utils.public import PublicOperator, PublicProperty, poll_message_active_gesture
 
 
 def add_all_preset():
@@ -18,13 +19,12 @@ def add_all_preset():
 
 class GestureCURE:
     """CRUD operations for gestures."""
-    from ..utils.public import PublicOperator, PublicProperty
 
     class GesturePoll(PublicOperator, PublicProperty):
 
         @classmethod
         def poll(cls, _):
-            return cls._pref().active_gesture is not None
+            return poll_message_active_gesture(cls)
 
     class ADD(PublicOperator, PublicProperty):
         bl_idname = 'gesture.gesture_add'
@@ -51,7 +51,7 @@ class GestureCURE:
         bl_idname = 'gesture.gesture_remove'
         bl_label = 'Remove gesture'
         bl_description = 'Ctrl Alt Shift + Click: Remove all gesture!!!'
-        bl_otions = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER', 'UNDO'}
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm

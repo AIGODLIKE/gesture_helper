@@ -4,7 +4,7 @@ __menu__ = []
 import bpy
 from bpy.props import EnumProperty, StringProperty
 
-from ...utils.public import PublicOperator, PublicProperty, get_pref
+from ...utils.public import PublicOperator, PublicProperty, get_pref, poll_message_active_gesture
 
 
 class CreatePanelMenu(PublicOperator, PublicProperty):
@@ -17,7 +17,7 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
 
     @classmethod
     def poll(cls, context):
-        return get_pref().active_gesture is not None
+        return poll_message_active_gesture(cls)
 
     def execute(self, context):
         t = getattr(bpy.types, self.create_id_name, None)

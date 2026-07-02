@@ -37,7 +37,10 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     @classmethod
     def poll(cls, context):
-        return not cls.is_preview_mode
+        if cls.is_preview_mode:
+            cls.poll_message_set("Gesture preview is already running")
+            return False
+        return True
 
     @property
     def is_exit(self):

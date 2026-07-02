@@ -361,7 +361,10 @@ class CreateElementProperty(Create):
     def poll(cls, context) -> bool:
         button_pointer = getattr(context, "button_pointer", None)
         button_prop = getattr(context, "button_prop", None)
-        return button_pointer and button_prop
+        if not button_pointer or not button_prop:
+            cls.poll_message_set("Right-click a property button in the UI")
+            return False
+        return True
 
     def invoke(self, context, event) -> set[str]:
         self.from_context_get_info(context)

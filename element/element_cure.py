@@ -3,7 +3,7 @@ from bpy.props import BoolProperty
 
 from .element_property import ElementAddProperty
 from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
-from ..utils.public import PublicProperty, PublicOperator, get_pref
+from ..utils.public import PublicProperty, PublicOperator, get_pref, poll_message_active_element
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 from ..utils.cache_state import CacheState
 from ..utils.translate import translate_lines_text
@@ -62,7 +62,7 @@ class ElementCURE:
 
         @classmethod
         def poll(cls, _):
-            return cls._pref().active_element is not None
+            return poll_message_active_element(cls)
 
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
         bl_label = 'Add element item'
@@ -136,7 +136,7 @@ class ElementCURE:
         bl_label = 'Remove element item'
         bl_idname = 'gesture.element_remove'
         bl_description = 'Ctrl Alt Shift + Click: Remove all element!!!'
-        bl_otions = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER', 'UNDO'}
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
@@ -279,7 +279,7 @@ class ElementCURE:
         def poll(cls, context):
             if cls.__cut_data__ is not None:
                 return True
-            return super().poll(context)
+            return poll_message_active_element(cls)
 
         def invoke(self, context, event):
             if self.cancel_cut:

@@ -13,7 +13,10 @@ class RestoreKey(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         keymap = getattr(context, "keymap", None)
-        return keymap
+        if keymap is None:
+            cls.poll_message_set("Keymap editor context required")
+            return False
+        return True
 
     def execute(self, _):
         from ..utils.public import get_pref

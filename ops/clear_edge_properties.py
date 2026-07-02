@@ -12,7 +12,10 @@ class ClearAllEdgeProperties(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'EDIT_MESH'
+        if context.mode != 'EDIT_MESH':
+            cls.poll_message_set("Edit Mesh mode required")
+            return False
+        return True
 
     def execute(self, context):
         bpy.ops.transform.edge_crease('EXEC_DEFAULT', value=-1)
