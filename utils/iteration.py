@@ -16,11 +16,6 @@ def iter_elements(root, *, include_root=False):
             stack[0:0] = list(element.element)
 
 
-def iter_element_children(element):
-    """Depth-first pre-order over *element*'s subtree (excluding *element*)."""
-    yield from iter_elements(element)
-
-
 def find_owning_gesture(item):
     """Return the gesture PropertyGroup that owns *item*."""
     from .public import get_pref

@@ -1,19 +1,4 @@
-import math
-
 import bpy
-
-
-def space_layout(layout: 'bpy.types.UILayout', space: int, level: int) -> 'bpy.types.UILayout':
-    """
-    Set layout spacing
-    """
-    if level == 0:
-        return layout.column()
-    indent = level * space / bpy.context.region.width
-
-    split = layout.split(factor=indent)
-    split.column()
-    return split.column()
 
 
 def _get_blender_icon(icon_style):
@@ -56,17 +41,7 @@ def icon_two(bool_prop, style='CHECKBOX', custom_icon: tuple[str, str] = None, )
 def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, align=True, alignment='LEFT',
                    default_extend=False,
                    style='BOX', icon_style='ARROW', draw_func=None, draw_func_data=None):
-    """
-    Store transient property on window_manager
-    if style == 'COLUMN':
-        lay = layout.column()
-    # "TRIA,ARROW,TRI""TRIA,ARROW,TRI"
-    #: str("BOUND,BOX")
-    enum in [‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’], default LEFT
-
-    draw_func(layout,**)
-    draw_func_data{}
-    """
+    """Store transient expand/collapse state on window_manager."""
     from ..props import TempDrawProperty
 
     extend = TempDrawProperty.temp_wm_prop()
@@ -74,7 +49,6 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
     extend_prop_name = prop_name + '_extend'
     extend_bool = getattr(extend, extend_prop_name, None)
     if not isinstance(extend_bool, bool):
-        # Create property on window manager if missing
         extend.default_bool_value = default_extend
         extend.add_ui_extend_bool_property = extend_prop_name
         extend_bool = getattr(extend, extend_prop_name)
@@ -103,7 +77,6 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
              )
 
     if draw_func:
-        # Use provided draw callback
         draw_func(layout=row, **draw_func_data)
     else:
         row.prop(extend, extend_prop_name,
@@ -123,44 +96,3 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
         out_lay = lay
 
     return extend_bool, out_lay
-
-
-class PublicGpuDraw:
-
-    @classmethod
-    def rounded_rectangle(cls, width, height, radius=0.2, segments=4):
-        rounded_segments = segments + 1
-        wh = width / 2 - radius
-        hh = height / 2 - radius
-
-        points = [0] * rounded_segments * 4 * 3
-        a = 0
-        b = rounded_segments * 3
-        c = rounded_segments * 3 * 2
-        d = rounded_segments * 3 * 3
-        for i in range(segments):
-            rad = (i / segments) * (math.pi / 2)
-            x = radius * math.cos(rad) + wh
-            y = radius * math.sin(rad) + hh
-            points[a] = x
-            points[a] = 0
-            points[a] = y
-
-            points[b] = -y
-            points[b] = 0
-            points[b] = x
-
-            points[c] = -x
-            points[c] = 0
-            points[c] = -y
-
-            points[d] = y
-            points[d] = 0
-            points[d] = -x
-
-            a += 1
-            b += 1
-            c += 1
-            d += 1
-
-        return points

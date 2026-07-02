@@ -13,7 +13,6 @@ from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
 from ..utils.property import __set_prop__
 from ..utils.backups import (
-    backup_date_string,
     blender_close_backup_filename,
     close_backup_filename,
     find_gesture_backup_for_restore,
@@ -109,15 +108,6 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data
-
-
-def ymd() -> str:
-    """Extract Y-M-D date string."""
-    return backup_date_string()
-
-
-def get_backups_folder(user_custom_path: bool = True) -> str:
-    return resolve_backups_folder(allow_custom=user_custom_path)
 
 
 class PublicFileOperator(PublicOperator, PublicProperty):

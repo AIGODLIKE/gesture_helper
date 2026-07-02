@@ -103,10 +103,6 @@ class GesturePreferences(PublicProperty,
     def is_show_gesture(self):
         return self.show_page == 'GESTURE'
 
-    @property
-    def is_show_property(self):
-        return self.show_page == 'PROPERTY'
-
     def draw(self, _):
         self.preferences_draw(self.layout)
 

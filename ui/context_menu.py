@@ -13,9 +13,6 @@ class ContextMenu(bpy.types.Menu):
     def draw(self, context):
         self.layout.separator()
 
-    def draw_menu(self, menu, context):
-        menu.context_menu(context)
-
     def context_menu(self, context):
         from ..src.translate import __name_translate__
         ContextMenu.show_context_menu = True
