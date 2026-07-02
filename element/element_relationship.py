@@ -150,6 +150,9 @@ class RadioSelect:
 
     @cache_update_lock
     def update_radio(self):
+        if PublicCache._suppress_radio_update:
+            return
+
         gesture = self.parent_gesture
         if gesture is None:
             PublicCacheFunc.ensure_item_structure(self)

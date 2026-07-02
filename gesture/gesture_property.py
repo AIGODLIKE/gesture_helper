@@ -16,7 +16,9 @@ class GestureProperty(PublicProperty):
     def copy(self) -> None:
         """Copy this gesture."""
         from ..utils.property import get_property, __set_prop__
-        copy_data = get_property(self)
+        from ..utils.selection import strip_radio_from_copy_data
+
+        copy_data = strip_radio_from_copy_data(get_property(self))
         __set_prop__(self.pref, 'gesture', {'0': copy_data})
 
     def update_index(self, _) -> None:
