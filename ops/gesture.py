@@ -47,6 +47,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
         self.init_trajectory()
         self.init_invoke(event)
+        self._ensure_trajectory_seed()
         self.area = context.area
         self.screen = context.screen
         self.cache_clear()

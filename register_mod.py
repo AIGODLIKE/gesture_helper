@@ -39,10 +39,10 @@ def _unregister_load_post_handler():
 
 def _sync_addon_state():
     """Refresh caches and keymap sync after file load or deferred init."""
-    from .utils.public import get_pref
+    from .utils.pref import clear_pref_cache, get_pref
     from .utils.selection import clear_all_active_element_caches
 
-    get_pref.cache_clear()
+    clear_pref_cache()
     pref = get_pref()
     public_cache.PublicCacheFunc.cache_clear()
     clear_all_active_element_caches(pref)
@@ -75,12 +75,12 @@ def _schedule_icon_verify():
 
 def init_register():
     from .ops.export_import import Import
-    from .utils.public import get_pref
+    from .utils.pref import clear_pref_cache, get_pref
     from .utils import icons
     from .utils.selection import suppress_radio_updates
     from .ui.panel import register as register_panel
 
-    get_pref.cache_clear()
+    clear_pref_cache()
     pref = get_pref()
     register_panel()
     icons.Icons.register()
@@ -100,15 +100,18 @@ def init_register():
 
 
 def register():
-    from .utils.public import get_pref
+    from .utils.pref import clear_pref_cache
+    from .utils.session_state import SessionState
     from .utils import icons
 
+    clear_pref_cache()
+    SessionState.clear()
     icons.Icons.register()
 
     for module in module_list:
         module.register()
 
-    get_pref.cache_clear()
+    clear_pref_cache()
     clear_temp_keymap()
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
@@ -121,7 +124,8 @@ def register():
 
 def unregister():
     from .utils import icons, is_blender_close
-    from .utils.public import get_pref
+    from .utils.pref import clear_pref_cache, get_pref
+    from .utils.session_state import SessionState
     from .utils.selection import clear_all_active_element_caches
     from .ops.export_import import Export
     from .ops.quick_add import create_panel_menu
@@ -131,13 +135,14 @@ def unregister():
     _deferred_init_done = False
 
     create_panel_menu.unregister()
+    SessionState.clear()
 
     pref = get_pref()
     clear_all_active_element_caches(pref)
     public_cache.PublicCacheFunc.cache_clear()
     pref.preferences_backups()
     Export.backups(is_blender_close())
-    get_pref.cache_clear()
+    clear_pref_cache()
     gesture_keymap.GestureKeymap.key_clear_legacy()
 
     for module in module_list:

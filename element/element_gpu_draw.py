@@ -13,7 +13,8 @@ from mathutils import Vector
 from ..utils import including_chinese, has_special_characters, contains_uppercase
 from ..utils.color import linear_to_srgb
 from ..utils.gpu import get_now_2d_offset_position
-from ..utils.public import get_pref, get_gesture_extension_items
+from ..utils.gesture_items import get_gesture_extension_items
+from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture

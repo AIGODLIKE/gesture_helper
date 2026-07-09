@@ -1,53 +1,26 @@
-from functools import cache
-import os
-from os.path import dirname, realpath, join, abspath
-
 import bpy
 from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
 from .cache_state import CacheState
+from . import pref
+from . import gesture_items as _gesture_items
 from .selection import resolve_active_element
 
-ADDON_FOLDER = dirname(dirname(realpath(__file__)))
-PRESET_FOLDER = abspath(join(ADDON_FOLDER, 'src', 'preset'))
-
-
-def poll_addon_preferences(cls) -> bool:
-    try:
-        get_pref()
-    except (KeyError, AttributeError):
-        cls.poll_message_set("Add-on is not enabled")
-        return False
-    return True
-
-
-def poll_message_active_gesture(cls) -> bool:
-    if not poll_addon_preferences(cls):
-        return False
-    if get_pref().active_gesture is None:
-        cls.poll_message_set("No active gesture")
-        return False
-    return True
-
-
-def poll_message_active_element(cls) -> bool:
-    if not poll_addon_preferences(cls):
-        return False
-    if get_pref().active_element is None:
-        cls.poll_message_set("No active element")
-        return False
-    return True
+# Re-exported for ``from ..utils.public import ...`` (keep explicit assignments).
+ADDON_FOLDER = pref.ADDON_FOLDER
+PRESET_FOLDER = pref.PRESET_FOLDER
+clear_pref_cache = pref.clear_pref_cache
+get_pref = pref.get_pref
+poll_addon_preferences = pref.poll_addon_preferences
+poll_message_active_element = pref.poll_message_active_element
+poll_message_active_gesture = pref.poll_message_active_gesture
+get_gesture_direction_items = _gesture_items.get_gesture_direction_items
+get_gesture_extension_items = _gesture_items.get_gesture_extension_items
 
 TRANSLATE_ID = "gesture"
 TRANSLATE_KEY = TRANSLATE_ID + "_keymap"
-
-
-@cache
-def get_pref():
-    from .. import __package__ as base_package
-    return bpy.context.preferences.addons[base_package].preferences
 
 
 def tag_redraw():
@@ -83,51 +56,6 @@ def by_path_set_value(point, data_path: list[str], value) -> None:
         setattr(point, data_path[0], value)
     else:
         by_path_set_value(getattr(point, data_path[0]), data_path[1:], value)
-
-
-@cache
-def get_gesture_direction_items(iteration):
-    direction = {}
-    last_selected_structure = None  # Tracks consecutive selection structures
-    for item in iteration:
-        if item.is_selected_structure:  # Selection structure
-            if item.__selected_structure_is_validity__:  # Valid selection structure
-                # Poll passed
-                poll = (item.is_selected_else or item.poll_bool)
-                if poll and (not last_selected_structure or item.is_selected_if):
-                    child = get_gesture_direction_items(item.element)
-                    direction.update(child)
-                    last_selected_structure = item
-            continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator:  # Child gesture or operator
-            if item.enabled:
-                direction[item.direction] = item
-        if item.enabled:  # Reset structure chain when enabled
-            last_selected_structure = None
-    return direction
-
-
-@cache
-def get_gesture_extension_items(iteration):
-    extension = []
-    last_selected_structure = None  # Tracks consecutive selection structures
-    for item in iteration:
-        if item.is_selected_structure:  # Selection structure
-            if item.__selected_structure_is_validity__:  # Valid selection structure
-                # Poll passed
-                poll = (item.is_selected_else or item.poll_bool)
-                if poll and (not last_selected_structure or item.is_selected_if):
-                    child = get_gesture_extension_items(item.element)
-                    extension.extend(child)
-                    last_selected_structure = item
-            continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
-            # Child gesture, operator, or divider
-            if item.enabled:
-                extension.append(item)
-        if item.enabled:  # Reset structure chain when enabled
-            last_selected_structure = None
-    return extension
 
 
 def update_effect(func):
@@ -466,3 +394,28 @@ class PublicMouseModal:
                 return min(x, y)
         else:
             raise ValueError("Invalid value mode: %r" % value_mode)
+
+
+__all__ = [
+    "ADDON_FOLDER",
+    "PRESET_FOLDER",
+    "TRANSLATE_ID",
+    "TRANSLATE_KEY",
+    "PublicMouseModal",
+    "PublicOperator",
+    "PublicProperty",
+    "PublicSortAndRemovePropertyGroup",
+    "PublicUniqueNamePropertyGroup",
+    "by_path_set_value",
+    "clear_pref_cache",
+    "debug_print",
+    "get_debug",
+    "get_gesture_direction_items",
+    "get_gesture_extension_items",
+    "get_pref",
+    "poll_addon_preferences",
+    "poll_message_active_element",
+    "poll_message_active_gesture",
+    "tag_redraw",
+    "update_effect",
+]

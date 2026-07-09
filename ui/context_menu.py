@@ -4,18 +4,18 @@ from bpy.app.translations import pgettext
 from ..ops.quick_add.create_element_operator import CreateElementOperator
 from ..ops.quick_add.create_element_property import CreateElementProperty
 from ..utils.public import get_pref
+from ..utils.session_state import SessionState
 
 
 class ContextMenu(bpy.types.Menu):
     bl_label = "Button Context Menu"
-    show_context_menu = False  # Exit panel after add
 
     def draw(self, context):
         self.layout.separator()
 
     def context_menu(self, context):
         from ..src.translate import __name_translate__
-        ContextMenu.show_context_menu = True
+        SessionState.context_menu_from_button = True
         show_operator = CreateElementOperator.poll(context)
         show_property = CreateElementProperty.poll(context)
 

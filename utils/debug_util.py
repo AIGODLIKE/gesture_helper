@@ -4,7 +4,7 @@
 def get_debug(key=None) -> bool:
     """Return debug flag from preferences; optional *key* selects a sub-flag."""
     try:
-        from .public import get_pref
+        from .pref import get_pref
         prop = get_pref().debug_property
     except (KeyError, AttributeError, ImportError):
         return False

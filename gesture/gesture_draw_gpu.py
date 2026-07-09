@@ -100,6 +100,27 @@ class GestureGpuDraw(DrawDebug):
     __temp_draw_class__ = {}
     __temp_debug_draw_class__ = {}
     __modal_draw_count__ = 0
+    __active_draw_instance__ = None
+
+    @staticmethod
+    def _gpu_draw_handler():
+        inst = GestureGpuDraw.__active_draw_instance__
+        if inst is None:
+            return
+        try:
+            inst.__gpu_draw__()
+        except ReferenceError:
+            ...
+
+    @staticmethod
+    def _gpu_debug_draw_handler():
+        inst = GestureGpuDraw.__active_draw_instance__
+        if inst is None:
+            return
+        try:
+            inst.gpu_draw_debug()
+        except ReferenceError:
+            ...
 
     def __gpu_draw__(self):
         """Main GPU draw entry."""
@@ -124,14 +145,16 @@ class GestureGpuDraw(DrawDebug):
         if not space:
             return
         cls = space.rna_type
+        GestureGpuDraw.__active_draw_instance__ = self
         if cls not in GestureGpuDraw.__temp_draw_class__:
             sub_class = {}
             debug_class = {}
             for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
                 try:
-                    sub_class[identifier] = cls.draw_handler_add(self.__gpu_draw__, (), identifier, 'POST_PIXEL')
-                    debug_class[identifier] = cls.draw_handler_add(self.gpu_draw_debug, (), identifier,
-                                                                   'POST_PIXEL')
+                    sub_class[identifier] = cls.draw_handler_add(
+                        GestureGpuDraw._gpu_draw_handler, (), identifier, 'POST_PIXEL')
+                    debug_class[identifier] = cls.draw_handler_add(
+                        GestureGpuDraw._gpu_debug_draw_handler, (), identifier, 'POST_PIXEL')
                 except Exception as e:
                     from ..utils.public import get_debug, debug_print
                     from ..utils.debug_util import debug_traceback, debug_trace_stack
@@ -145,7 +168,8 @@ class GestureGpuDraw(DrawDebug):
             GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 
         GestureGpuDraw.__modal_draw_count__ += 1
-        self.tag_redraw()
+        GestureGpuDraw.__active_draw_instance__ = self
+        self._tag_redraw_gesture_screen()
 
     @classmethod
     def unregister_draw(cls):
@@ -154,6 +178,7 @@ class GestureGpuDraw(DrawDebug):
         if GestureGpuDraw.__modal_draw_count__ > 0:
             cls.tag_redraw()
             return
+        GestureGpuDraw.__active_draw_instance__ = None
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 c.draw_handler_remove(value, key)
