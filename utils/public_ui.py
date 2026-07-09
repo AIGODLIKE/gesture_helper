@@ -45,6 +45,10 @@ def draw_extend_ui(layout: bpy.types.UILayout, prop_name, label: str = None, ali
     from ..props import TempDrawProperty
 
     extend = TempDrawProperty.temp_wm_prop()
+    if extend is None:
+        if label:
+            layout.label(text=label)
+        return False, layout
 
     extend_prop_name = prop_name + '_extend'
     extend_bool = getattr(extend, extend_prop_name, None)

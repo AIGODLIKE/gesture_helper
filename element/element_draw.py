@@ -97,7 +97,8 @@ class ElementDraw:
 
             row = layout.row()
             row.label(text='Select structure', icon_value=icon)
-            row.operator(SetPollExpression.bl_idname)
+            row.operator_context = "INVOKE_DEFAULT"
+            row.operator(SetPollExpression.bl_idname, icon='FILTER')
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
