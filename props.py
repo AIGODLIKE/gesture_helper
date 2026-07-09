@@ -19,8 +19,13 @@ class TempDrawProperty(bpy.types.PropertyGroup):
 
     @classmethod
     def unregister_property(cls):
-        bpy.utils.unregister_class(TempDrawProperty)
-        delattr(bpy.types.WindowManager, cls.key)
+        if TempDrawProperty.is_registered:
+            try:
+                bpy.utils.unregister_class(TempDrawProperty)
+            except RuntimeError:
+                pass
+        if hasattr(bpy.types.WindowManager, cls.key):
+            delattr(bpy.types.WindowManager, cls.key)
 
     @classmethod
     def temp_wm_prop(cls):

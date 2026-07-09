@@ -1,5 +1,4 @@
-import bpy
-
+from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 from . import element_modal
 from . import export_import, switch_mode
 from . import gesture
@@ -56,12 +55,10 @@ operator_list = (
     switch_mode.SwitchMode,
 )
 
-register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
-
 
 def register():
-    register_classes()
+    register_classes_safe(operator_list)
 
 
 def unregister():
-    unregister_classes()
+    unregister_classes_safe(operator_list)

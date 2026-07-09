@@ -3,6 +3,7 @@ import bpy
 from ..preferences.draw import PreferencesDraw
 from ..preferences.draw_gesture import GestureDraw
 from ..utils.public import PublicProperty, get_pref
+from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 
 
 class GesturePanel(bpy.types.Panel, PublicProperty):
@@ -116,7 +117,6 @@ panel_list = (
     GesturePropertyPanel,
     GestureDebugPanel,
 )
-register_classes, unregister_classes = bpy.utils.register_classes_factory(panel_list)
 
 
 def register():
@@ -124,12 +124,11 @@ def register():
     for panel in panel_list:
         panel.bl_category = pref.draw_property.panel_name
     if pref.draw_property.panel_enable:
-        register_classes()
+        register_classes_safe(panel_list)
 
 
 def unregister():
-    if GesturePanel.is_registered:
-        unregister_classes()
+    unregister_classes_safe(panel_list)
 
 
 def update_panel():

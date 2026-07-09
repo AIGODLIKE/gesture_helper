@@ -53,11 +53,29 @@ class ContextMenu(bpy.types.Menu):
                 rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
 
 
+_created_context_menu = False
+
+
 def register():
+    global _created_context_menu
+    _created_context_menu = False
     if not hasattr(bpy.types, "WM_MT_button_context"):
         bpy.utils.register_class(type("WM_MT_button_context", (ContextMenu,), {}))
+        _created_context_menu = True
     bpy.types.WM_MT_button_context.append(ContextMenu.context_menu)
 
 
 def unregister():
-    bpy.types.WM_MT_button_context.remove(ContextMenu.context_menu)
+    try:
+        bpy.types.WM_MT_button_context.remove(ContextMenu.context_menu)
+    except (ValueError, AttributeError):
+        pass
+    global _created_context_menu
+    if _created_context_menu:
+        menu_type = getattr(bpy.types, "WM_MT_button_context", None)
+        if menu_type is not None and menu_type.is_registered:
+            try:
+                bpy.utils.unregister_class(menu_type)
+            except RuntimeError:
+                pass
+        _created_context_menu = False
