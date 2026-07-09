@@ -66,7 +66,7 @@ def _on_load_post(_dummy):
 def _schedule_icon_verify():
     from .utils.icons import ensure_icons_loaded
 
-    def _verify(_):
+    def _verify():
         ensure_icons_loaded()
         return None
 
