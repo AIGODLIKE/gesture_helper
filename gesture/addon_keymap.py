@@ -12,6 +12,8 @@ _GESTURE_OPERATOR_IDNAMES = frozenset({
     "gesture.operator",  # legacy
 })
 
+_WARNED_UNKNOWN_PROP_TYPES: set[type] = set()
+
 
 class AddonKeymapRegistry:
     """Track keymap items created by this add-on for list-based unload."""
@@ -77,10 +79,13 @@ def get_kmi_operator_properties(kmi: bpy.types.KeyMapItem) -> dict:
                 'MESH_OT_duplicate',
                 'MESH_OT_offset_edge_loops',
                 'MESH_OT_extrude_faces_indiv',
+                'MESH_OT_select_linked_pick',
             ]:
                 del_key.append(item)
             else:
-                debug_print('Unknown operator property type', typ, dictionary[item], key='key')
+                if typ not in _WARNED_UNKNOWN_PROP_TYPES:
+                    _WARNED_UNKNOWN_PROP_TYPES.add(typ)
+                    debug_print('Unknown operator property type', typ, dictionary[item], key='key')
                 del_key.append(item)
     for i in del_key:
         dictionary.pop(i)
