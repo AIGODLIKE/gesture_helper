@@ -12,6 +12,7 @@ poll: str = """Poll expression template
 'O': bpy.context.object,
 'mode': bpy.context.mode,
 'tool': bpy.context.tool_settings,
+'active_tool': current workspace tool idname (e.g. "builtin.move"),
 }
 """
 

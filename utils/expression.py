@@ -25,6 +25,44 @@ def __check_addon_is_enabled__(addon_name):
     return addon_name in bpy.context.preferences.addons
 
 
+def get_active_tool_idname(context) -> str | None:
+    """Return the active workspace tool idname for the current editor context."""
+    workspace = getattr(context, 'workspace', None)
+    if workspace is None:
+        return None
+    tools = getattr(workspace, 'tools', None)
+    if tools is None:
+        return None
+
+    area = getattr(context, 'area', None)
+    mode = getattr(context, 'mode', None)
+
+    try:
+        if area and area.type == 'VIEW_3D' and mode:
+            tool = tools.from_space_view3d_mode(mode, create=False)
+            if tool is not None:
+                return tool.idname
+        if area and area.type == 'IMAGE_EDITOR':
+            ui_mode = getattr(context.space_data, 'ui_mode', None)
+            if getattr(area, 'ui_type', None) == 'UV':
+                image_mode = 'UV'
+            elif ui_mode == 'PAINT':
+                image_mode = 'PAINT'
+            elif ui_mode == 'MASK':
+                image_mode = 'MASK'
+            else:
+                image_mode = 'VIEW'
+            tool = tools.from_space_image_mode(image_mode, create=False)
+            if tool is not None:
+                return tool.idname
+        tool = getattr(tools, 'active', None)
+        if tool is not None:
+            return tool.idname
+    except (AttributeError, RuntimeError, TypeError):
+        return None
+    return None
+
+
 def get_condition_names():
     """Build the name mapping used by poll condition expressions."""
     context = bpy.context
@@ -43,6 +81,7 @@ def get_condition_names():
         'mesh': data,
         'mode': context.mode,
         'tool': context.tool_settings,
+        'active_tool': get_active_tool_idname(context),
     }
 
 
