@@ -78,7 +78,11 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
     def draw(self, _):
         layout = self.layout
         col = layout.column()
-        is_alert = self.pref.active_element.is_alert
+        element = self.element
+        if element is None:
+            col.label(text='No active element', icon='ERROR')
+            return
+        is_alert = element.is_alert
         cc = col.column(align=True)
         cc.alert = is_alert
         sp = cc.split(factor=0.05, align=True)
@@ -130,14 +134,23 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         op.poll_string = poll_string
 
     def invoke(self, context, _):
-        data = {'operator': self, 'width': 1000}
-        return context.window_manager.invoke_props_dialog(**data)
+        wm = context.window_manager
+        if wm is None:
+            self.report({'ERROR'}, "Window manager unavailable")
+            return {'CANCELLED'}
+        if self.poll_string or self.clear:
+            return self.execute(context)
+        return wm.invoke_props_dialog(self, width=1000)
 
     def execute(self, context):
         act = self.element
+        if act is None:
+            return {'CANCELLED'}
         if self.clear:
             act.poll_string = 'True'
             return {"FINISHED"}
+        if not self.poll_string:
+            return {'FINISHED'}
         if act.poll_string == 'True':
             act.poll_string = self.poll_string
         else:
