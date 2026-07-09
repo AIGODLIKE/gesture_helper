@@ -161,12 +161,12 @@ class PublicCacheFunc(PublicCache):
 
     @staticmethod
     def gesture_direction_cache_clear():
-        from .public import get_gesture_direction_items
+        from .gesture_items import get_gesture_direction_items
         get_gesture_direction_items.cache_clear()
 
     @staticmethod
     def gesture_extension_cache_clear():
-        from .public import get_gesture_extension_items
+        from .gesture_items import get_gesture_extension_items
         get_gesture_extension_items.cache_clear()
 
     @staticmethod

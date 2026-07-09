@@ -6,6 +6,7 @@ from bpy.props import EnumProperty, StringProperty
 
 from ...utils.panel import iter_menu_classes, iter_panel_classes
 from ...utils.public import PublicOperator, PublicProperty, get_pref, poll_message_active_gesture
+from ...utils.session_state import SessionState
 
 
 class CreatePanelMenu(PublicOperator, PublicProperty):
@@ -14,7 +15,6 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])
     create_id_name: StringProperty()
-    is_draw = False
 
     @classmethod
     def poll(cls, context):
@@ -40,14 +40,13 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
             return {"FINISHED"}
 
     def invoke(self, context, event):
-        if self.__class__.is_draw:
+        if SessionState.panel_menu_injecting:
             unregister()
         else:
             register()
 
         for area in context.screen.areas:
             area.tag_redraw()
-        self.__class__.is_draw = not self.__class__.is_draw
         return {"FINISHED"}
 
 
@@ -88,6 +87,7 @@ def register():
         if hasattr(m, "draw") and "gesture" not in m.__name__.lower() and m.__name__ not in exclude_panel:
             m.append(draw_add)
             __menu__.append(m)
+    SessionState.panel_menu_injecting = True
 
 
 def unregister():
@@ -103,4 +103,4 @@ def unregister():
             pass
     __panel__.clear()
     __menu__.clear()
-    CreatePanelMenu.is_draw = False
+    SessionState.panel_menu_injecting = False

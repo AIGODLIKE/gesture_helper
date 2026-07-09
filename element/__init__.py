@@ -43,8 +43,9 @@ class Element(ElementCURE,
         self.name = "------------"
 
     def ___set_properties___(self, data):
-        """Set operator_bl_idname before other operator properties."""
-        self.operator_bl_idname = data.get("operator_bl_idname", "error operator_bl_idname get")
+        """Set operator_bl_idname before other operator properties when present."""
+        if "operator_bl_idname" in data:
+            self.operator_bl_idname = data["operator_bl_idname"]
         __set_property__(self, data)
 
     @property

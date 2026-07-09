@@ -18,6 +18,32 @@ class GestureHandle:
         self.area = None
         self._gesture_timeout_timer = None
 
+    def _tag_redraw_gesture_screen(self):
+        """Redraw the screen that started this gesture (timer may have wrong context)."""
+        screen = getattr(self, 'screen', None)
+        if screen is not None:
+            try:
+                for area in screen.areas:
+                    area.tag_redraw()
+                return
+            except ReferenceError:
+                ...
+        from ..utils.public import tag_redraw
+        tag_redraw()
+
+    def tag_redraw(self):
+        self._tag_redraw_gesture_screen()
+
+    def _ensure_trajectory_seed(self):
+        """Ensure GPU draw has an anchor point before the first mouse move."""
+        tree = getattr(self, 'trajectory_tree', None)
+        if tree is None or len(tree):
+            return
+        try:
+            tree.append(None, self.__mouse_position__)
+        except (AttributeError, ReferenceError, TypeError):
+            ...
+
     def _cancel_gesture_timeout_timer(self):
         timer = getattr(self, '_gesture_timeout_timer', None)
         if timer is None:
@@ -36,10 +62,12 @@ class GestureHandle:
         if timeout <= 0:
             return
 
-        def _on_timeout():
+        def _on_timeout(*_args):
             self._gesture_timeout_timer = None
             try:
-                self.tag_redraw()
+                self.draw_trajectory_mouse_move = True
+                self._ensure_trajectory_seed()
+                self._tag_redraw_gesture_screen()
             except (AttributeError, ReferenceError):
                 ...
             return None

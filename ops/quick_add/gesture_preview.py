@@ -7,12 +7,12 @@ from ...gesture import GestureProperty
 from ...gesture.gesture_draw_gpu import GestureGpuDraw
 from ...gesture.gesture_handle import GestureHandle
 from ...utils.public import PublicOperator, debug_print
+from ...utils.session_state import SessionState
 
 
 class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty):
     bl_idname = "wm.gesture_preview"
     bl_label = "Gesture preview"
-    is_preview_mode = False
 
     gesture: StringProperty()
 
@@ -36,7 +36,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
     @classmethod
     def poll(cls, context):
-        if cls.is_preview_mode:
+        if SessionState.gesture_preview_active:
             cls.poll_message_set("Gesture preview is already running")
             return False
         return True
@@ -71,12 +71,13 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
         self.init_trajectory()
         self._schedule_gesture_timeout_timer()
+        self._ensure_trajectory_seed()
         self.trajectory_event_update(context, event)
         self.register_draw()
 
         wm = context.window_manager
         wm.modal_handler_add(self)
-        GesturePreview.is_preview_mode = True
+        SessionState.gesture_preview_active = True
 
         self.__sync_gesture__()
 
@@ -134,11 +135,11 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
 
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
         if self.is_exit:
-            GesturePreview.is_preview_mode = False
             self.__exit_modal__()
             return {'FINISHED'}
 
     def __exit_modal__(self):
+        SessionState.gesture_preview_active = False
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
 

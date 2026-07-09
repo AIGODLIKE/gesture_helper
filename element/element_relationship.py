@@ -4,7 +4,8 @@ from bpy.props import BoolProperty, StringProperty
 
 from ..utils.iteration import iter_elements
 from ..utils.selection import apply_radio_selection, _element_is_live
-from ..utils.public import PublicSortAndRemovePropertyGroup, get_gesture_direction_items, get_debug, debug_print
+from ..utils.gesture_items import get_gesture_direction_items
+from ..utils.public import PublicSortAndRemovePropertyGroup, get_debug, debug_print
 from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
 
 

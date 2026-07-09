@@ -6,6 +6,7 @@ from ...utils.panel import (
     get_ui_panels_by_space,
 )
 from ...utils.public import PublicProperty, poll_message_active_gesture
+from ...utils.session_state import SessionState
 from .switch_panel_category import GestureSwitchPanelCategory
 
 # Prefer common editors first in the space-type enum.
@@ -21,10 +22,6 @@ _SPACE_ORDER = (
     'TEXT_EDITOR',
     'SPREADSHEET',
 )
-
-# Module-level cache: EnumProperty items callbacks cannot reliably read instance attrs.
-_PANELS_BY_SPACE: dict[str, list[str]] = {}
-_SPACE_TYPE_ENUM_ITEMS: list[tuple] = [('VIEW_3D', '3D View', '')]
 
 
 def _space_label(space_type: str) -> str:
@@ -45,19 +42,18 @@ def _ordered_space_types(by_space: dict) -> list[str]:
 
 
 def _refresh_space_cache(by_space: dict) -> list[str]:
-    """Update module cache used by the dynamic EnumProperty. Returns ordered keys."""
-    global _PANELS_BY_SPACE, _SPACE_TYPE_ENUM_ITEMS
-    _PANELS_BY_SPACE = dict(by_space)
+    """Update session cache used by the dynamic EnumProperty. Returns ordered keys."""
+    SessionState.switch_panel_by_space = dict(by_space)
     ordered = _ordered_space_types(by_space)
     if ordered:
-        _SPACE_TYPE_ENUM_ITEMS = [(s, _space_label(s), '') for s in ordered]
+        SessionState.switch_panel_enum_items = [(s, _space_label(s), '') for s in ordered]
     else:
-        _SPACE_TYPE_ENUM_ITEMS = [('NONE', 'None', '')]
+        SessionState.switch_panel_enum_items = [('NONE', 'None', '')]
     return ordered
 
 
 def _space_type_items(self, context):
-    return _SPACE_TYPE_ENUM_ITEMS
+    return SessionState.switch_panel_enum_items
 
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
@@ -119,7 +115,7 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         layout.prop(self, "space_type", text="")
         layout.prop(self, "filter")
 
-        categories = _PANELS_BY_SPACE.get(self.space_type, [])
+        categories = SessionState.switch_panel_by_space.get(self.space_type, [])
         column = layout.column(align=True)
         for category in self._filtered_categories(categories):
             ops = column.operator(self.bl_idname, text=category)

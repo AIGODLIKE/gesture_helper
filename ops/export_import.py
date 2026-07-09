@@ -66,6 +66,8 @@ EXPORT_PROPERTY_ITEM = {
         'event_ctrl',
         'event_alt',
         'operator_bl_idname',
+        'operator_context',
+        'operator_properties',
         'event_shift',
         'direction', 'operator_type'],
     'OPERATOR_OPERATOR': [
@@ -185,14 +187,22 @@ class Import(PublicFileOperator):
             from ..utils.selection import suppress_radio_updates
 
             data = self.read_json()
+            if not isinstance(data, dict) or 'gesture' not in data:
+                raise ValueError("Invalid gesture file: missing 'gesture' data")
             restore = sanitize_gesture_import_data(data['gesture'])
+            if not isinstance(restore, dict):
+                raise ValueError("Invalid gesture file: 'gesture' must be an object")
             with suppress_radio_updates():
                 __set_prop__(self.pref, 'gesture', restore)
             gesture_keymap.GestureKeymap.key_restart()
 
-            auth = data['author']
-            des = data['description']
-            ver = '.'.join((str(i) for i in data['addon_version']))
+            auth = data.get('author', '')
+            des = data.get('description', '')
+            addon_version = data.get('addon_version', ())
+            if isinstance(addon_version, (list, tuple)) and addon_version:
+                ver = '.'.join(str(i) for i in addon_version)
+            else:
+                ver = str(addon_version) if addon_version else '?'
 
             text = pgettext(
                 r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s") % (
@@ -205,7 +215,7 @@ class Import(PublicFileOperator):
             debug_traceback(key='export_import')
 
     def read_json(self):
-        with open(self.filepath, 'r') as file:
+        with open(self.filepath, 'r', encoding='utf-8') as file:
             return json.load(file)
 
     @staticmethod
