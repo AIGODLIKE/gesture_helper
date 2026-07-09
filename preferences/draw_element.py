@@ -26,6 +26,8 @@ class DrawElement:
 
         column = layout.column(align=True)
         column.enabled = ElementCURE.MOVE.move_item is None
+        # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
+        column.operator_context = "INVOKE_DEFAULT"
 
         cr = column.column(align=True)
         cut = cr.column(align=True)

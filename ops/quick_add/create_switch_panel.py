@@ -65,7 +65,6 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     space_type: bpy.props.EnumProperty(
         name="Editor",
         items=_space_type_items,
-        default='VIEW_3D',
     )
 
     @classmethod

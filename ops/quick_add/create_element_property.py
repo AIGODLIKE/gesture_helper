@@ -20,6 +20,14 @@ class Enum:
     _enum_items_cache: list = []
     _enum_items_prop_id: int | None = None
 
+    _ENUM_MODE_DRAW_ITEMS = (
+        ('SET', 'Direct setting of enumeration values'),
+        ('CYCLE', 'Cyclic setting of the enumeration value'),
+        ('TOGGLE', 'Toggle setting Enumeration values'),
+        ('MENU', 'Menu'),
+        ('PIE', 'Pie Menu'),
+    )
+
     enum_mode: EnumProperty(
         items=[
             ('SET', 'Direct setting of enumeration values', 'Use bpy.ops.wm.context_set_enum operator'),
@@ -55,19 +63,9 @@ class Enum:
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
-    # Multi-select for RNA ENUM_FLAG properties (e.g. snap_elements_base).
-    enum_flag_value: EnumProperty(
-        options={'ENUM_FLAG', 'HIDDEN', 'SKIP_SAVE'},
-        items=__get_enum__,
-    )
     enum_reverse: BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
     enum_wrap: BoolProperty(default=True, name="Cycle",
                             description="Automatically jumps if it is the last or first value in the loop")
-
-    @property
-    def is_enum_flag_property(self) -> bool:
-        prop = getattr(self, 'button_prop', None)
-        return bool(prop is not None and prop.type == 'ENUM' and prop.is_enum_flag)
 
 
 class OpsProperty(Enum):
@@ -163,7 +161,12 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 elif prop_type == "STRING":
                     self.draw_string(layout)
                 elif prop_type == "ENUM":
-                    self.draw_enum(layout)
+                    if prop.is_enum_flag:
+                        layout.alert = True
+                        layout.label(text="Multi-select enum (set) is not supported")
+                        layout.label(text="Unable to add")
+                    else:
+                        self.draw_enum(layout)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
@@ -237,18 +240,12 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         layout.label(text="Modify Enumeration")
 
         layout.separator()
-        is_flag = self.is_enum_flag_property
-
-        if is_flag and self.enum_mode in {'CYCLE', 'TOGGLE'}:
-            self.enum_mode = 'SET'
 
         mode_row = layout.row(align=True)
-        for item in self.bl_rna.properties['enum_mode'].enum_items:
-            if is_flag and item.identifier in {'CYCLE', 'TOGGLE'}:
-                continue
-            mode_row.prop_enum(self, "enum_mode", item.identifier, text=item.name)
+        for identifier, name in self._ENUM_MODE_DRAW_ITEMS:
+            mode_row.prop_enum(self, "enum_mode", identifier, text=name)
 
-        if self.enum_mode == "TOGGLE" and not is_flag:
+        if self.enum_mode == "TOGGLE":
             row = layout.row(align=True)
             a = row.column(align=True)
             a.label(text="Value A")
@@ -258,12 +255,8 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
             b.label(text="Value B")
             b.prop(self, "enum_value_b", expand=True)
         elif self.enum_mode == "SET":
-            if is_flag:
-                layout.label(text="Select one or more values")
-                layout.prop(self, "enum_flag_value", expand=True)
-            else:
-                layout.prop(self, "enum_value_a", expand=True)
-        elif self.enum_mode == "CYCLE" and not is_flag:
+            layout.prop(self, "enum_value_a", expand=True)
+        elif self.enum_mode == "CYCLE":
             layout.separator()
             layout.prop(self, "enum_reverse")
             layout.prop(self, "enum_wrap")
@@ -271,11 +264,7 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         layout.separator()
 
         cc = layout.column(align=True)
-        is_eq = (
-            not is_flag
-            and self.enum_mode == "TOGGLE"
-            and self.enum_value_a == self.enum_value_b
-        )
+        is_eq = self.enum_mode == "TOGGLE" and self.enum_value_a == self.enum_value_b
         if is_eq:
             cc.alert = True
             cc.label(text="Value A == Value B")
@@ -287,7 +276,6 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         ops.enum_mode = self.enum_mode
         ops.enum_value_a = self.enum_value_a
         ops.enum_value_b = self.enum_value_b
-        ops.enum_flag_value = self.enum_flag_value
         ops.enum_reverse = self.enum_reverse
         ops.enum_wrap = self.enum_wrap
         ops.property_type = "ENUM"
@@ -366,32 +354,16 @@ class Create(Draw):
         bpy.ops.wm.context_toggle_enum(data_path="", value_1="", value_2="")
         bpy.ops.wm.context_menu_enum(data_path="")
         bpy.ops.wm.context_pie_enum(data_path="")
-        wm.gesture_context_set_enum_flag for ENUM_FLAG properties
         :return:
         """
-        from .set_enum_flag import GestureContextSetEnumFlag
-
         ae = self._created_element()
         if not ae:
             return
         path = self.__data_path__
         em = self.enum_mode
-        is_flag = self.is_enum_flag_property
-
-        if is_flag and em in {'CYCLE', 'TOGGLE'}:
-            em = 'SET'
 
         if em == "SET":
-            if is_flag:
-                flag_value = ','.join(sorted(self.enum_flag_value))
-                self._set_context_operator(
-                    ae,
-                    GestureContextSetEnumFlag.bl_idname,
-                    data_path=path,
-                    value=flag_value,
-                )
-            else:
-                self._set_context_operator(ae, 'wm.context_set_enum', data_path=path, value=self.enum_value_a)
+            self._set_context_operator(ae, 'wm.context_set_enum', data_path=path, value=self.enum_value_a)
         elif em == "CYCLE":
             self._set_context_operator(
                 ae, 'wm.context_cycle_enum',
@@ -422,9 +394,12 @@ class Create(Draw):
         """
         pref = get_pref()
         self.cache_clear()
+        pt = self.property_type
+        if pt == "ENUM" and self.button_prop and self.button_prop.is_enum_flag:
+            self.report({'ERROR'}, "Multi-select enum (set) is not supported")
+            return
         with pref.add_element_property.active_radio():
             bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
-            pt = self.property_type
             if pt == "BOOLEAN":
                 self.create_boolean()
             elif pt == "INT":
@@ -558,22 +533,9 @@ class CreateElementProperty(Create):
     def init_enum(self):
         prop = self.button_prop
         pointer = self.button_pointer
-        if not prop or not pointer or prop.type != "ENUM":
+        if not prop or not pointer or prop.type != "ENUM" or prop.is_enum_flag:
             return
         current = getattr(pointer, prop.identifier, None)
-        if prop.is_enum_flag:
-            if isinstance(current, (set, frozenset)):
-                self.enum_flag_value = set(current)
-            elif isinstance(current, str) and current:
-                self.enum_flag_value = {current}
-            else:
-                self.enum_flag_value = set()
-            if self.enum_mode in {'CYCLE', 'TOGGLE'}:
-                self.enum_mode = 'SET'
-            return
-        # ENUM_FLAG RNA props return a set; EnumProperty expects a single string.
-        if isinstance(current, (set, frozenset)):
-            current = next(iter(current), None) if current else None
         if isinstance(current, str) and current:
             self.enum_value_a = current
 
