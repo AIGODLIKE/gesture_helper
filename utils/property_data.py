@@ -33,6 +33,7 @@ CREATE_ELEMENT_DATA_PATHS = {
     "FileSelectParams": "bpy.context.space_data.params",
     "SceneEEVEE": "bpy.context.scene.eevee",
     "CyclesRenderSettings": "bpy.context.scene.cycles",
+    "CyclesObjectSettings": "bpy.context.object.cycles",
     "SceneDisplay": "bpy.context.scene.display",
 
     "Preferences": "bpy.context.preferences",
@@ -95,6 +96,71 @@ def normalize_context_data_path(path: str) -> str | None:
     return f"bpy.context.{text}"
 
 
+def convert_data_path_to_context(path: str, pointer=None) -> str | None:
+    """Convert bpy.data.objects[...] paths to bpy.context.object when it is active."""
+    import ast
+    import re
+
+    import bpy
+
+    text = str(path).strip()
+    if not text:
+        return None
+    if text.startswith('bpy.context.'):
+        return text
+
+    match = re.fullmatch(r'bpy\.data\.objects\[([^\]]+)\]\.(.*)', text)
+    if match:
+        try:
+            name = ast.literal_eval(match.group(1))
+        except (SyntaxError, ValueError):
+            name = match.group(1).strip('"\'')
+        rest = match.group(2)
+        obj = bpy.context.object
+        if obj is not None and obj.name == name:
+            return f"bpy.context.object.{rest}"
+        id_data = getattr(pointer, 'id_data', None) if pointer is not None else None
+        if isinstance(id_data, bpy.types.Object) and id_data.name == name and obj == id_data:
+            return f"bpy.context.object.{rest}"
+        return None
+
+    if text.startswith('bpy.data.'):
+        return None
+    return normalize_context_data_path(text)
+
+
+def resolve_id_data_context_path(pointer, prop_identifier: str) -> str | None:
+    """Map nested RNA pointers (e.g. object.cycles) to bpy.context.* paths."""
+    import bpy
+
+    if pointer is None or not hasattr(pointer, 'id_data'):
+        return None
+
+    id_data = pointer.id_data
+    context = bpy.context
+
+    try:
+        rel = pointer.path_from_id() or ""
+    except (AttributeError, RuntimeError, TypeError, ValueError):
+        rel = ""
+
+    suffix = f"{rel}.{prop_identifier}" if rel else prop_identifier
+
+    if isinstance(id_data, bpy.types.Object) and context.object == id_data:
+        return f"bpy.context.object.{suffix}"
+    if isinstance(id_data, bpy.types.Scene) and context.scene == id_data:
+        return f"bpy.context.scene.{suffix}"
+    if isinstance(id_data, bpy.types.World) and context.scene and context.scene.world == id_data:
+        return f"bpy.context.scene.world.{suffix}"
+    if isinstance(id_data, bpy.types.Mesh) and context.object and context.object.data == id_data:
+        return f"bpy.context.object.data.{suffix}"
+    if isinstance(id_data, bpy.types.Material):
+        obj = context.object
+        if obj and obj.active_material == id_data:
+            return f"bpy.context.object.active_material.{suffix}"
+    return None
+
+
 def resolve_view_layer_data_path(pointer, prop_identifier: str) -> str | None:
     """Map a ViewLayer pointer to bpy.context.view_layer or a named layer path."""
     import bpy
@@ -120,6 +186,11 @@ def resolve_context_data_path(pointer, prop_identifier: str) -> str | None:
     view_layer_path = resolve_view_layer_data_path(pointer, prop_identifier)
     if view_layer_path:
         return view_layer_path
+
+    id_data_path = resolve_id_data_context_path(pointer, prop_identifier)
+    if id_data_path:
+        return id_data_path
+
     for name in (
         'object', 'scene', 'view_layer', 'space_data', 'tool_settings',
         'area', 'region', 'screen', 'workspace', 'preferences', 'window_manager',

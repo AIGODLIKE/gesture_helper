@@ -286,6 +286,7 @@
   "Float Value": "浮点值",
   "String Value": "字符串值",
   "Unable to get data path": "无法获取数据路径",
+  "Data Path": "数据路径",
   "Unable to add": "无法添加",
   "Adding Property to Gestures": "添加属性到手势",
   "Set Boolean Value": "设置布尔值",
