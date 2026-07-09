@@ -1,5 +1,4 @@
-import bpy.utils
-
+from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 from . import context_menu
 from . import menu
 from . import ui_list
@@ -13,15 +12,13 @@ operator_list = (
     menu.GESTURE_MT_add_element_menu
 )
 
-register_classes, unregister_classes = bpy.utils.register_classes_factory(operator_list)
-
 
 def register():
-    register_classes()
+    register_classes_safe(operator_list)
     context_menu.register()
 
 
 def unregister():
     context_menu.unregister()
-    unregister_classes()
+    unregister_classes_safe(operator_list)
     unregister_panel()

@@ -1,6 +1,8 @@
 import bpy
 from bpy.props import CollectionProperty, BoolProperty, StringProperty
 
+from ..utils.rna_register import register_classes_safe, unregister_classes_safe
+
 from .gesture_keymap import GestureKeymap
 from .gesture_property import GestureProperty
 from .gesture_relationship import GestureRelationship
@@ -76,12 +78,10 @@ classes_list = (
     GestureCURE.REMOVE,
 )
 
-register_classes, unregister_classes = bpy.utils.register_classes_factory(classes_list)
-
 
 def register():
-    register_classes()
+    register_classes_safe(classes_list)
 
 
 def unregister():
-    unregister_classes()
+    unregister_classes_safe(classes_list)

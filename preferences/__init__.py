@@ -6,6 +6,8 @@ from bpy.props import (
     PointerProperty,
     EnumProperty)
 
+from ..utils.rna_register import register_classes_safe, unregister_classes_safe
+
 from .add_element import AddElementProperty
 from .backups import BackupsProperty, BackupsPreferences
 from .debug import DebugProperty
@@ -118,14 +120,12 @@ classes_list = (
     GesturePreferences,
 )
 
-register_classes, unregister_classes = bpy.utils.register_classes_factory(classes_list)
-
 
 def register():
     gesture.register()
-    register_classes()
+    register_classes_safe(classes_list)
 
 
 def unregister():
-    unregister_classes()
+    unregister_classes_safe(classes_list)
     gesture.unregister()
