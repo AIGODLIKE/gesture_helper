@@ -8,7 +8,7 @@ from ...utils.panel import (
 from ...utils.public import PublicProperty, poll_message_active_gesture
 from .switch_panel_category import GestureSwitchPanelCategory
 
-# Prefer common editors first when listing N-panel tabs from Preferences.
+# Prefer common editors first in the space-type enum.
 _SPACE_ORDER = (
     'VIEW_3D',
     'IMAGE_EDITOR',
@@ -22,6 +22,10 @@ _SPACE_ORDER = (
     'SPREADSHEET',
 )
 
+# Module-level cache: EnumProperty items callbacks cannot reliably read instance attrs.
+_PANELS_BY_SPACE: dict[str, list[str]] = {}
+_SPACE_TYPE_ENUM_ITEMS: list[tuple] = [('NONE', 'None', '')]
+
 
 def _space_label(space_type: str) -> str:
     try:
@@ -34,14 +38,38 @@ def _space_label(space_type: str) -> str:
     return space_type
 
 
+def _ordered_space_types(by_space: dict) -> list[str]:
+    ordered = [s for s in _SPACE_ORDER if s in by_space]
+    ordered.extend(sorted(s for s in by_space if s not in _SPACE_ORDER))
+    return ordered
+
+
+def _refresh_space_cache(by_space: dict) -> list[str]:
+    """Update module cache used by the dynamic EnumProperty. Returns ordered keys."""
+    global _PANELS_BY_SPACE, _SPACE_TYPE_ENUM_ITEMS
+    _PANELS_BY_SPACE = dict(by_space)
+    ordered = _ordered_space_types(by_space)
+    if ordered:
+        _SPACE_TYPE_ENUM_ITEMS = [(s, _space_label(s), '') for s in ordered]
+    else:
+        _SPACE_TYPE_ENUM_ITEMS = [('NONE', 'None', '')]
+    return ordered
+
+
+def _space_type_items(self, context):
+    return _SPACE_TYPE_ENUM_ITEMS
+
+
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     bl_label = 'Switch Panel Opterator'
     bl_idname = 'wm.gesture_create_switch_panel'
 
     panel_name: bpy.props.StringProperty()
     filter: bpy.props.StringProperty(options={"TEXTEDIT_UPDATE"}, name="Filter")
-    # list[tuple[space_type, list[str]]] grouped by editor, or flat list[str] fallback
-    panels = []
+    space_type: bpy.props.EnumProperty(
+        name="Editor",
+        items=_space_type_items,
+    )
 
     @classmethod
     def poll(cls, context):
@@ -51,16 +79,21 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         """source\\blender\\makesrna\\intern\\rna_screen.cc L348"""
         wm = context.window_manager
 
-        # Always list N-panel tabs for every editor (VIEW_3D, UV, Node, …).
-        # Creating from Preferences / 3D N-panel must not hide other editors.
         by_space = get_ui_panels_by_space(context, check_poll=False)
-        if by_space:
-            ordered = [s for s in _SPACE_ORDER if s in by_space]
-            ordered.extend(sorted(s for s in by_space if s not in _SPACE_ORDER))
-            self.panels = [(space, by_space[space]) for space in ordered]
-        else:
+        if not by_space:
             current = get_ui_panel_categories(context)
-            self.panels = current or get_panels_by_context(context, check_poll=False)
+            if not current:
+                current = get_panels_by_context(context, check_poll=False)
+            by_space = {'VIEW_3D': current} if current else {}
+
+        ordered = _refresh_space_cache(by_space)
+
+        area_type = getattr(context.area, 'type', None)
+        if area_type in by_space:
+            self.space_type = area_type
+        elif ordered:
+            self.space_type = ordered[0]
+
         return wm.invoke_props_dialog(**{'operator': self, 'width': 300})
 
     def execute(self, context):
@@ -77,19 +110,13 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     def draw(self, context):
         layout = self.layout
         layout.operator_context = "EXEC_DEFAULT"
+        layout.prop(self, "space_type", text="")
         layout.prop(self, "filter")
-        column = layout.column(align=True)
 
-        if self.panels and isinstance(self.panels[0], tuple):
-            for space_type, categories in self.panels:
-                filtered = self._filtered_categories(categories)
-                if not filtered:
-                    continue
-                box = column.box()
-                box.label(text=_space_label(space_type))
-                self._draw_category_buttons(box.column(align=True), filtered)
-        else:
-            self._draw_category_buttons(column, self._filtered_categories(self.panels))
+        categories = _PANELS_BY_SPACE.get(self.space_type, [])
+        column = layout.column(align=True)
+        for category in self._filtered_categories(categories):
+            column.operator(self.bl_idname, text=category).panel_name = category
 
     def _filtered_categories(self, categories):
         fl = self.filter.lower()
@@ -101,7 +128,3 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
             if fl in tn or fl in category.lower():
                 result.append(category)
         return result
-
-    def _draw_category_buttons(self, column, categories):
-        for category in categories:
-            column.operator(self.bl_idname, text=category).panel_name = category
