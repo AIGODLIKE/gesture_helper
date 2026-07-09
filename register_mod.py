@@ -124,10 +124,13 @@ def unregister():
     from .utils.public import get_pref
     from .utils.selection import clear_all_active_element_caches
     from .ops.export_import import Export
+    from .ops.quick_add import create_panel_menu
 
     _unregister_load_post_handler()
     global _deferred_init_done
     _deferred_init_done = False
+
+    create_panel_menu.unregister()
 
     pref = get_pref()
     clear_all_active_element_caches(pref)

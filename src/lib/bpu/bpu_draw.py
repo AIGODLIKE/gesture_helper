@@ -32,7 +32,6 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
     def __gpu_draw__(self):
         """Main GPU draw entry."""
         if IS_DEBUG_DRAW:
-            # print("__gpu_draw__\n")
             ...
 
         area = bpy.context.region

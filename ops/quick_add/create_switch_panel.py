@@ -24,7 +24,7 @@ _SPACE_ORDER = (
 
 # Module-level cache: EnumProperty items callbacks cannot reliably read instance attrs.
 _PANELS_BY_SPACE: dict[str, list[str]] = {}
-_SPACE_TYPE_ENUM_ITEMS: list[tuple] = [('NONE', 'None', '')]
+_SPACE_TYPE_ENUM_ITEMS: list[tuple] = [('VIEW_3D', '3D View', '')]
 
 
 def _space_label(space_type: str) -> str:
@@ -69,6 +69,7 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     space_type: bpy.props.EnumProperty(
         name="Editor",
         items=_space_type_items,
+        default='VIEW_3D',
     )
 
     @classmethod
@@ -89,7 +90,9 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         ordered = _refresh_space_cache(by_space)
 
         area_type = getattr(context.area, 'type', None)
-        if area_type in by_space:
+        if 'VIEW_3D' in by_space:
+            self.space_type = 'VIEW_3D'
+        elif area_type in by_space:
             self.space_type = area_type
         elif ordered:
             self.space_type = ordered[0]
@@ -103,7 +106,10 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
         last = ElementCURE.ADD.last_element
         last['operator_bl_idname'] = GestureSwitchPanelCategory.bl_idname
-        last['operator_properties'] = str({'panel_name': self.panel_name})
+        props = {'panel_name': self.panel_name}
+        if self.space_type and self.space_type != 'NONE':
+            props['space_type'] = self.space_type
+        last['operator_properties'] = str(props)
         last.name = self.panel_name
         return {"FINISHED"}
 
@@ -116,7 +122,9 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         categories = _PANELS_BY_SPACE.get(self.space_type, [])
         column = layout.column(align=True)
         for category in self._filtered_categories(categories):
-            column.operator(self.bl_idname, text=category).panel_name = category
+            ops = column.operator(self.bl_idname, text=category)
+            ops.panel_name = category
+            ops.space_type = self.space_type
 
     def _filtered_categories(self, categories):
         fl = self.filter.lower()

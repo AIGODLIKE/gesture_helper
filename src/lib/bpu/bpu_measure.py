@@ -195,8 +195,6 @@ class BpuMeasure(BpuProperty, BpuOffset):
             return self.__child_max_width__ + mt
         elif self.type.is_prop:
             w = self.___draw_width_property___ + mt
-            # print(
-            #     f"\t__draw_width__\t{w}\t{self.__property_rna__}\t{self.__property_value__}\t{self.__property_type__}\t{self.__text_width__}")
             return w
         # Text contribution
         return self.__text_width__ + mt

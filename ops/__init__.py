@@ -7,7 +7,6 @@ from . import select_icon
 from . import set_direction
 from . import set_key
 from . import set_poll
-from . import switch_ui
 from .modal_mouse import ModalMouseOperator
 from .clear_edge_properties import ClearAllEdgeProperties
 from .quick_add.create_element_operator import CreateElementOperator
@@ -23,8 +22,6 @@ operator_list = (
     select_icon.ClearHistory,
 
     element_modal.ElementModal,
-
-    switch_ui.SwitchGestureWindow,
 
     set_poll.SetPollExpression,
 

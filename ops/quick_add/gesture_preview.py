@@ -60,9 +60,6 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
             tree = self.trajectory_tree
             if len(tree) >= 2:
                 debug_print(tree, key='modal')
-            #     tree.remove(1)
-            #     print(tree)
-            #     ...
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         self.area = context.area

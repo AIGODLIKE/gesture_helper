@@ -33,17 +33,27 @@ def get_ui_panel_categories(context) -> list[str]:
         return []
 
 
-def _iter_panel_classes():
-    """Yield all Panel subclasses (including nested)."""
-    stack = list(bpy.types.Panel.__subclasses__())
+def _iter_rna_subclasses(root):
+    """Yield all subclasses of *root* (including nested)."""
+    stack = list(root.__subclasses__())
     seen = set()
     while stack:
-        panel = stack.pop()
-        if panel in seen:
+        cls = stack.pop()
+        if cls in seen:
             continue
-        seen.add(panel)
-        yield panel
-        stack.extend(panel.__subclasses__())
+        seen.add(cls)
+        yield cls
+        stack.extend(cls.__subclasses__())
+
+
+def iter_panel_classes():
+    """Yield all Panel subclasses (including nested)."""
+    yield from _iter_rna_subclasses(bpy.types.Panel)
+
+
+def iter_menu_classes():
+    """Yield all Menu subclasses (including nested)."""
+    yield from _iter_rna_subclasses(bpy.types.Menu)
 
 
 def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
@@ -58,7 +68,7 @@ def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
     area = getattr(context.area, "type", None)
     region = getattr(context.region, "type", None)
 
-    for panel in _iter_panel_classes():
+    for panel in iter_panel_classes():
         category = getattr(panel, "bl_category", None)
         if not category:
             continue
@@ -104,24 +114,3 @@ def get_ui_panels_by_space(context, check_poll=False) -> dict[str, list[str]]:
         if ui_cats:
             result[space_type] = list(ui_cats)
     return result
-
-
-def get_all_ui_panel_categories(context, check_poll=False) -> list[str]:
-    """Unique N-panel tab names across all editor types (stable order)."""
-    categories = []
-    seen = set()
-    by_space = get_ui_panels_by_space(context, check_poll=check_poll)
-    for space_type in sorted(by_space):
-        for category in by_space[space_type]:
-            if category not in seen:
-                seen.add(category)
-                categories.append(category)
-    return categories
-
-
-def get_3d_panels_by_context(context):
-    """Backward-compatible alias; works in any editor with an N-panel."""
-    cats = get_ui_panel_categories(context)
-    if cats:
-        return cats
-    return get_all_ui_panel_categories(context)
