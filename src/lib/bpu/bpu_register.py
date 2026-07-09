@@ -35,8 +35,6 @@ class BpuRegister:
         tag_redraw()
 
     def unregister_draw(self):
-        # if get_debug():
-        #     print(f'unregister_draw\t{id(self)}')
         i = id(self)
         if i in self.__draw_class__:
             for (c, identifier), draw_fun in self.__draw_class__[i].items():

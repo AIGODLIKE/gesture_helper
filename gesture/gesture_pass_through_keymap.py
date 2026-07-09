@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-
 import bpy
 
 from .addon_keymap import get_kmi_operator_properties
@@ -30,26 +28,89 @@ _VIEW3D_CONTEXT_MENUS = {
 }
 
 
-@contextmanager
-def _pass_through_context(context, area=None):
-    """Restore the gesture area/region so pass-through works outside modal context."""
-    area = area or getattr(context, 'area', None)
+def _screen_contains_area(screen, area) -> bool:
+    """Check whether *screen* still contains *area* (Blender 5.x safe)."""
+    if screen is None or area is None:
+        return False
+    try:
+        area_ptr = area.as_pointer()
+    except ReferenceError:
+        return False
+    for candidate in screen.areas:
+        try:
+            if candidate.as_pointer() == area_ptr:
+                return True
+        except ReferenceError:
+            continue
+    return False
+
+
+def _find_window_for_area(area):
+    """Return the window that contains *area* (works on Blender 4.x and 5.x)."""
     if area is None:
-        yield context
-        return
+        return None
+    wm = getattr(bpy.context, 'window_manager', None)
+    if wm is None:
+        return getattr(bpy.context, 'window', None)
+    for window in wm.windows:
+        if _screen_contains_area(window.screen, area):
+            return window
+    return None
 
-    window = getattr(context, 'window', None)
-    region = None
-    for item in area.regions:
-        if item.type == 'WINDOW':
-            region = item
-            break
 
-    if window is not None and region is not None:
-        with context.temp_override(window=window, area=area, region=region):
-            yield context
-    else:
-        yield context
+def _area_is_valid(area) -> bool:
+    if area is None:
+        return False
+    try:
+        _ = area.type
+    except ReferenceError:
+        return False
+
+    screen = getattr(area, 'screen', None)
+    if screen is not None:
+        return _screen_contains_area(screen, area)
+
+    return _find_window_for_area(area) is not None
+
+
+def _window_region(area):
+    for region in area.regions:
+        if region.type == 'WINDOW':
+            return region
+    return None
+
+
+def _defer_operator_call(context, area, idname: str, properties: dict | None = None) -> bool:
+    """Schedule operator invocation after the modal handler finishes."""
+    if not _area_is_valid(area):
+        return False
+
+    window = _find_window_for_area(area) or getattr(context, 'window', None)
+    region = _window_region(area)
+    if window is None or region is None:
+        return False
+
+    properties = dict(properties or {})
+    prefix, suffix = idname.split('.', 1)
+
+    def _invoke(*_args):
+        if not _area_is_valid(area):
+            return None
+        try:
+            func = getattr(getattr(bpy.ops, prefix), suffix)
+            with context.temp_override(window=window, area=area, region=region):
+                result = func('INVOKE_DEFAULT', **properties)
+            debug_print(f"deferred {idname}", properties, result, key='key')
+        except Exception as exc:
+            debug_print(f"deferred {idname} error", exc.args, key='key')
+        return None
+
+    bpy.app.timers.register(_invoke, first_interval=0)
+    return True
+
+
+def _defer_context_menu(context, area, menu_name: str) -> bool:
+    return _defer_operator_call(context, area, 'wm.call_menu', {'name': menu_name})
 
 
 def _kmi_matches_event(event, kmi, ui_idnames) -> bool:
@@ -209,15 +270,12 @@ class GesturePassThroughKeymap:
         "PREVIEW": "SequencerPreview",
     }
 
-    # "SEQUENCER_PREVIEW": "SequencerCommon",
     sequencer_preview_map = {
         "PREVIEW": "SequencerPreview",
         "WINDOW": "Sequencer",
     }
 
     tracking_map = {
-        # "CLIP_EDITOR": "Clip",
-        # Clip Time Scrub
         "CLIP": "Clip Editor",
         "GRAPH": "Clip Graph Editor",
         "DOPESHEET": "Clip Dopesheet Editor",
@@ -226,10 +284,9 @@ class GesturePassThroughKeymap:
     image_ui_mode_map = {
         "VIEW": "Image",
         "PAINT": "Image Paint",
-        "MASK": "Mask Editing",  # TODO: usage needs confirmation
+        "MASK": "Mask Editing",
     }
     pass_through_ui_idname = (
-        # Menus
         'wm.call_menu',
         'wm.call_panel',
         'wm.call_menu_pie',
@@ -379,11 +436,21 @@ class GesturePassThroughKeymap:
         essential = [key for key in region_keys if key in self._ESSENTIAL_PASS_THROUGH_KEYMAPS]
         return list(dict.fromkeys(gesture_keys + essential))
 
-    def _try_pass_matched_kmis(self, context, event, match_kmis) -> bool:
-        if not match_kmis:
-            return False
+    def _collect_pass_kmis(self, context, event, keys, keymaps, user_keymaps):
+        ui_idnames = self.pass_through_ui_idname
+        matched = []
+        for key in keys:
+            if key not in keymaps:
+                continue
+            km = keymaps[key]
+            match_kmis = _match_kmis_in_keymap(km, event, self.pass_through_idname, ui_idnames)
+            match_kmis = _apply_user_keymap_overrides(match_kmis, key, user_keymaps)
+            if match_kmis:
+                debug_print("try_pass_through_keymap match", key, [i.idname for i in match_kmis], key='key')
+                matched.extend(match_kmis)
+        return _filter_view3d_menu_kmis(context, matched) if matched else []
 
-        match_kmis = _filter_view3d_menu_kmis(context, match_kmis)
+    def _defer_pass_matched_kmis(self, context, area, event, match_kmis) -> bool:
         if not match_kmis:
             return False
 
@@ -392,78 +459,47 @@ class GesturePassThroughKeymap:
         for kmi in candidates:
             if not (kmi.active or kmi.idname in self.pass_through_ui_idname):
                 continue
-            if self.try_pass_set_cursor3d_location(context, event, kmi):
+            if self.try_pass_set_cursor3d_location(context, event, kmi, area):
                 return True
-            if try_operator_pass_through_right(kmi):
+            if defer_kmi_pass_through(context, area, kmi):
                 return True
         return False
-
-    def _try_pass_keymap_list(self, context, event, keys, keymaps, user_keymaps) -> bool:
-        ui_idnames = self.pass_through_ui_idname
-        for key in keys:
-            if key not in keymaps.keys():
-                continue
-            km = keymaps[key]
-            match_kmis = _match_kmis_in_keymap(km, event, self.pass_through_idname, ui_idnames)
-            match_kmis = _apply_user_keymap_overrides(match_kmis, key, user_keymaps)
-            if not match_kmis:
-                continue
-            debug_print("try_pass_through_keymap match", key, [i.idname for i in match_kmis], key='key')
-            if self._try_pass_matched_kmis(context, event, match_kmis):
-                return True
-            if key not in self._MULTI_MATCH_KEYMAPS:
-                debug_print(f"else\t{key}\t{[i.idname for i in match_kmis]}", key='key')
-        return False
-
-    @staticmethod
-    def _try_view3d_context_menu(context) -> bool:
-        area = context.area
-        if area is None or area.type != 'VIEW_3D':
-            return False
-        menu_name = _VIEW3D_CONTEXT_MENUS.get(context.mode)
-        if not menu_name:
-            return False
-        try:
-            result = bpy.ops.wm.call_menu('INVOKE_DEFAULT', name=menu_name)
-            debug_print("try_view3d_context_menu", menu_name, result, key='key')
-            return bool({'FINISHED', 'INTERFACE'} & set(result))
-        except Exception as e:
-            debug_print("try_view3d_context_menu Error", menu_name, e.args, key='key')
-            return False
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> str | None:
         """Try to pass through key events.
 
         Returns:
-            ``'handled'`` when a menu/operator was invoked directly,
+            ``'handled'`` when a deferred menu/operator was scheduled,
             ``'pass_through'`` when the event should be forwarded to Blender,
             ``None`` when nothing should happen.
         """
         gesture_area = getattr(self, 'area', None) or context.area
         is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
 
-        with _pass_through_context(context, gesture_area) as ctx:
-            if is_rmb and _expected_view3d_menu(ctx):
-                if self._try_view3d_context_menu(ctx):
-                    return 'handled'
+        keys = self.get_keymaps(context, event)
+        kc = context.window_manager.keyconfigs
+        debug_print("try_pass_through_keymap keys", keys, key='key')
+        match_kmis = self._collect_pass_kmis(context, event, keys, kc.active.keymaps, kc.user.keymaps)
 
-            keys = self.get_keymaps(ctx, event)
-
-            kc = ctx.window_manager.keyconfigs
-            keymaps = kc.active.keymaps
-
-            debug_print("try_pass_through_keymap keys", keys, key='key')
-            user_keymaps = kc.user.keymaps
-            if self._try_pass_keymap_list(ctx, event, keys, keymaps, user_keymaps):
+        if is_rmb:
+            if self._defer_pass_matched_kmis(context, gesture_area, event, match_kmis):
                 return 'handled'
 
-            if is_rmb and _expected_view3d_menu(ctx):
-                if self._try_view3d_context_menu(ctx):
-                    return 'handled'
+            menu_name = None
+            if _area_is_valid(gesture_area) and gesture_area.type == 'VIEW_3D':
+                menu_name = _VIEW3D_CONTEXT_MENUS.get(context.mode)
 
-        if is_rmb and gesture_area is not None:
-            debug_print("try_pass_through_keymap fallback PASS_THROUGH", gesture_area.type, key='key')
-            return 'pass_through'
+            if menu_name and _defer_context_menu(context, gesture_area, menu_name):
+                debug_print("try_pass_through_keymap deferred menu", menu_name, key='key')
+                return 'handled'
+
+            if gesture_area is not None:
+                debug_print("try_pass_through_keymap fallback PASS_THROUGH", gesture_area.type, key='key')
+                return 'pass_through'
+            return None
+
+        if match_kmis and self._defer_pass_matched_kmis(context, gesture_area, event, match_kmis):
+            return 'handled'
         return None
 
     @staticmethod
@@ -504,7 +540,7 @@ class GesturePassThroughKeymap:
         return None
 
     def try_pass_set_cursor3d_location(self, context: bpy.types.Context, event: bpy.types.Event,
-                                       kmi: bpy.types.KeyMapItem) -> bool:
+                                       kmi: bpy.types.KeyMapItem, area=None) -> bool:
         """Try to pass through 3D view cursor placement."""
         if (
                 event.shift and
@@ -515,10 +551,10 @@ class GesturePassThroughKeymap:
                 kmi.idname == "transform.translate"
         ):
             if get_kmi_operator_properties(kmi) == {'release_confirm': True, 'cursor_transform': True}:
-                # Shift+right-click
-                if context.area.type == "VIEW_3D":
-                    bpy.ops.view3d.cursor3d('INVOKE_DEFAULT', True)
-                    return True
+                target_area = area or context.area
+                if target_area and target_area.type == "VIEW_3D":
+                    return _defer_operator_call(context, target_area, 'view3d.cursor3d', {})
+        return False
 
 
 def check_kmi_pass_through(kmi: bpy.types.KeyMapItem, *, skip_ui_poll=False) -> bool:
@@ -531,12 +567,27 @@ def check_kmi_pass_through(kmi: bpy.types.KeyMapItem, *, skip_ui_poll=False) -> 
     return True
 
 
+def defer_kmi_pass_through(
+        context,
+        area,
+        kmi: bpy.types.KeyMapItem,
+        ui_idnames=GesturePassThroughKeymap.pass_through_ui_idname,
+) -> bool:
+    """Schedule pass-through operator after modal ends; returns True if scheduled."""
+    skip_ui_poll = kmi.idname in ui_idnames
+    if not check_kmi_pass_through(kmi, skip_ui_poll=skip_ui_poll):
+        debug_print("pass_through poll failed", kmi.idname, key='key')
+        return False
+    prop = get_kmi_operator_properties(kmi)
+    return _defer_operator_call(context, area, kmi.idname, prop)
+
+
 def try_operator_pass_through_right(
         kmi: bpy.types.KeyMapItem,
         operator_context='INVOKE_DEFAULT',
         ui_idnames=GesturePassThroughKeymap.pass_through_ui_idname,
 ) -> bool:
-    """Try to pass through operator; returns True if pass-through succeeded."""
+    """Try to pass through operator synchronously (non-modal use only)."""
     try:
         skip_ui_poll = kmi.idname in ui_idnames
         if not check_kmi_pass_through(kmi, skip_ui_poll=skip_ui_poll):

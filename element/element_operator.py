@@ -86,7 +86,6 @@ class ModalProperty:
         return self.properties
 
     def run_element_modal_event(self, ops, context, event) -> bool:
-        # print("run_element_modal_event", event.type, event.value)
         if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
             last_mouse = getattr(ops, "mouse", None)
             mouse = Vector((event.mouse_x, event.mouse_y))

@@ -4,6 +4,7 @@ __menu__ = []
 import bpy
 from bpy.props import EnumProperty, StringProperty
 
+from ...utils.panel import iter_menu_classes, iter_panel_classes
 from ...utils.public import PublicOperator, PublicProperty, get_pref, poll_message_active_gesture
 
 
@@ -71,18 +72,19 @@ def draw_add(self, context):
     ops.create_id_name = self.bl_idname
     rr = row.row(align=True)
     rr.operator_context = "INVOKE_DEFAULT"
-    rr.operator(CreatePanelMenu.bl_idname, text="",icon="PANEL_CLOSE")
+    rr.operator(CreatePanelMenu.bl_idname, text="", icon="PANEL_CLOSE")
 
 
 exclude_panel = ["PROPERTIES_PT_navigation_bar"]
 
 
 def register():
-    for p in bpy.types.Panel.__subclasses__():
+    unregister()
+    for p in iter_panel_classes():
         if hasattr(p, "draw") and "gesture" not in p.__name__.lower() and p.__name__ not in exclude_panel:
             p.append(draw_add)
             __panel__.append(p)
-    for m in bpy.types.Menu.__subclasses__():
+    for m in iter_menu_classes():
         if hasattr(m, "draw") and "gesture" not in m.__name__.lower() and m.__name__ not in exclude_panel:
             m.append(draw_add)
             __menu__.append(m)
@@ -90,6 +92,15 @@ def register():
 
 def unregister():
     for p in __panel__:
-        p.remove(draw_add)
+        try:
+            p.remove(draw_add)
+        except (ValueError, RuntimeError, AttributeError):
+            pass
     for m in __menu__:
-        m.remove(draw_add)
+        try:
+            m.remove(draw_add)
+        except (ValueError, RuntimeError, AttributeError):
+            pass
+    __panel__.clear()
+    __menu__.clear()
+    CreatePanelMenu.is_draw = False

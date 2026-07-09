@@ -117,12 +117,7 @@ class ElementDraw:
                 SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
-        """
-        # layout.label(text='gesture gesture_direction_items\t' + str(self.active_gesture.gesture_direction_items))
-        Drawing this property with Blender UI may cause poll errors
-        :param layout:
-        :return:
-        """
+        """Draw debug info for this element."""
         layout.separator()
         layout.label(text=str(self))
         layout.label(text='index\t' + str(self.index))

@@ -1,6 +1,5 @@
 from .cache_state import CacheState
-from .debug_util import get_debug
-from ..utils.debug_util import debug_print
+from .debug_util import get_debug, debug_print
 
 
 def cache_update_lock(func, cache_clear=False):

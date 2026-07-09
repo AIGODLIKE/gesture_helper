@@ -5,16 +5,17 @@ from bpy.props import StringProperty
 from ..utils.debug_util import debug_print, debug_trace_stack, debug_traceback
 from ..utils.expression import evaluate_condition
 
-poll: str = """Poll expression template
-{'bpy': bpy,
-'C': bpy.context,
-'D': bpy.data,
-'O': bpy.context.object,
-'mode': bpy.context.mode,
-'tool': bpy.context.tool_settings,
-'active_tool': current workspace tool idname (e.g. "builtin.move"),
-}
-"""
+_POLL_STRING_DESCRIPTION = (
+    "Poll expression template\n"
+    "{'bpy': bpy,\n"
+    "'C': bpy.context,\n"
+    "'D': bpy.data,\n"
+    "'O': bpy.context.object,\n"
+    "'mode': bpy.context.mode,\n"
+    "'tool': bpy.context.tool_settings,\n"
+    "'active_tool': current workspace tool idname (e.g. \"builtin.move\"),\n"
+    "}"
+)
 
 _POLL_CACHE_TIMER = None
 
@@ -84,7 +85,11 @@ class ElementPoll:
     def update_poll_string(self, context):
         _schedule_poll_cache_clear()
 
-    poll_string: StringProperty(name='Prerequisite', description=poll, update=update_poll_string)
+    poll_string: StringProperty(
+        name='Prerequisite',
+        description=_POLL_STRING_DESCRIPTION,
+        update=update_poll_string,
+    )
 
     def __init_selected_structure__(self):
         self.poll_string = 'True'

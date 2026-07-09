@@ -11,6 +11,8 @@ class GestureSwitchPanelCategory(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     panel_name: bpy.props.StringProperty(name='Panel Name')
+    # Empty = any editor with an N-panel; default VIEW_3D for gesture usage in 3D View.
+    space_type: bpy.props.StringProperty(name='Space Type', default='VIEW_3D')
 
     @classmethod
     def poll(cls, context):
@@ -24,8 +26,13 @@ class GestureSwitchPanelCategory(bpy.types.Operator):
         area = context.area
         if area is None or not self.panel_name:
             return {'CANCELLED'}
+        if self.space_type and area.type != self.space_type:
+            return {'CANCELLED'}
         ui_region, _ = get_ui_region(area)
         if ui_region is None:
             return {'CANCELLED'}
-        ui_region.active_panel_category = self.panel_name
+        try:
+            ui_region.active_panel_category = self.panel_name
+        except (TypeError, AttributeError, RuntimeError, ValueError):
+            return {'CANCELLED'}
         return {'FINISHED'}

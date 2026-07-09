@@ -69,13 +69,3 @@ class PreferencesDraw(GestureDraw):
         preferences.GestureProperty.draw_gesture_property(col)
         preferences.DrawProperty.draw_text_property(col)
         preferences.DrawProperty.draw_color_property(col)
-
-    @staticmethod
-    def exit(layout: 'bpy.types.UILayout') -> 'bpy.types.UILayout.operator':
-        """Draw exit button."""
-        layout.alert = True
-        from ..ops.switch_ui import SwitchGestureWindow
-        return layout.operator(SwitchGestureWindow.bl_idname,
-                               text='Exit',
-                               icon='PANEL_CLOSE'
-                               )
