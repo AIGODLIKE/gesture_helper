@@ -136,6 +136,23 @@ class PollData:
              'suffix': 'and C.space_data.tree_type == "TextureNodeTree"', },
         ],
     }
+    POLL_ACTIVE_TOOL = {
+        'prefix': 'active_tool',
+        'suffix': '',
+        'notation': '==',
+        'name': 'Active Tool',
+        'items': [
+            {'name': 'Move', 'item': '"builtin.move"', 'not_str': True},
+            {'name': 'Rotate', 'item': '"builtin.rotate"', 'not_str': True},
+            {'name': 'Scale', 'item': '"builtin.scale"', 'not_str': True},
+            {'name': 'Transform', 'item': '"builtin.transform"', 'not_str': True},
+            {'name': 'Select Box', 'item': '"builtin.select_box"', 'not_str': True},
+            {'name': 'Select Circle', 'item': '"builtin.select_circle"', 'not_str': True},
+            {'name': 'Cursor', 'item': '"builtin.cursor"', 'not_str': True},
+            {'name': 'Annotate', 'item': '"builtin.annotate"', 'not_str': True},
+            {'name': 'Measure', 'item': '"builtin.measure"', 'not_str': True},
+        ],
+    }
     POLL_OTHER = {
         'prefix': '',
         'suffix': '',
@@ -186,6 +203,7 @@ class PollData:
     POLL_ALL_LIST = [
         POLL_RENDER,
         POLL_MODE_TYPE,
+        POLL_ACTIVE_TOOL,
         POLL_ACTIVE_OBJECT_TYPE,
         POLL_MESH_SELECT_MODE,
         None,

@@ -107,8 +107,9 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                         f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}",
                         key='modal',
                     )
-                self.try_pass_through_keymap(context, event)
-                return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
+                if self.try_pass_through_keymap(context, event):
+                    return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
+                return {'FINISHED'}
         return {'FINISHED'}
 
     def cancel(self, context):

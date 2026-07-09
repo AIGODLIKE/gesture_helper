@@ -59,6 +59,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
                      'O: bpy.context.object': 'Active Object',
                      'mode: C.mode': 'Context Mode',
                      'tool: C.tool_settings': 'Tool Settings',
+                     'active_tool: active_tool': 'Active workspace tool idname in 3D View / Image Editor',
                      'mesh: bpy.context.object.data': 'Mesh, None if the object is not a mesh',
                      # 'is_select_vert: bool': 'Whether or not the boolean value of the vertex is selected',
                      }

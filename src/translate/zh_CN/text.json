@@ -313,6 +313,8 @@
   "Active Object": "活动物体",
   "Context Mode": "上下文模式",
   "Tool Settings": "工具设置",
+  "Active Tool": "当前工具",
+  "Active workspace tool idname in 3D View / Image Editor": "3D 视图/图像编辑器中当前工作区工具的 idname",
   "Mesh, None if the object is not a mesh": "网格,如果物体不为mesh则为None",
   "Whether or not the boolean value of the vertex is selected": "是否选择了顶点的布尔值",
   "Adding": "添加",
