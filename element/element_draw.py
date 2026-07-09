@@ -252,6 +252,8 @@ class ElementDraw:
             'modal_events_index',
         )
         col = row.column(align=True)
+        # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
+        col.operator_context = "INVOKE_DEFAULT"
         col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname, text="", icon="ADD")
         col.operator(ElementModalOperatorEventCRUE.COPY.bl_idname, text="", icon="COPYDOWN")
         col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname, text="", icon="REMOVE")

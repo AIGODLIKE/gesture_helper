@@ -44,6 +44,7 @@ class Enum:
         options={'HIDDEN', 'SKIP_SAVE'})
 
     ___enum___ = []  # legacy alias kept for compatibility
+    _EMPTY_ENUM_ITEMS = [('NONE', '(No items)', '')]
 
     def __get_enum__(self, context):
         """Get enum items for the right-clicked RNA property."""
@@ -59,7 +60,12 @@ class Enum:
             Enum.___enum___ = Enum._enum_items_cache
         if Enum._enum_items_cache:
             return Enum._enum_items_cache
-        return ENUM_NUMBER_VALUE_CHANGE_MODE
+        # Never fall back to number-mode items; that pollutes enum_value_a/b.
+        return Enum._EMPTY_ENUM_ITEMS
+
+    @property
+    def has_enum_items(self) -> bool:
+        return bool(Enum._enum_items_cache)
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -240,6 +246,11 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         layout.label(text="Modify Enumeration")
 
         layout.separator()
+        if not self.has_enum_items:
+            layout.alert = True
+            layout.label(text="Dynamic enumeration properties cannot be added!!")
+            layout.label(text="Unable to add")
+            return
 
         mode_row = layout.row(align=True)
         for identifier, name in self._ENUM_MODE_DRAW_ITEMS:
@@ -393,11 +404,14 @@ class Create(Draw):
         :return:
         """
         pref = get_pref()
-        self.cache_clear()
         pt = self.property_type
         if pt == "ENUM" and self.button_prop and self.button_prop.is_enum_flag:
             self.report({'ERROR'}, "Multi-select enum (set) is not supported")
-            return
+            return False
+        if pt == "ENUM" and not self.has_enum_items:
+            self.report({'ERROR'}, "Dynamic enumeration properties cannot be added!!")
+            return False
+        self.cache_clear()
         with pref.add_element_property.active_radio():
             bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
             if pt == "BOOLEAN":
@@ -414,6 +428,7 @@ class Create(Draw):
             ae = self._created_element()
             if ae and self.button_prop:
                 ae.name = self.__prop_name__
+        return True
 
     @property
     def __prop_name__(self) -> str:
@@ -467,10 +482,10 @@ class CreateElementProperty(Create):
             key='operator',
         )
         try:
-            self.create()
+            ok = self.create()
         finally:
             self.clear_info()
-        return {'FINISHED'}
+        return {'FINISHED'} if ok else {'CANCELLED'}
 
     def copy_data_path(self) -> None:
         """Resolve bpy.context-style RNA path for wm.context_* operators."""
