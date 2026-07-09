@@ -47,6 +47,8 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
 
         self.init_trajectory()
         self.init_invoke(event)
+        self.area = context.area
+        self.screen = context.screen
         self.cache_clear()
         self._schedule_gesture_timeout_timer()
         self.register_draw()
@@ -86,10 +88,11 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 key='modal',
             )
 
-        if not ops:
-            if not self.is_draw_gesture and not self.is_beyond_threshold_confirm:
+        if not ops and not self.is_draw_gesture:
+            is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
+            if is_rmb or not self.is_beyond_threshold_confirm:
                 if self.is_debug:
-                    area = context.area
+                    area = getattr(self, 'area', None) or context.area
                     view_type = getattr(context.space_data, "view_type", None)
                     view = getattr(context.space_data, "view", None)
                     mode = getattr(context.space_data, "mode", None)
@@ -107,8 +110,11 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                         f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}",
                         key='modal',
                     )
-                if self.try_pass_through_keymap(context, event):
-                    return {'FINISHED', 'PASS_THROUGH', 'INTERFACE'}
+                pass_result = self.try_pass_through_keymap(context, event)
+                if pass_result == 'handled':
+                    return {'FINISHED', 'INTERFACE'}
+                if pass_result == 'pass_through':
+                    return {'FINISHED', 'PASS_THROUGH'}
                 return {'FINISHED'}
         return {'FINISHED'}
 

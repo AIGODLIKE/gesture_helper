@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import bpy
 
 from .addon_keymap import get_kmi_operator_properties
@@ -21,7 +23,33 @@ _VIEW3D_CONTEXT_MENUS = {
     'EDIT_METABALL': 'VIEW3D_MT_edit_metaball_context_menu',
     'EDIT_LATTICE': 'VIEW3D_MT_edit_lattice_context_menu',
     'EDIT_TEXT': 'VIEW3D_MT_edit_font_context_menu',
+    'EDIT_GREASE_PENCIL': 'VIEW3D_MT_greasepencil_edit_context_menu',
+    'SCULPT_GREASE_PENCIL': 'VIEW3D_MT_greasepencil_edit_context_menu',
+    'PAINT_GREASE_PENCIL': 'VIEW3D_MT_greasepencil_edit_context_menu',
+    'WEIGHT_GREASE_PENCIL': 'VIEW3D_MT_greasepencil_edit_context_menu',
 }
+
+
+@contextmanager
+def _pass_through_context(context, area=None):
+    """Restore the gesture area/region so pass-through works outside modal context."""
+    area = area or getattr(context, 'area', None)
+    if area is None:
+        yield context
+        return
+
+    window = getattr(context, 'window', None)
+    region = None
+    for item in area.regions:
+        if item.type == 'WINDOW':
+            region = item
+            break
+
+    if window is not None and region is not None:
+        with context.temp_override(window=window, area=area, region=region):
+            yield context
+    else:
+        yield context
 
 
 def _kmi_matches_event(event, kmi, ui_idnames) -> bool:
@@ -403,25 +431,40 @@ class GesturePassThroughKeymap:
             debug_print("try_view3d_context_menu Error", menu_name, e.args, key='key')
             return False
 
-    def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> bool:
-        """Try to pass through key events."""
-        if event.type in {'RIGHTMOUSE', 'APP'} and _expected_view3d_menu(context):
-            if self._try_view3d_context_menu(context):
-                return True
+    def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> str | None:
+        """Try to pass through key events.
 
-        keys = self.get_keymaps(context, event)
+        Returns:
+            ``'handled'`` when a menu/operator was invoked directly,
+            ``'pass_through'`` when the event should be forwarded to Blender,
+            ``None`` when nothing should happen.
+        """
+        gesture_area = getattr(self, 'area', None) or context.area
+        is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
 
-        kc = context.window_manager.keyconfigs
-        keymaps = kc.active.keymaps
+        with _pass_through_context(context, gesture_area) as ctx:
+            if is_rmb and _expected_view3d_menu(ctx):
+                if self._try_view3d_context_menu(ctx):
+                    return 'handled'
 
-        debug_print("try_pass_through_keymap keys", keys, key='key')
-        user_keymaps = kc.user.keymaps
-        if self._try_pass_keymap_list(context, event, keys, keymaps, user_keymaps):
-            return True
+            keys = self.get_keymaps(ctx, event)
 
-        if event.type in {'RIGHTMOUSE', 'APP'} and _expected_view3d_menu(context):
-            return self._try_view3d_context_menu(context)
-        return False
+            kc = ctx.window_manager.keyconfigs
+            keymaps = kc.active.keymaps
+
+            debug_print("try_pass_through_keymap keys", keys, key='key')
+            user_keymaps = kc.user.keymaps
+            if self._try_pass_keymap_list(ctx, event, keys, keymaps, user_keymaps):
+                return 'handled'
+
+            if is_rmb and _expected_view3d_menu(ctx):
+                if self._try_view3d_context_menu(ctx):
+                    return 'handled'
+
+        if is_rmb and gesture_area is not None:
+            debug_print("try_pass_through_keymap fallback PASS_THROUGH", gesture_area.type, key='key')
+            return 'pass_through'
+        return None
 
     @staticmethod
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
