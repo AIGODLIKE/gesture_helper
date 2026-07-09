@@ -47,7 +47,7 @@ CREATE_ELEMENT_DATA_PATHS = {
     "GPencilSculptSettings": "bpy.context.tool_settings.gpencil_sculpt",
 
     "ColorManagedViewSettings": "bpy.context.scene.view_settings",
-    "ViewLayer": "bpy.context.scene.view_layers",
+    "ViewLayer": "bpy.context.view_layer",
     "UnitSettings": "bpy.context.scene.unit_settings",
     "RigidBodyWorld": "bpy.context.scene.rigidbody_world",
 
@@ -79,3 +79,63 @@ CREATE_ELEMENT_BRUSH_PATH = {
 
     "WEIGHT_GREASE_PENCIL": 'bpy.context.tool_settings.gpencil_weight_paint',
 }
+
+
+def normalize_context_data_path(path: str) -> str | None:
+    """Keep bpy.context-style paths; reject bpy.data absolute paths."""
+    if not path or not str(path).strip():
+        return None
+    text = str(path).strip()
+    if text.startswith('bpy.data.'):
+        return None
+    if text.startswith('bpy.context.'):
+        return text
+    if text.startswith('context.'):
+        return f"bpy.{text}"
+    return f"bpy.context.{text}"
+
+
+def resolve_view_layer_data_path(pointer, prop_identifier: str) -> str | None:
+    """Map a ViewLayer pointer to bpy.context.view_layer or a named layer path."""
+    import bpy
+    if not isinstance(pointer, bpy.types.ViewLayer):
+        return None
+    context = bpy.context
+    active = context.view_layer
+    if pointer == active:
+        return f"bpy.context.view_layer.{prop_identifier}"
+    scene = context.scene
+    if scene is None:
+        return None
+    for view_layer in scene.view_layers:
+        if view_layer == pointer:
+            return f'bpy.context.scene.view_layers["{view_layer.name}"].{prop_identifier}'
+    return None
+
+
+def resolve_context_data_path(pointer, prop_identifier: str) -> str | None:
+    """Map a live RNA pointer to bpy.context.* when it matches current context."""
+    import bpy
+    context = bpy.context
+    view_layer_path = resolve_view_layer_data_path(pointer, prop_identifier)
+    if view_layer_path:
+        return view_layer_path
+    for name in (
+        'object', 'scene', 'view_layer', 'space_data', 'tool_settings',
+        'area', 'region', 'screen', 'workspace', 'preferences', 'window_manager',
+    ):
+        ctx_item = getattr(context, name, None)
+        if ctx_item is not None and pointer == ctx_item:
+            return f"bpy.context.{name}.{prop_identifier}"
+
+    for base_path in CREATE_ELEMENT_DATA_PATHS.values():
+        rel = base_path
+        if rel.startswith('bpy.context.'):
+            rel = rel[len('bpy.context.'):]
+        try:
+            target = context.path_resolve(rel)
+        except (AttributeError, KeyError, TypeError, ValueError):
+            continue
+        if pointer == target:
+            return f"{base_path}.{prop_identifier}"
+    return None

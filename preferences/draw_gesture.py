@@ -112,6 +112,7 @@ class GestureDraw:
 
         if draw_property.element_show_left_side:  # Property panel on left
             box = split.box()
+            box.operator_context = "INVOKE_DEFAULT"
             if active:
                 active.draw_item_property(box)
             else:

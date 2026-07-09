@@ -18,7 +18,10 @@ class GesturePassThroughKeymap:
         "EDIT_METABALL": "Metaball",
         "EDIT_SURFACE": "Curve",
         "EDIT_CURVE": "Curve",
+        "EDIT_CURVES": "Curves",
+        "SCULPT_CURVES": "Sculpt Curves",
         "POSE": "Pose",
+        "PARTICLE": "Particle",
 
         "EDIT_GREASE_PENCIL": "Grease Pencil Edit Mode",
         "SCULPT_GREASE_PENCIL": "Grease Pencil Sculpt Mode",
@@ -166,7 +169,13 @@ class GesturePassThroughKeymap:
         keys = []
         if area_type == "VIEW_3D":
             keys.append("3D View Generic")
-            keys.append(self.object_mode_map.get(context.mode))
+            mode_key = self.object_mode_map.get(context.mode)
+            if mode_key:
+                keys.append(mode_key)
+            else:
+                obj = context.object
+                if obj and obj.type == "CURVES":
+                    keys.append("Curves")
         elif area_type == "SEQUENCE_EDITOR":
             sequence = self.sequence_map.get(view_type)
             if sequence is not None:
@@ -199,7 +208,7 @@ class GesturePassThroughKeymap:
                     keys.append(k)
 
         keys.append("Window")
-        return keys
+        return [key for key in keys if key]
 
     def get_keymaps(self, context):
         pref = self.pref
@@ -259,6 +268,8 @@ class GesturePassThroughKeymap:
                 elif key in (
                         "Object Mode",
                         "Mesh",
+                        "Curves",
+                        "Sculpt Curves",
                         "Outliner",  # Handle Outliner events separately
                 ):
                     # Multiple operators matched below

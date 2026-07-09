@@ -35,6 +35,40 @@ def check_icon(icon_identifier: str) -> bool:
     return icon_identifier in get_all_icons()
 
 
+def _preview_is_empty(preview) -> bool:
+    icon_size = preview.icon_size
+    if isinstance(icon_size, int):
+        if icon_size <= 0:
+            return True
+    elif not icon_size or icon_size[0] <= 0 or icon_size[1] <= 0:
+        return True
+    return not preview.icon_pixels and not preview.icon_pixels_float
+
+
+def has_empty_icons() -> bool:
+    """Return True when previews are missing or contain no pixel data."""
+    global icons, icons_map
+    if icons is None or not icons_map:
+        return True
+    for names in icons_map.values():
+        for name in names:
+            try:
+                preview = icons[name.lower()]
+            except KeyError:
+                return True
+            if _preview_is_empty(preview):
+                return True
+    return False
+
+
+def ensure_icons_loaded() -> bool:
+    """Reload icon previews when startup left any entries empty."""
+    if not has_empty_icons():
+        return False
+    Icons.reload_icons()
+    return has_empty_icons()
+
+
 class Icons:
 
     @staticmethod
