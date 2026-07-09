@@ -33,6 +33,19 @@ def get_ui_panel_categories(context) -> list[str]:
         return []
 
 
+def _iter_panel_classes():
+    """Yield all Panel subclasses (including nested)."""
+    stack = list(bpy.types.Panel.__subclasses__())
+    seen = set()
+    while stack:
+        panel = stack.pop()
+        if panel in seen:
+            continue
+        seen.add(panel)
+        yield panel
+        stack.extend(panel.__subclasses__())
+
+
 def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
     """get all panels_data
 
@@ -42,30 +55,39 @@ def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
     MP7 PROPERTIES WINDOW
     """
     panels_data = {}
-    area = context.area.type
-    region = context.region.type
+    area = getattr(context.area, "type", None)
+    region = getattr(context.region, "type", None)
 
-    for panel in bpy.types.Panel.__subclasses__():
+    for panel in _iter_panel_classes():
         category = getattr(panel, "bl_category", None)
-        if category:
-            if panel.bl_space_type not in panels_data:
-                panels_data[panel.bl_space_type] = {}
-            if panel.bl_region_type not in panels_data[panel.bl_space_type]:
-                panels_data[panel.bl_space_type][panel.bl_region_type] = []
-            if category not in panels_data[panel.bl_space_type][panel.bl_region_type]:
-                if check_poll and panel.bl_space_type == area and panel.bl_region_type == region:
-                    if not panel.poll(context):
-                        continue
-                panels_data[panel.bl_space_type][panel.bl_region_type].append(category)
+        if not category:
+            continue
+        space_type = getattr(panel, "bl_space_type", None)
+        region_type = getattr(panel, "bl_region_type", None)
+        if not space_type or not region_type:
+            continue
+        if space_type not in panels_data:
+            panels_data[space_type] = {}
+        if region_type not in panels_data[space_type]:
+            panels_data[space_type][region_type] = []
+        if category in panels_data[space_type][region_type]:
+            continue
+        if check_poll and space_type == area and region_type == region:
+            poll = getattr(panel, "poll", None)
+            if callable(poll) and not poll(context):
+                continue
+        panels_data[space_type][region_type].append(category)
     return panels_data
 
 
 def get_panels_by_context(context, area=None, region=None, check_poll=True):
     """Get panel category from context."""
     if area is None:
-        area = context.area.type
+        area = getattr(context.area, "type", None)
     if region is None:
-        region = context.region.type
+        region = getattr(context.region, "type", None)
+    if not area or not region:
+        return []
     panels = get_all_panels(context, check_poll=check_poll)
     if area in panels:
         if region in panels[area]:
@@ -73,6 +95,33 @@ def get_panels_by_context(context, area=None, region=None, check_poll=True):
     return []
 
 
+def get_ui_panels_by_space(context, check_poll=False) -> dict[str, list[str]]:
+    """Return ``{space_type: [category, ...]}`` for every editor with N-panel tabs."""
+    panels = get_all_panels(context, check_poll=check_poll)
+    result = {}
+    for space_type, regions in panels.items():
+        ui_cats = regions.get("UI")
+        if ui_cats:
+            result[space_type] = list(ui_cats)
+    return result
+
+
+def get_all_ui_panel_categories(context, check_poll=False) -> list[str]:
+    """Unique N-panel tab names across all editor types (stable order)."""
+    categories = []
+    seen = set()
+    by_space = get_ui_panels_by_space(context, check_poll=check_poll)
+    for space_type in sorted(by_space):
+        for category in by_space[space_type]:
+            if category not in seen:
+                seen.add(category)
+                categories.append(category)
+    return categories
+
+
 def get_3d_panels_by_context(context):
     """Backward-compatible alias; works in any editor with an N-panel."""
-    return get_ui_panel_categories(context)
+    cats = get_ui_panel_categories(context)
+    if cats:
+        return cats
+    return get_all_ui_panel_categories(context)
