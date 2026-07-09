@@ -14,7 +14,6 @@ from .quick_add.create_element_property import CreateElementProperty
 from .quick_add.create_panel_menu import CreatePanelMenu
 from .quick_add.create_switch_panel import CreateSwitchPanel
 from .quick_add.switch_panel_category import GestureSwitchPanelCategory
-from .quick_add.set_enum_flag import GestureContextSetEnumFlag
 from .quick_add.gesture_preview import GesturePreview
 
 operator_list = (
@@ -37,7 +36,6 @@ operator_list = (
     CreatePanelMenu,
     CreateSwitchPanel,
     GestureSwitchPanelCategory,
-    GestureContextSetEnumFlag,
 
     ModalMouseOperator,
     ClearAllEdgeProperties,

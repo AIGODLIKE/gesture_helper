@@ -39,9 +39,10 @@ def from_rna_get_enum_items(rna_property):
             items = []
     else:
         items = []
-    it = [(item.identifier, item.name, item.description, item.icon, index)
-          for (index, item) in enumerate(items)]
-    return it
+    return [
+        (item.identifier, item.name, item.description, item.icon, index)
+        for index, item in enumerate(items)
+    ]
 
 
 ENUM_GESTURE_DIRECTION = [

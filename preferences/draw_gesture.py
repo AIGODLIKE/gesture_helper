@@ -13,12 +13,12 @@ class GestureDraw:
         pref = get_pref()
 
         column = layout.column(align=True)
+        # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
+        column.operator_context = "INVOKE_DEFAULT"
 
         column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
         column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
-
         column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
-        column.operator_context = "INVOKE_DEFAULT"
 
         column.separator()
 
