@@ -7,8 +7,10 @@ from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items
 from ...utils.property_data import (
     CREATE_ELEMENT_DATA_PATHS,
     CREATE_ELEMENT_BRUSH_PATH,
+    convert_data_path_to_context,
     normalize_context_data_path,
     resolve_context_data_path,
+    resolve_id_data_context_path,
     resolve_view_layer_data_path,
 )
 from ...utils.public import get_pref, PublicOperator, PublicProperty, debug_print
@@ -123,11 +125,22 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
         pointer = self.button_pointer
         prop = self.button_prop
         if prop and ContextMenu.show_context_menu:
+            if not self.data_path:
+                self.copy_data_path()
+
             prop_type = prop.type
 
             value = getattr(pointer, prop.identifier)
 
             if self.data_path != "":
+                path_box = layout.box()
+                path_box.label(text="Data Path")
+                path_box.label(text=self.data_path, translate=False)
+                context_path = self.__data_path__
+                if context_path and context_path != self.data_path:
+                    path_box.label(text=f"Context: {context_path}", translate=False)
+                layout.separator()
+
                 if prop_type == "BOOLEAN":
                     self.draw_boolean(layout)
                 elif prop_type == "INT":
@@ -162,6 +175,8 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
                 layout.label(text=f"button_prop:\t{prop}")
                 layout.label(text=f"a:\t{getattr(context, 'button_prop', None)}")
                 layout.label(text=f"subtype:\t{prop.subtype}")
+
+            if self.debug_property.debug_mode and self.data_path:
                 layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, layout: bpy.types.UILayout):
@@ -457,6 +472,10 @@ class CreateElementProperty(Create):
         if view_layer_path:
             self.data_path = view_layer_path
             return
+        id_data_path = resolve_id_data_context_path(pointer, prop_identifier)
+        if id_data_path:
+            self.data_path = id_data_path
+            return
         if pointer_name in CREATE_ELEMENT_DATA_PATHS:
             self.data_path = f"{CREATE_ELEMENT_DATA_PATHS[pointer_name]}.{prop_identifier}"
             return
@@ -473,8 +492,14 @@ class CreateElementProperty(Create):
 
         cp = bpy.ops.ui.copy_data_path_button
         if cp.poll():
-            cp(full_path=False)
-            normalized = normalize_context_data_path(bpy.context.window_manager.clipboard)
+            cp(full_path=True)
+            clipboard = bpy.context.window_manager.clipboard
+            converted = convert_data_path_to_context(clipboard, pointer)
+            if converted:
+                debug_print("use clipboard", converted, key='operator')
+                self.data_path = converted
+                return
+            normalized = normalize_context_data_path(clipboard)
             if normalized:
                 debug_print("use clipboard", normalized, key='operator')
                 self.data_path = normalized
