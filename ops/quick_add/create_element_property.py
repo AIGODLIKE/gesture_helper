@@ -4,11 +4,20 @@ from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, BoolProperty
 
 from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
-from ...utils.property_data import CREATE_ELEMENT_DATA_PATHS, CREATE_ELEMENT_BRUSH_PATH
+from ...utils.property_data import (
+    CREATE_ELEMENT_DATA_PATHS,
+    CREATE_ELEMENT_BRUSH_PATH,
+    normalize_context_data_path,
+    resolve_context_data_path,
+    resolve_view_layer_data_path,
+)
 from ...utils.public import get_pref, PublicOperator, PublicProperty, debug_print
 
 
 class Enum:
+    _enum_items_cache: list = []
+    _enum_items_prop_id: int | None = None
+
     enum_mode: EnumProperty(
         items=[
             ('SET', 'Direct setting of enumeration values', 'Use bpy.ops.wm.context_set_enum operator'),
@@ -24,23 +33,23 @@ class Enum:
         name='Enum mode',
         options={'HIDDEN', 'SKIP_SAVE'})
 
-    ___enum___ = []  # Prevent stale enum cache
+    ___enum___ = []  # legacy alias kept for compatibility
 
     def __get_enum__(self, context):
-        """Get enum items for property."""
-        button_prop = getattr(CreateElementProperty, "button_prop",
-                              getattr(context, "button_prop",
-                                      getattr(self, "button_prop", None)
-                                      )
-                              )
-        items = from_rna_get_enum_items(button_prop)
-        if items:
-            if items != OpsProperty.___enum___:
-                OpsProperty.___enum___ = items
-        else:
-            if OpsProperty.___enum___ != ENUM_NUMBER_VALUE_CHANGE_MODE:
-                OpsProperty.___enum___ = ENUM_NUMBER_VALUE_CHANGE_MODE
-        return OpsProperty.___enum___
+        """Get enum items for the right-clicked RNA property."""
+        button_prop = (
+            getattr(context, "button_prop", None)
+            or getattr(CreateElementProperty, "button_prop", None)
+        )
+        prop_id = id(button_prop) if button_prop is not None else None
+        if prop_id != Enum._enum_items_prop_id:
+            Enum._enum_items_prop_id = prop_id
+            items = from_rna_get_enum_items(button_prop)
+            Enum._enum_items_cache = items if items else []
+            Enum.___enum___ = Enum._enum_items_cache
+        if Enum._enum_items_cache:
+            return Enum._enum_items_cache
+        return ENUM_NUMBER_VALUE_CHANGE_MODE
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
@@ -86,9 +95,18 @@ class OpsProperty(Enum):
 
     @classmethod
     def from_context_get_info(cls, context) -> None:
-        """Load info from current context."""
-        cls.button_pointer = getattr(context, "button_pointer", None)
-        cls.button_prop = getattr(context, "button_prop", None)
+        """Load info from current context without clearing cached values."""
+        pointer = getattr(context, "button_pointer", None)
+        prop = getattr(context, "button_prop", None)
+        if pointer is not None:
+            cls.button_pointer = pointer
+        if prop is not None:
+            cls.button_prop = prop
+
+    @classmethod
+    def _created_element(cls):
+        from ...element.element_cure import ElementCURE
+        return ElementCURE.ADD.last_element
 
 
 class Draw(PublicOperator, PublicProperty, OpsProperty):
@@ -233,53 +251,70 @@ class Draw(PublicOperator, PublicProperty, OpsProperty):
 
 
 class Create(Draw):
+    @staticmethod
+    def _set_context_operator(element, op_idname: str, **props) -> None:
+        """Assign operator id and properties in a form the UI can read."""
+        element.operator_bl_idname = op_idname
+        element.operator_properties = str(props) if props else "{}"
+
     def create_boolean(self):
         """
         bpy.ops.wm.context_set_boolean()
         bpy.ops.wm.context_toggle()
         :return:
         """
-        ae = self.active_element
-        if ae:
-            bm = self.boolean_mode
-            if bm == "SET_TRUE":
-                ae.operator_bl_idname = f"wm.context_set_boolean(data_path='{self.__data_path__}', value=True)"
-            elif bm == "SET_FALSE":
-                ae.operator_bl_idname = f"wm.context_set_boolean(data_path='{self.__data_path__}', value=False)"
-            elif bm == "SWITCH":
-                ae.operator_bl_idname = f"wm.context_toggle(data_path='{self.__data_path__}')"
+        ae = self._created_element()
+        if not ae:
+            return
+        path = self.__data_path__
+        bm = self.boolean_mode
+        if bm == "SET_TRUE":
+            self._set_context_operator(ae, 'wm.context_set_boolean', data_path=path, value=True)
+        elif bm == "SET_FALSE":
+            self._set_context_operator(ae, 'wm.context_set_boolean', data_path=path, value=False)
+        elif bm == "SWITCH":
+            self._set_context_operator(ae, 'wm.context_toggle', data_path=path)
 
     def create_int(self):
-        ae = self.active_element
+        ae = self._created_element()
         from ..modal_mouse import ModalMouseOperator
-        if ae:
-            vm = self.value_mode
-            if vm == "SET_VALUE":
-                ae.operator_bl_idname = f"wm.context_set_int(data_path='{self.__data_path__}', value={self.int_value})"
-            else:
-                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode='{self.value_mode}')"
-                ae.operator_bl_idname = bl
+        if not ae:
+            return
+        path = self.__data_path__
+        vm = self.value_mode
+        if vm == "SET_VALUE":
+            self._set_context_operator(ae, 'wm.context_set_int', data_path=path, value=self.int_value)
+        else:
+            ae.operator_bl_idname = (
+                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            )
 
     def create_float(self):
-        ae = self.active_element
+        ae = self._created_element()
         from ..modal_mouse import ModalMouseOperator
-        if ae:
-            vm = self.value_mode
-            if vm == "SET_VALUE":
-                ae.operator_bl_idname = f"wm.context_set_float(data_path='{self.__data_path__}', value={self.float_value})"
-            else:
-                bl = f"{ModalMouseOperator.bl_idname}(data_path='{self.__data_path__}', value_mode='{self.value_mode}')"
-                ae.operator_bl_idname = bl
+        if not ae:
+            return
+        path = self.__data_path__
+        vm = self.value_mode
+        if vm == "SET_VALUE":
+            self._set_context_operator(ae, 'wm.context_set_float', data_path=path, value=self.float_value)
+        else:
+            ae.operator_bl_idname = (
+                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            )
 
     def create_string(self):
         """
         bpy.ops.wm.context_set_string()
         :return:
         """
-        ae = self.active_element
+        ae = self._created_element()
         if ae:
-            bi = f"wm.context_set_string(data_path='{self.__data_path__}', value='{self.string_value}')"
-            ae.operator_bl_idname = bi
+            self._set_context_operator(
+                ae, 'wm.context_set_string',
+                data_path=self.__data_path__,
+                value=self.string_value,
+            )
 
     def create_enum(self):
         """
@@ -290,19 +325,27 @@ class Create(Draw):
         bpy.ops.wm.context_pie_enum(data_path="")
         :return:
         """
-        ae = self.active_element
-        if ae:
-            em = self.enum_mode
-            if em == "SET":
-                ae.operator_bl_idname = f"wm.context_set_enum(data_path='{self.__data_path__}', value='{self.enum_value_a}')"
-            elif em == "CYCLE":
-                ae.operator_bl_idname = f"wm.context_cycle_enum(data_path='{self.__data_path__}', reverse={self.enum_reverse},wrap={self.enum_wrap})"
-            elif em == "TOGGLE":
-                ae.operator_bl_idname = f"wm.context_toggle_enum(data_path='{self.__data_path__}', value_1='{self.enum_value_a}', value_2='{self.enum_value_b}')"
-            elif em == "MENU":
-                ae.operator_bl_idname = f"wm.context_menu_enum(data_path='{self.__data_path__}')"
-            elif em == "PIE":
-                ae.operator_bl_idname = f"wm.context_pie_enum(data_path='{self.__data_path__}')"
+        ae = self._created_element()
+        if not ae:
+            return
+        path = self.__data_path__
+        em = self.enum_mode
+        if em == "SET":
+            self._set_context_operator(ae, 'wm.context_set_enum', data_path=path, value=self.enum_value_a)
+        elif em == "CYCLE":
+            self._set_context_operator(
+                ae, 'wm.context_cycle_enum',
+                data_path=path, reverse=self.enum_reverse, wrap=self.enum_wrap,
+            )
+        elif em == "TOGGLE":
+            self._set_context_operator(
+                ae, 'wm.context_toggle_enum',
+                data_path=path, value_1=self.enum_value_a, value_2=self.enum_value_b,
+            )
+        elif em == "MENU":
+            self._set_context_operator(ae, 'wm.context_menu_enum', data_path=path)
+        elif em == "PIE":
+            self._set_context_operator(ae, 'wm.context_pie_enum', data_path=path)
 
     def create(self):
         """
@@ -333,7 +376,7 @@ class Create(Draw):
             elif pt == "ENUM":
                 self.create_enum()
 
-            ae = self.active_element
+            ae = self._created_element()
             if ae and self.button_prop:
                 ae.name = self.__prop_name__
 
@@ -370,56 +413,86 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
+        self.init_enum()
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
     def execute(self, context) -> set[str]:
-        self.clear_info()
         from ...ui.context_menu import ContextMenu
         ContextMenu.show_context_menu = False
 
         self.from_context_get_info(context)
-        name = self.button_pointer.__class__.__name__
-        identifier = self.button_prop.identifier
+        if not self.button_pointer or not self.button_prop:
+            self.report({'ERROR'}, "Property context lost, right-click the property again")
+            return {'CANCELLED'}
 
-        debug_print("\nexecute", self.data_path, name, identifier, key='operator')
-        self.create()
-        return {'FINISHED', "RUNNING_MODAL"}
+        debug_print(
+            "\nexecute", self.data_path,
+            self.button_pointer.__class__.__name__,
+            self.button_prop.identifier,
+            key='operator',
+        )
+        try:
+            self.create()
+        finally:
+            self.clear_info()
+        return {'FINISHED'}
 
     def copy_data_path(self) -> None:
-        """Copy RNA data path to clipboard."""
-        pointer_name = self.button_pointer.__class__.__name__
+        """Resolve bpy.context-style RNA path for wm.context_* operators."""
+        pointer = self.button_pointer
         prop_identifier = self.button_prop.identifier
-        id_data_type = type(self.button_pointer.id_data)
+        pointer_name = pointer.__class__.__name__
+        id_data_type = type(pointer.id_data)
+
         if id_data_type is bpy.types.Mesh:
             self.data_path = f"bpy.context.object.data.{prop_identifier}"
             return
-        elif id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":  # Text editor
+        if id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":
             self.data_path = f"bpy.context.space_data.text.{prop_identifier}"
             return
-        elif pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":  # Properties editor
+        if pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":
             self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
             return
-        elif pointer_name in CREATE_ELEMENT_DATA_PATHS:
+        view_layer_path = resolve_view_layer_data_path(pointer, prop_identifier)
+        if view_layer_path:
+            self.data_path = view_layer_path
+            return
+        if pointer_name in CREATE_ELEMENT_DATA_PATHS:
             self.data_path = f"{CREATE_ELEMENT_DATA_PATHS[pointer_name]}.{prop_identifier}"
             return
-        elif pointer_name == 'Brush' and bpy.context.object:
+        if pointer_name == 'Brush' and bpy.context.object:
             mode = UnifiedPaintPanel.get_brush_mode(bpy.context)
             if mode in CREATE_ELEMENT_BRUSH_PATH:
                 self.data_path = f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.{prop_identifier}"
                 return
 
-        # Use Blender operator
+        resolved = resolve_context_data_path(pointer, prop_identifier)
+        if resolved:
+            self.data_path = resolved
+            return
+
         cp = bpy.ops.ui.copy_data_path_button
         if cp.poll():
-            cp(full_path=True)
-            clipboard = bpy.context.window_manager.clipboard
-            debug_print("use clipboard", clipboard, key='operator')
-            self.data_path = clipboard
+            cp(full_path=False)
+            normalized = normalize_context_data_path(bpy.context.window_manager.clipboard)
+            if normalized:
+                debug_print("use clipboard", normalized, key='operator')
+                self.data_path = normalized
+                return
 
     def init_string(self):
         prop = self.button_prop
-        if prop.type == "STRING":
+        if prop and prop.type == "STRING":
             self.string_value = getattr(self.button_pointer, prop.identifier, "")
+
+    def init_enum(self):
+        prop = self.button_prop
+        pointer = self.button_pointer
+        if not prop or not pointer or prop.type != "ENUM":
+            return
+        current = getattr(pointer, prop.identifier, None)
+        if current:
+            self.enum_value_a = current
 
     def update_data(self, layout, context):
         """Update property from context."""

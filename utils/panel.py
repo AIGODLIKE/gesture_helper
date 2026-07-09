@@ -4,6 +4,35 @@ import re
 import bpy
 
 
+def get_ui_region(area: bpy.types.Area) -> tuple[bpy.types.Region | None, int]:
+    """Return the N-panel (UI) region and its index within *area*."""
+    if area is None:
+        return None, -1
+    for index, region in enumerate(area.regions):
+        if region.type == 'UI':
+            return region, index
+    return None, -1
+
+
+def get_ui_panel_categories(context) -> list[str]:
+    """Read available N-panel tab names from the current area's UI region."""
+    area = context.area
+    if area is None:
+        return []
+    ui_region, _ = get_ui_region(area)
+    if ui_region is None:
+        return []
+    try:
+        ui_region.active_panel_category = ""
+    except TypeError as e:
+        matches = re.findall(r'\(([^()]*)\)', e.args[-1])
+        if not matches:
+            return []
+        return list(ast.literal_eval(f"({matches[-1]})"))
+    except (AttributeError, RuntimeError, ValueError):
+        return []
+
+
 def get_all_panels(context, check_poll=True) -> dict[str, dict[str, list]]:
     """get all panels_data
 
@@ -45,15 +74,5 @@ def get_panels_by_context(context, area=None, region=None, check_poll=True):
 
 
 def get_3d_panels_by_context(context):
-    """
-  File "<string>", line 1, in <module>
-TypeError: bpy_struct: item.attr = val: enum "glTF Variants" not found in ('Item', 'Tool', 'View', 'MP7', 'Gesture')
-    """
-    try:
-        context.area.regions[5].active_panel_category = ""
-    except TypeError as e:
-        matches = re.findall(r'\(([^()]*)\)', e.args[-1])
-        return ast.literal_eval(f"({matches[-1]})")
-    except IndexError:  # Context is not 3D View
-        return []
-
+    """Backward-compatible alias; works in any editor with an N-panel."""
+    return get_ui_panel_categories(context)

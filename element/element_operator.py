@@ -8,7 +8,7 @@ from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get
 from ..utils.public import get_debug, debug_print
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
-from ..utils.expression import literal_to_dict
+from ..utils.expression import literal_to_dict, parse_operator_properties
 
 
 def resolve_operator_bl_idname(bl_idname: str) -> str:
@@ -126,10 +126,18 @@ class ModalProperty:
 class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """Sync element properties to temp KMI."""
+        from ..utils.public_cache import PublicCache
+        if PublicCache._suppress_operator_tmp_kmi:
+            return
         if not self.is_operator or not self.operator_is_operator:
             return
+        if not self.operator_bl_idname or not self.__operator_id_name_is_validity__:
+            return
+        kmi = self.operator_tmp_kmi
+        if kmi is None or kmi.properties is None:
+            return
         self.operator_tmp_kmi_properties_clear()
-        set_property_to_kmi_properties(self.operator_tmp_kmi.properties, self.properties)
+        set_property_to_kmi_properties(kmi.properties, self.properties)
 
     def from_tmp_kmi_operator_update_properties(self) -> None:
         """Sync temp KMI properties to element."""
@@ -244,7 +252,7 @@ class OperatorProperty:
             if ps.startswith('(') and ps.endswith(')'):
                 ps = ps[1:-1].strip()
             debug_print("__analysis_operator_properties__\n", ps, key='operator')
-            properties = literal_to_dict(ps)
+            properties = parse_operator_properties(ps)
             if properties:
                 self["operator_properties"] = str(properties)
         except Exception as e:

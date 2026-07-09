@@ -1,8 +1,9 @@
 import bpy
-from mathutils import Euler, Vector, Matrix
 
 from ...element.element_cure import ElementCURE
+from ...utils.property import collect_operator_property_overrides
 from ...utils.public import PublicOperator, PublicProperty, get_pref, debug_print
+from ...utils.public_cache import PublicCache
 
 
 def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
@@ -16,10 +17,14 @@ def __from_rna_get_bl_ops_idname__(bl_rna) -> str | None:
 class CreateModalOperator:
     def invoke(self, context, event):
         self.button_operator = getattr(context, "button_operator", None)
-        self.execute(context)
-
-        last_element = ElementCURE.ADD.last_element
-        last_element.operator_type = "MODAL"
+        PublicCache._suppress_operator_tmp_kmi = True
+        try:
+            self.execute(context)
+            last_element = ElementCURE.ADD.last_element
+            if last_element:
+                last_element.operator_type = "MODAL"
+        finally:
+            PublicCache._suppress_operator_tmp_kmi = False
 
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
@@ -34,20 +39,18 @@ class CreateModalOperator:
         layout.label(text=bl_idname)
 
         last_element = ElementCURE.ADD.last_element
-        last_element.draw_operator_modal(layout)
+        if last_element:
+            last_element.draw_operator_modal(layout)
 
-        properties = {}
-        for prop in dir(button_operator):
-            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
-                value = getattr(button_operator, prop, None)
-                if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
-                    value = value[:]
-                elif isinstance(value, Matrix):
-                    res = ()
-                    for i in value:
-                        res += (*tuple(i[:]),)
-                    value = res
-                layout.label(text=prop + " " + str(value))
+        for prop in button_operator.bl_rna.properties:
+            identifier = prop.identifier
+            if identifier in ('rna_type', 'bl_idname'):
+                continue
+            try:
+                value = getattr(button_operator, identifier)
+            except (AttributeError, TypeError):
+                continue
+            layout.label(text=f"{identifier} {value}")
 
 
 class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
@@ -77,45 +80,18 @@ class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator)
         button_operator = getattr(context, "button_operator", None)
         bl_idname = __from_rna_get_bl_ops_idname__(button_operator.bl_rna)
         debug_print(f"\n{self.bl_label}\texecute\t", bl_idname, key='operator')
-        properties = {}
-        for prop in dir(button_operator):
-            if prop not in ('__doc__', '__module__', '__slots__', 'bl_rna', 'rna_type', "bl_system_properties_get"):
-                value = getattr(button_operator, prop)
-
-                if isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
-                    value = value[:]
-                elif isinstance(value, Matrix):
-                    res = ()
-                    for i in value:
-                        res += (*tuple(i[:]),)
-                    value = res
-
-                try:
-                    p = button_operator.bl_rna.properties[prop]
-                    debug_print(prop, p.type, value, key='operator')
-                    if p.type not in ("POINTER", "COLLECTION"):
-                        if getattr(p, "is_array", False):
-                            default = p.default_array[:]
-                        else:
-                            if p.type == "ENUM" and p.default == '':
-                                default = value
-                            else:
-                                default = p.default
-                        if default != value:
-                            debug_print("default != value", default, key='operator')
-                            properties[prop] = value
-                except Exception as e:
-                    debug_print(e.args, key='operator')
-                    import traceback
-                    traceback.print_exc()
-                    traceback.print_stack()
-
-        pp = ",".join((f"{k}='{v}'" if type(v) is str else f"{k}={v}" for k, v in properties.items()))
+        properties = collect_operator_property_overrides(button_operator)
         last_element = ElementCURE.ADD.last_element
         if last_element:
-            last_element.operator_bl_idname = f"bpy.ops.{bl_idname}({pp})"
+            suppress = PublicCache._suppress_operator_tmp_kmi
+            PublicCache._suppress_operator_tmp_kmi = True
+            try:
+                last_element['operator_bl_idname'] = bl_idname
+                last_element['operator_properties'] = str(properties)
+            finally:
+                PublicCache._suppress_operator_tmp_kmi = suppress
             if on := last_element.__operator_original_name__:
                 last_element.name = on
-            debug_print(last_element.operator_bl_idname, key='operator')
+            debug_print(last_element.operator_bl_idname, last_element.operator_properties, key='operator')
         self.cache_clear()
         return {"FINISHED"}

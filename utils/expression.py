@@ -80,6 +80,55 @@ def literal_to_dict(value) -> dict:
     raise ValueError(f"Expected dict literal, got {type(parsed)!r}")
 
 
+def _ast_literal_value(node):
+    """Extract a literal Python value from an AST node."""
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        operand = _ast_literal_value(node.operand)
+        if isinstance(operand, (int, float)):
+            return -operand
+    if isinstance(node, (ast.List, ast.Tuple)):
+        return type(node.elts)([_ast_literal_value(elt) for elt in node.elts])
+    if isinstance(node, ast.Set):
+        return {_ast_literal_value(elt) for elt in node.elts}
+    if isinstance(node, ast.Dict):
+        return {
+            _ast_literal_value(key): _ast_literal_value(value)
+            for key, value in zip(node.keys, node.values)
+        }
+    return ast.literal_eval(ast.unparse(node))
+
+
+def parse_operator_properties(text: str) -> dict:
+    """Parse operator property text as a dict literal or keyword arguments."""
+    if not text or not str(text).strip():
+        return {}
+
+    body = str(text).strip()
+    if body.startswith('(') and body.endswith(')'):
+        body = body[1:-1].strip()
+    if not body:
+        return {}
+
+    try:
+        return literal_to_dict(body)
+    except (ValueError, SyntaxError, TypeError):
+        pass
+
+    tree = ast.parse(f"_f({body})", mode='eval')
+    call = tree.body
+    if not isinstance(call, ast.Call):
+        raise ValueError(f"Expected operator properties, got {body!r}")
+
+    result = {}
+    for kw in call.keywords:
+        if kw.arg is None:
+            raise ValueError("Positional operator properties are not supported")
+        result[kw.arg] = _ast_literal_value(kw.value)
+    return result
+
+
 class _ConditionExpressionParser:
     """Parse a restricted subset of Python expressions for poll checks."""
 

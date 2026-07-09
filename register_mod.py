@@ -52,9 +52,25 @@ def _sync_addon_state():
 def _on_load_post(_dummy):
     try:
         _sync_addon_state()
+        from .utils.icons import ensure_icons_loaded
+        if ensure_icons_loaded():
+            def _retry_icons():
+                ensure_icons_loaded()
+                return None
+            bpy.app.timers.register(_retry_icons, first_interval=1.0)
     except (KeyError, AttributeError, RuntimeError):
         ...
     return None
+
+
+def _schedule_icon_verify():
+    from .utils.icons import ensure_icons_loaded
+
+    def _verify(_):
+        ensure_icons_loaded()
+        return None
+
+    bpy.app.timers.register(_verify, first_interval=0.5)
 
 
 def init_register():
@@ -80,6 +96,7 @@ def init_register():
 
     _sync_addon_state()
     _register_load_post_handler()
+    _schedule_icon_verify()
 
 
 def register():

@@ -61,30 +61,61 @@ def __set_property__(prop, data: dict):
             __set_prop__(prop, k, item)
 
 
+def collect_operator_property_overrides(operator) -> dict:
+    """Collect non-default RNA properties from a context-menu button operator."""
+    properties = {}
+    for pr in operator.bl_rna.properties:
+        identifier = pr.identifier
+        if identifier in exclude_items:
+            continue
+        if pr.type in ("POINTER", "COLLECTION"):
+            continue
+        if pr.is_hidden:
+            continue
+        try:
+            value = getattr(operator, identifier)
+        except (AttributeError, TypeError):
+            continue
+
+        if pr.type == 'ENUM' and pr.is_enum_flag:
+            value = set(value) if value else set()
+            default = set(pr.default) if pr.default else set()
+            if value == default:
+                continue
+            properties[identifier] = value
+        elif getattr(pr, 'is_array', False):
+            value = tuple(value[:])
+            default = tuple(pr.default_array[:])
+            if value == default:
+                continue
+            properties[identifier] = value
+        elif isinstance(value, (Euler, Vector, bpy.types.bpy_prop_array)):
+            value = tuple(value[:])
+            default = tuple(pr.default[:]) if hasattr(pr.default, '__getitem__') else (pr.default,)
+            if value == default:
+                continue
+            properties[identifier] = value
+        elif isinstance(value, Matrix):
+            value = tuple(tuple(row[:]) for row in value)
+            default = tuple(tuple(row[:]) for row in pr.default) if pr.default else ()
+            if value == default:
+                continue
+            properties[identifier] = value
+        else:
+            default = pr.default
+            if pr.type == "ENUM" and default == '':
+                default = value
+            if default == value:
+                continue
+            properties[identifier] = value
+    return properties
+
+
 def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties', props) -> None:
-    """Inject operator properties into KMI (use when drawing items)
-    set operator property
-    self.operator_property:
-    """
-
-    def _for_set_prop(prop, pro, pr):
-        for index, j in enumerate(pr):
-            try:
-                getattr(prop, pro)[index] = j
-            except Exception as e:
-                debug_print(e.args, key='operator')
-
-    for pro in props:
-        pr = props[pro]
-        if hasattr(properties, pro):
-            if pr is tuple:
-                # Array property values
-                _for_set_prop(properties, pro, pr)
-            else:
-                try:
-                    setattr(properties, pro, props[pro])
-                except Exception as e:
-                    debug_print(e.args, key='operator')
+    """Inject operator properties into KMI (use when drawing items)."""
+    if not props or properties is None:
+        return
+    __set_property__(properties, props)
 
 
 def __collection_data__(prop, exclude=(), reversal=False) -> dict:

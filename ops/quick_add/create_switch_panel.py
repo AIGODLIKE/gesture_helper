@@ -1,7 +1,8 @@
 import bpy
 
-from ...utils.panel import get_3d_panels_by_context, get_panels_by_context
+from ...utils.panel import get_panels_by_context, get_ui_panel_categories
 from ...utils.public import PublicProperty, poll_message_active_gesture
+from .switch_panel_category import GestureSwitchPanelCategory
 
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
@@ -20,9 +21,9 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         """source\blender\makesrna\intern\rna_screen.cc L348"""
         wm = context.window_manager
 
-        self.panels = get_3d_panels_by_context(context)
+        self.panels = get_ui_panel_categories(context)
         if not self.panels:
-            self.panels = get_panels_by_context(context, area="VIEW_3D", region="UI")
+            self.panels = get_panels_by_context(context)
         return wm.invoke_props_dialog(**{'operator': self, 'width': 300})
 
     def execute(self, context):
@@ -31,7 +32,8 @@ class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
         from ...element.element_cure import ElementCURE
         bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
         last = ElementCURE.ADD.last_element
-        last.operator_bl_idname = f'bpy.ops.wm.context_set_string(data_path="area.regions[5].active_panel_category", value="{self.panel_name}")'
+        last['operator_bl_idname'] = GestureSwitchPanelCategory.bl_idname
+        last['operator_properties'] = str({'panel_name': self.panel_name})
         last.name = self.panel_name
         return {"FINISHED"}
 

@@ -36,6 +36,7 @@ class PublicCache:
     __gesture_element_iteration__ = {}  # Gesture iteration {gesture: [child_element]}
     __is_updatable__ = True
     _suppress_radio_update = False
+    _suppress_operator_tmp_kmi = False
     __structure_generation__ = 0
     __derived_generation__ = 0
 

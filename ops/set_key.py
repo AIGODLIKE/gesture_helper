@@ -10,7 +10,7 @@ from ..utils.public import (
 )
 from ..utils.public_ui import icon_two
 
-# Matches default gesture keymaps and other frequent 3D Viewport contexts.
+# Matches default gesture keymaps and other frequent editor contexts.
 COMMON_GESTURE_KEYMAPS = frozenset({
     "Window",
     "3D View",
@@ -29,6 +29,8 @@ COMMON_GESTURE_KEYMAPS = frozenset({
     "Grease Pencil Edit Mode",
     "Grease Pencil Paint Mode",
     "Grease Pencil Sculpt Mode",
+    "Outliner",
+    "Property Editor",
 })
 
 
@@ -65,7 +67,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     keymap_filter: EnumProperty(
         name='Keymap list',
         items=(
-            ('COMMON', 'Common', 'Show frequently used keymaps', 'SOLO_ON', 0),
+            ('COMMON', 'Frequently Used', 'Show frequently used keymaps', 'SOLO_ON', 0),
             ('ALL', 'All', 'Show all keymaps', 'PRESET', 1),
         ),
         default='COMMON',
@@ -123,7 +125,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         header.label(text="Keymap list", icon='KEYINGSET')
         row = box.row(align=True)
         row.scale_y = 1.1
-        row.prop_enum(self, "keymap_filter", 'COMMON', text="Common", icon='SOLO_ON')
+        row.prop_enum(self, "keymap_filter", 'COMMON', text="Frequently Used", icon='SOLO_ON')
         row.prop_enum(self, "keymap_filter", 'ALL', text="All", icon='PRESET')
 
     def draw(self, _):
