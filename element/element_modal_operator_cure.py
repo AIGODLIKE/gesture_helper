@@ -120,6 +120,16 @@ class ElementModalOperatorEventCRUE:
                     message="This removes every modal event on the active element. You can undo with Ctrl+Z.",
                 )
             self.bulk_remove = False
+            if self.pref.draw_property.element_remove_tips:
+                active = self.pref.active_element.active_event
+                name = getattr(active, 'control_property', None) or getattr(active, 'event_type', '')
+                return operator_invoke_confirm(
+                    self,
+                    event,
+                    context,
+                    title="Confirm To Delete The Element?",
+                    message=f"{name}",
+                )
             return self.execute(context)
 
         def execute(self, context):
@@ -154,14 +164,29 @@ class ElementModalOperatorEventCRUE:
                     for i in self.active_element.operator_func.get_rna_type().properties:
                         if i.identifier not in ["rna_type", ]:
                             row = layout.row(align=True)
+                            is_flag = i.type == 'ENUM' and getattr(i, 'is_enum_flag', False)
+                            row.alert = is_flag
+                            row.enabled = not is_flag
                             row.label(text=i.type, translate=False)
                             row.label(text=i.name, translate=False)
                             row.label(text=i.name)
-                            ops = row.operator(self.bl_idname, text=i.identifier)
-                            ops.control_property = i.identifier
+                            if is_flag:
+                                row.label(text="Multi-select enum (set) is not supported")
+                            else:
+                                ops = row.operator(self.bl_idname, text=i.identifier)
+                                ops.control_property = i.identifier
                 except KeyError:  # KeyError: 'get_rna_type("MESH_OT_fill_gridr") not found'
                     ...
 
         def execute(self, context):
+            element = self.active_element
+            if element and element.operator_func:
+                try:
+                    prop = element.operator_func.get_rna_type().properties.get(self.control_property)
+                    if prop and prop.type == 'ENUM' and getattr(prop, 'is_enum_flag', False):
+                        self.report({'ERROR'}, "Multi-select enum (set) is not supported")
+                        return {'CANCELLED'}
+                except KeyError:
+                    ...
             self.active_event.control_property = self.control_property
             return {"FINISHED"}

@@ -212,10 +212,14 @@ class EnumControl:
 
     def __load_enum__(self):
         key = self.enum_key
-        if self.control_property_type == "ENUM":
-            items = from_rna_get_enum_items(self.control_property_rna)
-            if items and key not in EnumControl.___enum_items___:
-                EnumControl.___enum_items___[key] = items
+        if self.control_property_type != "ENUM":
+            return
+        rna = self.control_property_rna
+        if rna is None or getattr(rna, 'is_enum_flag', False):
+            return
+        items = from_rna_get_enum_items(rna)
+        if items and key not in EnumControl.___enum_items___:
+            EnumControl.___enum_items___[key] = items
 
     def __get_enum__(self, context):
         self.__load_enum__()
@@ -259,6 +263,13 @@ class EnumControl:
 
     # noinspection DuplicatedCode
     def draw_enum(self, layout):
+        rna = self.control_property_rna
+        if rna is not None and getattr(rna, 'is_enum_flag', False):
+            column = layout.column(align=True)
+            column.alert = True
+            column.label(text="Multi-select enum (set) is not supported")
+            return
+
         column = layout.column(align=True)
         column.prop(self, "enum_value_mode", text="Enumeration Value", expand=True)
         if self.enum_value_mode == "TOGGLE":
@@ -292,6 +303,9 @@ class EnumControl:
             cc.enabled = False
 
     def enum_execute(self, ops):
+        rna = self.control_property_rna
+        if rna is not None and getattr(rna, 'is_enum_flag', False):
+            return
         op = ops.operator_properties
         key = self.control_property
         enum_value = op.get(key, None)
@@ -487,6 +501,10 @@ class ElementModalOperatorEventItem(
     def update_control_property(self, context):
         """Init property defaults from controlled RNA property."""
         if tp := self.control_property_type:
+            if tp == "ENUM":
+                rna = self.control_property_rna
+                if rna is not None and getattr(rna, 'is_enum_flag', False):
+                    return
             if default := self.default_value:
                 if tp == "FLOAT":
                     self.float_incremental_value = default
@@ -553,8 +571,12 @@ class ElementModalOperatorEventItem(
         """Return whether control property is valid."""
         pe = self.parent_element
         if pe and pe.__operator_id_name_is_validity__:
-            if self.control_property_rna:
-                return True
+            rna = self.control_property_rna
+            if rna is None:
+                return False
+            if rna.type == 'ENUM' and getattr(rna, 'is_enum_flag', False):
+                return False
+            return True
         return False
 
     def draw_item(self, layout):
