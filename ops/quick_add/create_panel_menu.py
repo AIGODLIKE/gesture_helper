@@ -23,23 +23,32 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
         return poll_message_active_gesture(cls)
 
     def execute(self, context):
+        from ...element.element_cure import ElementCURE
+
         t = getattr(bpy.types, self.create_id_name, None)
         if t is None:
             return {"CANCELLED"}
 
         pref = get_pref()
-        self.cache_clear()
         with pref.add_element_property.active_radio():
-            bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
-            ae = self.active_element
-            if self.type == "PANEL":
-                ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'
-            elif self.type == "MENU":
-                ae.operator_bl_idname = f'bpy.ops.wm.call_menu(name="{self.create_id_name}")'
-            else:
+            result = bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
+            if 'CANCELLED' in result:
                 return {"CANCELLED"}
-            ae.name = t.bl_label if t.bl_label else getattr(t, "bl_idname", self.create_id_name)
-            return {"FINISHED"}
+            ae = ElementCURE.ADD.last_element
+
+        if ae is None:
+            self.report({'ERROR'}, "Failed to add gesture element")
+            return {"CANCELLED"}
+
+        if self.type == "PANEL":
+            ae.operator_bl_idname = f'bpy.ops.wm.call_panel(name="{self.create_id_name}")'
+        elif self.type == "MENU":
+            ae.operator_bl_idname = f'bpy.ops.wm.call_menu(name="{self.create_id_name}")'
+        else:
+            return {"CANCELLED"}
+        ae.name = t.bl_label if t.bl_label else getattr(t, "bl_idname", self.create_id_name)
+        self.cache_clear()
+        return {"FINISHED"}
 
     def invoke(self, context, event):
         if SessionState.panel_menu_injecting:

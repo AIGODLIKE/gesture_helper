@@ -133,7 +133,6 @@ class ElementCURE:
                 add.selected_type = self.selected_type
                 add.__init_element__()
                 add.name = self.add_name
-                self.cache_clear(gesture=gesture)
 
                 if self.pref.add_element_property.add_active_radio:
                     if self.active_element:
@@ -141,6 +140,8 @@ class ElementCURE:
                     add.update_radio()
                 elif self.pref.active_element is None:
                     add.update_radio()
+
+                self.cache_clear(gesture=gesture)
 
             self.__class__.last_element = add
             return {'FINISHED'}
