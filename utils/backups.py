@@ -205,7 +205,7 @@ def find_gesture_backup_for_restore(folder: str | None = None) -> str | None:
     Priority:
     1. Today's disable-add-on backup
     2. Newest disable-add-on backup
-    3. Newest Blender-close backup
+    3. Newest Blender-close backup (EVERY mode: newest timestamp wins via reverse name sort)
     """
     folder = folder or resolve_backups_folder()
     files = _gesture_backup_files(folder)
