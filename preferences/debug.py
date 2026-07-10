@@ -5,16 +5,56 @@ from ..utils.public import get_pref
 
 
 class DebugProperty(bpy.types.PropertyGroup):
-    debug_mode: BoolProperty(name='Debug mode', default=False)
-    debug_key: BoolProperty(name='Debug key', default=False)
-    debug_kmi_sync: BoolProperty(name='Debug KMI sync', default=False)
-    debug_draw_gpu_mode: BoolProperty(name='Debug draw gpu mode', default=False)
-    debug_export_import: BoolProperty(name='Debug export import', default=False)
-    debug_operator: BoolProperty(name='Debug operator', default=False)
-    debug_modal: BoolProperty(name='Debug modal operator', default=False)
-    debug_poll: BoolProperty(name='Debug Poll', default=False)
-    debug_cache: BoolProperty(name='Debug cache', default=False)
-    debug_extension: BoolProperty(name='Debug Extension', default=False)
+    debug_mode: BoolProperty(
+        name='Debug mode',
+        description='Master switch for debug logging',
+        default=False,
+    )
+    debug_key: BoolProperty(
+        name='Debug key',
+        description='Log keymap and pass-through key matching',
+        default=False,
+    )
+    debug_kmi_sync: BoolProperty(
+        name='Debug KMI sync',
+        description='Log temporary keymap item synchronization',
+        default=False,
+    )
+    debug_draw_gpu_mode: BoolProperty(
+        name='Debug draw gpu mode',
+        description='Show GPU draw debug overlays while using gestures',
+        default=False,
+    )
+    debug_export_import: BoolProperty(
+        name='Debug export import',
+        description='Log export, import, and backup operations',
+        default=False,
+    )
+    debug_operator: BoolProperty(
+        name='Debug operator',
+        description='Log operator element execution',
+        default=False,
+    )
+    debug_modal: BoolProperty(
+        name='Debug modal operator',
+        description='Log modal operator element execution',
+        default=False,
+    )
+    debug_poll: BoolProperty(
+        name='Debug Poll',
+        description='Log poll / condition expression evaluation',
+        default=False,
+    )
+    debug_cache: BoolProperty(
+        name='Debug cache',
+        description='Log cache invalidation and rebuild',
+        default=False,
+    )
+    debug_extension: BoolProperty(
+        name='Debug Extension',
+        description='Log extension menu hover and layout',
+        default=False,
+    )
 
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):

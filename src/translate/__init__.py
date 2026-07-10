@@ -65,10 +65,25 @@ def __name_translate__(name: str) -> str:
 
 
 def __keymap_translate__(string: str) -> str:
-    """Translate keymap labels."""
-    if bpy.context.preferences.view.use_translate_interface:
-        keymap = ___translate_dict___("keymap")
-        return keymap[string] if (string in keymap) else pgettext(string)
+    """Translate keymap labels.
+
+    Prefer add-on keymap.json, then Blender's keymap / ID contexts.
+    Avoid bare pgettext("Screen") which resolves to blend-mode「滤色」.
+    """
+    if not bpy.context.preferences.view.use_translate_interface:
+        return string
+    keymap = ___translate_dict___("keymap")
+    if string in keymap:
+        return keymap[string]
+    contexts = bpy.app.translations.contexts
+    for msgctxt in (
+        contexts.ui_events_keymaps,
+        contexts.id_screen,
+        contexts.default,
+    ):
+        text = pgettext(string, msgctxt)
+        if text != string:
+            return text
     return string
 
 

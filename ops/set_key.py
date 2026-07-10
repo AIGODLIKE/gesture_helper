@@ -43,6 +43,15 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     __dialog_keymap_hierarchy__ = None
     __filtered_keymap_hierarchy__ = []
     add_keymap: StringProperty(options={'SKIP_SAVE'})
+    keymap_search: StringProperty(
+        name='Search',
+        description=(
+            'Search all keymaps by English or translated name (ignores Frequently Used / All). '
+            'Examples: "3D View" / "3D视图", "Mesh" / "网格", "2d", "Property"'
+        ),
+        options={'SKIP_SAVE', 'TEXTEDIT_UPDATE'},
+        default='',
+    )
 
     @classmethod
     def poll(cls, context):
@@ -89,6 +98,26 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     def _ensure_common_default_expansion(cls) -> None:
         cls._expand_keymap_groups(("3D View",))
 
+    @classmethod
+    def _iter_keymap_names(cls, items) -> list[str]:
+        names = []
+        for name, _space_type, _window_type, child in items:
+            names.append(name)
+            if child:
+                names.extend(cls._iter_keymap_names(child))
+        return names
+
+    @classmethod
+    def _keymap_matches_search(cls, name: str, query: str) -> bool:
+        from ..src.translate import __keymap_translate__
+        q = query.strip().casefold()
+        if not q:
+            return True
+        if q in name.casefold():
+            return True
+        translated = __keymap_translate__(name)
+        return q in translated.casefold()
+
     @property
     def active_gesture_keymaps(self):
         return get_pref().active_gesture.keymaps
@@ -108,6 +137,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         OperatorSetKeyMaps.__dialog_keymap_hierarchy__ = keymap_hierarchy.generate()
         OperatorSetKeyMaps.__temp_selected_keymaps__ = self.active_gesture_keymaps
         self.keymap_filter = OperatorSetKeyMaps.__session_keymap_filter__
+        self.keymap_search = ''
         OperatorSetKeyMaps._rebuild_filtered_hierarchy()
         if self.keymap_filter == 'COMMON':
             OperatorSetKeyMaps._ensure_common_default_expansion()
@@ -120,13 +150,17 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         return {'FINISHED'}
 
     def draw_keymap_filter(self, layout: bpy.types.UILayout) -> None:
+        searching = bool(self.keymap_search.strip())
         box = layout.box()
         header = box.row(align=True)
         header.label(text="Keymap list", icon='KEYINGSET')
         row = box.row(align=True)
         row.scale_y = 1.1
+        row.enabled = not searching
         row.prop_enum(self, "keymap_filter", 'COMMON', text="Frequently Used", icon='SOLO_ON')
         row.prop_enum(self, "keymap_filter", 'ALL', text="All", icon='PRESET')
+        search_row = box.row(align=True)
+        search_row.prop(self, "keymap_search", text="", icon='VIEWZOOM')
 
     def draw(self, _):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
@@ -138,7 +172,13 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         split = layout.split(factor=0.65)
         left_col = split.box().column(align=True)
         right_col = split.box().column(align=True)
-        self.draw_keymaps(left_col, OperatorSetKeyMaps.__filtered_keymap_hierarchy__)
+        query = self.keymap_search.strip()
+        if query:
+            # Search always uses the full keymap hierarchy, ignoring COMMON/ALL.
+            all_items = OperatorSetKeyMaps.__dialog_keymap_hierarchy__ or []
+            self.draw_keymaps_flat(left_col, all_items, query)
+        else:
+            self.draw_keymaps(left_col, OperatorSetKeyMaps.__filtered_keymap_hierarchy__)
         self.draw_selected_keymap(right_col)
 
     @classmethod
@@ -155,6 +195,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
         return filtered
 
     def draw_selected_keymap(self, layout):
+        from ..src.translate import __keymap_translate__
         layout.emboss = "NONE"
         selected = OperatorSetKeyMaps.__temp_selected_keymaps__
         if not selected:
@@ -163,10 +204,37 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             row.label(text="—", icon='BLANK1')
             return
         for name in selected:
-            text = bpy.app.translations.pgettext(name)
-            layout.operator(self.bl_idname, icon='RESTRICT_SELECT_OFF', text=text).add_keymap = name
+            text = __keymap_translate__(name)
+            # Already translated; disable UI auto-translate (e.g. Screen → 滤色).
+            layout.operator(
+                self.bl_idname,
+                icon='RESTRICT_SELECT_OFF',
+                text=text,
+                translate=False,
+            ).add_keymap = name
+
+    def _draw_keymap_row(self, layout, name: str):
+        from ..src.translate import __keymap_translate__
+        row = layout.row(align=True)
+        row.label(text=__keymap_translate__(name), translate=False)
+        select_icon = icon_two(name in OperatorSetKeyMaps.__temp_selected_keymaps__, 'RESTRICT_SELECT')
+        row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = name
+
+    def draw_keymaps_flat(self, layout, items, query: str):
+        """Flat search results: match English or translated names, no folding."""
+        layout.emboss = "NONE"
+        names = self._iter_keymap_names(items)
+        matched = [name for name in names if self._keymap_matches_search(name, query)]
+        if not matched:
+            row = layout.row()
+            row.enabled = False
+            row.label(text="No matching keymaps", icon='INFO')
+            return
+        for name in matched:
+            self._draw_keymap_row(layout, name)
 
     def draw_keymaps(self, layout, items):
+        from ..src.translate import __keymap_translate__
         layout.emboss = "NONE"
         keymaps = bpy.context.window_manager.keyconfigs.default.keymaps
         for name, space_type, window_type, child in items:
@@ -174,7 +242,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
             if keymap:
                 column = layout.column(align=True)
                 row = column.row(align=True)
-                row.label(text=keymap.name)
+                row.label(text=__keymap_translate__(keymap.name), translate=False)
                 show_child = getattr(keymap, 'show_expanded_items', False)
 
                 if child:
@@ -182,7 +250,8 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
                 select_icon = icon_two(name in OperatorSetKeyMaps.__temp_selected_keymaps__, 'RESTRICT_SELECT')
                 row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = keymap.name
                 if show_child and child:
-                    self.draw_keymaps(column.box().column(align=True), child)
+                    child_box = column.box()
+                    self.draw_keymaps(child_box.column(align=True), child)
 
 
 class OperatorTempModifierKey(bpy.types.Operator):
