@@ -58,10 +58,21 @@ class DebugProperty(bpy.types.PropertyGroup):
 
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):
+        from ..utils.public_ui import draw_extend_ui
+
         pref = get_pref()
         debug = pref.debug_property
 
-        col = layout.box().column(heading="Debug", align=True)
+        is_draw, lay = draw_extend_ui(
+            layout,
+            'draw_debug',
+            label='Debug',
+            default_extend=False,
+        )
+        if not is_draw:
+            return
+
+        col = lay.column(align=True)
         col.prop(debug, 'debug_mode')
         col.prop(debug, 'debug_key')
         col.prop(debug, 'debug_kmi_sync')

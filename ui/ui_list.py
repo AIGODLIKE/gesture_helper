@@ -53,12 +53,6 @@ class ElementUIList(bpy.types.UIList, PublicProperty):
         icon = icon_two(prop.element_show_icon, 'HIDE')
         row.prop(prop, 'element_show_icon', icon=icon)
 
-        debug = self.debug_property
-        row = column.row(align=True)
-        row.prop(debug, 'debug_mode', icon='GHOST_ENABLED')
-        row.prop(debug, 'debug_key', icon='GHOST_ENABLED')
-        row.prop(debug, 'debug_draw_gpu_mode', icon='INFO')
-
         row = column.row(align=True)
         row.prop(prop, "element_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
         row.operator(ElementCURE.SwitchShowChild.bl_idname)

@@ -19,12 +19,8 @@ class PreferencesDraw(GestureDraw):
         if pref.is_show_gesture:
             sub_column.enabled = pref.enabled
 
-        getattr(pref, f'draw_ui_{pref.show_page.lower()}')(sub_column)
-
-    @staticmethod
-    def draw_ui_debug(layout: 'bpy.types.UILayout'):
-        from .debug import DebugProperty
-        DebugProperty.draw_debug(layout)
+        if draw_func := getattr(pref, f'draw_ui_{pref.show_page.lower()}', None):
+            draw_func(sub_column)
 
     @staticmethod
     def draw_topbar(layout: 'bpy.types.UILayout'):
@@ -62,10 +58,14 @@ class PreferencesDraw(GestureDraw):
         col.operator(ExportPreferences.bl_idname)
         col.operator(ImportPreferences.bl_idname)
 
+        column.separator()
         preferences.BackupsProperty.draw_backups(column)
+        column.separator()
+        preferences.DebugProperty.draw_debug(column)
 
         col = row.box().column(align=True)
         col.label(text='Gesture')
         preferences.GestureProperty.draw_gesture_property(col)
+        col.separator()
         preferences.DrawProperty.draw_text_property(col)
         preferences.DrawProperty.draw_color_property(col)

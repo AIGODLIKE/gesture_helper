@@ -89,9 +89,15 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 key='modal',
             )
 
-        if not ops and not self.is_draw_gesture:
+        if not ops:
             is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
-            if is_rmb or not self.is_beyond_threshold_confirm:
+            # Timeout can mark the gesture as "drawn" without a real swipe.
+            # Still allow pass-through for near-clicks (Shift+RMB cursor, etc.).
+            allow_pass = (
+                not self.is_draw_gesture
+                or (is_rmb and not self.is_beyond_threshold)
+            )
+            if allow_pass and (is_rmb or not self.is_beyond_threshold_confirm):
                 if self.is_debug:
                     area = getattr(self, 'area', None) or context.area
                     view_type = getattr(context.space_data, "view_type", None)
