@@ -141,7 +141,12 @@ def add_addon_kmi(
 
 
 def clear_orphan_gesture_kmis() -> int:
-    """One-time cleanup for legacy KMIs not tracked in the registry."""
+    """Remove legacy Gesture Helper keymap items not tracked in the registry.
+
+    Only scans ``keyconfigs.addon`` and only removes items whose ``idname`` is in
+    ``_GESTURE_OPERATOR_IDNAMES`` (currently ``wm.gesture_operator``). Other
+    add-ons' shortcuts are never touched.
+    """
     wm = getattr(bpy.context, "window_manager", None)
     if wm is None:
         return 0

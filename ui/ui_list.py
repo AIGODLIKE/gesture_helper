@@ -5,7 +5,7 @@ from ..utils.public_ui import icon_two
 
 
 class GestureUIList(bpy.types.UIList, PublicProperty):
-    bl_idname = 'DRAW_UL_gesture_items'
+    bl_idname = 'GESTURE_UL_gesture_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
@@ -30,7 +30,7 @@ class GestureUIList(bpy.types.UIList, PublicProperty):
 
 
 class ElementUIList(bpy.types.UIList, PublicProperty):
-    bl_idname = 'DRAW_UL_element_items'
+    bl_idname = 'GESTURE_UL_element_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
@@ -60,7 +60,7 @@ class ElementUIList(bpy.types.UIList, PublicProperty):
 
 
 class ElementModalEventUIList(bpy.types.UIList, PublicProperty):
-    bl_idname = 'DRAW_UL_element_modal_items'
+    bl_idname = 'GESTURE_UL_element_modal_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
@@ -69,7 +69,7 @@ class ElementModalEventUIList(bpy.types.UIList, PublicProperty):
 
 class ImportPresetUIList(bpy.types.UIList,
                          PublicProperty):
-    bl_idname = 'DRAW_UL_preset'
+    bl_idname = 'GESTURE_UL_preset'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
