@@ -167,23 +167,25 @@ class ElementDraw:
                 col.label(text=alert)
 
     def draw_icon(self, layout):
+        from ..utils.icons import icon_layout_kwargs
         if self.draw_property.element_show_icon:
             if self.is_draw_context_toggle_operator_bool:
                 layout.label(text='', icon='BLANK1')
             elif self.is_draw_icon:
-                layout.label(text='', icon_value=self.__get_icon__(self.icon))
+                layout.label(text='', **icon_layout_kwargs(self.icon))
             else:
                 layout.label(text='', icon='BLANK1')
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
+        from ..utils.icons import icon_layout_kwargs
         if self.is_draw_context_toggle_operator_bool:
             layout.label(text="Use property toggle icon")
         else:
             row = layout.row(align=True)
             row.prop(self, 'enabled_icon')
             if self.icon_is_validity:
-                row.prop(self, 'icon', text='', icon_value=self.__get_icon__(self.icon))
+                row.prop(self, 'icon', text='', **icon_layout_kwargs(self.icon))
             else:
                 row.alert = True
                 row.prop(self, 'icon', text='', icon='ERROR')

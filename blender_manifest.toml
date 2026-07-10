@@ -2,9 +2,9 @@ schema_version = "1.0.0"
 
 blender_version_min = "4.2.0"
 id = "gesture_helper"
-license = ["SPDX:GPL-3.0-or-later", ]
+license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
-    "Blender UI icons (src/icon/blender): converted from Blender blender_icons.svg (CC BY-SA 4.0)",
+    "Icon picker UI adapted from Icon Viewer by Robin Aerts (GPL-3.0-or-later)",
 ]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
@@ -32,3 +32,4 @@ paths_exclude_pattern = [
 
 [permissions]
 files = "Import and export gesture presets"
+clipboard = "Copy and paste icon names when selecting element icons"

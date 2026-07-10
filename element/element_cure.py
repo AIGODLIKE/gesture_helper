@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 from bpy.props import BoolProperty
 
 from .element_property import ElementAddProperty
@@ -200,6 +200,7 @@ class ElementCURE:
     class MOVE(ElementPoll):
         bl_label = 'Move gesture item'
         bl_idname = 'wm.gesture_element_move'
+        bl_description = 'Move the active element to another parent or cancel the move'
         bl_options = {'REGISTER'}
         move_item = None
 
@@ -251,6 +252,7 @@ class ElementCURE:
     class SORT(ElementPoll):
         bl_label = 'Sort gesture item'
         bl_idname = 'wm.gesture_element_sort'
+        bl_description = 'Move the active element up or down within its parent list'
         bl_options = {'REGISTER'}
 
         is_next: BoolProperty()
@@ -265,6 +267,7 @@ class ElementCURE:
     class COPY(ElementPoll):
         bl_label = 'Copy gesture item'
         bl_idname = 'wm.gesture_element_copy'
+        bl_description = 'Duplicate the active element within the gesture'
         bl_options = {'REGISTER'}
 
         def execute(self, _):
@@ -291,6 +294,7 @@ class ElementCURE:
     class CUT(ElementPoll):
         bl_label = 'Cut gesture item'
         bl_idname = 'wm.gesture_element_cut'
+        bl_description = 'Cut the active element and paste it elsewhere, or cancel the cut'
         bl_options = {'REGISTER'}
 
         __cut_data__ = None  # Cut buffer data
@@ -362,6 +366,7 @@ class ElementCURE:
     class SwitchShowChild(ElementPoll):
         bl_idname = 'wm.gesture_element_switch_show_child'
         bl_label = 'Switch show child'
+        bl_description = 'Show or hide child elements for every item in the active gesture'
         bl_options = {'REGISTER'}
 
         def execute(self, context):

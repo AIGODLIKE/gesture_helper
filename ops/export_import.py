@@ -152,6 +152,7 @@ class PublicFileOperator(PublicOperator, PublicProperty):
 class Import(PublicFileOperator):
     bl_label = 'Import gesture'
     bl_idname = 'wm.gesture_import'
+    bl_description = 'Import gesture presets from a JSON file or bundled examples'
     @property
     def preset_items(self):
         from ..utils.preset import get_preset_gesture_list
@@ -249,6 +250,7 @@ class Import(PublicFileOperator):
 class Export(PublicFileOperator):
     bl_label = 'Export gesture'
     bl_idname = 'wm.gesture_export'
+    bl_description = 'Export selected gestures to a JSON preset file'
 
     description: StringProperty(name='Description', default='This is a description')
 
@@ -317,7 +319,7 @@ class Export(PublicFileOperator):
 
         gesture_data = self.export_data['gesture']
         if not len(gesture_data):
-            self.report({'WARNING'}, "Export Item Not Selected")
+            self.report({'INFO'}, "Export Item Not Selected")
             return {'CANCELLED'}
 
         path = self.file_path
@@ -405,6 +407,7 @@ class Export(PublicFileOperator):
 class ExportPreferences(bpy.types.Operator, ExportHelper):
     bl_idname = "wm.gesture_export_preferences"
     bl_label = "Export Preferences"
+    bl_description = "Export add-on preferences to a backup file"
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
 
@@ -442,6 +445,7 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
 class ImportPreferences(bpy.types.Operator, ImportHelper):
     bl_idname = "wm.gesture_import_preferences"
     bl_label = "Import Preferences"
+    bl_description = "Import add-on preferences from a backup file"
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
     filter_glob: bpy.props.StringProperty(

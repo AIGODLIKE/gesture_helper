@@ -37,6 +37,7 @@ COMMON_GESTURE_KEYMAPS = frozenset({
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'wm.gesture_set_key_maps'
     bl_label = 'Set keymaps'
+    bl_description = 'Choose which keymap contexts can trigger the active gesture'
     bl_options = {'REGISTER'}
 
     __temp_selected_keymaps__ = []  # static
@@ -258,6 +259,7 @@ class OperatorSetKeyMaps(PublicOperator, PublicProperty):
 class OperatorTempModifierKey(bpy.types.Operator):
     bl_idname = 'wm.gesture_temp_kmi'
     bl_label = 'Temp Kmi Key Gesture Helper'
+    bl_description = 'Internal placeholder keymap item used while editing gesture shortcuts'
 
     gesture: StringProperty()
 

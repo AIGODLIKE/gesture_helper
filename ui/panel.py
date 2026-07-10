@@ -13,6 +13,13 @@ class GesturePanel(bpy.types.Panel, PublicProperty):
     bl_region_type = "UI"
     bl_category = "Gesture"
 
+    @classmethod
+    def poll(cls, context):
+        try:
+            return get_pref().draw_property.panel_enable
+        except (KeyError, AttributeError):
+            return False
+
     def draw_header(self, context):
         pref = self.pref
         row = self.layout.row(align=True)
@@ -34,6 +41,10 @@ class GestureItemPanel(bpy.types.Panel, PublicProperty):
     bl_parent_id = GesturePanel.bl_idname
     bl_options = set()
 
+    @classmethod
+    def poll(cls, context):
+        return GesturePanel.poll(context)
+
     def draw(self, context):
         layout = self.layout.row(align=True)
         layout.enabled = self.pref.enabled
@@ -50,6 +61,10 @@ class GestureElementPanel(bpy.types.Panel, PublicProperty):
     bl_category = "Gesture"
     bl_parent_id = GesturePanel.bl_idname
     bl_options = set()
+
+    @classmethod
+    def poll(cls, context):
+        return GesturePanel.poll(context)
 
     def draw(self, context):
         layout = self.layout
@@ -69,6 +84,8 @@ class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
 
     @classmethod
     def poll(cls, context):
+        if not GesturePanel.poll(context):
+            return False
         pref = get_pref()
         active = pref.active_element
         if active is None or not active.operator_is_modal:
@@ -87,6 +104,10 @@ class GesturePropertyPanel(bpy.types.Panel, PublicProperty):
     bl_category = "Gesture"
     bl_parent_id = GesturePanel.bl_idname
     bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        return GesturePanel.poll(context)
 
     def draw(self, context):
         layout = self.layout

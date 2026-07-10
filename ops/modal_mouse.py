@@ -25,6 +25,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
     """
     bl_idname = 'wm.gesture_modal_mouse_operator'
     bl_label = 'Mouse Modal Modify Value'
+    bl_description = 'Drag the mouse to change a property value on a data path'
     bl_options = {'GRAB_CURSOR', 'BLOCKING', 'UNDO', 'INTERNAL'}
 
     data_path: StringProperty(

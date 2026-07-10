@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 
 from bpy.props import BoolProperty
 
@@ -73,6 +73,7 @@ class ElementModalOperatorEventCRUE:
     class COPY(ModalPoll):
         bl_label = 'Copy element modal item'
         bl_idname = 'wm.gesture_element_modal_copy'
+        bl_description = 'Duplicate the active modal event on this element'
         bl_options = {'REGISTER'}
 
         @classmethod
@@ -152,6 +153,7 @@ class ElementModalOperatorEventCRUE:
     class SelectControlProperty(ModalPoll):
         bl_label = 'Select Control Property'
         bl_idname = 'wm.gesture_select_control_property'
+        bl_description = 'Choose which operator property this modal event controls'
         bl_options = {'REGISTER'}
         control_property: bpy.props.StringProperty(name="Control Property")
 

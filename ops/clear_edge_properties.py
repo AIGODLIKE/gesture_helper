@@ -8,6 +8,7 @@ class ClearAllEdgeProperties(bpy.types.Operator):
 
     bl_idname = "wm.gesture_clear_all_edge_properties"
     bl_label = "Clear All Edge Properties"
+    bl_description = "Clear crease, bevel weight, seam, sharp, and freestyle edge data on selected edges"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod

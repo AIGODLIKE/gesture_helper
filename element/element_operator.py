@@ -12,9 +12,7 @@ from ..utils.expression import literal_to_dict, parse_operator_properties
 
 
 def resolve_operator_bl_idname(bl_idname: str) -> str:
-    """Map legacy gesture.* operator ids to wm.gesture_*."""
-    if bl_idname.startswith('gesture.'):
-        return 'wm.gesture_' + bl_idname.split('.', 1)[1]
+    """Return the operator bl_idname used at runtime."""
     return bl_idname
 
 

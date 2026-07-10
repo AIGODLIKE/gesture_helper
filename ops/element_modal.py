@@ -118,6 +118,7 @@ class KeymapTips(PublicGpu):
 class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
     bl_idname = 'wm.gesture_element_modal_event'
     bl_label = 'Element Modal'
+    bl_description = 'Run a modal operator element and map events to its properties'
     bl_options = {'MACRO', 'GRAB_CURSOR', 'DEPENDS_ON_CURSOR'}
 
     operator_properties: dict
