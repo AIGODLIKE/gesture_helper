@@ -1,3 +1,13 @@
+"""Gesture keymap pass-through.
+
+HARD RULE (do not re-introduce RMB exceptions in ops/gesture.py):
+    - Gesture shown (timeout or draw) → no pass
+    - Dragged beyond threshold → no pass
+    Pass only for a near-click that never showed the gesture UI.
+
+Gate: ``GesturePassThroughKeymap.can_pass_through_keymap``
+"""
+
 import bpy
 
 from .addon_keymap import get_kmi_operator_properties
@@ -221,7 +231,7 @@ def defer_gesture_element_operator(context, area, element) -> bool:
     )
 
 
-def _kmi_matches_event(event, kmi, ui_idnames=None) -> bool:
+def _kmi_matches_event(event, kmi) -> bool:
     event_type = event.type
     kmi_type = kmi.type
     if event_type != kmi_type:
@@ -239,13 +249,9 @@ def _kmi_matches_event(event, kmi, ui_idnames=None) -> bool:
             return False
 
     if kmi.value not in {'NOTHING', 'ANY'} and event.value != kmi.value:
-        # Gesture modal consumes PRESS and exits on RELEASE. Allow PRESS bindings
-        # to match that RELEASE for pass-through (menus, Shift+RMB cursor, etc.).
-        if not (
-                event_type in {'RIGHTMOUSE', 'APP'}
-                and event.value == 'RELEASE'
-                and kmi.value == 'PRESS'
-        ):
+        # Gesture modal consumes PRESS and exits on RELEASE. Allow any PRESS
+        # binding (RMB menus, X delete, W tool, …) to match that RELEASE.
+        if not (event.value == 'RELEASE' and kmi.value == 'PRESS'):
             return False
     return True
 
@@ -256,7 +262,7 @@ def _match_kmis_in_keymap(km, event, pass_through_idname, ui_idnames):
     for item in km.keymap_items:
         if item.idname not in pass_through_idname:
             continue
-        if not _kmi_matches_event(event, item, ui_idnames):
+        if not _kmi_matches_event(event, item):
             continue
         if item.active:
             active.append(item)
@@ -325,22 +331,6 @@ class GesturePassThroughKeymap:
         "Window",
         "3D View",
         "3D View Generic",
-    })
-    _MULTI_MATCH_KEYMAPS = frozenset({
-        "Window",
-        "3D View",
-        "3D View Generic",
-        "Object Mode",
-        "Mesh",
-        "Curve",
-        "Curves",
-        "Sculpt Curves",
-        "Armature",
-        "Pose",
-        "Metaball",
-        "Font",
-        "Lattice",
-        "Outliner",
     })
 
     object_mode_map = {
@@ -575,14 +565,36 @@ class GesturePassThroughKeymap:
                 matched.extend(match_kmis)
         return _filter_view3d_menu_kmis(context, matched) if matched else []
 
+    def can_pass_through_keymap(self, event=None) -> bool:
+        """Whether keymap pass-through is allowed for this gesture session.
+
+        HARD RULE — do not weaken for RMB / Shift+RMB / APP / timeout edge cases:
+
+        - After the gesture UI is shown (timeout or draw) → **no pass**
+        - After the mouse is dragged beyond the threshold → **no pass**
+
+        Pass-through is only for a near-click that never showed the gesture.
+        Callers (``ops/gesture.py`` exit) must not add RMB exceptions around this.
+        """
+        # Gesture drawn (includes timeout that sets draw_trajectory_mouse_move).
+        if getattr(self, 'is_draw_gesture', False):
+            debug_print("can_pass_through_keymap: blocked (gesture drawn/timeout)", key='key')
+            return False
+        # Dragged past threshold even if draw flag has not flipped yet.
+        if getattr(self, 'is_beyond_threshold', False):
+            debug_print("can_pass_through_keymap: blocked (beyond threshold)", key='key')
+            return False
+        return True
+
     def _should_pass_rmb_ui(self, event) -> bool:
-        """RMB context menus only on a plain near-click, not swipes / modifiers."""
+        """RMB context menus only on a plain near-click, not modifiers.
+
+        Draw / drag gating lives in ``can_pass_through_keymap`` — do not re-open
+        pass for RMB after the gesture was shown.
+        """
         if event.type not in {'RIGHTMOUSE', 'APP'}:
             return True
         if event.shift or event.ctrl or event.alt or getattr(event, 'oskey', False):
-            return False
-        # Timeout may set is_draw_gesture without a real swipe; use distance only.
-        if getattr(self, 'is_beyond_threshold', False):
             return False
         return True
 
@@ -622,15 +634,19 @@ class GesturePassThroughKeymap:
         """Try to pass through key events.
 
         Flow:
-            exit (no gesture op, not drawn) -> match keymap items for this event
+            can_pass_through_keymap (drawn/timeout/drag → stop)
+            -> match keymap items for this event
             -> Shift+RMB cursor (sync) -> UI menu (defer, plain click only)
             -> other operators (sync or defer)
 
         Returns:
             ``'handled'`` when a menu/operator was invoked or scheduled,
-            ``'pass_through'`` when the event should be forwarded to Blender,
             ``None`` when nothing should happen.
         """
+        # Single gate: timeout display or drag → never pass (incl. RMB).
+        if not self.can_pass_through_keymap(event):
+            return None
+
         gesture_area = getattr(self, 'area', None) or context.area
 
         keys = self.get_keymaps(context, event)
@@ -702,9 +718,8 @@ class GesturePassThroughKeymap:
                 and _is_cursor_transform_kmi(kmi)
         ):
             return False
-        # Modal may see PRESS/RELEASE plus a tiny move; reject real swipes.
-        if getattr(self, 'is_beyond_threshold', False):
-            return False
+        # Draw / drag already gated by can_pass_through_keymap.
+        # move_count only increments on MOUSEMOVE (see trajectory_event_update).
         if getattr(self, 'move_count', 0) > 6:
             return False
         target_area = area or context.area
@@ -714,11 +729,25 @@ class GesturePassThroughKeymap:
         return _invoke_operator_now(context, target_area, 'view3d.cursor3d', {})
 
 
-def check_kmi_pass_through(kmi: bpy.types.KeyMapItem, *, skip_ui_poll=False) -> bool:
+def check_kmi_pass_through(
+        kmi: bpy.types.KeyMapItem,
+        *,
+        skip_ui_poll=False,
+        context=None,
+        area=None,
+) -> bool:
     if skip_ui_poll and kmi.idname in GesturePassThroughKeymap.pass_through_ui_idname:
         return True
     prefix, suffix = kmi.idname.split('.')
     func = getattr(getattr(bpy.ops, prefix), suffix)
+    if context is not None:
+        override = _pass_override(context, area)
+        if override is not None:
+            try:
+                with context.temp_override(**override):
+                    return bool(func.poll())
+            except Exception:
+                return False
     if not func.poll():
         return False
     return True
@@ -732,36 +761,8 @@ def defer_kmi_pass_through(
 ) -> bool:
     """Schedule pass-through operator after modal ends; returns True if scheduled."""
     skip_ui_poll = kmi.idname in ui_idnames
-    if not check_kmi_pass_through(kmi, skip_ui_poll=skip_ui_poll):
+    if not check_kmi_pass_through(kmi, skip_ui_poll=skip_ui_poll, context=context, area=area):
         debug_print("pass_through poll failed", kmi.idname, key='key')
         return False
     prop = get_kmi_operator_properties(kmi)
     return _defer_operator_call(context, area, kmi.idname, prop)
-
-
-def try_operator_pass_through_right(
-        kmi: bpy.types.KeyMapItem,
-        operator_context='INVOKE_DEFAULT',
-        ui_idnames=GesturePassThroughKeymap.pass_through_ui_idname,
-) -> bool:
-    """Try to pass through operator synchronously (non-modal use only)."""
-    try:
-        skip_ui_poll = kmi.idname in ui_idnames
-        if not check_kmi_pass_through(kmi, skip_ui_poll=skip_ui_poll):
-            debug_print("pass_through poll failed", kmi.idname, key='key')
-            return False
-
-        sp = kmi.idname.split('.')
-        prefix, suffix = sp
-        func = getattr(getattr(bpy.ops, prefix), suffix)
-
-        prop = get_kmi_operator_properties(kmi)
-        op_re = func(operator_context, True, **prop)
-        debug_print(f"\tcall {kmi.idname}\t{prop}\t{op_re}", key='key')
-        return "FINISHED" in op_re or "CANCELLED" in op_re or "INTERFACE" in op_re
-    except Exception as e:
-        debug_print(f"try_operator_pass_through_right Error\t{e.args}", key='key')
-        import traceback
-        traceback.print_exc()
-        traceback.print_stack()
-        return False

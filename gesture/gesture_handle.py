@@ -172,11 +172,13 @@ class GestureHandle:
 
     def trajectory_event_update(self, context, event):
         """Update trajectory from modal event."""
-        self.area = context.area
-        self.screen = context.screen
-        if event.type != "TIMER":
-            self.move_count += 1
+        # Do not overwrite invoke-time area/screen here. Pass-through and
+        # deferred operators need the area that started the gesture; modal
+        # context.area can be None or a different editor on RELEASE.
+        # Count mouse moves only — PRESS/RELEASE/TIMER must not inflate the
+        # near-click budget used by Shift+RMB cursor pass-through.
         if event.type == "MOUSEMOVE":
+            self.move_count += 1
             self.last_mouse_mouse_time = time.time()
             self._schedule_gesture_timeout_timer()
         self.event_count += 1
