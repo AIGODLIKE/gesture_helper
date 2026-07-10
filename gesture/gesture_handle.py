@@ -105,6 +105,11 @@ class GestureHandle:
 
         def run(i):
             from bpy.app.translations import pgettext_iface
+            from .gesture_pass_through_keymap import (
+                defer_gesture_element_operator,
+                should_defer_gesture_operator,
+            )
+            from ..element.element_operator import resolve_operator_bl_idname
 
             if i.operator_is_operator or i.operator_is_modal:
                 if i.operator_func is None:
@@ -118,6 +123,13 @@ class GestureHandle:
                     return
 
             if i.check_operator_poll():
+                idname = resolve_operator_bl_idname(i.operator_bl_idname)
+                # Opening Preferences / menus while still modal leaves the gesture stuck.
+                if i.operator_is_operator and should_defer_gesture_operator(idname):
+                    area = getattr(self, 'area', None) or getattr(ops, 'area', None)
+                    if defer_gesture_element_operator(bpy.context, area, i):
+                        ops.report({'INFO'}, i.name_translate)
+                        return
                 error = i.running_operator()
                 if error is not None:
                     ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))

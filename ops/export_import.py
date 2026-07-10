@@ -223,6 +223,9 @@ class Import(PublicFileOperator):
         """Import the best matching gesture backup when preferences are empty."""
         try:
             pref = get_pref()
+            if not pref.backups_property.auto_restore_backups:
+                log_backup("restore: skipped, auto_restore_backups is disabled")
+                return
             if len(pref.gesture) > 0:
                 log_backup("restore: skipped, gestures already configured")
                 return

@@ -6,10 +6,17 @@ import bpy
 
 
 def is_blender_close() -> bool:
+    """True when unregister runs as part of Blender exit (addon_utils.disable_all).
+
+    Manual disable goes through ``addon_utils.disable`` only, without ``disable_all``.
+    Blender 4.x used ``disable(mod_name)``; 5.x uses ``disable(mod_name, refresh_handled=True)``.
+    Match the caller frame name instead of an exact source line.
+    """
     import sys
     import traceback
+
     for stack in traceback.extract_stack(sys._getframe().f_back, limit=None):
-        if stack.name == "disable_all" and stack.line == "disable(mod_name)":
+        if stack.name == "disable_all":
             return True
     return False
 

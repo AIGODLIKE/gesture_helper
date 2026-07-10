@@ -80,26 +80,45 @@ def _window_region(area):
     return None
 
 
-def _defer_operator_call(context, area, idname: str, properties: dict | None = None) -> bool:
+def _defer_operator_call(
+        context,
+        area,
+        idname: str,
+        properties: dict | None = None,
+        *,
+        operator_context: str = 'INVOKE_DEFAULT',
+) -> bool:
     """Schedule operator invocation after the modal handler finishes."""
-    if not _area_is_valid(area):
-        return False
-
-    window = _find_window_for_area(area) or getattr(context, 'window', None)
-    region = _window_region(area)
-    if window is None or region is None:
+    window = None
+    region = None
+    if area is not None and _area_is_valid(area):
+        window = _find_window_for_area(area)
+        region = _window_region(area)
+    if window is None:
+        window = getattr(context, 'window', None)
+    if region is None and getattr(context, 'region', None) is not None:
+        region = context.region
+    if window is None:
         return False
 
     properties = dict(properties or {})
     prefix, suffix = idname.split('.', 1)
 
     def _invoke(*_args):
-        if not _area_is_valid(area):
-            return None
         try:
             func = getattr(getattr(bpy.ops, prefix), suffix)
-            with context.temp_override(window=window, area=area, region=region):
-                result = func('INVOKE_DEFAULT', **properties)
+            override = {'window': window}
+            if area is not None and _area_is_valid(area):
+                override['area'] = area
+            if region is not None:
+                try:
+                    # Region may be invalid after layout changes.
+                    _ = region.type
+                    override['region'] = region
+                except ReferenceError:
+                    ...
+            with context.temp_override(**override):
+                result = func(operator_context, True, **properties)
             debug_print(f"deferred {idname}", properties, result, key='key')
         except Exception as exc:
             debug_print(f"deferred {idname} error", exc.args, key='key')
@@ -107,6 +126,53 @@ def _defer_operator_call(context, area, idname: str, properties: dict | None = N
 
     bpy.app.timers.register(_invoke, first_interval=0)
     return True
+
+
+# Operators that open a window / UI while the gesture modal is still on the stack
+# leave the gesture "stuck" until the new window closes. Defer these until after exit.
+_DEFER_GESTURE_OPERATOR_IDNAMES = frozenset({
+    'screen.userpref_show',
+    'wm.call_menu',
+    'wm.call_panel',
+    'wm.call_menu_pie',
+    'wm.call_menu_pie_drag_only',
+    'wm.search_menu',
+    'wm.search_operator',
+    'wm.search_single_menu',
+    'preferences.addon_show',
+})
+
+
+def should_defer_gesture_operator(idname: str) -> bool:
+    """Return True if *idname* should run after the gesture modal exits."""
+    if not idname:
+        return False
+    if idname in _DEFER_GESTURE_OPERATOR_IDNAMES:
+        return True
+    # Any call_* UI helper tends to return INTERFACE and nest under the gesture.
+    if idname.startswith('wm.call_'):
+        return True
+    return False
+
+
+def defer_gesture_element_operator(context, area, element) -> bool:
+    """Defer a gesture element operator until after the modal returns FINISHED."""
+    from ..element.element_operator import resolve_operator_bl_idname
+
+    idname = resolve_operator_bl_idname(getattr(element, 'operator_bl_idname', '') or '')
+    if not idname or '.' not in idname:
+        return False
+    props = getattr(element, 'properties', None)
+    if not isinstance(props, dict):
+        props = {}
+    op_context = getattr(element, 'operator_context', None) or 'INVOKE_DEFAULT'
+    return _defer_operator_call(
+        context,
+        area,
+        idname,
+        props,
+        operator_context=op_context,
+    )
 
 
 def _defer_context_menu(context, area, menu_name: str) -> bool:
