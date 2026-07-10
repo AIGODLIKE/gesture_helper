@@ -30,7 +30,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
         name='Auto restore backups',
         description=(
             'On enable, restore preferences and empty gesture lists from the backup folder. '
-            'Off by default. Manual import is unaffected'
+            'On by default. Manual import is unaffected'
         ),
         default=True,
     )

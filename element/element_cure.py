@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 from bpy.props import BoolProperty
 
 from .element_property import ElementAddProperty
@@ -75,6 +75,7 @@ class ElementCURE:
     class ADD(PublicOperator, PublicProperty, ElementAddProperty):
         bl_label = 'Add element item'
         bl_idname = 'wm.gesture_element_add'
+        bl_options = {'REGISTER'}
         last_element = None
 
         @classmethod
@@ -151,7 +152,7 @@ class ElementCURE:
             'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture. '
             'You will be asked to confirm. Use Ctrl+Z to undo.'
         )
-        bl_options = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER'}
 
         bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
@@ -199,6 +200,7 @@ class ElementCURE:
     class MOVE(ElementPoll):
         bl_label = 'Move gesture item'
         bl_idname = 'wm.gesture_element_move'
+        bl_options = {'REGISTER'}
         move_item = None
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
@@ -249,6 +251,7 @@ class ElementCURE:
     class SORT(ElementPoll):
         bl_label = 'Sort gesture item'
         bl_idname = 'wm.gesture_element_sort'
+        bl_options = {'REGISTER'}
 
         is_next: BoolProperty()
 
@@ -262,6 +265,7 @@ class ElementCURE:
     class COPY(ElementPoll):
         bl_label = 'Copy gesture item'
         bl_idname = 'wm.gesture_element_copy'
+        bl_options = {'REGISTER'}
 
         def execute(self, _):
             from ..utils.selection import clear_active_element_cache, enforce_single_selection
@@ -287,6 +291,7 @@ class ElementCURE:
     class CUT(ElementPoll):
         bl_label = 'Cut gesture item'
         bl_idname = 'wm.gesture_element_cut'
+        bl_options = {'REGISTER'}
 
         __cut_data__ = None  # Cut buffer data
 
@@ -357,6 +362,7 @@ class ElementCURE:
     class SwitchShowChild(ElementPoll):
         bl_idname = 'wm.gesture_element_switch_show_child'
         bl_label = 'Switch show child'
+        bl_options = {'REGISTER'}
 
         def execute(self, context):
             value = not self.pref.active_element.show_child

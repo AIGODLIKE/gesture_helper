@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 
 from ...utils.panel import (
     get_panels_by_context,
@@ -57,7 +57,8 @@ def _space_type_items(self, context):
 
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
-    bl_label = 'Switch Panel Opterator'
+    bl_label = 'Switch Panel Operator'
+    bl_options = {'REGISTER'}
     bl_idname = 'wm.gesture_create_switch_panel'
 
     panel_name: bpy.props.StringProperty()

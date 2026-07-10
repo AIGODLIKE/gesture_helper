@@ -1,4 +1,4 @@
-__panel__ = []
+﻿__panel__ = []
 __menu__ = []
 
 import bpy
@@ -12,6 +12,7 @@ from ...utils.session_state import SessionState
 class CreatePanelMenu(PublicOperator, PublicProperty):
     bl_label = 'Create Panel Menu'
     bl_idname = 'wm.gesture_create_panel_menu'
+    bl_options = {'REGISTER'}
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])
     create_id_name: StringProperty()
