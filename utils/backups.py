@@ -10,6 +10,7 @@ from os.path import abspath, join
 import bpy
 
 BACKUP_DIR_NAME = "backups"
+GESTURES_FILENAME = "gesture_helper_gestures.json"
 PREFERENCES_EXPORT_EXTENSION = ".gesture_preference"
 PREFERENCES_BACKUP_FILENAME = f"preferences{PREFERENCES_EXPORT_EXTENSION}"
 PREFERENCES_IMPORT_MAX_BYTES = 5 * 1024 * 1024
@@ -199,7 +200,7 @@ def _gesture_backup_files(folder: str) -> list[str]:
 
 def find_gesture_backup_for_restore(folder: str | None = None) -> str | None:
     """
-    Pick a gesture backup to import on first add-on init.
+    Pick a gesture backup as a load fallback when CONFIG / fixed files are missing.
 
     Priority:
     1. Today's disable-add-on backup
@@ -224,3 +225,53 @@ def find_gesture_backup_for_restore(folder: str | None = None) -> str | None:
         return join(folder, blender_files[0])
 
     return None
+
+
+def get_gestures_config_path() -> str | None:
+    """Fixed path under Blender CONFIG; return None when CONFIG is unavailable."""
+    try:
+        root = bpy.utils.user_resource('CONFIG', path='', create=True)
+        if not root:
+            return None
+        return abspath(join(root, GESTURES_FILENAME))
+    except Exception:
+        return None
+
+
+def get_gestures_backup_fallback_path() -> str:
+    """Same filename under the gesture backups folder."""
+    path = abspath(join(resolve_backups_folder(), GESTURES_FILENAME))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
+def resolve_gestures_load_path() -> str | None:
+    """
+    Resolve which gesture JSON to load.
+
+    Priority:
+    1. CONFIG fixed file
+    2. Backups-folder fixed file
+    3. Newest rotating backup via find_gesture_backup_for_restore()
+    """
+    config_path = get_gestures_config_path()
+    if config_path and os.path.isfile(config_path):
+        return config_path
+
+    backup_fixed = get_gestures_backup_fallback_path()
+    if os.path.isfile(backup_fixed):
+        return backup_fixed
+
+    return find_gesture_backup_for_restore()
+
+
+def resolve_gestures_save_path() -> str:
+    """Prefer CONFIG; fall back to the backups-folder fixed file."""
+    config_path = get_gestures_config_path()
+    if config_path:
+        try:
+            os.makedirs(os.path.dirname(config_path), exist_ok=True)
+            return config_path
+        except OSError:
+            ...
+    return get_gestures_backup_fallback_path()

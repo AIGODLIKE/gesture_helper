@@ -74,10 +74,10 @@ def _schedule_icon_verify():
 
 
 def init_register():
-    from .ops.export_import import Import
     from .utils.pref import clear_pref_cache, get_pref
     from .utils import icons
     from .utils.selection import suppress_radio_updates
+    from .utils.gesture_persistence import load_gestures_from_disk
     from .ui.panel import register as register_panel
 
     clear_pref_cache()
@@ -87,12 +87,10 @@ def init_register():
 
     with suppress_radio_updates():
         pref.preferences_restore()
-
         prop = getattr(pref, 'other_property', None)
         if prop and not prop.init_addon:
             prop.init_addon = True
-            if len(pref.gesture) == 0:
-                Import.restore()
+        load_gestures_from_disk()
 
     _sync_addon_state()
     _register_load_post_handler()
@@ -127,6 +125,7 @@ def unregister():
     from .utils.pref import clear_pref_cache, get_pref
     from .utils.session_state import SessionState
     from .utils.selection import clear_all_active_element_caches
+    from .utils.gesture_persistence import save_gestures_to_disk
     from .ops.export_import import Export
     from .ops.quick_add import create_panel_menu
 
@@ -140,6 +139,7 @@ def unregister():
     pref = get_pref()
     clear_all_active_element_caches(pref)
     public_cache.PublicCacheFunc.cache_clear()
+    save_gestures_to_disk()
     pref.preferences_backups()
     Export.backups(is_blender_close())
     clear_pref_cache()

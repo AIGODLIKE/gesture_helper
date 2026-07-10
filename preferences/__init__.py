@@ -26,12 +26,15 @@ class GesturePreferences(PublicProperty,
                          PreferencesDraw):
     bl_idname = base_package
 
-    # Item export filter config
-    gesture: CollectionProperty(type=gesture.Gesture)
+    # Large gesture tree: persist via CONFIG JSON, not userpref.blend.
+    gesture: CollectionProperty(type=gesture.Gesture, options={'SKIP_SAVE'})
     index_gesture: IntProperty(
         name='Gesture index',
         description='Index of the active gesture in the list',
-        update=lambda self, context: self.active_gesture.to_temp_kmi(),
+        options={'SKIP_SAVE'},
+        update=lambda self, context: (
+            self.active_gesture.to_temp_kmi() if self.active_gesture else None
+        ),
     )
 
     draw_property: PointerProperty(type=DrawProperty)
