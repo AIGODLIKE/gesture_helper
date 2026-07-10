@@ -116,7 +116,7 @@ class ElementCURE:
 
         @property
         def add_name(self):
-            return self.element_type.title() + (" " + self.selected_type.title() if self.is_selected_structure else "")
+            return self.element_type.title() + (" " + self.selected_type if self.is_selected_structure else "")
 
         def execute(self, _):
             gesture = self.active_gesture

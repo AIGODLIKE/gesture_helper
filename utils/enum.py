@@ -14,8 +14,8 @@ OPERATOR_CONTEXT_ELEMENT = [
 
 
 def from_each_as_enum_upper(enum):
-    return [(i.upper(), i.title(), i.title())
-            for i in enum]
+    # Keep IF/ELIF/ELSE uppercase so UI labels are not translated.
+    return [(i.upper(), i.upper(), i.upper()) for i in enum]
 
 
 def from_each_as_title_items(enum):
