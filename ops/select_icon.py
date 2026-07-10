@@ -1,4 +1,4 @@
-﻿"""
+"""
 https://extensions.blender.org/add-ons/icon-viewer/
 """
 import math
@@ -150,7 +150,7 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
         row.separator()
         row.operator(RefreshIcons.bl_idname, icon='FILE_REFRESH')
         row.separator()
-        row.operator('wm.url_open', text='Open Custom Folder', icon='FILE_FOLDER').url = CUSTOM_ICON_FOLDER
+        row.operator('wm.path_open', text='Open Custom Folder', icon='FILE_FOLDER').filepath = CUSTOM_ICON_FOLDER
         row.separator()
 
         box = col.box()
