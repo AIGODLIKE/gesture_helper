@@ -161,10 +161,13 @@ class Import(PublicFileOperator):
     def execute(self, _):
         if self.preset_show:
             return {'FINISHED'}
-        self.gesture_import()
+        if not self.gesture_import():
+            return {'CANCELLED'}
         self.cache_clear()
         self.update_state()
         GestureKeymap.key_restart()
+        from ..utils.gesture_persistence import save_gestures_to_disk
+        save_gestures_to_disk(description='after_import')
         return {'FINISHED'}
 
     def draw(self, _):
@@ -181,7 +184,7 @@ class Import(PublicFileOperator):
             ops.preset_show = False
 
     @cache_update_lock
-    def gesture_import(self):
+    def gesture_import(self) -> bool:
         try:
             from ..gesture import gesture_keymap
 
@@ -209,12 +212,13 @@ class Import(PublicFileOperator):
                 r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s") % (
                        len(restore), auth, des, ver)
             self.report({'INFO'}, text)
+            return True
         except Exception as e:
             self.report({'ERROR'}, f"{pgettext('Import error')}: {e.args}")
             from ..utils.debug_util import debug_trace_stack, debug_traceback
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
-
+            return False
     def read_json(self):
         with open(self.filepath, 'r', encoding='utf-8') as file:
             return json.load(file)
@@ -440,6 +444,37 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
             self.report({'ERROR'}, pgettext_iface("Export error, please check path %s") % self.filepath)
             return {'CANCELLED'}
         return {"FINISHED"}
+
+
+class SaveGesturesAndUserPref(bpy.types.Operator):
+    """Save gesture JSON (CONFIG) then Blender user preferences."""
+
+    bl_idname = "wm.gesture_save_userpref"
+    bl_label = "Save Preferences"
+    bl_description = (
+        "Save gesture data to the config JSON file, then save Blender user preferences"
+    )
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    def execute(self, context):
+        from ..utils.gesture_persistence import save_gestures_to_disk
+        from bpy.app.translations import pgettext_iface
+
+        path = save_gestures_to_disk(description='manual_save')
+        try:
+            bpy.ops.wm.save_userpref()
+        except RuntimeError as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
+        if path:
+            self.report({'INFO'}, pgettext_iface("Saved gestures and preferences"))
+        else:
+            self.report({'WARNING'}, pgettext_iface("Preferences saved; gesture file write failed"))
+        return {'FINISHED'}
 
 
 class ImportPreferences(bpy.types.Operator, ImportHelper):

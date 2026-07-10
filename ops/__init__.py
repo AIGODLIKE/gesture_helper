@@ -44,6 +44,7 @@ operator_list = (
     export_import.Import,
     export_import.ExportPreferences,
     export_import.ImportPreferences,
+    export_import.SaveGesturesAndUserPref,
 
     restore_key.RestoreKey,
 

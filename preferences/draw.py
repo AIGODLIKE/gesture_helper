@@ -30,7 +30,7 @@ class PreferencesDraw(GestureDraw):
         rr = row.row(align=True)
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
-        rr.operator("wm.save_userpref", text="", icon="FILE_TICK")
+        rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
 
