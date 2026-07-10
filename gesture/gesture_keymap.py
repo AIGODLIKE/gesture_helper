@@ -86,9 +86,17 @@ class GestureKeymap(KeymapProperty):
             self.key_restart()
 
     def to_temp_kmi(self) -> None:
-        key = ",".join(list(f"{k.title()}={v}" for k, v in self.key.items()))
-        debug_print(f'Gesture -> Temp kmi {self.name} (%s)' % key, key='key')
-        set_property(self.temp_kmi, self.key)
+        key = dict(self.key)
+        debug_print(f'Gesture -> Temp kmi {self.name} ({key})', key='key')
+        # type enum depends on map_type; set map_type first.
+        kmi = self.temp_kmi
+        t = key.get('type', '')
+        mt = key.pop('map_type', None) or (
+            'MOUSE' if 'MOUSE' in t or t in {'PEN', 'ERASER'} else 'KEYBOARD'
+        )
+        if kmi.map_type != mt:
+            kmi.map_type = mt
+        set_property(kmi, key)
 
     def draw_key(self, layout) -> None:
         draw_temp_keymap_item(layout, self.temp_kmi, self.keymaps)
@@ -153,10 +161,11 @@ class GestureKeymap(KeymapProperty):
         """Reset shortcut to default."""
         self.key = default_key
         kmi = self.temp_kmi
-        kmi.map_type = 'KEYBOARD'
         kmi.shift = False
         kmi.ctrl = False
         kmi.alt = False
+        kmi.oskey = False
+        kmi.any = False
         self.to_temp_kmi()
 
     @property

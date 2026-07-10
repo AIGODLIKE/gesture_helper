@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, IntProperty, EnumProperty
+from bpy.props import BoolProperty, IntProperty
 
 
 def _gen_gesture_prop(default, subtype='PIXEL'):
@@ -55,17 +55,6 @@ class GestureProperty(bpy.types.PropertyGroup):
         default=False,
     )
 
-    pass_through_keymap_type: EnumProperty(
-        name="Pass Through Keymap Type",
-        description="How to find shortcut keys when setting gestures that require transparent operators",
-        items=[
-            ("REGION", "Region",
-             "It is possible for operator errors to occur when searching for passed operators in the area executed through gesture operations"),
-            ("KEYMAPS", "Keymaps", "from gesture set keymaps find key"),
-        ],
-        default="REGION",
-    )
-
     modal_pass_view_rotation: BoolProperty(
         name='Allow view rotation in modal',
         description="Will occupy the middle key operation",
@@ -85,5 +74,4 @@ class GestureProperty(bpy.types.PropertyGroup):
         col.prop(g, 'threshold_confirm')
         col.prop(g, 'immediate_implementation')
         col.prop(g, 'return_distance')
-        col.prop(g, 'pass_through_keymap_type')
         col.prop(g, 'modal_pass_view_rotation')

@@ -468,7 +468,7 @@
                   "enabled_icon": true,
                   "direction": "5",
                   "operator_bl_idname": "object.mode_set",
-                  "operator_properties": "{'mode': 'EDIT_GPENCIL'}"
+                  "operator_properties": "{'mode': 'EDIT'}"
                 },
                 "1": {
                   "name": "Sculpt",
@@ -477,7 +477,7 @@
                   "enabled_icon": true,
                   "direction": "7",
                   "operator_bl_idname": "object.mode_set",
-                  "operator_properties": "{'mode': 'SCULPT_GPENCIL'}"
+                  "operator_properties": "{'mode': 'SCULPT_GREASE_PENCIL'}"
                 },
                 "2": {
                   "name": "Paint",
@@ -486,7 +486,7 @@
                   "enabled_icon": true,
                   "direction": "1",
                   "operator_bl_idname": "object.mode_set",
-                  "operator_properties": "{'mode': 'PAINT_GPENCIL'}"
+                  "operator_properties": "{'mode': 'PAINT_GREASE_PENCIL'}"
                 },
                 "3": {
                   "name": "Weight Paint",
@@ -495,7 +495,7 @@
                   "enabled_icon": true,
                   "direction": "8",
                   "operator_bl_idname": "object.mode_set",
-                  "operator_properties": "{'mode': 'WEIGHT_GPENCIL'}"
+                  "operator_properties": "{'mode': 'WEIGHT_GREASE_PENCIL'}"
                 },
                 "4": {
                   "name": "Vertex Paint",
@@ -504,7 +504,7 @@
                   "enabled_icon": true,
                   "direction": "6",
                   "operator_bl_idname": "object.mode_set",
-                  "operator_properties": "{'mode': 'VERTEX_GPENCIL'}"
+                  "operator_properties": "{'mode': 'VERTEX_GREASE_PENCIL'}"
                 }
               }
             },
@@ -1003,8 +1003,8 @@
                               "icon": "UV_ISLANDSEL",
                               "enabled_icon": true,
                               "direction": "8",
-                              "operator_bl_idname": "uv.select_mode",
-                              "operator_properties": "{'type': 'ISLAND'}"
+                              "operator_bl_idname": "uv.select_linked",
+                              "operator_properties": "{}"
                             }
                           }
                         }
