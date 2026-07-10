@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
@@ -35,6 +35,7 @@ class GestureCURE:
         bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
         bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+        bl_options = {'REGISTER'}
 
         @classmethod
         def poll(cls, context):
@@ -63,7 +64,7 @@ class GestureCURE:
             'Hold Ctrl+Alt+Shift while clicking to remove all gestures. '
             'You will be asked to confirm. Use Ctrl+Z to undo.'
         )
-        bl_options = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER'}
 
         bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
@@ -109,6 +110,7 @@ class GestureCURE:
     class SORT(GesturePoll):
         bl_idname = 'wm.gesture_sort'
         bl_label = 'Sort gesture'
+        bl_options = {'REGISTER'}
 
         is_next: BoolProperty()
 
@@ -121,6 +123,7 @@ class GestureCURE:
     class COPY(GesturePoll):
         bl_idname = 'wm.gesture_copy'
         bl_label = 'Copy gesture'
+        bl_options = {'REGISTER'}
 
         def execute(self, _):
             source = self.active_gesture

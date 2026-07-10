@@ -18,10 +18,14 @@ paths_exclude_pattern = [
     "/.git/",
     "/*.zip",
     ".cursor/",
+    ".idea/",
+    ".editorconfig",
+    ".gitignore",
     "backups/",
+    "auto_backups/",
     "**/svg_2_png.py",
     "README.md",
 ]
 
 [permissions]
-files = "Import/Export Gesture preset"
+files = "Import and export gesture presets"

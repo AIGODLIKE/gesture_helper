@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 
 from bpy.props import BoolProperty
 
@@ -26,6 +26,7 @@ class ElementModalOperatorEventCRUE:
         bl_label = 'Add modal event item'
         bl_idname = 'wm.gesture_element_modal_add'
         bl_description = 'Hold Ctrl+Alt+Shift while clicking to add modal events for every operator property'
+        bl_options = {'REGISTER'}
         control_property: bpy.props.StringProperty(name="Control Property")
 
         def invoke(self, context, event):
@@ -72,6 +73,7 @@ class ElementModalOperatorEventCRUE:
     class COPY(ModalPoll):
         bl_label = 'Copy element modal item'
         bl_idname = 'wm.gesture_element_modal_copy'
+        bl_options = {'REGISTER'}
 
         @classmethod
         def poll(cls, context):
@@ -98,7 +100,7 @@ class ElementModalOperatorEventCRUE:
             'Hold Ctrl+Alt+Shift while clicking to remove all modal events. '
             'You will be asked to confirm. Use Ctrl+Z to undo.'
         )
-        bl_options = {'REGISTER', 'UNDO'}
+        bl_options = {'REGISTER'}
 
         bulk_remove: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'})
 
@@ -150,6 +152,7 @@ class ElementModalOperatorEventCRUE:
     class SelectControlProperty(ModalPoll):
         bl_label = 'Select Control Property'
         bl_idname = 'wm.gesture_select_control_property'
+        bl_options = {'REGISTER'}
         control_property: bpy.props.StringProperty(name="Control Property")
 
         def invoke(self, context, event):

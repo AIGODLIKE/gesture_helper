@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 from bpy.props import EnumProperty, StringProperty
 
 from ..utils.public import (
@@ -37,6 +37,7 @@ COMMON_GESTURE_KEYMAPS = frozenset({
 class OperatorSetKeyMaps(PublicOperator, PublicProperty):
     bl_idname = 'wm.gesture_set_key_maps'
     bl_label = 'Set keymaps'
+    bl_options = {'REGISTER'}
 
     __temp_selected_keymaps__ = []  # static
     __session_keymap_filter__ = 'COMMON'

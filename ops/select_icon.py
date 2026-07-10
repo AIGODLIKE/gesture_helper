@@ -1,4 +1,4 @@
-"""
+﻿"""
 https://extensions.blender.org/add-ons/icon-viewer/
 """
 import math
@@ -32,6 +32,7 @@ def get_num_cols(num_icons):
 class SelectIcon(bpy.types.Operator, PublicProperty):
     bl_idname = 'wm.gesture_select_icon'
     bl_label = 'Select Icon'
+    bl_options = {'REGISTER'}
     filtered_icons = []
 
     width: int
@@ -245,6 +246,7 @@ class RefreshIcons(bpy.types.Operator):
 class ClearHistory(bpy.types.Operator):
     bl_idname = "wm.gesture_clear_icons_history"
     bl_label = "Clear History"
+    bl_options = {'REGISTER'}
 
     @classmethod
     def poll(cls, context):

@@ -29,7 +29,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         for text in [
             "No gesture found to draw",
             "Possible errors in keymap",
-            "Please go to the plugin preference settings to restore keymap",
+            "Please go to the add-on preferences to restore keymap",
         ]:
             layout.label(text=text)
 

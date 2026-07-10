@@ -1,4 +1,4 @@
-import bpy
+﻿import bpy
 
 from ...element.element_cure import ElementCURE
 from ...utils.property import collect_operator_property_overrides
@@ -56,6 +56,7 @@ class CreateModalOperator:
 class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
     bl_label = 'Create Operator Element'
     bl_idname = 'wm.gesture_create_element_operator'
+    bl_options = {'REGISTER'}
 
     @classmethod
     def poll(cls, context):
