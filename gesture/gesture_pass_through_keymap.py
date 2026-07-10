@@ -279,7 +279,12 @@ def _expected_view3d_menu(context) -> str | None:
 
 
 def _filter_view3d_menu_kmis(context, match_kmis):
-    """Prefer the View3D context menu for the current mode, keep non-menu KMIs."""
+    """Prefer the View3D *context* menu for the current mode (RMB/APP only).
+
+    Do NOT run this for keyboard keys: Edit Mode X/M bind ``wm.call_menu`` to
+    delete/merge menus, not ``VIEW3D_MT_*_context_menu``. Filtering those out
+    made X/M pass-through match then discard every candidate.
+    """
     expected = _expected_view3d_menu(context)
     if not expected:
         return match_kmis
@@ -563,7 +568,13 @@ class GesturePassThroughKeymap:
             if match_kmis:
                 debug_print("try_pass_through_keymap match", key, [i.idname for i in match_kmis], key='key')
                 matched.extend(match_kmis)
-        return _filter_view3d_menu_kmis(context, matched) if matched else []
+        if not matched:
+            return []
+        # Context-menu name filter is only for RMB/APP. Keyboard keys (X delete,
+        # M merge, …) also use wm.call_menu with different menu names.
+        if event is not None and event.type in {'RIGHTMOUSE', 'APP'}:
+            return _filter_view3d_menu_kmis(context, matched)
+        return matched
 
     def can_pass_through_keymap(self, event=None) -> bool:
         """Whether keymap pass-through is allowed for this gesture session.
