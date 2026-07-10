@@ -222,7 +222,7 @@
                 "1": {
                   "name": "By Property",
                   "element_type": "CHILD_GESTURE",
-                  "icon": "ONE_TO_MANY_CONNECTION.png",
+                              "icon": "ONE_TO_MANY_CONNECTION",
                   "enabled_icon": true,
                   "element": {
                     "0": {
@@ -390,7 +390,7 @@
                         "2": {
                           "name": "Perimeter",
                           "element_type": "OPERATOR",
-                          "icon": "NETWORK_CONNECTION.png",
+                          "icon": "NETWORK_CONNECTION",
                           "enabled_icon": true,
                           "operator_bl_idname": "mesh.select_similar",
                           "operator_properties": "{'type': 'FACE_PERIMETER'}"

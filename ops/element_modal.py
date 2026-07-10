@@ -159,8 +159,10 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         fps = max(1, pref.gesture_property.modal_operator_target_fps)
         frame_time = 1.0 / fps
         if self.last_running_time > frame_time:
-            text = bpy.app.translations.pgettext_iface("Running operators consumes too much time")
-            self.report({'ERROR'}, f"{text} {self.last_running_time}s")
+            self.report(
+                {'ERROR'},
+                f"Running operators consumes too much time {self.last_running_time}s",
+            )
             return self.exit(context, event)
         if event.type == "LEFTMOUSE" and event.value == "PRESS":  # Confirm
             self.finished(context)

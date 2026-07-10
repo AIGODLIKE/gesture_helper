@@ -227,27 +227,42 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((w, 0))
 
+    def _gpu_draw_icon_name(self) -> str | None:
+        """Icon name used for GPU draw, or None when icon drawing is disabled."""
+        if self.is_draw_context_toggle_operator_bool:
+            if not self.draw_property.element_draw_property_toggle_icon:
+                return None
+            if self.get_operator_wm_context_toggle_property_bool:
+                return "CHECKBOX_HLT"
+            return "CHECKBOX_DEHLT"
+        if self.is_have_icon and self.is_show_icon:
+            return self.icon
+        return None
+
     def gpu_draw_icon(self, use_offset=True):
         w, icon_size = self.text_dimensions
-        if self.is_draw_icon:
-            icon = self.icon
-            if self.is_draw_context_toggle_operator_bool:
-                if self.parent_is_extension:
-                    icon_size = self.parent_element.max_height_dimensions
-                if self.get_operator_wm_context_toggle_property_bool:
-                    icon = "CHECKBOX_HLT"
-                else:
-                    icon = "CHECKBOX_DEHLT"
-            self.draw_image([0, -icon_size], icon_size, icon_size, texture=Texture.get_texture(icon))
-            if use_offset:
-                gpu.matrix.translate((self.icon_offset_width, 0))
+        icon = self._gpu_draw_icon_name()
+        if not icon:
+            return
+        if self.is_draw_context_toggle_operator_bool and self.parent_is_extension:
+            icon_size = self.parent_element.max_height_dimensions
+        texture = Texture.get_texture(icon)
+        if texture is None:
+            return
+        self.draw_image([0, -icon_size], icon_size, icon_size, texture=texture)
+        if use_offset:
+            gpu.matrix.translate((self.icon_offset_width, 0))
 
     def gpu_draw_child_icon(self, use_offset=True):
         w, h = self.text_dimensions
-        if self.is_draw_child_icon:
-            self.draw_image([0, -h], h, h, texture=Texture.get_texture("1"))
-            if use_offset:
-                gpu.matrix.translate((self.icon_offset_width, 0))
+        if not self.is_draw_child_icon:
+            return
+        texture = Texture.get_texture("1")
+        if texture is None:
+            return
+        self.draw_image([0, -h], h, h, texture=texture)
+        if use_offset:
+            gpu.matrix.translate((self.icon_offset_width, 0))
 
     def gpu_draw_margin(self):
         w, h = self.draw_dimensions
@@ -277,9 +292,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     @property
     def draw_dimensions(self) -> Vector:
         w, h = self.text_dimensions
-        if self.is_draw_icon:
+        if self.is_draw_icon and Texture.get_texture(self._gpu_draw_icon_name()):
             w += self.icon_offset_width
-        if self.is_draw_child_icon:
+        if self.is_draw_child_icon and Texture.get_texture("1"):
             w += self.icon_offset_width
         return Vector((w, h))
 

@@ -78,7 +78,8 @@ class ElementIcon:
     @property
     def icon_is_validity(self) -> bool:
         """Return whether the icon identifier is valid."""
-        return self.icon in self.all_icons
+        from ..utils.icons import check_icon
+        return check_icon(self.icon)
 
     @property
     def is_show_icon(self) -> bool:
