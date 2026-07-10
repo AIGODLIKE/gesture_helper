@@ -29,8 +29,9 @@ class BackupsProperty(bpy.types.PropertyGroup):
     auto_restore_backups: BoolProperty(
         name='Auto restore backups',
         description=(
-            'On enable, restore preferences and empty gesture lists from the backup folder. '
-            'On by default. Manual import is unaffected'
+            'On enable, restore add-on preferences from the backup folder. '
+            'Gesture data is loaded from the config JSON separately. '
+            'Manual import is unaffected'
         ),
         default=True,
     )
@@ -160,10 +161,13 @@ class BackupsPreferences:
                 return
             raise
 
-        # Drop removed property from older backups.
+        # Drop removed / non-preference fields from older backups.
         backups = data.get("backups_property")
         if isinstance(backups, dict):
             backups.pop("auto_backups", None)
+        # Gestures live in CONFIG JSON; never merge from preference backups.
+        data.pop("gesture", None)
+        data.pop("index_gesture", None)
 
         log_backup(f"preferences restore <- {file_path}")
         from ..utils.selection import suppress_radio_updates

@@ -51,7 +51,9 @@ def _sync_addon_state():
 
 def _on_load_post(_dummy):
     try:
-        _sync_addon_state()
+        from .utils.gesture_persistence import suppress_gesture_disk_save
+        with suppress_gesture_disk_save():
+            _sync_addon_state()
         from .utils.icons import ensure_icons_loaded
         if ensure_icons_loaded():
             def _retry_icons():
@@ -77,7 +79,10 @@ def init_register():
     from .utils.pref import clear_pref_cache, get_pref
     from .utils import icons
     from .utils.selection import suppress_radio_updates
-    from .utils.gesture_persistence import load_gestures_from_disk
+    from .utils.gesture_persistence import (
+        load_gestures_from_disk,
+        suppress_gesture_disk_save,
+    )
     from .ui.panel import register as register_panel
 
     clear_pref_cache()
@@ -85,14 +90,14 @@ def init_register():
     register_panel()
     icons.Icons.register()
 
-    with suppress_radio_updates():
+    with suppress_radio_updates(), suppress_gesture_disk_save():
         pref.preferences_restore()
         prop = getattr(pref, 'other_property', None)
         if prop and not prop.init_addon:
             prop.init_addon = True
         load_gestures_from_disk()
+        _sync_addon_state()
 
-    _sync_addon_state()
     _register_load_post_handler()
     _schedule_icon_verify()
 
@@ -125,7 +130,11 @@ def unregister():
     from .utils.pref import clear_pref_cache, get_pref
     from .utils.session_state import SessionState
     from .utils.selection import clear_all_active_element_caches
-    from .utils.gesture_persistence import save_gestures_to_disk
+    from .utils.gesture_persistence import (
+        cancel_scheduled_gesture_save,
+        save_gestures_to_disk,
+        suppress_gesture_disk_save,
+    )
     from .ops.export_import import Export
     from .ops.quick_add import create_panel_menu
 
@@ -138,7 +147,9 @@ def unregister():
 
     pref = get_pref()
     clear_all_active_element_caches(pref)
-    public_cache.PublicCacheFunc.cache_clear()
+    with suppress_gesture_disk_save():
+        public_cache.PublicCacheFunc.cache_clear()
+    cancel_scheduled_gesture_save()
     save_gestures_to_disk()
     pref.preferences_backups()
     Export.backups(is_blender_close())

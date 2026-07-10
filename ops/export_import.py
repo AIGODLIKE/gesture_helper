@@ -15,9 +15,9 @@ from ..utils.property import __set_prop__
 from ..utils.backups import (
     blender_close_backup_filename,
     close_backup_filename,
-    find_gesture_backup_for_restore,
     log_backup,
     PREFERENCES_EXPORT_EXTENSION,
+    PREFERENCES_LEGACY_EXTENSION,
     resolve_backups_folder,
 )
 from ..utils.public import (
@@ -166,8 +166,19 @@ class Import(PublicFileOperator):
         self.cache_clear()
         self.update_state()
         GestureKeymap.key_restart()
-        from ..utils.gesture_persistence import save_gestures_to_disk
-        save_gestures_to_disk(description='after_import')
+        from ..utils.gesture_persistence import (
+            cancel_scheduled_gesture_save,
+            save_gestures_to_disk,
+        )
+        from bpy.app.translations import pgettext_iface
+
+        cancel_scheduled_gesture_save()
+        path = save_gestures_to_disk(description='after_import')
+        if not path:
+            self.report(
+                {'WARNING'},
+                pgettext_iface("Imported to memory; gesture file write failed"),
+            )
         return {'FINISHED'}
 
     def draw(self, _):
@@ -222,33 +233,6 @@ class Import(PublicFileOperator):
     def read_json(self):
         with open(self.filepath, 'r', encoding='utf-8') as file:
             return json.load(file)
-
-    @staticmethod
-    def restore():
-        """Import the best matching gesture backup when preferences are empty."""
-        try:
-            pref = get_pref()
-            if not pref.backups_property.auto_restore_backups:
-                log_backup("restore: skipped, auto_restore_backups is disabled")
-                return
-            if len(pref.gesture) > 0:
-                log_backup("restore: skipped, gestures already configured")
-                return
-            log_backup("restore: searching gesture backup")
-            backup_file = find_gesture_backup_for_restore()
-            if backup_file is None:
-                log_backup("restore: no gesture backup file found")
-                return
-            log_backup(f"restore: importing <- {backup_file}")
-            bpy.ops.wm.gesture_import(
-                filepath=backup_file,
-                run_execute=True,
-            )
-            log_backup("restore: import finished")
-        except Exception as e:
-            log_backup(f"restore failed: {e}")
-            from ..utils.debug_util import debug_traceback
-            debug_traceback(key='export_import')
 
 
 class Export(PublicFileOperator):
@@ -484,7 +468,7 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
     filter_glob: bpy.props.StringProperty(
-        default="*.gesture_preference;*.*",
+        default=f"*{PREFERENCES_EXPORT_EXTENSION};*{PREFERENCES_LEGACY_EXTENSION}",
         options={'HIDDEN'},
         maxlen=255,
     )
