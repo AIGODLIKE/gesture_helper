@@ -30,15 +30,24 @@ def _schedule_poll_cache_clear():
         PublicCacheFunc.clear_derived_only()
         return None
 
-    if _POLL_CACHE_TIMER is not None:
-        try:
-            import bpy
-            bpy.app.timers.unregister(_POLL_CACHE_TIMER)
-        except Exception:
-            ...
+    cancel_poll_cache_timer()
     import bpy
     _POLL_CACHE_TIMER = _flush
     bpy.app.timers.register(_flush, first_interval=0.2)
+
+
+def cancel_poll_cache_timer() -> None:
+    """Cancel a pending poll-cache clear timer (call on unregister)."""
+    global _POLL_CACHE_TIMER
+    if _POLL_CACHE_TIMER is None:
+        return
+    try:
+        import bpy
+        if bpy.app.timers.is_registered(_POLL_CACHE_TIMER):
+            bpy.app.timers.unregister(_POLL_CACHE_TIMER)
+    except (ValueError, RuntimeError, AttributeError):
+        ...
+    _POLL_CACHE_TIMER = None
 
 
 class ElementPoll:

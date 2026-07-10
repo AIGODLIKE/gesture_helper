@@ -31,5 +31,5 @@ paths_exclude_pattern = [
 ]
 
 [permissions]
-files = "Import and export gesture presets"
+files = "Read/write gestures, backups, and preference files"
 clipboard = "Copy and paste icon names when selecting element icons"

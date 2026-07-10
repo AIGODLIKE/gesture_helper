@@ -54,6 +54,17 @@ class GestureHandle:
             ...
         self._gesture_timeout_timer = None
 
+    @classmethod
+    def cancel_active_gesture_timeout_timer(cls) -> None:
+        """Cancel timeout timer on the active gesture modal (call on unregister)."""
+        from .gesture_draw_gpu import GestureGpuDraw
+        inst = GestureGpuDraw.__active_draw_instance__
+        if inst is None:
+            return
+        cancel = getattr(inst, '_cancel_gesture_timeout_timer', None)
+        if callable(cancel):
+            cancel()
+
     def _schedule_gesture_timeout_timer(self):
         self._cancel_gesture_timeout_timer()
         if getattr(self, 'draw_trajectory_mouse_move', False):
