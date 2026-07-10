@@ -19,8 +19,3 @@ class OtherProperty(bpy.types.PropertyGroup):
         description='Internal flag set after the first successful add-on initialization',
         default=False,
     )
-    userpref_gestures_purged: BoolProperty(
-        name="Userpref gestures purged",
-        description='Internal flag: legacy gesture DNA cleared from userpref.blend',
-        default=False,
-    )
