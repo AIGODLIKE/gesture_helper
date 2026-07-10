@@ -80,15 +80,8 @@ def _window_region(area):
     return None
 
 
-def _defer_operator_call(
-        context,
-        area,
-        idname: str,
-        properties: dict | None = None,
-        *,
-        operator_context: str = 'INVOKE_DEFAULT',
-) -> bool:
-    """Schedule operator invocation after the modal handler finishes."""
+def _pass_override(context, area):
+    """Build a temp_override dict for the gesture area/region."""
     window = None
     region = None
     if area is not None and _area_is_valid(area):
@@ -99,25 +92,78 @@ def _defer_operator_call(
     if region is None and getattr(context, 'region', None) is not None:
         region = context.region
     if window is None:
+        return None
+
+    override = {'window': window}
+    if area is not None and _area_is_valid(area):
+        override['area'] = area
+    if region is not None:
+        try:
+            _ = region.type
+            override['region'] = region
+        except ReferenceError:
+            ...
+    return override
+
+
+def _invoke_operator_now(
+        context,
+        area,
+        idname: str,
+        properties: dict | None = None,
+        *,
+        operator_context: str = 'INVOKE_DEFAULT',
+) -> bool:
+    """Invoke an operator immediately (keeps mouse event / cursor position)."""
+    override = _pass_override(context, area)
+    if override is None:
+        return False
+    properties = dict(properties or {})
+    prefix, suffix = idname.split('.', 1)
+    try:
+        func = getattr(getattr(bpy.ops, prefix), suffix)
+        with context.temp_override(**override):
+            result = func(operator_context, True, **properties)
+        debug_print(f"invoke now {idname}", properties, result, key='key')
+        return bool({'FINISHED', 'CANCELLED', 'INTERFACE', 'RUNNING_MODAL'} & set(result))
+    except Exception as exc:
+        debug_print(f"invoke now {idname} error", exc.args, key='key')
+        return False
+
+
+def _defer_operator_call(
+        context,
+        area,
+        idname: str,
+        properties: dict | None = None,
+        *,
+        operator_context: str = 'INVOKE_DEFAULT',
+) -> bool:
+    """Schedule operator invocation after the modal handler finishes."""
+    override = _pass_override(context, area)
+    if override is None:
         return False
 
     properties = dict(properties or {})
     prefix, suffix = idname.split('.', 1)
+    # Capture pointers now; area/region may be gone when the timer fires.
+    window = override.get('window')
+    captured_area = override.get('area')
+    captured_region = override.get('region')
 
     def _invoke(*_args):
         try:
             func = getattr(getattr(bpy.ops, prefix), suffix)
-            override = {'window': window}
-            if area is not None and _area_is_valid(area):
-                override['area'] = area
-            if region is not None:
+            ov = {'window': window}
+            if captured_area is not None and _area_is_valid(captured_area):
+                ov['area'] = captured_area
+            if captured_region is not None:
                 try:
-                    # Region may be invalid after layout changes.
-                    _ = region.type
-                    override['region'] = region
+                    _ = captured_region.type
+                    ov['region'] = captured_region
                 except ReferenceError:
                     ...
-            with context.temp_override(**override):
+            with context.temp_override(**ov):
                 result = func(operator_context, True, **properties)
             debug_print(f"deferred {idname}", properties, result, key='key')
         except Exception as exc:
@@ -175,11 +221,7 @@ def defer_gesture_element_operator(context, area, element) -> bool:
     )
 
 
-def _defer_context_menu(context, area, menu_name: str) -> bool:
-    return _defer_operator_call(context, area, 'wm.call_menu', {'name': menu_name})
-
-
-def _kmi_matches_event(event, kmi, ui_idnames) -> bool:
+def _kmi_matches_event(event, kmi, ui_idnames=None) -> bool:
     event_type = event.type
     kmi_type = kmi.type
     if event_type != kmi_type:
@@ -197,9 +239,10 @@ def _kmi_matches_event(event, kmi, ui_idnames) -> bool:
             return False
 
     if kmi.value not in {'NOTHING', 'ANY'} and event.value != kmi.value:
+        # Gesture modal consumes PRESS and exits on RELEASE. Allow PRESS bindings
+        # to match that RELEASE for pass-through (menus, Shift+RMB cursor, etc.).
         if not (
-                kmi.idname in ui_idnames
-                and event_type in {'RIGHTMOUSE', 'APP'}
+                event_type in {'RIGHTMOUSE', 'APP'}
                 and event.value == 'RELEASE'
                 and kmi.value == 'PRESS'
         ):
@@ -230,7 +273,7 @@ def _expected_view3d_menu(context) -> str | None:
 
 
 def _filter_view3d_menu_kmis(context, match_kmis):
-    """Keep only the context menu that matches the current 3D View mode."""
+    """Prefer the View3D context menu for the current mode, keep non-menu KMIs."""
     expected = _expected_view3d_menu(context)
     if not expected:
         return match_kmis
@@ -239,16 +282,31 @@ def _filter_view3d_menu_kmis(context, match_kmis):
     if not call_menus:
         return match_kmis
 
-    matched = [
+    matched_menus = [
         kmi for kmi in call_menus
         if get_kmi_operator_properties(kmi).get('name') == expected
     ]
-    if matched:
-        return matched
-
-    # Ignore unrelated wm.call_menu items such as DOPESHEET_MT_channel_context_menu.
+    # Always keep non-menu matches (e.g. Shift+RMB transform.translate / cursor3d).
     other = [kmi for kmi in match_kmis if kmi.idname != 'wm.call_menu']
+    if matched_menus:
+        return matched_menus + other
+    # Drop unrelated wm.call_menu items such as DOPESHEET_MT_channel_context_menu.
     return other
+
+
+def _is_cursor_transform_kmi(kmi) -> bool:
+    """True for the default Shift+RMB cursor placement binding."""
+    if kmi.idname == 'view3d.cursor3d':
+        return True
+    if kmi.idname != 'transform.translate':
+        return False
+    props = kmi.properties
+    if props is None:
+        return False
+    # Do not use properties.items(): defaults are often omitted there.
+    return bool(getattr(props, 'cursor_transform', False)) and bool(
+        getattr(props, 'release_confirm', False)
+    )
 
 
 def _apply_user_keymap_overrides(match_kmis, key, user_keymaps):
@@ -426,6 +484,7 @@ class GesturePassThroughKeymap:
         'transform.translate',
         'transform.rotate',
         'transform.resize',
+        'view3d.cursor3d',  # Shift+RMB cursor (or direct binding)
 
         'transform.edge_crease',  # Shift+E
     )
@@ -516,55 +575,77 @@ class GesturePassThroughKeymap:
                 matched.extend(match_kmis)
         return _filter_view3d_menu_kmis(context, matched) if matched else []
 
-    def _defer_pass_matched_kmis(self, context, area, event, match_kmis) -> bool:
+    def _should_pass_rmb_ui(self, event) -> bool:
+        """RMB context menus only on a plain near-click, not swipes / modifiers."""
+        if event.type not in {'RIGHTMOUSE', 'APP'}:
+            return True
+        if event.shift or event.ctrl or event.alt or getattr(event, 'oskey', False):
+            return False
+        # Timeout may set is_draw_gesture without a real swipe; use distance only.
+        if getattr(self, 'is_beyond_threshold', False):
+            return False
+        return True
+
+    def _pass_matched_kmis(self, context, area, event, match_kmis) -> bool:
         if not match_kmis:
             return False
 
-        ui_kmis = [kmi for kmi in match_kmis if kmi.idname in self.pass_through_ui_idname]
-        candidates = ui_kmis if ui_kmis else match_kmis
+        # 1) Shift+RMB cursor must win over context-menu UI items.
+        for kmi in match_kmis:
+            if self.try_pass_set_cursor3d_location(context, event, kmi, area):
+                return True
+
+        allow_ui = self._should_pass_rmb_ui(event)
+        ui_kmis = [
+            kmi for kmi in match_kmis
+            if kmi.idname in self.pass_through_ui_idname
+        ] if allow_ui else []
+        non_ui_kmis = [
+            kmi for kmi in match_kmis
+            if kmi.idname not in self.pass_through_ui_idname
+            and not _is_cursor_transform_kmi(kmi)
+        ]
+        # Prefer UI on plain RMB click; otherwise only non-UI operators.
+        candidates = ui_kmis if ui_kmis else non_ui_kmis
         for kmi in candidates:
             if not (kmi.active or kmi.idname in self.pass_through_ui_idname):
                 continue
-            if self.try_pass_set_cursor3d_location(context, event, kmi, area):
-                return True
-            if defer_kmi_pass_through(context, area, kmi):
+            # Menus/panels need defer so they are not nested under the gesture modal.
+            if kmi.idname in self.pass_through_ui_idname or should_defer_gesture_operator(kmi.idname):
+                if defer_kmi_pass_through(context, area, kmi):
+                    return True
+            elif _invoke_operator_now(context, area, kmi.idname, get_kmi_operator_properties(kmi)):
                 return True
         return False
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> str | None:
         """Try to pass through key events.
 
+        Flow:
+            exit (no gesture op, not drawn) -> match keymap items for this event
+            -> Shift+RMB cursor (sync) -> UI menu (defer, plain click only)
+            -> other operators (sync or defer)
+
         Returns:
-            ``'handled'`` when a deferred menu/operator was scheduled,
+            ``'handled'`` when a menu/operator was invoked or scheduled,
             ``'pass_through'`` when the event should be forwarded to Blender,
             ``None`` when nothing should happen.
         """
         gesture_area = getattr(self, 'area', None) or context.area
-        is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
 
         keys = self.get_keymaps(context, event)
         kc = context.window_manager.keyconfigs
         debug_print("try_pass_through_keymap keys", keys, key='key')
         match_kmis = self._collect_pass_kmis(context, event, keys, kc.active.keymaps, kc.user.keymaps)
+        debug_print(
+            "try_pass_through_keymap matched",
+            [(kmi.idname, get_kmi_operator_properties(kmi)) for kmi in match_kmis],
+            key='key',
+        )
 
-        if is_rmb:
-            if self._defer_pass_matched_kmis(context, gesture_area, event, match_kmis):
-                return 'handled'
-
-            menu_name = None
-            if _area_is_valid(gesture_area) and gesture_area.type == 'VIEW_3D':
-                menu_name = _VIEW3D_CONTEXT_MENUS.get(context.mode)
-
-            if menu_name and _defer_context_menu(context, gesture_area, menu_name):
-                debug_print("try_pass_through_keymap deferred menu", menu_name, key='key')
-                return 'handled'
-
-            if gesture_area is not None:
-                debug_print("try_pass_through_keymap fallback PASS_THROUGH", gesture_area.type, key='key')
-                return 'pass_through'
-            return None
-
-        if match_kmis and self._defer_pass_matched_kmis(context, gesture_area, event, match_kmis):
+        # Only act on real keymap matches. Never force a View3D context menu
+        # fallback (that reopened RMB menus after empty swipes since 2.3.3).
+        if match_kmis and self._pass_matched_kmis(context, gesture_area, event, match_kmis):
             return 'handled'
         return None
 
@@ -607,20 +688,30 @@ class GesturePassThroughKeymap:
 
     def try_pass_set_cursor3d_location(self, context: bpy.types.Context, event: bpy.types.Event,
                                        kmi: bpy.types.KeyMapItem, area=None) -> bool:
-        """Try to pass through 3D view cursor placement."""
-        if (
-                event.shift and
-                not event.ctrl and
-                not event.alt and
-                event.type_prev == "RIGHTMOUSE" and
-                self.move_count <= 2 and
-                kmi.idname == "transform.translate"
+        """Pass through 3D cursor placement (Shift+RMB quick click).
+
+        Must run synchronously: ``view3d.cursor3d`` needs the current mouse event.
+        A timer defer loses the click position.
+        """
+        if not (
+                event.shift
+                and not event.ctrl
+                and not event.alt
+                and not getattr(event, 'oskey', False)
+                and event.type in {'RIGHTMOUSE', 'APP'}
+                and _is_cursor_transform_kmi(kmi)
         ):
-            if get_kmi_operator_properties(kmi) == {'release_confirm': True, 'cursor_transform': True}:
-                target_area = area or context.area
-                if target_area and target_area.type == "VIEW_3D":
-                    return _defer_operator_call(context, target_area, 'view3d.cursor3d', {})
-        return False
+            return False
+        # Modal may see PRESS/RELEASE plus a tiny move; reject real swipes.
+        if getattr(self, 'is_beyond_threshold', False):
+            return False
+        if getattr(self, 'move_count', 0) > 6:
+            return False
+        target_area = area or context.area
+        if not target_area or target_area.type != "VIEW_3D":
+            return False
+        debug_print("try_pass_set_cursor3d_location", kmi.idname, key='key')
+        return _invoke_operator_now(context, target_area, 'view3d.cursor3d', {})
 
 
 def check_kmi_pass_through(kmi: bpy.types.KeyMapItem, *, skip_ui_poll=False) -> bool:

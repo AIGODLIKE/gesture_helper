@@ -271,7 +271,7 @@
   "Which preferences page to display": "显示哪个偏好设置页面",
   "Gesture list and element editor": "手势列表与元素编辑器",
   "Draw, backup, and general settings": "绘制、备份与常规设置",
-  "Debug logging switches": "调试日志开关",
+  "Debug": "调试",
   "From Prop Update": "从属性更新",
   "Update To Prop": "更新到属性",
   "Operator bl_idname": "操作符 bl_idname",

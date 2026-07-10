@@ -50,7 +50,6 @@ class GesturePreferences(PublicProperty,
         items=[
             ('GESTURE', 'Gesture', 'Gesture list and element editor'),
             ('PROPERTY', 'Property', 'Draw, backup, and general settings'),
-            ('DEBUG', 'Debug', 'Debug logging switches'),
         ],
     )
 
