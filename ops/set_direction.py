@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 from bpy.props import StringProperty
 
 from ..utils.enum import ENUM_GESTURE_DIRECTION
@@ -10,6 +10,7 @@ from ..utils.translate import translate_lines_text
 class SetDirection(bpy.types.Operator):
     bl_idname = 'wm.gesture_set_direction'
     bl_label = 'Set direction'
+    bl_description = 'Set the swipe direction for the active gesture element'
     bl_options = {'REGISTER'}
 
     direction: StringProperty()

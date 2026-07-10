@@ -15,8 +15,14 @@ from ..utils.public import PublicOperator, debug_print
 class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, ):
     bl_idname = 'wm.gesture_operator'
     bl_label = 'Gesture Operator'
+    bl_description = 'Run the active gesture from its keymap shortcut'
     gesture: StringProperty()
     extension_hover = []
+
+    @classmethod
+    def poll(cls, context):
+        from ..utils.pref import poll_addon_preferences
+        return poll_addon_preferences(cls)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

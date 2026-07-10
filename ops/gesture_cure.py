@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
@@ -110,6 +110,7 @@ class GestureCURE:
     class SORT(GesturePoll):
         bl_idname = 'wm.gesture_sort'
         bl_label = 'Sort gesture'
+        bl_description = 'Move the active gesture up or down in the list'
         bl_options = {'REGISTER'}
 
         is_next: BoolProperty()
@@ -123,6 +124,7 @@ class GestureCURE:
     class COPY(GesturePoll):
         bl_idname = 'wm.gesture_copy'
         bl_label = 'Copy gesture'
+        bl_description = 'Duplicate the active gesture and its elements'
         bl_options = {'REGISTER'}
 
         def execute(self, _):

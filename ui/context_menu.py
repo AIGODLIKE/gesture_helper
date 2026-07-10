@@ -24,7 +24,7 @@ class ContextMenu(bpy.types.Menu):
         button_prop = getattr(context, "button_prop", None)
         button_operator = getattr(context, "button_operator", None)
 
-        if button_operator and button_operator.bl_rna.identifier.startswith("GESTURE_OT_"):
+        if button_operator and button_operator.bl_rna.identifier.startswith("WM_OT_gesture_"):
             return
         layout = self.layout
 

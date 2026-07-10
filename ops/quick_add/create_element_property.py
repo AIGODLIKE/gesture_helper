@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 from bl_ui.properties_paint_common import UnifiedPaintPanel
 from bpy.app.translations import pgettext, pgettext_n
 from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, BoolProperty
@@ -446,6 +446,7 @@ class Create(Draw):
 class CreateElementProperty(Create):
     bl_label = 'Create Property Element'
     bl_idname = 'wm.gesture_create_element_property'
+    bl_description = 'Add a gesture element from a right-clicked property button'
     bl_options = {'REGISTER'}
 
     button_pointer = None

@@ -13,6 +13,7 @@ from ...utils.session_state import SessionState
 class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty):
     bl_idname = "wm.gesture_preview"
     bl_label = "Gesture preview"
+    bl_description = "Preview gesture layout and directions without running operators"
 
     gesture: StringProperty()
 

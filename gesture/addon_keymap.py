@@ -9,7 +9,6 @@ from ..utils.debug_util import debug_print
 
 _GESTURE_OPERATOR_IDNAMES = frozenset({
     "wm.gesture_operator",
-    "gesture.operator",  # legacy
 })
 
 _WARNED_UNKNOWN_PROP_TYPES: set[type] = set()

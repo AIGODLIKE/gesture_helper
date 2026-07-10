@@ -1,6 +1,3 @@
-"""
-https://extensions.blender.org/add-ons/icon-viewer/
-"""
 import math
 import os
 
@@ -8,6 +5,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 
 from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER, poll_message_active_element
+from ..utils.icons import icon_layout_kwargs
 
 CUSTOM_ICON_FOLDER = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
 
@@ -32,6 +30,7 @@ def get_num_cols(num_icons):
 class SelectIcon(bpy.types.Operator, PublicProperty):
     bl_idname = 'wm.gesture_select_icon'
     bl_label = 'Select Icon'
+    bl_description = 'Pick a built-in Blender icon or a custom add-on icon for the active element'
     bl_options = {'REGISTER'}
     filtered_icons = []
 
@@ -186,20 +185,8 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
         col_idx = 0
         i: int = 0
 
-        ics = bpy.types.UILayout.bl_rna.functions[
-            "prop"].parameters["icon"].enum_items.keys()
-
         def get_icon_args(icon_name) -> dict:
-            from ..utils.icons import check_icon
-
-            if icon_name in ics and icons is None:  # Check built-in icon set first
-                return {"icon": icon_name}
-            elif check_icon(icon_name):
-                icon_value = self.__get_icon__(key=icon_name)
-                return {"icon_value": icon_value}
-            else:  # Icon not found
-                ...
-                return {}
+            return icon_layout_kwargs(icon_name)
 
         for i, icon in enumerate(filtered_icons):
             args = get_icon_args(icon)
@@ -232,6 +219,7 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
 class RefreshIcons(bpy.types.Operator):
     bl_idname = "wm.gesture_refresh_icons"
     bl_label = "Refresh Icons"
+    bl_description = 'Reload custom add-on icon previews from disk'
 
     @classmethod
     def poll(cls, context):
@@ -246,6 +234,7 @@ class RefreshIcons(bpy.types.Operator):
 class ClearHistory(bpy.types.Operator):
     bl_idname = "wm.gesture_clear_icons_history"
     bl_label = "Clear History"
+    bl_description = 'Clear the icon selection history list'
     bl_options = {'REGISTER'}
 
     @classmethod

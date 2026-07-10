@@ -1,6 +1,6 @@
 # Gesture Helper
 
-which allows you to quickly use gestures to run the blender operator or change properties.
+Quickly use gestures to run Blender operators or change properties.
 
 <img width="1355" height="895" alt="image" src="https://github.com/user-attachments/assets/5086f258-922e-4f22-9447-2960c53545ab" />
 
@@ -10,15 +10,7 @@ https://github.com/user-attachments/assets/40e0eeac-7fd7-4a5b-aa2a-21e6b6053ee6
 
 ![preview](https://github.com/user-attachments/assets/04cbd99a-91de-4818-8cc5-e4bc64dcf69f)
 
-Install:
-
-If it is version 4.2, you can drag the plugin directly into Blender.
-
-Conventional methods:
-
-![install](https://github.com/user-attachments/assets/f6b140ef-1acf-4072-bbae-8747cc23f299)
-
-Simple to use:
+## Usage
 
 * Import Preset
 

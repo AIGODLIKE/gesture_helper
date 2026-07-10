@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 from bpy.props import StringProperty, BoolProperty
 
 from ..utils.poll_data import PollData
@@ -8,6 +8,7 @@ from ..utils.public import PublicOperator, PublicProperty, poll_message_active_e
 class SetPollExpression(PublicProperty, PublicOperator, PollData):
     bl_label = 'Setting Conditional Expressions'
     bl_idname = 'wm.gesture_set_poll_expression'
+    bl_description = 'Edit the poll expression that controls when this element is shown'
     bl_options = {'REGISTER'}
 
     is_not: BoolProperty(name='Invert', description='It can be interpreted as an inverse')

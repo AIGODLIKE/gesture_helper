@@ -1,4 +1,4 @@
-﻿import bpy
+import bpy
 
 from ...utils.panel import (
     get_panels_by_context,
@@ -58,6 +58,7 @@ def _space_type_items(self, context):
 
 class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
     bl_label = 'Switch Panel Operator'
+    bl_description = 'Create a gesture element that switches the N-panel tab in an editor'
     bl_options = {'REGISTER'}
     bl_idname = 'wm.gesture_create_switch_panel'
 
