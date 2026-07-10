@@ -105,7 +105,7 @@ class GestureHandle:
 
         def run(i):
             from bpy.app.translations import pgettext_iface
-            from .gesture_pass_through_keymap import (
+            from .pass_through import (
                 defer_gesture_element_operator,
                 should_defer_gesture_operator,
             )

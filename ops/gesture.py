@@ -8,7 +8,7 @@ from bpy.props import StringProperty
 from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
 from ..gesture.gesture_handle import GestureHandle
-from ..gesture.gesture_pass_through_keymap import GesturePassThroughKeymap
+from ..gesture.pass_through import GesturePassThroughKeymap
 from ..utils.public import PublicOperator, debug_print
 
 

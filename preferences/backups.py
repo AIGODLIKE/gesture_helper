@@ -165,6 +165,9 @@ class BackupsPreferences:
         backups = data.get("backups_property")
         if isinstance(backups, dict):
             backups.pop("auto_backups", None)
+        gesture_prop = data.get("gesture_property")
+        if isinstance(gesture_prop, dict):
+            gesture_prop.pop("pass_through_keymap_type", None)
         # Gestures live in CONFIG JSON; never merge from preference backups.
         data.pop("gesture", None)
         data.pop("index_gesture", None)

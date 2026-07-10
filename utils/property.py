@@ -1,4 +1,5 @@
-# version = 1.0.3
+# version = 1.0.4
+# 1.0.4: coerce/skip invalid ENUM values (e.g. GPENCIL → GREASE_PENCIL)
 # 1.0.3: custom export via ___set_properties___ / ___properties___
 # 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
 exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
@@ -8,6 +9,14 @@ from mathutils import Euler, Vector, Matrix
 
 from .public_cache import PublicCache
 from ..utils.debug_util import debug_print
+
+# Legacy enum identifiers → current Blender names (4.3+ / 5.x Grease Pencil).
+_ENUM_RENAMES = {
+    'SCULPT_GPENCIL': 'SCULPT_GREASE_PENCIL',
+    'PAINT_GPENCIL': 'PAINT_GREASE_PENCIL',
+    'WEIGHT_GPENCIL': 'WEIGHT_GREASE_PENCIL',
+    'VERTEX_GPENCIL': 'VERTEX_GREASE_PENCIL',
+}
 
 
 def __set_collection_data__(prop, data):
@@ -20,6 +29,19 @@ def __set_collection_data__(prop, data):
     for i in data:
         pro = prop.add()
         set_property(pro, data[i])
+
+
+def __coerce_enum_value__(pro, value):
+    """Return a valid enum identifier, or None to skip."""
+    if not pro.enum_items:
+        return value
+    ids = {i.identifier for i in pro.enum_items}
+    if value in ids:
+        return value
+    alias = _ENUM_RENAMES.get(value)
+    if alias in ids:
+        return alias
+    return None
 
 
 def __set_prop__(prop, path, value):
@@ -36,15 +58,16 @@ def __set_prop__(prop, path, value):
             elif typ == 'BOOL' and path == 'radio' and PublicCache._suppress_radio_update:
                 return
             elif typ == 'ENUM' and pro.is_enum_flag:
-                # Multi-select enum (ENUM FLAG)
                 setattr(prop, path, set(value))
+            elif typ == 'ENUM':
+                value = __coerce_enum_value__(pro, value)
+                if value is None:
+                    return
+                setattr(prop, path, value)
             else:
                 setattr(prop, path, value)
         except Exception as e:
-            debug_print('ERROR', typ, pro, value, e, key='operator')
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            debug_print('ERROR', typ, path, value, e, key='operator')
 
 
 def set_property(prop, data: dict):
@@ -203,7 +226,7 @@ def get_kmi_property(kmi):
         get_property(
             kmi,
             exclude=(
-                'name', 'id', 'show_expanded', 'properties', 'idname', 'map_type', 'active', 'propvalue',
+                'name', 'id', 'show_expanded', 'properties', 'idname', 'active', 'propvalue',
                 'shift_ui', 'ctrl_ui', 'alt_ui', 'oskey_ui', 'is_user_modified', 'is_user_defined',
                 'hyper', 'hyper_ui',
             )

@@ -77,8 +77,8 @@ CREATE_ELEMENT_BRUSH_PATH = {
     "SCULPT_CURVES": 'bpy.context.tool_settings.curves_sculpt',
     "PAINT_GREASE_PENCIL": 'bpy.context.tool_settings.gpencil_paint',
     "SCULPT_GREASE_PENCIL": 'bpy.context.tool_settings.gpencil_sculpt_paint',
-
     "WEIGHT_GREASE_PENCIL": 'bpy.context.tool_settings.gpencil_weight_paint',
+    "VERTEX_GREASE_PENCIL": 'bpy.context.tool_settings.gpencil_vertex_paint',
 }
 
 
