@@ -151,7 +151,7 @@ class ElementCURE:
         bl_idname = 'wm.gesture_element_remove'
         bl_description = (
             'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture. '
-            'You will be asked to confirm. Use Ctrl+Z to undo.'
+            'You will be asked to confirm. This cannot be undone.'
         )
         bl_options = {'REGISTER'}
 
@@ -166,7 +166,7 @@ class ElementCURE:
                     event,
                     context,
                     title="Remove all elements?",
-                    message="This removes every element in the active gesture. You can undo with Ctrl+Z.",
+                    message="This removes every element in the active gesture. This cannot be undone.",
                 )
             self.bulk_remove = False
             if self.pref.draw_property.element_remove_tips:

@@ -16,6 +16,26 @@ module_list = (
 
 _load_post_handler = None
 _deferred_init_done = False
+_icon_verify_timer = None
+_icon_retry_timer = None
+
+
+def _unregister_timer(timer) -> None:
+    if timer is None:
+        return
+    try:
+        if bpy.app.timers.is_registered(timer):
+            bpy.app.timers.unregister(timer)
+    except (ValueError, RuntimeError, AttributeError):
+        ...
+
+
+def _cancel_icon_timers() -> None:
+    global _icon_verify_timer, _icon_retry_timer
+    _unregister_timer(_icon_verify_timer)
+    _unregister_timer(_icon_retry_timer)
+    _icon_verify_timer = None
+    _icon_retry_timer = None
 
 
 def _register_load_post_handler():
@@ -50,6 +70,7 @@ def _sync_addon_state():
 
 
 def _on_load_post(_dummy):
+    global _icon_retry_timer
     try:
         from .utils.gesture_persistence import suppress_gesture_disk_save
         with suppress_gesture_disk_save():
@@ -57,8 +78,12 @@ def _on_load_post(_dummy):
         from .utils.icons import ensure_icons_loaded
         if ensure_icons_loaded():
             def _retry_icons():
+                global _icon_retry_timer
+                _icon_retry_timer = None
                 ensure_icons_loaded()
                 return None
+            _unregister_timer(_icon_retry_timer)
+            _icon_retry_timer = _retry_icons
             bpy.app.timers.register(_retry_icons, first_interval=1.0)
     except (KeyError, AttributeError, RuntimeError):
         ...
@@ -66,12 +91,17 @@ def _on_load_post(_dummy):
 
 
 def _schedule_icon_verify():
+    global _icon_verify_timer
     from .utils.icons import ensure_icons_loaded
 
     def _verify():
+        global _icon_verify_timer
+        _icon_verify_timer = None
         ensure_icons_loaded()
         return None
 
+    _unregister_timer(_icon_verify_timer)
+    _icon_verify_timer = _verify
     bpy.app.timers.register(_verify, first_interval=0.5)
 
 
@@ -137,8 +167,15 @@ def unregister():
     )
     from .ops.export_import import Export
     from .ops.quick_add import create_panel_menu
+    from .element.element_poll import cancel_poll_cache_timer
+    from .gesture.gesture_handle import GestureHandle
 
     _unregister_load_post_handler()
+    _cancel_icon_timers()
+    cancel_poll_cache_timer()
+    cancel_scheduled_gesture_save()
+    GestureHandle.cancel_active_gesture_timeout_timer()
+
     global _deferred_init_done
     _deferred_init_done = False
 
@@ -149,7 +186,6 @@ def unregister():
     clear_all_active_element_caches(pref)
     with suppress_gesture_disk_save():
         public_cache.PublicCacheFunc.cache_clear()
-    cancel_scheduled_gesture_save()
     save_gestures_to_disk()
     pref.preferences_backups()
     Export.backups(is_blender_close())

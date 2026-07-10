@@ -62,7 +62,7 @@ class GestureCURE:
         bl_label = 'Remove gesture'
         bl_description = (
             'Hold Ctrl+Alt+Shift while clicking to remove all gestures. '
-            'You will be asked to confirm. Use Ctrl+Z to undo.'
+            'You will be asked to confirm. This cannot be undone.'
         )
         bl_options = {'REGISTER'}
 
@@ -77,7 +77,7 @@ class GestureCURE:
                     event,
                     context,
                     title="Remove all gestures?",
-                    message="This removes every gesture. You can undo with Ctrl+Z.",
+                    message="This removes every gesture. This cannot be undone.",
                 )
             self.bulk_remove = False
             if self.pref.draw_property.gesture_remove_tips:

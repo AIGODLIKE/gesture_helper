@@ -99,7 +99,7 @@ class ElementModalOperatorEventCRUE:
         bl_idname = 'wm.gesture_element_modal_remove'
         bl_description = (
             'Hold Ctrl+Alt+Shift while clicking to remove all modal events. '
-            'You will be asked to confirm. Use Ctrl+Z to undo.'
+            'You will be asked to confirm. This cannot be undone.'
         )
         bl_options = {'REGISTER'}
 
@@ -120,7 +120,7 @@ class ElementModalOperatorEventCRUE:
                     event,
                     context,
                     title="Remove all modal events?",
-                    message="This removes every modal event on the active element. You can undo with Ctrl+Z.",
+                    message="This removes every modal event on the active element. This cannot be undone.",
                 )
             self.bulk_remove = False
             if self.pref.draw_property.element_remove_tips:
