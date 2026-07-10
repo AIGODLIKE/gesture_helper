@@ -26,6 +26,14 @@ class BackupsProperty(bpy.types.PropertyGroup):
         description='Export gesture data when the add-on is disabled without closing Blender',
         default=True,
     )
+    auto_restore_backups: BoolProperty(
+        name='Auto restore backups',
+        description=(
+            'On enable, restore preferences and empty gesture lists from the backup folder. '
+            'Off by default. Manual import is unaffected'
+        ),
+        default=True,
+    )
     enabled_backups_to_specified_path: BoolProperty(
         name='Use custom backup folder',
         description='Save gesture backups to a custom folder instead of the default',
@@ -43,11 +51,14 @@ class BackupsProperty(bpy.types.PropertyGroup):
         default="BLENDER_CLOSE_EVERY",
         items=[
             ("BLENDER_CLOSE_EVERY", "Every close",
-             "Create a new backup file each time Blender closes (filename includes date and time)"),
+             "Create a new backup file each time Blender closes (filename includes date and time)\n"
+             "Gesture Blender Close Backups YYYY-MM-DD-HH-MM-SS.json"),
             ("BLENDER_CLOSE_DAY", "One per day",
-             "Keep at most one backup file per day when Blender closes"),
+             "Keep at most one backup file per day when Blender closes\n"
+             "Gesture Blender Close Backups YYYY-MM-DD.json"),
             ("BLENDER_CLOSE_ONE", "Single file",
-             "Overwrite one backup file on each Blender close"),
+             "Overwrite one backup file on each Blender close\n"
+             "Gesture Blender Close Backups.json"),
         ],
     )
 
@@ -58,35 +69,41 @@ class BackupsProperty(bpy.types.PropertyGroup):
 
         pref = get_pref()
         backups = pref.backups_property
-        column = layout.column(heading=translate("Auto Backups"))
+        column = layout.column(heading=translate("Auto Backups"), align=True)
 
         box = column.box()
         default_folder = get_default_backups_folder()
         active_folder = resolve_backups_folder()
 
-        box.label(text=translate("Default backup folder:"))
-        box.label(text=default_folder, translate=False)
-
-        box.operator("wm.url_open", text=translate("Open Backup Folder")).url = active_folder
-
-        box.prop(backups, 'backup_on_blender_close')
-        if backups.backup_on_blender_close:
-            box.prop(backups, 'backups_file_mode')
+        row = box.row(align=True)
+        row.prop(backups, 'backup_on_blender_close')
+        sub = row.row(align=True)
+        sub.enabled = backups.backup_on_blender_close
+        sub.prop(backups, 'backups_file_mode', text="")
         box.prop(backups, 'backup_on_disable_addon')
+        box.prop(backups, 'auto_restore_backups')
 
         box.separator()
         box.label(text=translate(
             "Preferences are always backed up on disable or exit"
         ))
 
-        box.prop(backups, 'enabled_backups_to_specified_path')
+
+        folder_box = box.box()
+        folder_box.use_property_split = False
+        folder_box.label(text=translate("Default backup folder:"))
+        folder_box_row = folder_box.row(align=True)
+        folder_box_row.label(text=default_folder, translate=False)
+        folder_box_row.operator("wm.url_open", text="", icon='FILE_FOLDER').url = active_folder
+
+        folder_box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
-            box.prop(backups, 'backups_path')
+            folder_box.prop(backups, 'backups_path')
 
         if active_folder != default_folder:
-            box.separator()
-            box.label(text=translate("Active backup folder:"))
-            box.label(text=active_folder, translate=False)
+            folder_box.separator()
+            folder_box.label(text=translate("Active backup folder:"))
+            folder_box.label(text=active_folder, translate=False)
 
 
 class BackupsPreferences:
@@ -103,6 +120,10 @@ class BackupsPreferences:
         from ..utils.public import get_pref
 
         auto_restore = file_path is None
+        if auto_restore and not get_pref().backups_property.auto_restore_backups:
+            log_backup("preferences restore skipped: auto_restore_backups is disabled")
+            return
+
         if auto_restore:
             file_path = resolve_preferences_backup_path()
         else:

@@ -155,13 +155,12 @@ def load_preferences_backup_file(file_path: str) -> dict:
 
 
 def backup_date_string() -> str:
-    now = datetime.now()
-    return f"{now.year}-{now.month:02d}-{now.day:02d}"
+    return datetime.now().strftime(r"%Y-%m-%d")
 
 
 def backup_datetime_string() -> str:
-    """Date and time (H-M-S) safe for filenames on Windows."""
-    return datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    """Year-month-day-hour-minute-second, safe for filenames on Windows."""
+    return datetime.now().strftime(r"%Y-%m-%d-%H-%M-%S")
 
 
 def close_backup_filename(date: str | None = None) -> str:
