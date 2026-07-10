@@ -136,11 +136,15 @@ class PublicProperty(PublicCacheFunc):
 
     @property
     def active_gesture(self):
-        """Return active gesture."""
+        """Return active gesture from the session WM store."""
+        from .gesture_store import get_gesture_store
         try:
-            index = getattr(self.pref, "index_gesture", None)
+            store = get_gesture_store()
+            if store is None:
+                return None
+            index = getattr(store, "index_gesture", None)
             if index is not None:
-                return self.pref.gesture[index]
+                return store.gesture[index]
         except IndexError:
             ...
 

@@ -26,15 +26,14 @@ class GesturePreferences(PublicProperty,
                          PreferencesDraw):
     bl_idname = base_package
 
-    # Large gesture tree: persist via CONFIG JSON, not userpref.blend.
+    # Legacy only: kept one release so old userpref DNA can migrate to WM/JSON.
+    # Runtime UI and persistence use WindowManager.gesture_helper (GestureStore).
     gesture: CollectionProperty(type=gesture.Gesture, options={'SKIP_SAVE'})
     index_gesture: IntProperty(
         name='Gesture index',
-        description='Index of the active gesture in the list',
+        description='Legacy index; runtime uses WindowManager.gesture_helper',
         options={'SKIP_SAVE'},
-        update=lambda self, context: (
-            self.active_gesture.to_temp_kmi() if self.active_gesture else None
-        ),
+        default=0,
     )
 
     draw_property: PointerProperty(type=DrawProperty)
@@ -105,7 +104,11 @@ class GesturePreferences(PublicProperty,
             return res
 
         data = {}
-        for index, g in enumerate(self.pref.gesture):
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None:
+            return data
+        for index, g in enumerate(gestures):
             if g.selected or get_all:
                 origin = get_property(g, EXPORT_PROPERTY_EXCLUDE)
                 item = filter_data(origin)

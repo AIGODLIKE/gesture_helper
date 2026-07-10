@@ -19,7 +19,10 @@ class GestureProperty(PublicProperty):
         from ..utils.selection import strip_radio_from_copy_data
 
         copy_data = strip_radio_from_copy_data(get_property(self))
-        __set_prop__(self.pref, 'gesture', {'0': copy_data})
+        from ..utils.gesture_store import get_gesture_store
+        store = get_gesture_store()
+        if store is not None:
+            __set_prop__(store, 'gesture', {'0': copy_data})
 
     def update_index(self, _) -> None:
         """Update element index selection."""
@@ -72,7 +75,11 @@ class GestureProperty(PublicProperty):
         Gesture currently executing in the operator
         :return:
         """
-        return self.pref.gesture.get(self.gesture)
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None:
+            return None
+        return gestures.get(self.gesture)
 
     @property
     def angle(self) -> float:  # Angle in degrees

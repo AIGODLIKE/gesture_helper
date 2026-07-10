@@ -49,9 +49,14 @@ class GestureCURE:
             return self.execute(context)
 
         def execute(self, _):
-            pref = self.pref
-            add = pref.gesture.add()
+            from ..utils.gesture_store import get_gesture_store, get_gestures
+            gestures = get_gestures()
+            store = get_gesture_store()
+            if gestures is None or store is None:
+                return {'CANCELLED'}
+            add = gestures.add()
             add.name = 'Gesture'
+            store.index_gesture = len(gestures) - 1
             GestureKeymap.key_restart()
             self.structure_changed(add)
             self.tag_redraw()
@@ -91,8 +96,14 @@ class GestureCURE:
             return self.execute(context)
 
         def execute(self, _):
+            from ..utils.gesture_store import get_gesture_store, get_gestures
+            gestures = get_gestures()
+            store = get_gesture_store()
+            if gestures is None or store is None:
+                return {'CANCELLED'}
             if self.bulk_remove:
-                self.pref.gesture.clear()
+                gestures.clear()
+                store.index_gesture = 0
                 self.cache_clear()
                 GestureKeymap.key_restart()
                 self.bulk_remove = False
@@ -128,10 +139,16 @@ class GestureCURE:
         bl_options = {'REGISTER'}
 
         def execute(self, _):
+            from ..utils.gesture_store import get_gesture_store, get_gestures
             source = self.active_gesture
             source_index = source.index_element if source and len(source.element) else 0
             source.copy()
-            new_gesture = self.pref.gesture[-1]
+            gestures = get_gestures()
+            store = get_gesture_store()
+            if gestures is None or store is None or not len(gestures):
+                return {'CANCELLED'}
+            new_gesture = gestures[-1]
+            store.index_gesture = len(gestures) - 1
             self.structure_changed(new_gesture)
             new_gesture.__fix_duplicate_name__()
             if len(new_gesture.element):

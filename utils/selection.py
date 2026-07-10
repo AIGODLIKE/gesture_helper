@@ -33,10 +33,8 @@ def _element_is_live(element) -> bool:
 
 def clear_all_active_element_caches(pref=None):
     """Drop cached active-element pointers on every gesture."""
-    if pref is None:
-        from .public import get_pref
-        pref = get_pref()
-    gestures = getattr(pref, 'gesture', None)
+    from .gesture_store import get_gestures
+    gestures = get_gestures()
     if gestures is None:
         return
     for gesture in gestures:

@@ -1,4 +1,4 @@
-"""Persist gesture CollectionProperty to CONFIG JSON (SKIP_SAVE in userpref)."""
+"""Persist gesture CollectionProperty to CONFIG JSON (WM session store)."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from .backups import (
     log_backup,
     resolve_gestures_save_path,
 )
+from .gesture_store import get_gesture_store
 from .public import get_pref
 from .selection import suppress_radio_updates
 
@@ -58,20 +59,22 @@ def _read_gesture_file(path: str) -> dict:
     return data
 
 
-def _apply_gesture_data(pref, gesture_data: dict) -> None:
+def _apply_gesture_data(store, gesture_data: dict) -> None:
     from ..ops.export_import import sanitize_gesture_import_data
     from ..gesture import gesture_keymap
     from .property import __set_prop__
 
     restore = sanitize_gesture_import_data(gesture_data)
     with suppress_radio_updates():
-        pref.gesture.clear()
+        store.gesture.clear()
         if restore:
-            __set_prop__(pref, 'gesture', restore)
-        if len(pref.gesture):
-            pref.index_gesture = min(max(pref.index_gesture, 0), len(pref.gesture) - 1)
+            __set_prop__(store, 'gesture', restore)
+        if len(store.gesture):
+            store.index_gesture = min(max(store.index_gesture, 0), len(store.gesture) - 1)
         else:
-            pref.index_gesture = 0
+            store.index_gesture = 0
+    from ..gesture.gesture_relationship import get_gesture_index
+    get_gesture_index.cache_clear()
     gesture_keymap.GestureKeymap.key_restart()
 
 
@@ -130,34 +133,105 @@ def schedule_save_gestures_to_disk(*, description: str = 'structure_changed') ->
         save_gestures_to_disk(description=description)
 
 
-def _try_load_path(pref, path: str) -> bool:
+def _try_load_path(store, path: str) -> bool:
     log_backup(f"gestures load: <- {path}")
     data = _read_gesture_file(path)
-    _apply_gesture_data(pref, data['gesture'])
-    log_backup(f"gestures load: ok ({len(pref.gesture)} gesture(s))")
+    _apply_gesture_data(store, data['gesture'])
+    # Drop migration-only DNA so it cannot be confused with the WM store.
+    clear_legacy_preferences_gestures()
+    log_backup(f"gestures load: ok ({len(store.gesture)} gesture(s))")
+    return True
+
+
+def _migrate_legacy_preferences_gestures(store) -> bool:
+    """Copy leftover AddonPreferences.gesture DNA into the WM store + JSON."""
+    pref = get_pref()
+    legacy = getattr(pref, "gesture", None)
+    if legacy is None or len(legacy) == 0:
+        return False
+
+    log_backup(
+        f"gestures migrate: {len(legacy)} gesture(s) from preferences -> WM/disk"
+    )
+    from ..ops.export_import import sanitize_gesture_import_data
+    from .property import get_property, __set_prop__
+
+    raw = {str(i): get_property(g) for i, g in enumerate(legacy)}
+    restore = sanitize_gesture_import_data(raw)
+    with suppress_radio_updates():
+        store.gesture.clear()
+        if restore:
+            __set_prop__(store, 'gesture', restore)
+        store.index_gesture = min(getattr(pref, "index_gesture", 0), max(len(store.gesture) - 1, 0))
+    from ..gesture.gesture_relationship import get_gesture_index
+    get_gesture_index.cache_clear()
+    saved = save_gestures_to_disk(description='migrated_from_userpref')
+    if saved is not None:
+        clear_legacy_preferences_gestures()
+    return saved is not None
+
+
+def clear_legacy_preferences_gestures() -> None:
+    """Clear migration-only gesture DNA still hanging on AddonPreferences."""
+    pref = get_pref()
+    legacy = getattr(pref, "gesture", None)
+    if legacy is None:
+        return
+    with suppress_radio_updates():
+        legacy.clear()
+        if hasattr(pref, "index_gesture"):
+            pref.index_gesture = 0
+
+
+def purge_legacy_gestures_from_userpref() -> bool:
+    """One-time rewrite of userpref.blend after clearing legacy gesture DNA."""
+    pref = get_pref()
+    other = getattr(pref, "other_property", None)
+    if other is not None and getattr(other, "userpref_gestures_purged", False):
+        # Still drop any leftover DNA loaded into memory this session.
+        clear_legacy_preferences_gestures()
+        return False
+
+    clear_legacy_preferences_gestures()
+    # Persist the flag in the same save_userpref write.
+    if other is not None:
+        other.userpref_gestures_purged = True
+    try:
+        bpy.ops.wm.save_userpref()
+    except RuntimeError as e:
+        log_backup(f"userpref purge failed: {e}")
+        if other is not None:
+            other.userpref_gestures_purged = False
+        return False
+
+    log_backup("userpref purge: cleared legacy gesture DNA and saved preferences")
     return True
 
 
 def load_gestures_from_disk() -> bool:
     """
-    Always load gestures into preferences.
+    Always load gestures into the WM session store.
 
     Order:
     1. Try each fixed/rotating candidate; on parse failure continue to the next
     2. If fixed files failed, also try rotating backups (corrupt CONFIG recovery)
     3. Empty-but-valid fixed file counts as success (no rotating fallback)
-    4. If no file but pref.gesture still has legacy data → migrate to disk
+    4. If no file but AddonPreferences still has legacy data → migrate to store/disk
     5. Otherwise leave empty
 
     Returns True when gestures were loaded or migrated from memory.
     """
-    pref = get_pref()
+    store = get_gesture_store()
+    if store is None:
+        log_backup("gestures load: gesture store unavailable")
+        return False
+
     failed: list[str] = []
     candidates = iter_gestures_load_candidates()
 
     for path in candidates:
         try:
-            return _try_load_path(pref, path)
+            return _try_load_path(store, path)
         except Exception as e:
             failed.append(path)
             log_backup(f"gestures load failed ({path}): {e}")
@@ -166,19 +240,14 @@ def load_gestures_from_disk() -> bool:
 
     for path in iter_gestures_load_fallback_after_failure(failed):
         try:
-            return _try_load_path(pref, path)
+            return _try_load_path(store, path)
         except Exception as e:
             log_backup(f"gestures load failed ({path}): {e}")
             from .debug_util import debug_traceback
             debug_traceback(key='export_import')
 
-    if len(pref.gesture) > 0:
-        # Legacy userpref DNA still in memory after upgrade to SKIP_SAVE.
-        log_backup(
-            f"gestures migrate: {len(pref.gesture)} gesture(s) from preferences -> disk"
-        )
-        saved = save_gestures_to_disk(description='migrated_from_userpref')
-        return saved is not None
+    if _migrate_legacy_preferences_gestures(store):
+        return True
 
     log_backup("gestures load: no file and no in-memory gestures")
     return False
