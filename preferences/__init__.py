@@ -28,7 +28,11 @@ class GesturePreferences(PublicProperty,
 
     # Item export filter config
     gesture: CollectionProperty(type=gesture.Gesture)
-    index_gesture: IntProperty(name='Gesture index', update=lambda self, context: self.active_gesture.to_temp_kmi())
+    index_gesture: IntProperty(
+        name='Gesture index',
+        description='Index of the active gesture in the list',
+        update=lambda self, context: self.active_gesture.to_temp_kmi(),
+    )
 
     draw_property: PointerProperty(type=DrawProperty)
     debug_property: PointerProperty(type=DebugProperty)
@@ -40,10 +44,15 @@ class GesturePreferences(PublicProperty,
         name='Enable gesture',
         description="""Enable gesture system""",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
-    show_page: EnumProperty(name='Show panel',
-                            items=[('GESTURE', 'Gesture', ''),
-                                   ('PROPERTY', 'Property', ''),
-                                   ('DEBUG', 'Debug', '')])
+    show_page: EnumProperty(
+        name='Show panel',
+        description='Which preferences page to display',
+        items=[
+            ('GESTURE', 'Gesture', 'Gesture list and element editor'),
+            ('PROPERTY', 'Property', 'Draw, backup, and general settings'),
+            ('DEBUG', 'Debug', 'Debug logging switches'),
+        ],
+    )
 
 
     def get_gesture_data(self, get_all: bool = False) -> {}:
