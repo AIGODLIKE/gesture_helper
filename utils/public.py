@@ -245,7 +245,9 @@ class PublicOperator(bpy.types.Operator):
 
     @property
     def is_exit(self):
-        return self.is_release or self.is_right_mouse
+        # Exit only on RELEASE. Treating any RIGHTMOUSE (including PRESS) as
+        # exit would abort the gesture before the matching RELEASE arrives.
+        return self.is_release
 
     @staticmethod
     def tag_redraw():

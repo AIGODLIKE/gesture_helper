@@ -90,39 +90,30 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
             )
 
         if not ops:
-            is_rmb = event.type in {'RIGHTMOUSE', 'APP'}
-            # Timeout can mark the gesture as "drawn" without a real swipe.
-            # Still allow pass-through for near-clicks (Shift+RMB cursor, etc.).
-            allow_pass = (
-                not self.is_draw_gesture
-                or (is_rmb and not self.is_beyond_threshold)
-            )
-            if allow_pass and (is_rmb or not self.is_beyond_threshold_confirm):
-                if self.is_debug:
-                    area = getattr(self, 'area', None) or context.area
-                    view_type = getattr(context.space_data, "view_type", None)
-                    view = getattr(context.space_data, "view", None)
-                    mode = getattr(context.space_data, "mode", None)
+            # Pass gate (drawn/timeout/drag → no pass) lives in
+            # GesturePassThroughKeymap.can_pass_through_keymap — do not add
+            # RMB exceptions here.
+            if self.is_debug:
+                area = getattr(self, 'area', None) or context.area
+                view_type = getattr(context.space_data, "view_type", None)
+                view = getattr(context.space_data, "view", None)
+                mode = getattr(context.space_data, "mode", None)
 
-                    region_type = bpy.context.region.type
-                    debug_print(
-                        f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}',
-                        key='modal',
-                    )
-                    debug_print(
-                        f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}",
-                        key='modal',
-                    )
-                    debug_print(
-                        f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}",
-                        key='modal',
-                    )
-                pass_result = self.try_pass_through_keymap(context, event)
-                if pass_result == 'handled':
-                    return {'FINISHED', 'INTERFACE'}
-                if pass_result == 'pass_through':
-                    return {'FINISHED', 'PASS_THROUGH'}
-                return {'FINISHED'}
+                region_type = bpy.context.region.type
+                debug_print(
+                    f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}',
+                    key='modal',
+                )
+                debug_print(
+                    f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}",
+                    key='modal',
+                )
+                debug_print(
+                    f"SPACE_DATA\tview_type:{view_type}\tview:{view}\tmode:{mode}",
+                    key='modal',
+                )
+            if self.try_pass_through_keymap(context, event) == 'handled':
+                return {'FINISHED', 'INTERFACE'}
         return {'FINISHED'}
 
     def cancel(self, context):
