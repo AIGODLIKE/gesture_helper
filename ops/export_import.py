@@ -123,12 +123,18 @@ class PublicFileOperator(PublicOperator, PublicProperty):
     run_execute: BoolProperty(default=False, options={'HIDDEN', 'SKIP_SAVE'}, )
 
     def __get_all__(self):
-        pref = get_pref()
-        return all((i.selected for i in pref.gesture))
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None or not len(gestures):
+            return False
+        return all((i.selected for i in gestures))
 
     def __set_all__(self, value):
-        pref = get_pref()
-        for i in pref.gesture:
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None:
+            return
+        for i in gestures:
             i.selected = value
 
     selected_all: BoolProperty(name='Select all', get=__get_all__, set=__set_all__)
@@ -207,7 +213,13 @@ class Import(PublicFileOperator):
             if not isinstance(restore, dict):
                 raise ValueError("Invalid gesture file: 'gesture' must be an object")
             with suppress_radio_updates():
-                __set_prop__(self.pref, 'gesture', restore)
+                from ..utils.gesture_store import get_gesture_store
+                store = get_gesture_store()
+                if store is None:
+                    raise RuntimeError("Gesture store unavailable")
+                __set_prop__(store, 'gesture', restore)
+            from ..gesture.gesture_relationship import get_gesture_index
+            get_gesture_index.cache_clear()
             gesture_keymap.GestureKeymap.key_restart()
 
             auth = data.get('author', '')
@@ -289,12 +301,17 @@ class Export(PublicFileOperator):
         row.prop(self, 'selected_all', emboss=True)
 
         column = layout.column()
+        from ..utils.gesture_store import get_gesture_store
+        store = get_gesture_store()
+        if store is None:
+            column.label(text="Gesture store unavailable")
+            return
         column.template_list(
             ImportPresetUIList.bl_idname,
             ImportPresetUIList.bl_idname,
-            self.pref,
+            store,
             'gesture',
-            self.pref,
+            store,
             'index_gesture',
         )
 
@@ -306,7 +323,9 @@ class Export(PublicFileOperator):
 
     def execute(self, _):
         from bpy.app.translations import pgettext
-        if len(self.pref.gesture) == 0:
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None or len(gestures) == 0:
             return {'CANCELLED'}
 
         gesture_data = self.export_data['gesture']
@@ -364,7 +383,9 @@ class Export(PublicFileOperator):
         elif not prop.backup_on_disable_addon:
             log_backup("skipped: backup_on_disable_addon is disabled")
             return None
-        if not len(pref.gesture):
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None or not len(gestures):
             log_backup("skipped: no gestures")
             return None
 
@@ -435,13 +456,11 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
 
 
 class SaveGesturesAndUserPref(bpy.types.Operator):
-    """Save gesture JSON (CONFIG) then Blender user preferences."""
+    """Save gesture data to the CONFIG JSON file."""
 
     bl_idname = "wm.gesture_save_userpref"
-    bl_label = "Save Preferences"
-    bl_description = (
-        "Save gesture data to the config JSON file, then save Blender user preferences"
-    )
+    bl_label = "Save Gestures"
+    bl_description = "Save gesture data to the config JSON file"
     bl_options = {'REGISTER'}
 
     @classmethod
@@ -453,16 +472,11 @@ class SaveGesturesAndUserPref(bpy.types.Operator):
         from bpy.app.translations import pgettext
 
         path = save_gestures_to_disk(description='manual_save')
-        try:
-            bpy.ops.wm.save_userpref()
-        except RuntimeError as e:
-            self.report({'ERROR'}, str(e))
-            return {'CANCELLED'}
         if path:
-            self.report({'INFO'}, pgettext("Saved gestures and preferences"))
-        else:
-            self.report({'WARNING'}, pgettext("Preferences saved; gesture file write failed"))
-        return {'FINISHED'}
+            self.report({'INFO'}, pgettext("Saved gestures"))
+            return {'FINISHED'}
+        self.report({'WARNING'}, pgettext("Gesture file write failed"))
+        return {'CANCELLED'}
 
 
 class ImportPreferences(bpy.types.Operator, ImportHelper):

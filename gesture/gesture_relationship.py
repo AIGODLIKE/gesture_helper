@@ -10,7 +10,11 @@ from ..utils.public_cache import cache_update_lock
 
 @cache
 def get_gesture_index(gesture) -> int:
-    return gesture.pref.gesture.values().index(gesture)
+    from ..utils.gesture_store import get_gestures
+    gestures = get_gestures()
+    if gestures is None:
+        return 0
+    return gestures.values().index(gesture)
 
 
 class GestureRelationship(PublicUniqueNamePropertyGroup,
@@ -23,7 +27,9 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
 
     @property
     def collection_iteration(self) -> list:
-        return get_pref().gesture.values()
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        return gestures.values() if gestures is not None else []
 
     @property
     def names_iteration(self):
@@ -33,13 +39,20 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
         return get_gesture_index(self)
 
     def _set_index_(self, value: int) -> None:
-        get_pref().index_gesture = value
+        from ..utils.gesture_store import get_gesture_store
+        store = get_gesture_store()
+        if store is not None:
+            store.index_gesture = value
 
     index = property(fget=_get_index_, fset=_set_index_, doc='Set collection index from item index and move items')
 
     @property
     def collection(self):
-        return get_pref().gesture
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None:
+            raise RuntimeError("Gesture store unavailable")
+        return gestures
 
     @property
     def is_enable(self) -> bool:

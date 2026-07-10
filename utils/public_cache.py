@@ -98,16 +98,18 @@ class PublicCache:
 
     @staticmethod
     def init_cache():
-        from .public import get_pref
-        pref = get_pref()
+        from .gesture_store import get_gestures
 
         cls = PublicCache
         cls.cache_clear_data()
 
         debug_print("init_cache", key='cache')
 
-        pref.gesture.update()
-        for gesture in pref.gesture:
+        gestures = get_gestures()
+        if gestures is None:
+            return
+        gestures.update()
+        for gesture in gestures:
             debug_print("gesture", gesture, key='cache')
             cls.rebuild_gesture(gesture)
         debug_print("", key='cache')
@@ -240,11 +242,12 @@ class PublicCacheFunc(PublicCache):
     def _cache_clear_impl():
         cls = PublicCacheFunc
         from .selection import clear_active_element_cache
-        from .public import get_pref
+        from .gesture_store import get_gestures
 
-        pref = get_pref()
-        for gesture in pref.gesture:
-            clear_active_element_cache(gesture)
+        gestures = get_gestures()
+        if gestures is not None:
+            for gesture in gestures:
+                clear_active_element_cache(gesture)
 
         PublicCache.__structure_generation__ += 1
         PublicCache.__derived_generation__ += 1

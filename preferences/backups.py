@@ -128,6 +128,9 @@ class BackupsPreferences:
             export_path = get_preferences_backup_path()
         log_backup(f"preferences start -> {export_path}")
         data = get_property(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
+        other = data.get("other_property")
+        if isinstance(other, dict):
+            other.pop("userpref_gestures_purged", None)
         with open(export_path, "w", encoding="utf-8") as file:
             file.write(json.dumps(data, ensure_ascii=True, indent=2))
         log_backup(f"preferences ok -> {export_path}")
@@ -171,6 +174,9 @@ class BackupsPreferences:
         # Gestures live in CONFIG JSON; never merge from preference backups.
         data.pop("gesture", None)
         data.pop("index_gesture", None)
+        other = data.get("other_property")
+        if isinstance(other, dict):
+            other.pop("userpref_gestures_purged", None)
 
         log_backup(f"preferences restore <- {file_path}")
         from ..utils.selection import suppress_radio_updates

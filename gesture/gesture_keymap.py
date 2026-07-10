@@ -129,8 +129,11 @@ class GestureKeymap(KeymapProperty):
     @classmethod
     def key_all_load(cls) -> None:
         """Load all keymaps."""
-        from ..utils.public import get_pref
-        for g in get_pref().gesture:
+        from ..utils.gesture_store import get_gestures
+        gestures = get_gestures()
+        if gestures is None:
+            return
+        for g in gestures:
             g.key_load()
 
     @classmethod

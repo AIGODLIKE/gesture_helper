@@ -67,12 +67,16 @@ class BpuPropLayout(BpuMeasure):
 
     def __modify_property_event__(self):
         if self.__property_type__ == "BOOLEAN":
-            from .... import __package__ as base_package
             from ....element import Element
             if type(self.__property_data__) is Element and self.__property_identifier__ == "enabled":
                 import bpy
-                prop = f"preferences.addons['{base_package}'].preferences.active_gesture{self.___element_value___(self.__property_data__)}.enabled"
-                bpy.ops.wm.context_set_boolean(data_path=prop, value=not self.__property_value__)
+                gesture = getattr(self.__property_data__, "parent_gesture", None)
+                if gesture is not None:
+                    prop = (
+                        f"window_manager.gesture_helper.gesture['{gesture.name}']"
+                        f"{self.___element_value___(self.__property_data__)}.enabled"
+                    )
+                    bpy.ops.wm.context_set_boolean(data_path=prop, value=not self.__property_value__)
             else:
                 if self.__property_value__:
                     ...

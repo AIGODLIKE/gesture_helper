@@ -54,17 +54,18 @@ class TempDrawProperty(bpy.types.PropertyGroup):
 
 
 def __get_gesture_index__(self):
-    from .utils.public import get_pref
-    pref = get_pref()
-    if len(pref.gesture) > 0:
-        return getattr(pref, "index_gesture", -10)
+    from .utils.gesture_store import get_gesture_store
+    store = get_gesture_store()
+    if store is not None and len(store.gesture) > 0:
+        return store.index_gesture
     return -1
 
 
 def __set_gesture_index__(self, value):
-    from .utils.public import get_pref
-    pref = get_pref()
-    pref.index_gesture = value
+    from .utils.gesture_store import get_gesture_store
+    store = get_gesture_store()
+    if store is not None:
+        store.index_gesture = value
 
 
 def register():

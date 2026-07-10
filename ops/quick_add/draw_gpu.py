@@ -17,7 +17,9 @@ class DrawGpu:
                 bpu.translate = False
                 bpu.offset_position = ops.offset_position - ops.offset
                 bpu.mouse_position = ops.mouse_position
-                gesture_list = ops.pref.gesture.values()
+                from ...utils.gesture_store import get_gestures
+                gestures = get_gestures()
+                gesture_list = gestures.values() if gestures is not None else []
                 if gesture_list:
                     for g in reversed(gesture_list):
                         name = f"{g.name}({g.__key_str__})"

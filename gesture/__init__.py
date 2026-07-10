@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import CollectionProperty, BoolProperty, StringProperty
+from bpy.props import CollectionProperty, BoolProperty, StringProperty, IntProperty, PointerProperty
 
 from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 
@@ -12,6 +12,7 @@ from ..element.element_modal_operator import ElementModalOperatorEventItem
 from ..element.element_modal_operator_cure import ElementModalOperatorEventCRUE
 from ..ops.gesture_cure import GestureCURE
 from ..utils.public import PublicProperty
+from ..utils.gesture_store import WM_STORE_ATTR
 
 
 class Gesture(
@@ -55,6 +56,26 @@ class Gesture(
             layout.label(text=self.description_translate)
 
 
+def _on_store_index_gesture_update(self, _context):
+    try:
+        if len(self.gesture):
+            self.gesture[self.index_gesture].to_temp_kmi()
+    except (IndexError, AttributeError, TypeError, RuntimeError):
+        ...
+
+
+class GestureStore(bpy.types.PropertyGroup):
+    """In-memory gesture list for the current Blender session (not userpref)."""
+
+    gesture: CollectionProperty(type=Gesture, options={"SKIP_SAVE"})
+    index_gesture: IntProperty(
+        name="Gesture index",
+        description="Index of the active gesture in the list",
+        options={"SKIP_SAVE"},
+        update=_on_store_index_gesture_update,
+    )
+
+
 classes_list = (
     ElementModalOperatorEventItem,
     ElementModalOperatorEventCRUE.ADD,
@@ -76,12 +97,21 @@ classes_list = (
     GestureCURE.SORT,
     GestureCURE.COPY,
     GestureCURE.REMOVE,
+
+    GestureStore,
 )
 
 
 def register():
     register_classes_safe(classes_list)
+    setattr(
+        bpy.types.WindowManager,
+        WM_STORE_ATTR,
+        PointerProperty(type=GestureStore, options={"SKIP_SAVE"}),
+    )
 
 
 def unregister():
+    if hasattr(bpy.types.WindowManager, WM_STORE_ATTR):
+        delattr(bpy.types.WindowManager, WM_STORE_ATTR)
     unregister_classes_safe(classes_list)

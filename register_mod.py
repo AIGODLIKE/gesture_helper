@@ -72,8 +72,18 @@ def _sync_addon_state():
 def _on_load_post(_dummy):
     global _icon_retry_timer
     try:
-        from .utils.gesture_persistence import suppress_gesture_disk_save
-        with suppress_gesture_disk_save():
+        # WM GestureStore is SKIP_SAVE: File > Open often resets it to empty.
+        # Reload from CONFIG only when the session store was wiped.
+        from .utils.gesture_persistence import (
+            load_gestures_from_disk,
+            suppress_gesture_disk_save,
+        )
+        from .utils.gesture_store import get_gestures
+        from .utils.selection import suppress_radio_updates
+        with suppress_radio_updates(), suppress_gesture_disk_save():
+            gestures = get_gestures()
+            if gestures is None or len(gestures) == 0:
+                load_gestures_from_disk()
             _sync_addon_state()
         from .utils.icons import ensure_icons_loaded
         if ensure_icons_loaded():
@@ -111,6 +121,7 @@ def init_register():
     from .utils.selection import suppress_radio_updates
     from .utils.gesture_persistence import (
         load_gestures_from_disk,
+        purge_legacy_gestures_from_userpref,
         suppress_gesture_disk_save,
     )
     from .ui.panel import register as register_panel
@@ -127,6 +138,7 @@ def init_register():
             prop.init_addon = True
         load_gestures_from_disk()
         _sync_addon_state()
+        purge_legacy_gestures_from_userpref()
 
     _register_load_post_handler()
     _schedule_icon_verify()
@@ -191,6 +203,12 @@ def unregister():
     Export.backups(is_blender_close())
     clear_pref_cache()
     gesture_keymap.GestureKeymap.key_clear_legacy()
+
+    from .utils.gesture_store import get_gesture_store
+    store = get_gesture_store()
+    if store is not None:
+        with suppress_gesture_disk_save():
+            store.gesture.clear()
 
     for module in module_list:
         module.unregister()

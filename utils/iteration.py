@@ -18,9 +18,12 @@ def iter_elements(root, *, include_root=False):
 
 def find_owning_gesture(item):
     """Return the gesture PropertyGroup that owns *item*."""
-    from .public import get_pref
+    from .gesture_store import get_gestures
 
-    for gesture in get_pref().gesture:
+    gestures = get_gestures()
+    if gestures is None:
+        return None
+    for gesture in gestures:
         if item == gesture:
             return gesture
         for element in iter_elements(gesture):

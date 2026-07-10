@@ -55,12 +55,17 @@ class GestureDraw:
         GestureDraw.draw_gesture_cure(row)
         column = row.column(align=True)
         from ..ui.ui_list import GestureUIList
+        from ..utils.gesture_store import get_gesture_store
+        store = get_gesture_store()
+        if store is None:
+            column.label(text="Gesture store unavailable")
+            return
         column.template_list(
             GestureUIList.bl_idname,
             GestureUIList.bl_idname,
-            pref,
+            store,
             'gesture',
-            pref,
+            store,
             'index_gesture',
         )
         ag = pref.active_gesture
