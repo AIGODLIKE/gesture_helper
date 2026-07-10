@@ -20,12 +20,7 @@ _ENUM_RENAMES = {
 
 
 def __set_collection_data__(prop, data):
-    """Set collection property values
-
-    Args:
-        prop (_type_): _description_
-        data (_type_): _description_
-    """
+    """Populate a CollectionProperty from an index-keyed dict of item data."""
     for i in data:
         pro = prop.add()
         set_property(pro, data[i])
@@ -142,16 +137,7 @@ def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties'
 
 
 def __collection_data__(prop, exclude=(), reversal=False) -> dict:
-    """Get collection property contents
-
-    Args:
-        prop (_type_): _description_
-
-    Returns:
-        :param prop:
-        :param reversal:
-        :param exclude:
-    """
+    """Serialize a CollectionProperty to an index-keyed dict."""
     data = {}
     for index, value in enumerate(prop):
         if value not in exclude_items:

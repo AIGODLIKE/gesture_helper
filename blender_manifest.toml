@@ -5,6 +5,7 @@ id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
     "Icon picker UI adapted from Icon Viewer by Robin Aerts (GPL-3.0-or-later)",
+    "Icons in src/icon/blender/ derived from Blender Foundation SVG icons, converted to PNG (GPL-2.0-or-later / GPL-3.0-or-later)",
 ]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
@@ -19,15 +20,22 @@ support = "https://github.com/AIGODLIKE/gesture_helper/issues"
 paths_exclude_pattern = [
     "__pycache__/",
     "/.git/",
+    "/.cursor/",
+    "/.idea/",
+    "/.vscode/",
+    "/.github/",
     "/*.zip",
-    ".cursor/",
-    ".idea/",
-    ".editorconfig",
-    ".gitignore",
-    "backups/",
-    "auto_backups/",
+    "/.editorconfig",
+    "/.gitignore",
+    "/.gitattributes",
+    "/README.md",
+    "/backups/",
+    "/auto_backups/",
     "**/svg_2_png.py",
-    "README.md",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/.DS_Store",
+    "**/Thumbs.db",
 ]
 
 [permissions]

@@ -109,11 +109,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.__exit_modal__()
 
     def modal_event(self, event):
-        """
-        TODO: space key moves UI
-        :param event:
-        :return:
-        """
+        """Handle Space-drag to move the preview UI, and Esc to cancel."""
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
         mv = (event.type == "MOUSEMOVE" and event.type_prev == "SPACE")
         if space or mv:

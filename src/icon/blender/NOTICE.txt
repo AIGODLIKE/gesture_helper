@@ -1,0 +1,11 @@
+Blender UI icons (PNG)
+======================
+
+These PNG files are derived from Blender Foundation SVG icons shipped with
+Blender (release/datafiles/icons_svg and related icon sources), converted to
+PNG for use as add-on preview icons.
+
+Copyright (C) Blender Foundation
+License: GPL-2.0-or-later / GPL-3.0-or-later (same as Blender)
+
+Source: https://projects.blender.org/blender/blender
