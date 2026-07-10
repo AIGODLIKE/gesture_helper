@@ -3,6 +3,9 @@ schema_version = "1.0.0"
 blender_version_min = "4.2.0"
 id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later", ]
+copyright = [
+    "Blender UI icons (src/icon/blender): converted from Blender blender_icons.svg (CC BY-SA 4.0)",
+]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
 tagline = "Quickly use gestures to run the operator or change properties"

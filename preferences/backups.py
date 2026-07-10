@@ -94,7 +94,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
         folder_box.label(text=translate("Default backup folder:"))
         folder_box_row = folder_box.row(align=True)
         folder_box_row.label(text=default_folder, translate=False)
-        folder_box_row.operator("wm.url_open", text="", icon='FILE_FOLDER').url = active_folder
+        folder_box_row.operator("wm.path_open", text="", icon='FILE_FOLDER').filepath = active_folder
 
         folder_box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
