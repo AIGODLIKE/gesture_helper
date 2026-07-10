@@ -183,31 +183,6 @@ def clear_legacy_preferences_gestures() -> None:
             pref.index_gesture = 0
 
 
-def purge_legacy_gestures_from_userpref() -> bool:
-    """One-time rewrite of userpref.blend after clearing legacy gesture DNA."""
-    pref = get_pref()
-    other = getattr(pref, "other_property", None)
-    if other is not None and getattr(other, "userpref_gestures_purged", False):
-        # Still drop any leftover DNA loaded into memory this session.
-        clear_legacy_preferences_gestures()
-        return False
-
-    clear_legacy_preferences_gestures()
-    # Persist the flag in the same save_userpref write.
-    if other is not None:
-        other.userpref_gestures_purged = True
-    try:
-        bpy.ops.wm.save_userpref()
-    except RuntimeError as e:
-        log_backup(f"userpref purge failed: {e}")
-        if other is not None:
-            other.userpref_gestures_purged = False
-        return False
-
-    log_backup("userpref purge: cleared legacy gesture DNA and saved preferences")
-    return True
-
-
 def load_gestures_from_disk() -> bool:
     """
     Always load gestures into the WM session store.

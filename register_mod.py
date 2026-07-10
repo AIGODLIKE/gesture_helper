@@ -121,7 +121,6 @@ def init_register():
     from .utils.selection import suppress_radio_updates
     from .utils.gesture_persistence import (
         load_gestures_from_disk,
-        purge_legacy_gestures_from_userpref,
         suppress_gesture_disk_save,
     )
     from .ui.panel import register as register_panel
@@ -138,7 +137,6 @@ def init_register():
             prop.init_addon = True
         load_gestures_from_disk()
         _sync_addon_state()
-        purge_legacy_gestures_from_userpref()
 
     _register_load_post_handler()
     _schedule_icon_verify()
