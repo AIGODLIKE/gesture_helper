@@ -173,9 +173,10 @@ class Import(PublicFileOperator):
         cancel_scheduled_gesture_save()
         path = save_gestures_to_disk(description='after_import')
         if not path:
+            from bpy.app.translations import pgettext
             self.report(
                 {'WARNING'},
-                "Imported to memory; gesture file write failed",
+                pgettext("Imported to memory; gesture file write failed"),
             )
         return {'FINISHED'}
 
@@ -217,14 +218,17 @@ class Import(PublicFileOperator):
             else:
                 ver = str(addon_version) if addon_version else '?'
 
-            text = (
+            from bpy.app.translations import pgettext
+
+            text = pgettext(
                 r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s"
-                % (len(restore), auth, des, ver)
-            )
+            ) % (len(restore), auth, des, ver)
             self.report({'INFO'}, text)
             return True
         except Exception as e:
-            self.report({'ERROR'}, f"Import error: {e.args}")
+            from bpy.app.translations import pgettext
+            # Translate msgid + detail separately; never report e.args (tuple noise).
+            self.report({'ERROR'}, pgettext("Import error: %s") % pgettext(str(e)))
             from ..utils.debug_util import debug_trace_stack, debug_traceback
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
@@ -301,17 +305,18 @@ class Export(PublicFileOperator):
         return super().invoke(context, event)
 
     def execute(self, _):
+        from bpy.app.translations import pgettext
         if len(self.pref.gesture) == 0:
             return {'CANCELLED'}
 
         gesture_data = self.export_data['gesture']
         if not len(gesture_data):
-            self.report({'INFO'}, "Export Item Not Selected")
+            self.report({'INFO'}, pgettext("Export Item Not Selected"))
             return {'CANCELLED'}
 
         path = self.file_path
         self.write_json_file()
-        self.report({'INFO'}, "Export Finished! %s" % path)
+        self.report({'INFO'}, pgettext("Export Finished! %s") % path)
         return {'FINISHED'}
 
     def write_json_file(self):
@@ -417,13 +422,14 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         from ..utils.public import get_pref
         from ..utils.debug_util import debug_trace_stack, debug_traceback
+        from bpy.app.translations import pgettext
         try:
             get_pref().preferences_backups(self.filepath)
         except Exception as e:
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
             debug_print(e.args, key='export_import')
-            self.report({'ERROR'}, "Export error, please check path %s" % self.filepath)
+            self.report({'ERROR'}, pgettext("Export error, please check path %s") % self.filepath)
             return {'CANCELLED'}
         return {"FINISHED"}
 
@@ -444,6 +450,7 @@ class SaveGesturesAndUserPref(bpy.types.Operator):
 
     def execute(self, context):
         from ..utils.gesture_persistence import save_gestures_to_disk
+        from bpy.app.translations import pgettext
 
         path = save_gestures_to_disk(description='manual_save')
         try:
@@ -452,9 +459,9 @@ class SaveGesturesAndUserPref(bpy.types.Operator):
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
         if path:
-            self.report({'INFO'}, "Saved gestures and preferences")
+            self.report({'INFO'}, pgettext("Saved gestures and preferences"))
         else:
-            self.report({'WARNING'}, "Preferences saved; gesture file write failed")
+            self.report({'WARNING'}, pgettext("Preferences saved; gesture file write failed"))
         return {'FINISHED'}
 
 
@@ -485,28 +492,29 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
+        from bpy.app.translations import pgettext
         from ..utils.public import get_pref
 
         filepath = (self.filepath or "").strip()
         if not filepath:
-            self.report({'ERROR'}, "Please select a preferences backup file")
+            self.report({'ERROR'}, pgettext("Please select a preferences backup file"))
             return {'CANCELLED'}
 
         try:
             get_pref().preferences_restore(filepath)
         except ValueError as e:
-            self.report({'ERROR'}, str(e))
+            self.report({'ERROR'}, pgettext(str(e)))
             return {'CANCELLED'}
         except Exception as e:
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+            debug_trace_stack(key='export_import')
+            debug_traceback(key='export_import')
             debug_print(e.args, key='export_import')
             self.report(
                 {'ERROR'},
-                "Import error, please select preference settings file",
+                pgettext("Import error, please select preference settings file"),
             )
             return {'CANCELLED'}
 
-        self.report({'INFO'}, "Preferences imported successfully")
+        self.report({'INFO'}, pgettext("Preferences imported successfully"))
         return {"FINISHED"}
