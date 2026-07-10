@@ -467,9 +467,6 @@
   "Show frequently used keymaps": "仅显示常用的键位映射",
   "Show all keymaps": "显示全部键位映射",
 
-  "If": "如果",
-  "Elif": "否则如果",
-  "Else": "否则",
   "Add element item": "添加元素项",
   "Add modal event item": "添加模态事件项",
   "Copy element modal item": "复制元素模态项",
