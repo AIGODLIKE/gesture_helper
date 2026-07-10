@@ -248,8 +248,6 @@ class Export(PublicFileOperator):
     bl_idname = 'wm.gesture_export'
 
     description: StringProperty(name='Description', default='This is a description')
-    is_auto_backups: BoolProperty(name="Is auto backups", default=False, options={"SKIP_SAVE"})
-    is_close_backups: BoolProperty(name="Is close backups", default=False, options={"SKIP_SAVE"})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -261,16 +259,6 @@ class Export(PublicFileOperator):
 
         if self.is_invoke and folder_path.endswith('.json'):
             return os.path.abspath(folder_path)
-
-        if self.is_close_backups:
-            folder_path = resolve_backups_folder()
-            return os.path.abspath(os.path.join(folder_path, close_backup_filename()))
-
-        if self.is_auto_backups:
-            folder_path = resolve_backups_folder()
-            mode = self.pref.backups_property.backups_file_mode
-            return os.path.abspath(os.path.join(
-                folder_path, blender_close_backup_filename(mode)))
 
         if not folder_path:
             folder_path = resolve_backups_folder()
@@ -289,7 +277,7 @@ class Export(PublicFileOperator):
     def export_data(self):
         return self._build_export_data(
             self.pref,
-            all_gestures=self.is_auto_backups or self.is_close_backups,
+            all_gestures=False,
             description=self.description,
         )
 
@@ -321,26 +309,17 @@ class Export(PublicFileOperator):
         return super().invoke(context, event)
 
     def execute(self, _):
-        automatic = self.is_auto_backups or self.is_close_backups
         if len(self.pref.gesture) == 0:
-            if automatic:
-                log_backup("skipped: no gestures configured")
             return {'CANCELLED'}
 
         gesture_data = self.export_data['gesture']
         if not len(gesture_data):
-            if automatic:
-                log_backup("skipped: gesture export data is empty")
-            else:
-                self.report({'WARNING'}, "Export Item Not Selected")
+            self.report({'WARNING'}, "Export Item Not Selected")
             return {'CANCELLED'}
 
         path = self.file_path
         self.write_json_file()
-        if automatic:
-            log_backup(f"saved {len(gesture_data)} gesture(s) -> {path}")
-        else:
-            self.report({'INFO'}, pgettext("Export Finished! %s") % path)
+        self.report({'INFO'}, pgettext("Export Finished! %s") % path)
         return {'FINISHED'}
 
     def write_json_file(self):
@@ -378,11 +357,9 @@ class Export(PublicFileOperator):
         folder = resolve_backups_folder()
         log_backup(
             f"start blender_close={is_blender_close} "
-            f"auto_backups={prop.auto_backups} folder={folder}"
+            f"on_close={prop.backup_on_blender_close} "
+            f"on_disable={prop.backup_on_disable_addon} folder={folder}"
         )
-        if not prop.auto_backups:
-            log_backup("skipped: auto_backups is disabled")
-            return None
         if is_blender_close:
             if not prop.backup_on_blender_close:
                 log_backup("skipped: backup_on_blender_close is disabled")
@@ -413,7 +390,7 @@ class Export(PublicFileOperator):
 
     @staticmethod
     def backups(is_blender_close: bool = False):
-        """Export gesture backup when the add-on is disabled."""
+        """Export gesture backup when the add-on is disabled or Blender closes."""
         try:
             Export.run_automatic_backup(is_blender_close)
         except Exception as e:

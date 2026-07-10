@@ -16,14 +16,6 @@ from ..utils.property import set_property, get_property
 
 
 class BackupsProperty(bpy.types.PropertyGroup):
-    auto_backups: BoolProperty(
-        name='Enable auto backups',
-        description=(
-            'Automatically export gesture data when the add-on is disabled or Blender closes. '
-            'Preference settings are always saved separately on disable.'
-        ),
-        default=True,
-    )
     backup_on_blender_close: BoolProperty(
         name='Backup when Blender closes',
         description='Export gesture data every time Blender exits',
@@ -76,12 +68,17 @@ class BackupsProperty(bpy.types.PropertyGroup):
         box.label(text=default_folder, translate=False)
 
         box.operator("wm.url_open", text=translate("Open Backup Folder")).url = active_folder
-        box.prop(backups, 'auto_backups')
-        if backups.auto_backups:
-            box.prop(backups, 'backup_on_blender_close')
-            if backups.backup_on_blender_close:
-                box.prop(backups, 'backups_file_mode')
-            box.prop(backups, 'backup_on_disable_addon')
+
+        box.prop(backups, 'backup_on_blender_close')
+        if backups.backup_on_blender_close:
+            box.prop(backups, 'backups_file_mode')
+        box.prop(backups, 'backup_on_disable_addon')
+
+        box.separator()
+        box.label(text=translate(
+            "Preferences are always backed up on disable or exit"
+        ))
+
         box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
             box.prop(backups, 'backups_path')
@@ -126,6 +123,11 @@ class BackupsPreferences:
             if auto_restore:
                 return
             raise
+
+        # Drop removed property from older backups.
+        backups = data.get("backups_property")
+        if isinstance(backups, dict):
+            backups.pop("auto_backups", None)
 
         log_backup(f"preferences restore <- {file_path}")
         from ..utils.selection import suppress_radio_updates
