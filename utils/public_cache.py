@@ -201,6 +201,8 @@ class PublicCacheFunc(PublicCache):
             clear_active_element_cache(gesture)
             PublicCacheFunc.rebuild_gesture(gesture)
         PublicCacheFunc.clear_derived_lru_caches()
+        from .gesture_persistence import schedule_save_gestures_to_disk
+        schedule_save_gestures_to_disk()
 
     @staticmethod
     def ensure_gesture_structure(gesture):
@@ -250,6 +252,8 @@ class PublicCacheFunc(PublicCache):
         cls.init_cache()
         cls.clear_derived_lru_caches()
         debug_print("", key='cache')
+        from .gesture_persistence import schedule_save_gestures_to_disk
+        schedule_save_gestures_to_disk()
 
     @staticmethod
     def cache_clear():

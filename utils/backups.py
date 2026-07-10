@@ -11,8 +11,10 @@ import bpy
 
 BACKUP_DIR_NAME = "backups"
 GESTURES_FILENAME = "gesture_helper_gestures.json"
-PREFERENCES_EXPORT_EXTENSION = ".gesture_preference"
-PREFERENCES_BACKUP_FILENAME = f"preferences{PREFERENCES_EXPORT_EXTENSION}"
+PREFERENCES_EXPORT_EXTENSION = ".json"
+PREFERENCES_BACKUP_FILENAME = "gesture_helper_preferences.json"
+PREFERENCES_LEGACY_EXTENSION = ".gesture_preference"
+PREFERENCES_LEGACY_BACKUP_FILENAME = f"preferences{PREFERENCES_LEGACY_EXTENSION}"
 PREFERENCES_IMPORT_MAX_BYTES = 5 * 1024 * 1024
 _PREFERENCES_ROOT_KEYS = frozenset({
     "draw_property",
@@ -96,12 +98,17 @@ def resolve_preferences_backup_path() -> str | None:
     path = get_preferences_backup_path()
     if os.path.isfile(path):
         return path
+    legacy = join(get_default_backups_folder(), PREFERENCES_LEGACY_BACKUP_FILENAME)
+    if os.path.isfile(legacy):
+        return legacy
     return None
 
 
 def is_preferences_import_path(file_path: str) -> bool:
     """Return whether *file_path* looks like a preferences backup file."""
     base = os.path.basename(file_path).lower()
+    if base.endswith(PREFERENCES_LEGACY_EXTENSION):
+        return True
     return base.endswith(PREFERENCES_EXPORT_EXTENSION)
 
 
@@ -116,7 +123,7 @@ def load_preferences_backup_file(file_path: str) -> dict:
 
     if not is_preferences_import_path(file_path):
         raise ValueError(
-            f"Invalid file type: please select a preferences backup ({PREFERENCES_EXPORT_EXTENSION})"
+            "Invalid file type: please select a preferences backup (.json)"
         )
 
     try:
@@ -246,23 +253,56 @@ def get_gestures_backup_fallback_path() -> str:
 
 
 def resolve_gestures_load_path() -> str | None:
-    """
-    Resolve which gesture JSON to load.
+    """First load candidate, or None. Prefer ``iter_gestures_load_candidates``."""
+    for path in iter_gestures_load_candidates():
+        return path
+    return None
 
-    Priority:
-    1. CONFIG fixed file
-    2. Backups-folder fixed file
-    3. Newest rotating backup via find_gesture_backup_for_restore()
+
+def iter_gestures_load_candidates() -> list[str]:
     """
+    Load candidates in priority order.
+
+    1. CONFIG fixed file (if present; empty file still counts — do not skip to rotating)
+    2. Backups-folder fixed file (same empty rule)
+    3. Rotating backup — only when neither fixed file exists
+
+    Callers that hit a corrupt/invalid file should continue to the next candidate.
+    A successfully loaded empty ``gesture: {}`` must not fall back to rotating backups.
+    """
+    paths: list[str] = []
     config_path = get_gestures_config_path()
-    if config_path and os.path.isfile(config_path):
-        return config_path
+    config_exists = bool(config_path and os.path.isfile(config_path))
+    if config_exists:
+        paths.append(config_path)
 
     backup_fixed = get_gestures_backup_fallback_path()
-    if os.path.isfile(backup_fixed):
-        return backup_fixed
+    backup_exists = os.path.isfile(backup_fixed)
+    if backup_exists and backup_fixed not in paths:
+        paths.append(backup_fixed)
 
-    return find_gesture_backup_for_restore()
+    if not config_exists and not backup_exists:
+        rotating = find_gesture_backup_for_restore()
+        if rotating:
+            paths.append(rotating)
+
+    return paths
+
+
+def iter_gestures_load_fallback_after_failure(failed_paths: list[str]) -> list[str]:
+    """
+    Extra candidates after fixed files failed to parse.
+
+    Rotating backups are included here so a corrupt CONFIG can still recover
+    from Close Addon / Blender Close copies. Empty-but-valid fixed files never
+    reach this path (load already succeeded).
+    """
+    extra: list[str] = []
+    seen = set(failed_paths)
+    rotating = find_gesture_backup_for_restore()
+    if rotating and rotating not in seen:
+        extra.append(rotating)
+    return extra
 
 
 def resolve_gestures_save_path() -> str:
