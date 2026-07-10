@@ -323,11 +323,7 @@ class OperatorProperty:
 
     @property
     def operator_func(self) -> 'bpy.types.Operator | None':
-        """Get operator callable
-
-        Returns:
-            bpy.types.Operator: _description_
-        """
+        """Return the ``bpy.ops`` callable for this element's bl_idname, or None."""
         bl_idname = resolve_operator_bl_idname(self.operator_bl_idname)
         sp = bl_idname.split('.')
         if len(sp) != 2:

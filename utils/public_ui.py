@@ -2,13 +2,7 @@ import bpy
 
 
 def _get_blender_icon(icon_style):
-    """Return icon name pair
-
-    Args:
-        icon_style: icon style or custom (str, str) pair. Defaults to TRIA/ARROW/TRI.
-    Returns:
-        (str,str): _description_
-    """
+    """Return ``(icon_true, icon_false)`` names for a known toggle style."""
     icon_data = {
         'TRI': ('DISCLOSURE_TRI_DOWN', 'DISCLOSURE_TRI_RIGHT'),
         'TRIA': ('TRIA_DOWN', 'TRIA_RIGHT'),
@@ -26,14 +20,7 @@ def _get_blender_icon(icon_style):
 
 
 def icon_two(bool_prop, style='CHECKBOX', custom_icon: tuple[str, str] = None, ) -> str:
-    """Return icon id string from bool value
-    Args:
-        bool_prop (_type_): _description_
-        custom_icon (tuple[str, str], optional): custom icons; True returns first. Defaults to None.
-        style (str, optional): icon style. Defaults to 'CHECKBOX'.
-    Returns:
-        str: icon identifier
-    """
+    """Return an icon identifier for a boolean (true/false pair by *style*)."""
     icon_true, icon_false = custom_icon if custom_icon else _get_blender_icon(style)
     return icon_true if bool_prop else icon_false
 
