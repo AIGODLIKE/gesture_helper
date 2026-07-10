@@ -37,7 +37,11 @@ class Texture:
         if not key:
             return None
 
-        lookup = key.lower()
+        from .icons import normalize_icon_name
+        lookup = normalize_icon_name(key).lower()
+        if not lookup:
+            return None
+
         texture = Texture.texture_list.get(lookup)
         if texture is not None:
             return texture

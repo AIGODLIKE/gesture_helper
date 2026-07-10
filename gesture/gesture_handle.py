@@ -104,7 +104,6 @@ class GestureHandle:
         """Try to run gesture operator(s)."""
 
         def run(i):
-            from bpy.app.translations import pgettext_iface
             from .pass_through import (
                 defer_gesture_element_operator,
                 should_defer_gesture_operator,
@@ -113,12 +112,11 @@ class GestureHandle:
 
             if i.operator_is_operator or i.operator_is_modal:
                 if i.operator_func is None:
-                    gesture_name = pgettext_iface(self.operator_gesture.name)
-                    tips = pgettext_iface(
-                        "Operator not found, please check the operator id in gesture settings")
+                    # English msgid only — do not pre-translate (avoids Windows console mojibake).
                     ops.report(
                         {'ERROR'},
-                        f"{tips} {gesture_name} -> {i.name_translate} bpy.ops.{i.operator_bl_idname}",
+                        "Operator not found, please check the operator id in gesture settings "
+                        f"{self.operator_gesture.name} -> {i.name} bpy.ops.{i.operator_bl_idname}",
                     )
                     return
 
@@ -128,20 +126,16 @@ class GestureHandle:
                 if i.operator_is_operator and should_defer_gesture_operator(idname):
                     area = getattr(self, 'area', None) or getattr(ops, 'area', None)
                     if defer_gesture_element_operator(bpy.context, area, i):
-                        ops.report({'INFO'}, i.name_translate)
                         return
                 error = i.running_operator()
                 if error is not None:
-                    ops.report({'ERROR'}, pgettext_iface("Operator Run Error,Please check the console"))
+                    ops.report({'ERROR'}, "Operator Run Error,Please check the console")
                     return
-                ops.report({'INFO'}, i.name_translate)
             else:
-                gesture_name = pgettext_iface(self.operator_gesture.name)
-                tips = pgettext_iface(
-                    "Operator context error, please ensure that the operator is available in this context")
                 ops.report(
                     {'ERROR'},
-                    f"{tips} {gesture_name} -> {i.name_translate} bpy.ops.{i.operator_bl_idname}.poll()",
+                    "Operator context error, please ensure that the operator is available in this context "
+                    f"{self.operator_gesture.name} -> {i.name} bpy.ops.{i.operator_bl_idname}.poll()",
                 )
 
         # Run extension menu operators

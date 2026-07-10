@@ -168,13 +168,12 @@ class ElementDraw:
 
     def draw_icon(self, layout):
         from ..utils.icons import icon_layout_kwargs
-        if self.draw_property.element_show_icon:
-            if self.is_draw_context_toggle_operator_bool:
-                layout.label(text='', icon='BLANK1')
-            elif self.is_draw_icon:
-                layout.label(text='', **icon_layout_kwargs(self.icon))
-            else:
-                layout.label(text='', icon='BLANK1')
+        if not self.draw_property.element_show_icon:
+            return
+        if self.is_draw_context_toggle_operator_bool:
+            return
+        if self.is_draw_icon:
+            layout.label(text='', **icon_layout_kwargs(self.icon))
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon

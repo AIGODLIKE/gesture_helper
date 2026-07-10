@@ -8,6 +8,16 @@ icons_map = None
 _builtin_icon_names: frozenset[str] | None = None
 
 
+def normalize_icon_name(icon_name: str) -> str:
+    """Strip optional ``.png`` suffix from icon identifiers."""
+    if not icon_name:
+        return ""
+    name = str(icon_name).strip()
+    if name.lower().endswith(".png"):
+        return name[:-4]
+    return name
+
+
 def get_builtin_icon_names() -> frozenset[str]:
     """Return Blender built-in icon identifiers from the UI layout RNA enum."""
     global _builtin_icon_names
@@ -19,16 +29,27 @@ def get_builtin_icon_names() -> frozenset[str]:
 
 
 def is_builtin_icon(icon_name: str) -> bool:
-    return bool(icon_name) and icon_name in get_builtin_icon_names()
+    name = normalize_icon_name(icon_name)
+    return bool(name) and name in get_builtin_icon_names()
+
+
+def has_preview_icon(icon_name: str) -> bool:
+    """Return whether a PNG preview is loaded for GPU / icon_value drawing."""
+    name = normalize_icon_name(icon_name).lower()
+    if not name:
+        return False
+    Icons._ensure_registered()
+    return name in icons
 
 
 def icon_layout_kwargs(icon_name: str) -> dict:
     """Return ``icon`` or ``icon_value`` kwargs for UILayout widgets."""
-    if is_builtin_icon(icon_name):
-        return {"icon": icon_name}
+    name = normalize_icon_name(icon_name)
+    if is_builtin_icon(name):
+        return {"icon": name}
     Icons._ensure_registered()
     try:
-        return {"icon_value": icons[icon_name.lower()].icon_id}
+        return {"icon_value": icons[name.lower()].icon_id}
     except KeyError:
         return {"icon": "ERROR"}
 
@@ -41,8 +62,11 @@ def load_from_folder(icon_folder_path: str, icon_type: str) -> None:
         is_png = file.lower().endswith('.png')
         file_path = os.path.abspath(os.path.join(icon_folder_path, file))
         if is_png and os.path.isfile(file_path):
-            name, suffix = file.split('.', 1)
-            icons.load(name.lower(), file_path, 'IMAGE', force_reload=True)
+            name, _suffix = file.split('.', 1)
+            key = name.lower()
+            if key in icons:
+                continue
+            icons.load(key, file_path, 'IMAGE', force_reload=True)
             icons_map[icon_type].append(name)
 
 
@@ -60,12 +84,13 @@ def get_blender_icons() -> list[str]:
 
 
 def check_icon(icon_identifier: str) -> bool:
-    if not icon_identifier:
+    name = normalize_icon_name(icon_identifier)
+    if not name:
         return False
-    if is_builtin_icon(icon_identifier):
+    if is_builtin_icon(name):
         return True
     Icons._ensure_registered()
-    return icon_identifier.lower() in icons
+    return name.lower() in icons
 
 
 def _preview_is_empty(preview) -> bool:
@@ -113,11 +138,10 @@ class Icons:
         icons_map = {"ADDON": [], "CUSTOM": []}
         from ..utils.public import ADDON_FOLDER
 
-        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon')
-        load_from_folder(icon_folder, "ADDON")
-
-        icon_folder = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
-        load_from_folder(icon_folder, "CUSTOM")
+        icon_root = os.path.join(ADDON_FOLDER, 'src', 'icon')
+        load_from_folder(icon_root, "ADDON")
+        load_from_folder(os.path.join(icon_root, 'blender'), "ADDON")
+        load_from_folder(os.path.join(icon_root, 'custom'), "CUSTOM")
 
     @staticmethod
     def _ensure_registered() -> None:
@@ -126,11 +150,14 @@ class Icons:
 
     @staticmethod
     def get(key):
+        """Return preview icon; prefers loaded PNG even when name matches a built-in."""
         global icons
         Icons._ensure_registered()
-        if is_builtin_icon(key):
-            raise KeyError(f"{key!r} is a built-in Blender icon, not a preview icon")
-        return icons[key.lower()]
+        lookup = normalize_icon_name(key).lower()
+        try:
+            return icons[lookup]
+        except KeyError as exc:
+            raise KeyError(f"No preview icon for {key!r}") from exc
 
     @staticmethod
     def unregister() -> None:
