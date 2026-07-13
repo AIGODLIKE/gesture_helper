@@ -47,11 +47,24 @@ jobs:
           "$BLENDER_BIN" --command extension build --source-dir . --output-dir dist --verbose
           ls -lh dist/*.zip
 
+          # Resolve package zip from the build output (id-version.zip).
+          package_zip="$(ls dist/*.zip | head -n1)"
+          echo "PACKAGE_ZIP=$package_zip" >> "$GITHUB_ENV"
+
+          # Unpack so the Actions artifact download is a single-layer extension zip
+          # (upload-artifact always wraps paths in an outer zip on download).
+          rm -rf dist/extension
+          mkdir -p dist/extension
+          unzip -q "$package_zip" -d dist/extension
+          test -f dist/extension/blender_manifest.toml
+          "$BLENDER_BIN" --command extension validate "$package_zip"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
+          # Downloaded as gesture_helper.zip with blender_manifest.toml at the root.
           name: gesture_helper
-          path: dist/*.zip
+          path: dist/extension/
           if-no-files-found: error
 
       - name: Create GitHub Release
