@@ -89,20 +89,18 @@ class BackupsProperty(bpy.types.PropertyGroup):
             "Preferences are always backed up on disable or exit"
         ))
         box.label(text=translate(
-            "Gestures are saved to Blender config (fallback: backup folder)"
+            "Gestures are saved under the extension user folder "
+            "(legacy Blender config is still loaded if present)"
         ))
 
-        from ..utils.backups import get_gestures_config_path, resolve_gestures_save_path
+        from ..utils.backups import resolve_gestures_save_path
         gesture_path = resolve_gestures_save_path()
-        config_path = get_gestures_config_path()
         path_box = box.box()
         path_box.use_property_split = False
         path_box.label(text=translate("Gesture data file:"))
         path_row = path_box.row(align=True)
         path_row.label(text=gesture_path, translate=False)
-        folder = os.path.dirname(gesture_path) if gesture_path else (
-            os.path.dirname(config_path) if config_path else active_folder
-        )
+        folder = os.path.dirname(gesture_path) if gesture_path else active_folder
         path_row.operator("wm.path_open", text="", icon='FILE_FOLDER').filepath = folder
 
         folder_box = box.box()

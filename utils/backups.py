@@ -240,10 +240,22 @@ def find_gesture_backup_for_restore(folder: str | None = None) -> str | None:
     return None
 
 
+def get_gestures_extension_path() -> str:
+    """Primary gesture JSON under ``extension_path_user`` (or legacy DATAFILES)."""
+    path = abspath(join(get_extension_user_folder(), GESTURES_FILENAME))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
 def get_gestures_config_path() -> str | None:
-    """Fixed path under Blender CONFIG; return None when CONFIG is unavailable."""
+    """Legacy gesture JSON under Blender CONFIG (read-only migrate path).
+
+    Older builds wrote the main gesture file here. New saves use
+    ``get_gestures_extension_path()`` instead. Keep reading CONFIG so existing
+    installs still load; do not write new primary data here.
+    """
     try:
-        root = bpy.utils.user_resource('CONFIG', path='', create=True)
+        root = bpy.utils.user_resource('CONFIG', path='', create=False)
         if not root:
             return None
         return abspath(join(root, GESTURES_FILENAME))
@@ -269,17 +281,24 @@ def iter_gestures_load_candidates() -> list[str]:
     """
     Load candidates in priority order.
 
-    1. CONFIG fixed file (if present; empty file still counts — do not skip to rotating)
-    2. Backups-folder fixed file (same empty rule)
-    3. Rotating backup — only when neither fixed file exists
+    1. Extension user folder fixed file (primary; empty still counts)
+    2. Legacy CONFIG fixed file (migrate-only; empty still counts)
+    3. Backups-folder fixed file (same empty rule)
+    4. Rotating backup — only when none of the fixed files exist
 
     Callers that hit a corrupt/invalid file should continue to the next candidate.
     A successfully loaded empty ``gesture: {}`` must not fall back to rotating backups.
     """
     paths: list[str] = []
+
+    extension_path = get_gestures_extension_path()
+    extension_exists = os.path.isfile(extension_path)
+    if extension_exists:
+        paths.append(extension_path)
+
     config_path = get_gestures_config_path()
     config_exists = bool(config_path and os.path.isfile(config_path))
-    if config_exists:
+    if config_exists and config_path not in paths:
         paths.append(config_path)
 
     backup_fixed = get_gestures_backup_fallback_path()
@@ -287,7 +306,7 @@ def iter_gestures_load_candidates() -> list[str]:
     if backup_exists and backup_fixed not in paths:
         paths.append(backup_fixed)
 
-    if not config_exists and not backup_exists:
+    if not extension_exists and not config_exists and not backup_exists:
         rotating = find_gesture_backup_for_restore()
         if rotating:
             paths.append(rotating)
@@ -299,9 +318,9 @@ def iter_gestures_load_fallback_after_failure(failed_paths: list[str]) -> list[s
     """
     Extra candidates after fixed files failed to parse.
 
-    Rotating backups are included here so a corrupt CONFIG can still recover
-    from Close Addon / Blender Close copies. Empty-but-valid fixed files never
-    reach this path (load already succeeded).
+    Rotating backups are included here so a corrupt primary / CONFIG file can
+    still recover from Close Addon / Blender Close copies. Empty-but-valid
+    fixed files never reach this path (load already succeeded).
     """
     extra: list[str] = []
     seen = set(failed_paths)
@@ -312,12 +331,8 @@ def iter_gestures_load_fallback_after_failure(failed_paths: list[str]) -> list[s
 
 
 def resolve_gestures_save_path() -> str:
-    """Prefer CONFIG; fall back to the backups-folder fixed file."""
-    config_path = get_gestures_config_path()
-    if config_path:
-        try:
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            return config_path
-        except OSError:
-            ...
-    return get_gestures_backup_fallback_path()
+    """Prefer extension user folder; fall back to the backups-folder fixed file."""
+    try:
+        return get_gestures_extension_path()
+    except OSError:
+        return get_gestures_backup_fallback_path()

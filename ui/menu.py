@@ -13,7 +13,7 @@ class GESTURE_MT_add_element_menu(bpy.types.Menu):
         layout.operator(CreateSwitchPanel.bl_idname, text="Switch N Panel")
         text = (
             "Cancel adding panel or menu"
-            if SessionState.panel_menu_injecting
+            if SessionState.panel_menu_adding
             else "Adding Panel or Menu"
         )
         layout.operator(CreatePanelMenu.bl_idname, text=text)

@@ -6,7 +6,7 @@ from __future__ import annotations
 class SessionState:
     """Mutable flags that must not survive disable/reload."""
 
-    panel_menu_injecting: bool = False
+    panel_menu_adding: bool = False
     gesture_preview_active: bool = False
     context_menu_from_button: bool = False
 
@@ -16,7 +16,7 @@ class SessionState:
 
     @classmethod
     def clear(cls) -> None:
-        cls.panel_menu_injecting = False
+        cls.panel_menu_adding = False
         cls.gesture_preview_active = False
         cls.context_menu_from_button = False
         cls.switch_panel_by_space = {}
