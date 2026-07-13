@@ -48,15 +48,46 @@ _VIEW3D_CONTEXT_MENUS = {
 }
 
 
-def should_defer_gesture_operator(idname: str) -> bool:
-    """Return True if *idname* should run after the gesture modal exits."""
+# Operators that must keep the current mouse/event (sync invoke in exit).
+_SYNC_GESTURE_OPERATOR_PREFIXES = (
+    'transform.',
+)
+
+
+def is_preferences_op(idname: str) -> bool:
+    """Built-ins + custom wrappers that open the Preferences window."""
     if not idname:
+        return False
+    if idname in {'screen.userpref_show', 'preferences.addon_show'}:
+        return True
+    lower = idname.lower()
+    return (
+        'userpref' in lower
+        or 'addon_preference' in lower
+        or lower.endswith('_preferences')
+        or lower.endswith('_preference')
+    )
+
+
+def should_defer_gesture_operator(idname: str) -> bool:
+    """Return True if *idname* should run after the gesture modal exits.
+
+    Preferences ops stay **sync** so the new OS window inherits the user-click
+    focus context (timer defer loses OS focus on Windows). Menus still defer.
+    """
+    if not idname:
+        return False
+    if idname.startswith(_SYNC_GESTURE_OPERATOR_PREFIXES):
+        return False
+    # Sync: preserve click-to-focus for the Preferences OS window.
+    if is_preferences_op(idname):
         return False
     if idname in _DEFER_GESTURE_OPERATOR_IDNAMES:
         return True
     if idname.startswith('wm.call_'):
         return True
-    return False
+    # Default: defer (unknown UI wrappers, etc.).
+    return True
 
 
 def is_ui_pass_idname(idname: str) -> bool:

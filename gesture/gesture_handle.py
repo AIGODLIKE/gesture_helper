@@ -133,12 +133,27 @@ class GestureHandle:
 
             if i.check_operator_poll():
                 idname = resolve_operator_bl_idname(i.operator_bl_idname)
-                # Opening Preferences / menus while still modal leaves the gesture stuck.
+                from .pass_through.invoke import preferences_window_exists
+                from .pass_through.ui_filter import is_preferences_op
+
+                is_prefs = is_preferences_op(idname)
+                # Preferences already open: do not re-invoke (focus fight).
+                if is_prefs and preferences_window_exists():
+                    return
                 if i.operator_is_operator and should_defer_gesture_operator(idname):
                     area = getattr(self, 'area', None) or getattr(ops, 'area', None)
                     if defer_gesture_element_operator(bpy.context, area, i):
+                        ops._gesture_deferred_ui = True
                         return
-                error = i.running_operator()
+                # Sync Preferences open must keep the user-click OS focus context.
+                if is_prefs:
+                    ops._opening_ui = True
+                    ops._gesture_deferred_ui = True
+                try:
+                    error = i.running_operator()
+                finally:
+                    if is_prefs:
+                        ops._opening_ui = False
                 if error is not None:
                     ops.report({'ERROR'}, "Operator Run Error,Please check the console")
                     return

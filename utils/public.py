@@ -232,9 +232,13 @@ class PublicProperty(PublicCacheFunc):
 
 class PublicOperator(bpy.types.Operator):
     event: 'bpy.types.Event'
+    _invoke_event_type: str
 
     def init_invoke(self, event):
         self.event = event
+        # Remember the key/button that started the gesture so WINDOW_DEACTIVATE
+        # / other RELEASE events cannot abort it and re-run operators.
+        self._invoke_event_type = event.type
 
     def init_modal(self, event):
         self.event = event
@@ -249,9 +253,15 @@ class PublicOperator(bpy.types.Operator):
 
     @property
     def is_exit(self):
-        # Exit only on RELEASE. Treating any RIGHTMOUSE (including PRESS) as
-        # exit would abort the gesture before the matching RELEASE arrives.
-        return self.is_release
+        # Exit only on RELEASE of the invoke key/button. Any other RELEASE
+        # (WINDOW_DEACTIVATE, LEFTMOUSE while RMB gesture, etc.) must not end
+        # the modal — that re-runs operators and breaks window focus.
+        if not self.is_release:
+            return False
+        invoke_type = getattr(self, '_invoke_event_type', None)
+        if invoke_type:
+            return self.event.type == invoke_type
+        return self.event.type not in {'WINDOW_DEACTIVATE', 'WINDOW_ACTIVATE'}
 
     @staticmethod
     def tag_redraw():

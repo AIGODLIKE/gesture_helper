@@ -45,6 +45,12 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         if pass_right_mouse := self.try_pass_paint_texture_stencil(context, event):
             return pass_right_mouse
 
+        # Preferences / other utility windows must not start a gesture modal —
+        # opening prefs from a gesture while already in prefs breaks focus.
+        area = context.area
+        if area is not None and area.type in {'PREFERENCES', 'FILE_BROWSER'}:
+            return {'CANCELLED'}
+
         if self.operator_gesture is None:
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
@@ -73,11 +79,23 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
+        # Focus left this window (e.g. Preferences popup took focus): cancel
+        # cleanly without running gesture operators — avoids focus fights.
+        if event.type == 'WINDOW_DEACTIVATE':
+            # While sync-opening Preferences, ignore deactivate so we can still
+            # return FINISHED+INTERFACE from exit().
+            if getattr(self, '_opening_ui', False):
+                return {'RUNNING_MODAL'}
+            self.__exit_modal__()
+            return {'CANCELLED'}
+
         self.trajectory_event_update(context, event)
         self.init_modal(event)
         debug_print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev, key='modal')
         if self.try_immediate_implementation():
             self.__exit_modal__()
+            if getattr(self, '_gesture_deferred_ui', False):
+                return {'FINISHED', 'INTERFACE'}
             return {"FINISHED"}
         if self.is_exit:
             self.__exit_modal__()
@@ -120,6 +138,8 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 )
             if self.try_pass_through_keymap(context, event) == 'handled':
                 return {'FINISHED', 'INTERFACE'}
+        if getattr(self, '_gesture_deferred_ui', False):
+            return {'FINISHED', 'INTERFACE'}
         return {'FINISHED'}
 
     def cancel(self, context):
