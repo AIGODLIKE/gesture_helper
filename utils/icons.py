@@ -1,5 +1,6 @@
 import os
-from os.path import abspath, join
+import zipfile
+from os.path import abspath, basename, join
 
 import bpy
 import bpy.utils.previews
@@ -9,6 +10,7 @@ icons_map = None
 _builtin_icon_names: frozenset[str] | None = None
 
 CUSTOM_ICONS_DIR_NAME = "custom_icons"
+CUSTOM_ICONS_EXPORT_FILENAME = "gesture_helper_custom_icons.zip"
 
 
 def get_custom_icons_folder() -> str:
@@ -22,6 +24,53 @@ def ensure_custom_icons_folder() -> str:
     path = get_custom_icons_folder()
     os.makedirs(path, exist_ok=True)
     return path
+
+
+def list_custom_icon_pngs() -> list[str]:
+    """Return absolute paths of top-level PNG files in the custom icons folder."""
+    folder = get_custom_icons_folder()
+    if not os.path.isdir(folder):
+        return []
+    paths = []
+    for name in os.listdir(folder):
+        if not name.lower().endswith(".png"):
+            continue
+        path = abspath(join(folder, name))
+        if os.path.isfile(path):
+            paths.append(path)
+    return sorted(paths)
+
+
+def export_custom_icons_zip(filepath: str) -> int:
+    """Write top-level custom PNG icons into a zip archive. Returns file count."""
+    pngs = list_custom_icon_pngs()
+    if not pngs:
+        return 0
+    with zipfile.ZipFile(filepath, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for path in pngs:
+            zf.write(path, arcname=basename(path))
+    return len(pngs)
+
+
+def import_custom_icons_zip(filepath: str) -> int:
+    """Extract PNG files from a zip into the custom icons folder (overwrite)."""
+    folder = ensure_custom_icons_folder()
+    imported = 0
+    with zipfile.ZipFile(filepath, "r") as zf:
+        for info in zf.infolist():
+            if info.is_dir():
+                continue
+            name = basename(info.filename)
+            if not name or not name.lower().endswith(".png"):
+                continue
+            # Reject path traversal / empty names after basename.
+            if name in (".", "..") or os.sep in name or (os.altsep and os.altsep in name):
+                continue
+            target = join(folder, name)
+            with zf.open(info, "r") as src, open(target, "wb") as dst:
+                dst.write(src.read())
+            imported += 1
+    return imported
 
 
 def normalize_icon_name(icon_name: str) -> str:

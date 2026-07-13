@@ -43,6 +43,11 @@ class PreferencesDraw(GestureDraw):
         """
         from .. import preferences
         from ..ops.export_import import ExportPreferences, ImportPreferences
+        from ..ops.select_icon import (
+            OpenCustomIconFolder,
+            ExportCustomIcons,
+            ImportCustomIcons,
+        )
         pref = get_pref()
 
         row = layout.row()
@@ -57,6 +62,13 @@ class PreferencesDraw(GestureDraw):
         col.operator_context = "INVOKE_DEFAULT"
         col.operator(ExportPreferences.bl_idname)
         col.operator(ImportPreferences.bl_idname)
+
+        icon_box = column.box().column(align=True)
+        icon_box.label(text="Custom Icons")
+        icon_box.operator_context = "INVOKE_DEFAULT"
+        icon_box.operator(OpenCustomIconFolder.bl_idname, icon="FILE_FOLDER")
+        icon_box.operator(ExportCustomIcons.bl_idname)
+        icon_box.operator(ImportCustomIcons.bl_idname)
 
         column.separator()
         preferences.BackupsProperty.draw_backups(column)
