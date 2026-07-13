@@ -175,9 +175,9 @@ class PublicProperty(PublicCacheFunc):
                     ae.to_operator_tmp_kmi()
         except Exception as e:
             debug_print('update_state Error', e.args, key='operator')
-            import traceback
-            traceback.print_stack()
-            traceback.print_exc()
+            from .debug_util import debug_traceback, debug_trace_stack
+            debug_trace_stack(key='operator')
+            debug_traceback(key='operator')
 
     @staticmethod
     def __tn__(text):

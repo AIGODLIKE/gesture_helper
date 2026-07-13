@@ -12,7 +12,7 @@ from ...utils.session_state import SessionState
 class CreatePanelMenu(PublicOperator, PublicProperty):
     bl_label = 'Create Panel Menu'
     bl_idname = 'wm.gesture_create_panel_menu'
-    bl_description = 'Inject a quick-add button into Blender panels and menus'
+    bl_description = 'Show a quick-add button on Blender panels and menus'
     bl_options = {'REGISTER'}
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])
@@ -51,10 +51,10 @@ class CreatePanelMenu(PublicOperator, PublicProperty):
         return {"FINISHED"}
 
     def invoke(self, context, event):
-        if SessionState.panel_menu_injecting:
-            unregister()
+        if SessionState.panel_menu_adding:
+            stop_adding()
         else:
-            register()
+            start_adding()
 
         for area in context.screen.areas:
             area.tag_redraw()
@@ -88,7 +88,7 @@ def draw_add(self, context):
 exclude_panel = ["PROPERTIES_PT_navigation_bar"]
 
 
-def _can_inject(cls) -> bool:
+def _can_append(cls) -> bool:
     return (
         hasattr(cls, "draw")
         and "gesture" not in cls.__name__.lower()
@@ -103,22 +103,27 @@ def _safe_remove_draw(cls) -> None:
         pass
 
 
-def register():
+def start_adding():
+    """Append quick-add buttons to panels/menus.
+
+    Only call this when the user explicitly starts "Adding Panel or Menu".
+    Do not run from add-on enable or gesture preview.
+    """
     # Always clear first so cancel / re-enter never stacks duplicate draw hooks.
-    unregister()
+    stop_adding()
     for p in iter_panel_classes():
-        if _can_inject(p):
+        if _can_append(p):
             p.append(draw_add)
             __panel__.append(p)
     for m in iter_menu_classes():
-        if _can_inject(m):
+        if _can_append(m):
             m.append(draw_add)
             __menu__.append(m)
-    SessionState.panel_menu_injecting = True
+    SessionState.panel_menu_adding = True
 
 
-def unregister():
-    """Remove injected panel/menu draw hooks.
+def stop_adding():
+    """Remove quick-add draw hooks from panels/menus.
 
     Called when the user cancels adding, and from add-on ``unregister()`` so
     disable/uninstall never leaves draw_add on Blender UI classes.
@@ -129,11 +134,11 @@ def unregister():
         _safe_remove_draw(m)
     # Full sweep: tracked lists can be lost after script reload / partial fail.
     for p in iter_panel_classes():
-        if _can_inject(p):
+        if _can_append(p):
             _safe_remove_draw(p)
     for m in iter_menu_classes():
-        if _can_inject(m):
+        if _can_append(m):
             _safe_remove_draw(m)
     __panel__.clear()
     __menu__.clear()
-    SessionState.panel_menu_injecting = False
+    SessionState.panel_menu_adding = False

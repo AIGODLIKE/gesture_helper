@@ -130,7 +130,7 @@ def collect_operator_property_overrides(operator) -> dict:
 
 
 def set_property_to_kmi_properties(properties: 'bpy.types.KeyMapItem.properties', props) -> None:
-    """Inject operator properties into KMI (use when drawing items)."""
+    """Copy operator properties into KMI (use when drawing items)."""
     if not props or properties is None:
         return
     __set_property__(properties, props)
