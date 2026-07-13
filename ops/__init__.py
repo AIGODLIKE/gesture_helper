@@ -9,6 +9,7 @@ from . import set_key
 from . import set_poll
 from .modal_mouse import ModalMouseOperator
 from .clear_edge_properties import ClearAllEdgeProperties
+from .clear_backups import ClearBackups
 from .quick_add.create_element_operator import CreateElementOperator
 from .quick_add.create_element_property import CreateElementProperty
 from .quick_add.create_panel_menu import CreatePanelMenu
@@ -42,6 +43,7 @@ operator_list = (
 
     ModalMouseOperator,
     ClearAllEdgeProperties,
+    ClearBackups,
 
     export_import.Export,
     export_import.Import,
