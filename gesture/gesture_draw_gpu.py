@@ -169,6 +169,9 @@ class GestureGpuDraw(DrawDebug):
 
         GestureGpuDraw.__modal_draw_count__ += 1
         GestureGpuDraw.__active_draw_instance__ = self
+        # Drop any pending N-panel keymap/operator sync so it cannot key_restart mid-draw.
+        from ..utils.ui_draw_sync import cancel_all
+        cancel_all()
         self._tag_redraw_gesture_screen()
 
     @classmethod
