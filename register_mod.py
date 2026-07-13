@@ -195,7 +195,7 @@ def unregister():
     global _deferred_init_done
     _deferred_init_done = False
 
-    create_panel_menu.unregister()
+    create_panel_menu.stop_adding()
     SessionState.clear()
 
     pref = get_pref()

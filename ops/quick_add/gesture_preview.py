@@ -81,9 +81,6 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         SessionState.gesture_preview_active = True
 
         self.__sync_gesture__()
-
-        from .create_panel_menu import register
-        register()
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
@@ -140,8 +137,6 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
 
-        from .create_panel_menu import unregister
-        unregister()
         window = getattr(bpy.context, 'window', None)
         if window is not None and window.screen is not None:
             for area in window.screen.areas:
