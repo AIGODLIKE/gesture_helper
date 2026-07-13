@@ -4,7 +4,12 @@ from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
-from ..utils.public import by_path_set_value, PublicMouseModal, debug_print
+from ..utils.public import (
+    by_path_set_value,
+    PublicMouseModal,
+    debug_print,
+    poll_addon_preferences,
+)
 from ..utils.expression import resolve_context_path
 
 
@@ -46,6 +51,18 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
     )
     mouse = None
     last_mouse = None
+
+    @classmethod
+    def poll(cls, context):
+        if not poll_addon_preferences(cls):
+            return False
+        if context.window is None:
+            cls.poll_message_set("A window context is required")
+            return False
+        if context.area is None:
+            cls.poll_message_set("An editor area is required")
+            return False
+        return True
 
     @property
     def __header_text__(self) -> str:
