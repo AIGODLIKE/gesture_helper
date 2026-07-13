@@ -111,6 +111,42 @@ def invoke_operator_now(
         return False
 
 
+def preferences_window_exists() -> bool:
+    wm = getattr(bpy.context, 'window_manager', None)
+    if wm is None:
+        return False
+    for win in wm.windows:
+        screen = getattr(win, 'screen', None)
+        if screen is None:
+            continue
+        for area in screen.areas:
+            try:
+                if area.type == 'PREFERENCES':
+                    return True
+            except ReferenceError:
+                continue
+    return False
+
+
+def _needs_area_pin(idname: str) -> bool:
+    """Menus/panels need the gesture area; window-opening ops must not pin it."""
+    if not idname:
+        return False
+    if idname.startswith('wm.call_'):
+        return True
+    if idname in {
+        'wm.call_menu',
+        'wm.call_panel',
+        'wm.call_menu_pie',
+        'wm.call_menu_pie_drag_only',
+        'wm.search_menu',
+        'wm.search_operator',
+        'wm.search_single_menu',
+    }:
+        return True
+    return False
+
+
 def defer_operator_call(
         context,
         area,
@@ -118,8 +154,11 @@ def defer_operator_call(
         properties: dict | None = None,
         *,
         operator_context: str = 'INVOKE_DEFAULT',
+        pin_area: bool | None = None,
 ) -> bool:
     """Schedule operator invocation after the modal handler finishes."""
+    from .ui_filter import is_preferences_op
+
     override = pass_override(context, area)
     if override is None:
         return False
@@ -129,21 +168,33 @@ def defer_operator_call(
     window = override.get('window')
     captured_area = override.get('area')
     captured_region = override.get('region')
+    if pin_area is None:
+        pin_area = _needs_area_pin(idname)
+    is_prefs = is_preferences_op(idname)
 
     def _invoke(*_args):
         try:
+            # Re-opening Preferences while it already exists steals/fights focus.
+            if is_prefs and preferences_window_exists():
+                return None
+
             func = getattr(getattr(bpy.ops, prefix), suffix)
-            ov = {'window': window}
-            if captured_area is not None and _area_is_valid(captured_area):
-                ov['area'] = captured_area
-            if captured_region is not None:
-                try:
-                    _ = captured_region.type
-                    ov['region'] = captured_region
-                except ReferenceError:
-                    ...
-            with context.temp_override(**ov):
+            # Preferences / new-window ops: do NOT pin gesture area/region —
+            # that keeps input focus on the old View3D after the popup opens.
+            if is_prefs or not pin_area:
                 result = func(operator_context, True, **properties)
+            else:
+                ov = {'window': window}
+                if captured_area is not None and _area_is_valid(captured_area):
+                    ov['area'] = captured_area
+                if captured_region is not None:
+                    try:
+                        _ = captured_region.type
+                        ov['region'] = captured_region
+                    except ReferenceError:
+                        ...
+                with context.temp_override(**ov):
+                    result = func(operator_context, True, **properties)
             debug_print(f"deferred {idname}", properties, result, key='key')
         except Exception as exc:
             debug_print(f"deferred {idname} error", exc.args, key='key')
