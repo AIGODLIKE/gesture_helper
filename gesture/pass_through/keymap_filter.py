@@ -7,8 +7,12 @@ from ..addon_keymap import get_kmi_operator_properties
 from .ui_filter import PASS_THROUGH_UI_IDNAMES, filter_view3d_menu_kmis
 
 # Do not re-enter gesture / related modal operators via pass-through.
+# Include legacy ``gesture.operator`` — custom keyconfigs often keep both the
+# old and new idnames; the legacy active item would otherwise shadow inactive
+# RMB context menus (``active if active else inactive_ui``).
 PASS_THROUGH_BLOCKLIST = frozenset({
     'wm.gesture_operator',
+    'gesture.operator',
     'wm.gesture_modal_mouse_operator',
     'wm.gesture_element_modal_event',
     'wm.gesture_temp_kmi',
@@ -114,7 +118,17 @@ def match_kmis_in_keymap(km, event, ui_idnames=PASS_THROUGH_UI_IDNAMES):
             active.append(item)
         elif item.idname in ui_idnames:
             inactive_ui.append(item)
-    return active if active else inactive_ui
+    # RMB/APP: custom keymaps often disable the context menu while leaving
+    # unrelated active bindings. Prefer inactive UI when no active UI remains.
+    if active:
+        if (
+                event.type in {'RIGHTMOUSE', 'APP'}
+                and inactive_ui
+                and not any(item.idname in ui_idnames for item in active)
+        ):
+            return inactive_ui
+        return active
+    return inactive_ui
 
 
 def apply_user_keymap_overrides(match_kmis, key, user_keymaps):
