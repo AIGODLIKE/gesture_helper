@@ -211,6 +211,72 @@ def _gesture_backup_files(folder: str) -> list[str]:
     )
 
 
+def _is_rotating_gesture_backup(name: str) -> bool:
+    """True for Close Addon / Blender Close auto-backup filenames only."""
+    if not (name.startswith(_GESTURE_BACKUP_PREFIX) and name.endswith(".json")):
+        return False
+    return _CLOSE_BACKUP_MARKER in name or _BLENDER_CLOSE_MARKER in name
+
+
+def iter_rotating_gesture_backup_paths(folder: str | None = None) -> list[str]:
+    """Absolute paths of rotating auto-backups in the active (or given) folder."""
+    folder = folder or resolve_backups_folder()
+    if not os.path.isdir(folder):
+        return []
+    names = sorted(
+        (name for name in os.listdir(folder) if _is_rotating_gesture_backup(name)),
+        reverse=True,
+    )
+    return [join(folder, name) for name in names]
+
+
+def get_rotating_backup_stats(folder: str | None = None) -> tuple[int, int]:
+    """Return ``(count, total_bytes)`` for rotating auto-backups."""
+    total = 0
+    count = 0
+    for path in iter_rotating_gesture_backup_paths(folder):
+        try:
+            total += os.path.getsize(path)
+            count += 1
+        except OSError:
+            continue
+    return count, total
+
+
+def format_backup_size(nbytes: int) -> str:
+    """Human-readable size for backup stats UI."""
+    if nbytes < 1024:
+        return f"{nbytes} B"
+    if nbytes < 1024 * 1024:
+        return f"{nbytes / 1024:.1f} KB"
+    return f"{nbytes / (1024 * 1024):.1f} MB"
+
+
+def clear_rotating_gesture_backups(folder: str | None = None) -> tuple[int, int]:
+    """
+    Delete rotating auto-backups only.
+
+    Never touches preferences backups or ``gesture_helper_gestures.json``.
+    Returns ``(deleted_count, deleted_bytes)``.
+    """
+    deleted_count = 0
+    deleted_bytes = 0
+    for path in iter_rotating_gesture_backup_paths(folder):
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            size = 0
+        try:
+            os.remove(path)
+        except OSError as e:
+            log_backup(f"clear skipped ({path}): {e}")
+            continue
+        deleted_count += 1
+        deleted_bytes += size
+        log_backup(f"clear deleted: {path}")
+    return deleted_count, deleted_bytes
+
+
 def find_gesture_backup_for_restore(folder: str | None = None) -> str | None:
     """
     Pick a gesture backup as a load fallback when CONFIG / fixed files are missing.

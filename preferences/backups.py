@@ -5,8 +5,10 @@ import bpy
 from bpy.props import BoolProperty, StringProperty, EnumProperty
 
 from ..utils.backups import (
+    format_backup_size,
     get_default_backups_folder,
     get_preferences_backup_path,
+    get_rotating_backup_stats,
     load_preferences_backup_file,
     log_backup,
     resolve_backups_folder,
@@ -109,6 +111,19 @@ class BackupsProperty(bpy.types.PropertyGroup):
         folder_box_row = folder_box.row(align=True)
         folder_box_row.label(text=default_folder, translate=False)
         folder_box_row.operator("wm.path_open", text="", icon='FILE_FOLDER').filepath = active_folder
+
+        backup_count, backup_bytes = get_rotating_backup_stats(active_folder)
+        stats_row = folder_box.row(align=True)
+        stats_row.label(
+            text=translate("Auto backups: {count} files, {size}").format(
+                count=backup_count,
+                size=format_backup_size(backup_bytes),
+            ),
+            translate=False,
+        )
+        clear_row = stats_row.row(align=True)
+        clear_row.enabled = backup_count > 0
+        clear_row.operator("wm.gesture_clear_backups", text="", icon='TRASH')
 
         folder_box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:

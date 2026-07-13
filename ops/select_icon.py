@@ -223,7 +223,7 @@ class RefreshIcons(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return poll_message_active_element(cls)
+        return poll_addon_preferences(cls)
 
     def execute(self, context):
         from ..utils.icons import Icons
