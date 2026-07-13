@@ -19,6 +19,7 @@ from .quick_add.gesture_preview import GesturePreview
 operator_list = (
     select_icon.SelectIcon,
     select_icon.RefreshIcons,
+    select_icon.OpenCustomIconFolder,
     select_icon.ClearHistory,
 
     element_modal.ElementModal,

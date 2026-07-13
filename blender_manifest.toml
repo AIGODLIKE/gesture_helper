@@ -4,6 +4,7 @@ blender_version_min = "4.2.0"
 id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
+    "2024-2026 ACGGIT Community",
     "Icon picker UI adapted from Icon Viewer by Robin Aerts (GPL-3.0-or-later)",
     "Icons in src/icon/blender/ derived from Blender Foundation SVG icons, converted to PNG (GPL-2.0-or-later / GPL-3.0-or-later)",
 ]
@@ -39,5 +40,5 @@ paths_exclude_pattern = [
 ]
 
 [permissions]
-files = "Read/write gestures, backups, and preference files"
+files = "Read/write gestures, backups, custom icons, and preference files"
 clipboard = "Copy selected icon names to the clipboard"

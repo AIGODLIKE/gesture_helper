@@ -1,4 +1,5 @@
 import os
+from os.path import abspath, join
 
 import bpy
 import bpy.utils.previews
@@ -6,6 +7,21 @@ import bpy.utils.previews
 icons = None
 icons_map = None
 _builtin_icon_names: frozenset[str] | None = None
+
+CUSTOM_ICONS_DIR_NAME = "custom_icons"
+
+
+def get_custom_icons_folder() -> str:
+    """User custom icons folder under extension_path_user (never the install tree)."""
+    from .backups import get_extension_user_folder
+    return abspath(join(get_extension_user_folder(), CUSTOM_ICONS_DIR_NAME))
+
+
+def ensure_custom_icons_folder() -> str:
+    """Return the custom icons folder, creating it when missing."""
+    path = get_custom_icons_folder()
+    os.makedirs(path, exist_ok=True)
+    return path
 
 
 def normalize_icon_name(icon_name: str) -> str:
@@ -141,7 +157,7 @@ class Icons:
         icon_root = os.path.join(ADDON_FOLDER, 'src', 'icon')
         load_from_folder(icon_root, "ADDON")
         load_from_folder(os.path.join(icon_root, 'blender'), "ADDON")
-        load_from_folder(os.path.join(icon_root, 'custom'), "CUSTOM")
+        load_from_folder(get_custom_icons_folder(), "CUSTOM")
 
     @staticmethod
     def _ensure_registered() -> None:
