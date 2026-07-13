@@ -6,7 +6,7 @@ class SwitchMode(bpy.types.Operator):
     bl_idname = 'wm.gesture_switch_mode'
     bl_label = 'Switch mode'
     bl_description = 'Switch the active object mode or mesh selection mode'
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
     type: EnumProperty(items=[
         ('SWITCH_OBJECT_MODE', 'Switch object mode', ''),
         ('SWITCH_OBJECT_EDIT_MODE', 'Switch object edit mode', ''),

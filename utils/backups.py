@@ -33,16 +33,22 @@ _BLENDER_CLOSE_MARKER = "Blender Close Backups"
 
 
 def get_extension_user_folder() -> str:
-    """User data folder for backups.
+    """User data folder for backups and persistent gesture files.
 
-    Extensions use ``extension_path_user``; legacy ``scripts/addons`` installs
-    are not extension packages, so fall back to ``user_resource('DATAFILES')``.
+    Path boundary (do not mix these roots):
+    - Extension install (``bl_ext.*`` package): always
+      ``bpy.utils.extension_path_user(__package__)``. Uninstall removes this
+      folder with the extension.
+    - Legacy ``scripts/addons`` install only: ``extension_path_user`` raises
+      ``ValueError`` because the package is not an extension id. Fall back to
+      ``bpy.utils.user_resource('DATAFILES', path='gesture_helper')`` so zip /
+      manual installs keep working. Never write into the add-on source tree.
     """
     from .. import __package__ as base_package
     try:
         path = bpy.utils.extension_path_user(base_package)
     except ValueError:
-        # Legacy add-on: package is e.g. "gesture_helper", not "bl_ext....".
+        # Legacy add-on only: package is e.g. "gesture_helper", not "bl_ext....".
         path = bpy.utils.user_resource('DATAFILES', path="gesture_helper", create=True)
     os.makedirs(path, exist_ok=True)
     return path

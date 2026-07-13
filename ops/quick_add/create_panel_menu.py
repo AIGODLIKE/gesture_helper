@@ -88,30 +88,52 @@ def draw_add(self, context):
 exclude_panel = ["PROPERTIES_PT_navigation_bar"]
 
 
+def _can_inject(cls) -> bool:
+    return (
+        hasattr(cls, "draw")
+        and "gesture" not in cls.__name__.lower()
+        and cls.__name__ not in exclude_panel
+    )
+
+
+def _safe_remove_draw(cls) -> None:
+    try:
+        cls.remove(draw_add)
+    except (ValueError, RuntimeError, AttributeError, TypeError):
+        pass
+
+
 def register():
+    # Always clear first so cancel / re-enter never stacks duplicate draw hooks.
     unregister()
     for p in iter_panel_classes():
-        if hasattr(p, "draw") and "gesture" not in p.__name__.lower() and p.__name__ not in exclude_panel:
+        if _can_inject(p):
             p.append(draw_add)
             __panel__.append(p)
     for m in iter_menu_classes():
-        if hasattr(m, "draw") and "gesture" not in m.__name__.lower() and m.__name__ not in exclude_panel:
+        if _can_inject(m):
             m.append(draw_add)
             __menu__.append(m)
     SessionState.panel_menu_injecting = True
 
 
 def unregister():
+    """Remove injected panel/menu draw hooks.
+
+    Called when the user cancels adding, and from add-on ``unregister()`` so
+    disable/uninstall never leaves draw_add on Blender UI classes.
+    """
     for p in __panel__:
-        try:
-            p.remove(draw_add)
-        except (ValueError, RuntimeError, AttributeError):
-            pass
+        _safe_remove_draw(p)
     for m in __menu__:
-        try:
-            m.remove(draw_add)
-        except (ValueError, RuntimeError, AttributeError):
-            pass
+        _safe_remove_draw(m)
+    # Full sweep: tracked lists can be lost after script reload / partial fail.
+    for p in iter_panel_classes():
+        if _can_inject(p):
+            _safe_remove_draw(p)
+    for m in iter_menu_classes():
+        if _can_inject(m):
+            _safe_remove_draw(m)
     __panel__.clear()
     __menu__.clear()
     SessionState.panel_menu_injecting = False
