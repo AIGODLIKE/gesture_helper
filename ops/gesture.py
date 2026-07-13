@@ -16,6 +16,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     bl_idname = 'wm.gesture_operator'
     bl_label = 'Gesture Operator'
     bl_description = 'Run the active gesture from its keymap shortcut'
+    bl_options = {'BLOCKING'}
     gesture: StringProperty()
     extension_hover = []
 

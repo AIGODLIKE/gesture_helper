@@ -1,3 +1,7 @@
+# Icon picker UI adapted from Icon Viewer (development_icon_get) by roaoao.
+# SPDX-License-Identifier: GPL-2.0-or-later
+# https://projects.blender.org/extensions/development_icon_get
+
 import math
 import os
 import zipfile
@@ -236,6 +240,10 @@ class OpenCustomIconFolder(bpy.types.Operator):
     bl_label = "Open Custom Folder"
     bl_description = "Open the custom icons folder; create it if missing"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
 
     def execute(self, context):
         from ..utils.icons import ensure_custom_icons_folder

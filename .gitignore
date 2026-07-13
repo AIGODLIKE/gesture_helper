@@ -5,3 +5,5 @@ __pycache__
 /backups/*.json
 /backups/preferences
 *.log
+/dist/
+*.zip

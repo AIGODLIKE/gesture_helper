@@ -5,7 +5,7 @@ id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
     "2024-2026 ACGGIT Community",
-    "Icon picker UI adapted from Icon Viewer by Robin Aerts (GPL-3.0-or-later)",
+    "Icon picker UI adapted from Icon Viewer (development_icon_get) by roaoao (GPL-2.0-or-later); https://projects.blender.org/extensions/development_icon_get",
     "Icons in src/icon/blender/ derived from Blender Foundation SVG icons, converted to PNG (GPL-2.0-or-later / GPL-3.0-or-later)",
 ]
 maintainer = "ACGGIT Community(小萌新)"
@@ -25,6 +25,7 @@ paths_exclude_pattern = [
     "/.idea/",
     "/.vscode/",
     "/.github/",
+    "/dist/",
     "/*.zip",
     "/.editorconfig",
     "/.gitignore",
@@ -35,6 +36,7 @@ paths_exclude_pattern = [
     "**/svg_2_png.py",
     "**/*.pyc",
     "**/*.pyo",
+    "**/*.log",
     "**/.DS_Store",
     "**/Thumbs.db",
 ]
