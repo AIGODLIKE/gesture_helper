@@ -1,13 +1,10 @@
 import math
-import os
 
 import bpy
 from bpy.props import StringProperty, BoolProperty
 
-from ..utils.public import get_pref, PublicProperty, ADDON_FOLDER, poll_message_active_element
+from ..utils.public import get_pref, PublicProperty, poll_message_active_element
 from ..utils.icons import icon_layout_kwargs
-
-CUSTOM_ICON_FOLDER = os.path.join(ADDON_FOLDER, 'src', 'icon', 'custom')
 
 DPI = 72
 POPUP_PADDING = 10
@@ -149,7 +146,7 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
         row.separator()
         row.operator(RefreshIcons.bl_idname, icon='FILE_REFRESH')
         row.separator()
-        row.operator('wm.path_open', text='Open Custom Folder', icon='FILE_FOLDER').filepath = CUSTOM_ICON_FOLDER
+        row.operator(OpenCustomIconFolder.bl_idname, icon='FILE_FOLDER')
         row.separator()
 
         box = col.box()
@@ -228,6 +225,19 @@ class RefreshIcons(bpy.types.Operator):
     def execute(self, context):
         from ..utils.icons import Icons
         Icons.reload_icons()
+        return {'FINISHED'}
+
+
+class OpenCustomIconFolder(bpy.types.Operator):
+    bl_idname = "wm.gesture_open_custom_icon_folder"
+    bl_label = "Open Custom Folder"
+    bl_description = "Open the custom icons folder; create it if missing"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        from ..utils.icons import ensure_custom_icons_folder
+        path = ensure_custom_icons_folder()
+        bpy.ops.wm.path_open(filepath=path)
         return {'FINISHED'}
 
 
