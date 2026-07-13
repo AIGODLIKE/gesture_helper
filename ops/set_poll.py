@@ -47,9 +47,9 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
             lay.label(text=text)
             text = "and  x and y Boolean 'and' - if x is False, x and y returns the value of x, otherwise it returns the calculated value of y"
             lay.label(text=text)
-            text = "or   x or y Boolean 'or' - if x is True，return True，else return y"
+            text = "or   x or y Boolean 'or' - if x is True, return True, else return y"
             lay.label(text=text)
-            text = "not  not x Boolean 'not' - if x is True，return False, if x is False return True"
+            text = "not  not x Boolean 'not' - if x is True, return False, if x is False return True"
             lay.label(text=text)
 
             lay.separator()
