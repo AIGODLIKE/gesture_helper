@@ -1,10 +1,13 @@
 import math
+import os
+import zipfile
 
 import bpy
 from bpy.props import StringProperty, BoolProperty
+from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from ..utils.public import get_pref, PublicProperty, poll_message_active_element
-from ..utils.icons import icon_layout_kwargs
+from ..utils.public import get_pref, PublicProperty, poll_message_active_element, poll_addon_preferences
+from ..utils.icons import icon_layout_kwargs, CUSTOM_ICONS_EXPORT_FILENAME
 
 DPI = 72
 POPUP_PADDING = 10
@@ -238,6 +241,96 @@ class OpenCustomIconFolder(bpy.types.Operator):
         from ..utils.icons import ensure_custom_icons_folder
         path = ensure_custom_icons_folder()
         bpy.ops.wm.path_open(filepath=path)
+        return {'FINISHED'}
+
+
+class ExportCustomIcons(bpy.types.Operator, ExportHelper):
+    bl_idname = "wm.gesture_export_custom_icons"
+    bl_label = "Export Custom Icons"
+    bl_description = "Export custom icons from the user folder as a ZIP archive"
+
+    filename_ext = ".zip"
+    filter_glob: StringProperty(default="*.zip", options={'HIDDEN'}, maxlen=255)
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    def invoke(self, context, event):
+        from ..utils.backups import get_default_backups_folder
+        if not (self.filepath or "").strip():
+            self.filepath = os.path.join(get_default_backups_folder(), CUSTOM_ICONS_EXPORT_FILENAME)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        from bpy.app.translations import pgettext
+        from ..utils.icons import export_custom_icons_zip
+
+        filepath = (self.filepath or "").strip()
+        if not filepath:
+            self.report({'ERROR'}, pgettext("Please select an export path"))
+            return {'CANCELLED'}
+        if not filepath.lower().endswith(".zip"):
+            filepath = filepath + ".zip"
+            self.filepath = filepath
+
+        try:
+            count = export_custom_icons_zip(filepath)
+        except OSError:
+            self.report({'ERROR'}, pgettext("Export error, please check path %s") % filepath)
+            return {'CANCELLED'}
+
+        if count == 0:
+            self.report({'WARNING'}, pgettext("No custom icons to export"))
+            return {'CANCELLED'}
+
+        self.report({'INFO'}, pgettext("Exported %d custom icons") % count)
+        return {'FINISHED'}
+
+
+class ImportCustomIcons(bpy.types.Operator, ImportHelper):
+    bl_idname = "wm.gesture_import_custom_icons"
+    bl_label = "Import Custom Icons"
+    bl_description = "Import custom icons from a ZIP archive into the user folder"
+
+    filename_ext = ".zip"
+    filter_glob: StringProperty(default="*.zip", options={'HIDDEN'}, maxlen=255)
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    def invoke(self, context, event):
+        from ..utils.backups import get_default_backups_folder
+        self.filepath = os.path.join(get_default_backups_folder(), CUSTOM_ICONS_EXPORT_FILENAME)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        from bpy.app.translations import pgettext
+        from ..utils.icons import Icons, import_custom_icons_zip
+
+        filepath = (self.filepath or "").strip()
+        if not filepath:
+            self.report({'ERROR'}, pgettext("Please select a custom icons ZIP file"))
+            return {'CANCELLED'}
+        if not os.path.isfile(filepath):
+            self.report({'ERROR'}, pgettext("Please select a custom icons ZIP file"))
+            return {'CANCELLED'}
+
+        try:
+            count = import_custom_icons_zip(filepath)
+        except (OSError, zipfile.BadZipFile):
+            self.report({'ERROR'}, pgettext("Import error, please select a valid ZIP file"))
+            return {'CANCELLED'}
+
+        if count == 0:
+            self.report({'WARNING'}, pgettext("No PNG icons found in ZIP"))
+            return {'CANCELLED'}
+
+        Icons.reload_icons()
+        self.report({'INFO'}, pgettext("Imported %d custom icons") % count)
         return {'FINISHED'}
 
 

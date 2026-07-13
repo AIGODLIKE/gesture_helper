@@ -20,6 +20,8 @@ operator_list = (
     select_icon.SelectIcon,
     select_icon.RefreshIcons,
     select_icon.OpenCustomIconFolder,
+    select_icon.ExportCustomIcons,
+    select_icon.ImportCustomIcons,
     select_icon.ClearHistory,
 
     element_modal.ElementModal,
