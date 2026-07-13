@@ -213,7 +213,21 @@ class ElementDraw:
 
         if is_operator or is_modal:
             if self.other_property.auto_update_element_operator_properties:
-                self.from_tmp_kmi_operator_update_properties()
+                # Do not write RNA inside draw — debounce instead.
+                from ..utils.ui_draw_sync import schedule
+
+                def _flush():
+                    from ..utils.public import get_pref
+                    pref = get_pref()
+                    active = pref.active_element
+                    if (
+                        active is not None
+                        and active.is_operator
+                        and pref.other_property.auto_update_element_operator_properties
+                    ):
+                        active.from_tmp_kmi_operator_update_properties()
+
+                schedule('operator_tmp_kmi_sync', _flush)
             is_change = self.properties != self.operator_tmp_kmi_properties
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
