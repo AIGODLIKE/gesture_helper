@@ -39,6 +39,10 @@ def _cancel_icon_timers() -> None:
 
 
 def _register_load_post_handler():
+    # Must register at add-on startup (not lazily on first gesture use).
+    # WM GestureStore is SKIP_SAVE: File > Open / Load Factory Settings wipes it.
+    # Without a persistent load_post handler, gestures would stay empty after every
+    # file load until the user manually re-triggers init.
     global _load_post_handler
     if _load_post_handler is not None:
         return
