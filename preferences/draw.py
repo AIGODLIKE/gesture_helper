@@ -45,6 +45,7 @@ class PreferencesDraw(GestureDraw):
         from ..ops.export_import import ExportPreferences, ImportPreferences
         from ..ops.select_icon import (
             OpenCustomIconFolder,
+            RefreshIcons,
             ExportCustomIcons,
             ImportCustomIcons,
         )
@@ -63,12 +64,18 @@ class PreferencesDraw(GestureDraw):
         col.operator(ExportPreferences.bl_idname)
         col.operator(ImportPreferences.bl_idname)
 
-        icon_box = column.box().column(align=True)
-        icon_box.label(text="Custom Icons")
-        icon_box.operator_context = "INVOKE_DEFAULT"
-        icon_box.operator(OpenCustomIconFolder.bl_idname, icon="FILE_FOLDER")
-        icon_box.operator(ExportCustomIcons.bl_idname)
-        icon_box.operator(ImportCustomIcons.bl_idname)
+        icon_box = column.box()
+        icon_row = icon_box.row(align=True)
+        icon_row.label(text="Custom Icons")
+        icon_ops = icon_row.row(align=True)
+        icon_ops.operator_context = "INVOKE_DEFAULT"
+        icon_ops.operator(OpenCustomIconFolder.bl_idname, text="", icon="FILE_FOLDER")
+        icon_ops.operator(RefreshIcons.bl_idname, text="", icon="FILE_REFRESH")
+        icon_ops.operator(ExportCustomIcons.bl_idname, text="", icon="EXPORT")
+        icon_ops.operator(ImportCustomIcons.bl_idname, text="", icon="IMPORT")
+        icon_box.label(
+            text="Put PNG files in the custom icons folder to use them as gesture element icons"
+        )
 
         column.separator()
         preferences.BackupsProperty.draw_backups(column)
