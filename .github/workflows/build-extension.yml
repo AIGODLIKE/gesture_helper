@@ -11,31 +11,44 @@ on:
 permissions:
   contents: write
 
+env:
+  # Official LTS used only for packaging (`extension build` / `validate`).
+  BLENDER_VERSION: "4.2.22"
+  BLENDER_SERIES: "4.2"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Setup Blender
-        uses: bradyajohnston/setup-blender@v5
-        with:
-          # Extension build CLI is available since 4.2; use LTS for stable packaging.
-          version: "4.2"
+      - name: Download Blender
+        run: |
+          set -euo pipefail
+          archive="blender-${BLENDER_VERSION}-linux-x64.tar.xz"
+          url="https://download.blender.org/release/Blender${BLENDER_SERIES}/${archive}"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "$url"
+          tar -C "$RUNNER_TEMP" -xf "$RUNNER_TEMP/$archive"
+          blender_bin="$(find "$RUNNER_TEMP" -type f -name blender -path "*/blender-${BLENDER_VERSION}-linux-x64/*" | head -n1)"
+          test -x "$blender_bin"
+          echo "BLENDER_BIN=$blender_bin" >> "$GITHUB_ENV"
+          "$blender_bin" --version
 
       - name: Validate extension
-        run: blender --command extension validate
+        run: |
+          set -euo pipefail
+          "$BLENDER_BIN" --command extension validate
 
       - name: Build extension zip
         run: |
           set -euo pipefail
           mkdir -p dist
-          blender --command extension build --source-dir . --output-dir dist --verbose
+          "$BLENDER_BIN" --command extension build --source-dir . --output-dir dist --verbose
           ls -lh dist/*.zip
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gesture_helper
           path: dist/*.zip
@@ -43,7 +56,7 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.zip
           generate_release_notes: true
