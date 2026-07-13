@@ -4,9 +4,9 @@ blender_version_min = "4.2.0"
 id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
-    "2024-2026 ACGGIT Community",
-    "Icon picker UI adapted from Icon Viewer (development_icon_get) by roaoao (GPL-2.0-or-later); https://projects.blender.org/extensions/development_icon_get",
-    "Icons in src/icon/blender/ derived from Blender Foundation SVG icons, converted to PNG (GPL-2.0-or-later / GPL-3.0-or-later)",
+    "2024 ACGGIT Community",
+    "2014 roaoao (Icon Viewer / development_icon_get)",
+    "2002 Blender Foundation (icons in src/icon/blender)",
 ]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
