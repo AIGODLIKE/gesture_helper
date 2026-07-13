@@ -13,10 +13,11 @@ import bpy
 from ...utils.debug_util import debug_print
 from ..addon_keymap import get_kmi_operator_properties
 from . import cursor
-from .invoke import defer_kmi_pass_through, invoke_operator_now
+from .invoke import defer_kmi_pass_through, defer_operator_call, invoke_operator_now
 from .keymap_filter import collect_pass_kmis, from_region_get_keymaps
 from .ui_filter import (
     PASS_THROUGH_UI_IDNAMES,
+    expected_view3d_menu,
     is_ui_pass_idname,
     should_defer_gesture_operator,
     should_pass_rmb_ui,
@@ -103,6 +104,18 @@ class GesturePassThroughKeymap:
 
         if match_kmis and self._pass_matched_kmis(context, gesture_area, event, match_kmis):
             return 'handled'
+
+        # v2.3.3 RMB safety net: if keymap match missed the (often inactive)
+        # context menu, still open the mode-appropriate View3D menu.
+        expected_menu = expected_view3d_menu(context)
+        if (
+                event.type in {'RIGHTMOUSE', 'APP'}
+                and should_pass_rmb_ui(event)
+                and expected_menu
+        ):
+            if defer_operator_call(
+                    context, gesture_area, 'wm.call_menu', {'name': expected_menu}):
+                return 'handled'
         return None
 
     @staticmethod
