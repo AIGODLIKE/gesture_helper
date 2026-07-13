@@ -106,7 +106,16 @@ class GestureKeymap(KeymapProperty):
             layout.label(text=str(self.temp_kmi.id))
             layout.label(text=str(self.temp_kmi))
             layout.label(text=str(self.temp_kmi_data))
-        self.from_temp_key_update_data()
+        # Do not write RNA / restart keymaps inside draw — debounce instead.
+        from ..utils.ui_draw_sync import schedule
+
+        def _flush():
+            from ..utils.public import get_pref
+            active = get_pref().active_gesture
+            if active is not None:
+                active.from_temp_key_update_data()
+
+        schedule('gesture_temp_key_sync', _flush)
 
     def key_load(self) -> None:
         if not self.is_enable:

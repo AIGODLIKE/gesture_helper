@@ -179,11 +179,13 @@ def unregister():
     from .ops.quick_add import create_panel_menu
     from .element.element_poll import cancel_poll_cache_timer
     from .gesture.gesture_handle import GestureHandle
+    from .utils.ui_draw_sync import cancel_all as cancel_ui_draw_sync
 
     _unregister_load_post_handler()
     _cancel_icon_timers()
     cancel_poll_cache_timer()
     cancel_scheduled_gesture_save()
+    cancel_ui_draw_sync()
     GestureHandle.cancel_active_gesture_timeout_timer()
 
     global _deferred_init_done
