@@ -83,9 +83,9 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         # Focus left this window (e.g. Preferences popup took focus): cancel
         # cleanly without running gesture operators — avoids focus fights.
         if event.type == 'WINDOW_DEACTIVATE':
-            # While sync-opening Preferences, ignore deactivate so we can still
-            # return FINISHED+INTERFACE from exit().
-            if getattr(self, '_opening_ui', False):
+            # While sync-opening Preferences (or other deferred UI), ignore
+            # deactivate so exit() can still return FINISHED+INTERFACE.
+            if getattr(self, '_opening_ui', False) or getattr(self, '_gesture_deferred_ui', False):
                 return {'RUNNING_MODAL'}
             self.__exit_modal__()
             return {'CANCELLED'}
@@ -149,6 +149,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     def __exit_modal__(self):
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
+        self._opening_ui = False
 
     def try_immediate_implementation(self):
         """Try to run operator immediately."""

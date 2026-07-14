@@ -1,7 +1,10 @@
+import blf
 import bpy
+import gpu
 from bl_operators.wm import operator_value_undo_return
 from bpy.app.translations import pgettext
 from bpy.props import StringProperty, EnumProperty
+from mathutils import Vector
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
 from ..utils.public import (
@@ -9,8 +12,10 @@ from ..utils.public import (
     PublicMouseModal,
     debug_print,
     poll_addon_preferences,
+    tag_redraw,
 )
 from ..utils.expression import resolve_context_path
+from ..utils.public_gpu import PublicGpu
 
 
 class StoreValue:
@@ -23,7 +28,7 @@ class StoreValue:
         by_path_set_value(bpy.context, self.data_path.split("."), self.___value___)
 
 
-class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
+class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, PublicGpu):
     """
     from bl_operators.wm import WM_OT_context_modal_mouse
     scripts/startup/bl_operators/wm.py
@@ -51,6 +56,10 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
     )
     mouse = None
     last_mouse = None
+    _draw_handle = None
+    _draw_space_cls = None
+    _display_text = ""
+    _overlay_mouse = None
 
     @classmethod
     def poll(cls, context):
@@ -85,21 +94,108 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
                 ...
         return "value %"
 
+    def _format_display_text(self, *, value=None, delta=None) -> str:
+        header_text = self.__header_text__
+        if not header_text:
+            return ""
+        try:
+            if value is not None and self.___value___ is not None:
+                return header_text % value
+            if delta is not None:
+                return (header_text % delta) + pgettext(" (delta)")
+        except Exception as e:
+            return f"header_text Text Error:{header_text} {value} {e.args}"
+        return header_text
+
+    def _set_display_text(self, context, text: str, *, mouse: Vector | None = None) -> None:
+        self._display_text = text
+        if mouse is not None:
+            self._overlay_mouse = mouse.copy()
+        if context.area is not None:
+            context.area.header_text_set(text or None)
+        tag_redraw()
+
+    def _mouse_overlay_position(self) -> Vector | None:
+        mouse = self._overlay_mouse
+        if mouse is None:
+            return None
+        scale = bpy.context.preferences.view.ui_scale
+        return Vector((mouse.x + 12 * scale, mouse.y + 18 * scale))
+
+    def draw_mouse_overlay(self):
+        text = self._display_text
+        if not text:
+            return
+
+        position = self._mouse_overlay_position()
+        if position is None:
+            return
+
+        scale = bpy.context.preferences.view.ui_scale
+        size = int(12 * scale)
+        font_id = 0
+
+        gpu.state.blend_set('ALPHA')
+        blf.size(font_id, size)
+        width, height = blf.dimensions(font_id, text)
+        padding = 8 * scale
+        self.draw_rounded_rectangle_area(
+            position,
+            color=(0.0, 0.0, 0.0, 0.65),
+            width=width + padding * 2,
+            height=height + padding,
+            radius=int(4 * scale),
+        )
+        self.draw_text(text, position=(position.x + padding, position.y + padding * 0.5), size=size)
+
+    def register_draw(self, context):
+        if self._draw_handle is not None:
+            return
+        space_type = getattr(context.area, "type", "VIEW_3D")
+        space_cls = getattr(bpy.types, f"Space{space_type}", None)
+        if space_cls is None:
+            space_cls = bpy.types.SpaceView3D
+        self._draw_space_cls = space_cls
+        self._draw_handle = space_cls.draw_handler_add(
+            self.draw_mouse_overlay, (), 'WINDOW', 'POST_PIXEL')
+
+    def unregister_draw(self):
+        if self._draw_handle is None:
+            return
+        space_cls = self._draw_space_cls or bpy.types.SpaceView3D
+        try:
+            space_cls.draw_handler_remove(self._draw_handle, 'WINDOW')
+        except (ValueError, RuntimeError):
+            pass
+        self._draw_handle = None
+        self._draw_space_cls = None
+        tag_redraw()
+
     def invoke(self, context, event):
         self.__store__()
         debug_print("invoke", self.bl_idname, self.___value___, self.data_path, key='modal')
         if self.___value___ is None:
             return {'CANCELLED'}
-        else:
-            self.start_mouse(event)
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
+
+        self.start_mouse(event)
+        region = context.region
+        self._overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
+        initial_value = resolve_context_path(context, self.data_path)
+        self._set_display_text(
+            context,
+            self._format_display_text(value=initial_value),
+            mouse=self._overlay_mouse,
+        )
+        self.register_draw(context)
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
         et = event.type
 
         vm = self.value_mode
         self.set_cursor(context, vm)
+        overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
 
         if et == 'MOUSEMOVE':
             delta = self.value_delta(event, vm)
@@ -108,17 +204,12 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
             else:
                 value = self.___value___ + delta
             by_path_set_value(bpy.context, self.data_path.split("."), value)
-            header_text = self.__header_text__
-            if header_text:
-                value = resolve_context_path(bpy.context, self.data_path)
-                try:
-                    if self.___value___ is not None:
-                        header_text = header_text % value
-                    else:
-                        header_text = (self.__header_text__ % delta) + pgettext(" (delta)")
-                except Exception as e:
-                    header_text = f"header_text Text Error:{header_text} {value} {e.args}"
-                context.area.header_text_set(header_text)
+            current_value = resolve_context_path(context, self.data_path)
+            self._set_display_text(
+                context,
+                self._format_display_text(value=current_value),
+                mouse=overlay_mouse,
+            )
 
         elif 'LEFTMOUSE' == et or event.value == "RELEASE":
             self.exit()
@@ -130,3 +221,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal):
             return {'CANCELLED'}
 
         return {'RUNNING_MODAL'}
+
+    def exit(self):
+        self.unregister_draw()
+        self._display_text = ""
+        self._overlay_mouse = None
+        super().exit()

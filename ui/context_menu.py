@@ -7,10 +7,12 @@ from ..utils.public import get_pref
 from ..utils.session_state import SessionState
 
 
-class ContextMenu:
-    """Draw callback for Blender's button context menu (append only)."""
+class ContextMenu(bpy.types.Menu):
+    bl_label = "Button Context Menu"
 
-    @staticmethod
+    def draw(self, context):
+        self.layout.separator()
+
     def context_menu(self, context):
         from ..src.translate import __name_translate__
         SessionState.context_menu_from_button = True
@@ -51,18 +53,31 @@ class ContextMenu:
                 rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
 
 
+_context_menu_appended = False
+
+
 def register():
-    menu = getattr(bpy.types, "WM_MT_button_context", None)
-    if menu is None:
+    """Append draw hook to WM_MT_button_context."""
+    global _context_menu_appended
+    if _context_menu_appended:
         return
-    menu.append(ContextMenu.context_menu)
+
+    if not hasattr(bpy.types, "WM_MT_button_context"):
+        bpy.utils.register_class(type("WM_MT_button_context", (ContextMenu,), {}))
+
+    bpy.types.WM_MT_button_context.append(ContextMenu.context_menu)
+    _context_menu_appended = True
 
 
 def unregister():
-    menu = getattr(bpy.types, "WM_MT_button_context", None)
-    if menu is None:
+    """Remove draw hook only."""
+    global _context_menu_appended
+    if not _context_menu_appended:
         return
+
     try:
-        menu.remove(ContextMenu.context_menu)
-    except (ValueError, AttributeError):
+        bpy.types.WM_MT_button_context.remove(ContextMenu.context_menu)
+    except (ValueError, AttributeError, TypeError):
         pass
+
+    _context_menu_appended = False

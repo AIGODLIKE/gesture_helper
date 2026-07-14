@@ -1,6 +1,7 @@
 import time
 
 import bpy
+from mathutils import Vector
 
 from ..gesture.gesture_point_kd_tree import GesturePointKDTree
 
@@ -40,7 +41,11 @@ class GestureHandle:
         if tree is None or len(tree):
             return
         try:
-            tree.append(None, self.__mouse_position__)
+            # Window coords (mouse_x/y). mouse_prev_press_* is region space.
+            press = self.__mouse_position__.copy()
+            self._gesture_circle_center = press
+            self._last_trajectory_mouse = press.copy()
+            tree.append(None, press)
         except (AttributeError, ReferenceError, TypeError):
             ...
 
@@ -133,28 +138,25 @@ class GestureHandle:
 
             if i.check_operator_poll():
                 idname = resolve_operator_bl_idname(i.operator_bl_idname)
-                from .pass_through.invoke import preferences_window_exists
                 from .pass_through.ui_filter import is_preferences_op
 
                 is_prefs = is_preferences_op(idname)
-                # Preferences already open: do not re-invoke (focus fight).
-                if is_prefs and preferences_window_exists():
-                    return
                 if i.operator_is_operator and should_defer_gesture_operator(idname):
                     area = getattr(self, 'area', None) or getattr(ops, 'area', None)
                     if defer_gesture_element_operator(bpy.context, area, i):
                         ops._gesture_deferred_ui = True
                         return
                 # Sync Preferences open must keep the user-click OS focus context.
+                # Keep _opening_ui until modal exit so WINDOW_DEACTIVATE does not
+                # cancel before FINISHED+INTERFACE is returned.
                 if is_prefs:
                     ops._opening_ui = True
                     ops._gesture_deferred_ui = True
-                try:
-                    error = i.running_operator()
-                finally:
+                error = i.running_operator()
+                if error is not None:
                     if is_prefs:
                         ops._opening_ui = False
-                if error is not None:
+                        ops._gesture_deferred_ui = False
                     ops.report({'ERROR'}, "Operator Run Error,Please check the console")
                     return
             else:
@@ -189,35 +191,55 @@ class GestureHandle:
         self.last_mouse_mouse_time = time.time()
         self._derived_cache_key = None
         self._direction_items_memo = None
+        self._gesture_circle_center = None
+        self._last_trajectory_mouse = None
+
+    @staticmethod
+    def _mouse_moved_enough(current: Vector, previous: Vector | None, *, min_dist: float = 1.0) -> bool:
+        if previous is None:
+            return True
+        return (current - previous).length >= min_dist
 
     def trajectory_event_update(self, context, event):
         """Update trajectory from modal event."""
         # Do not overwrite invoke-time area/screen here. Pass-through and
         # deferred operators need the area that started the gesture; modal
         # context.area can be None or a different editor on RELEASE.
-        # Count mouse moves only — PRESS/RELEASE/TIMER must not inflate the
-        # near-click budget used by Shift+RMB cursor pass-through.
+        moved = False
         if event.type == "MOUSEMOVE":
             self.move_count += 1
             self.last_mouse_mouse_time = time.time()
             self._schedule_gesture_timeout_timer()
+            emp = self.__mouse_position__
+            if self._mouse_moved_enough(emp, self._last_trajectory_mouse):
+                moved = True
+                self._last_trajectory_mouse = emp.copy()
         self.event_count += 1
+        if not moved:
+            self.tag_redraw()
+            return
+
         emp = self.__mouse_position__
         if self.event_count > 2:
             not_draw = not self.is_draw_gesture
-            if (not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp) and not_draw:
-                self.trajectory_mouse_move.append(emp)
-                self.trajectory_mouse_move_time.append(time.time())
+            if not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp:
+                if not_draw:
+                    self.trajectory_mouse_move.append(emp)
+                    self.trajectory_mouse_move_time.append(time.time())
             if not len(self.trajectory_tree):
                 self.trajectory_tree.append(None, emp)
+                if self._gesture_circle_center is None:
+                    self._gesture_circle_center = emp.copy()
             if self.is_access_child_gesture:
 
                 if self.is_have_extension_item and self.direction_element.direction == "7":
                     if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
                         self.trajectory_tree.append(self.direction_element, emp)
+                        self._gesture_circle_center = emp.copy()
                         self.invalidate_derived_caches()
                 else:
                     self.trajectory_tree.append(self.direction_element, emp)
+                    self._gesture_circle_center = emp.copy()
                     self.invalidate_derived_caches()
             if self.is_draw_gesture:
                 self.check_return_previous()

@@ -72,8 +72,9 @@ def is_preferences_op(idname: str) -> bool:
 def should_defer_gesture_operator(idname: str) -> bool:
     """Return True if *idname* should run after the gesture modal exits.
 
-    Preferences ops stay **sync** so the new OS window inherits the user-click
-    focus context (timer defer loses OS focus on Windows). Menus still defer.
+    Only defer known UI openers (menus/panels/search). Normal operators such as
+    ``wm.context_toggle`` / panel switching must stay sync so they keep area
+    context. Preferences stay sync so the new OS window inherits click focus.
     """
     if not idname:
         return False
@@ -86,8 +87,7 @@ def should_defer_gesture_operator(idname: str) -> bool:
         return True
     if idname.startswith('wm.call_'):
         return True
-    # Default: defer (unknown UI wrappers, etc.).
-    return True
+    return False
 
 
 def is_ui_pass_idname(idname: str) -> bool:
