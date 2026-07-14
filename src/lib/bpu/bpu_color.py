@@ -1,10 +1,15 @@
 class BpuColor:
-    __background_normal_color__ = [.01, .01, .01, 1]
-    __background_active_color__ = [0, .5, .7, 1]  # self.active
-    __background_haver_color__ = [.5, .5, .5, 1]
-    __background_property_haver_color__ = [.1, .2, .5, 1]
-    __background_property_normal_color__ = [.1, .1, .1, 1]
-    __background_alert_color__ = [1, 0, 0, 1]  # self.alert
+    # Dark flat defaults aligned with gesture draw theme.
+    __background_normal_color__ = [0.035, 0.035, 0.038, 1.0]
+    __background_active_color__ = [0.02, 0.45, 0.40, 1.0]  # self.active
+    __background_haver_color__ = [0.28, 0.18, 0.75, 0.85]
+    __background_property_haver_color__ = [0.02, 0.45, 0.40, 0.7]
+    __background_property_normal_color__ = [0.05, 0.05, 0.055, 1.0]
+    __background_alert_color__ = [0.85, 0.15, 0.15, 1.0]  # self.alert
+
+    __outline_color__ = [0.55, 0.55, 0.58, 0.28]
+    __outline_active_color__ = [0.75, 0.75, 0.78, 0.42]
+    __outline_width__ = 0.75
 
     __debug_layout_bound_color__ = [.6, .1, .1, 1]
     __debug_layout_margin_color__ = [.1, .2, 1, 1]
@@ -14,14 +19,14 @@ class BpuColor:
     __debug_menu_bound_color__ = [.1, .2, 1, 1]
     __debug_menu_margin_color__ = [.5, .5, .5, 1]
 
-    __text_normal_color__ = [.9, .9, .9, 1]
+    __text_normal_color__ = [0.92, 0.92, 0.94, 1]
     __text_haver_color__ = [1, 1, 1, 1]
-    __text_alert_color__ = [1, 0, 0, 1]
+    __text_alert_color__ = [1, 0.3, 0.3, 1]
 
-    __separator_color__ = [.4, .4, .4, 1]
+    __separator_color__ = [0.35, 0.35, 0.38, 1]
 
     __layout_radius__ = 10
-    __layout_segments__ = 40
+    __layout_segments__ = 48
 
     __debug_line__ = 1
     __separator_line__ = 2

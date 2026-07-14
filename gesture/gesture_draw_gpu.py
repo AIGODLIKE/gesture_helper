@@ -5,18 +5,18 @@ import bpy
 import gpu
 from mathutils import Vector
 
-from ..utils.public_gpu import PublicGpu
+from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 
 
 class DrawDebug(PublicGpu):
     def gpu_draw_debug(self):
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
-        gpu.state.depth_mask_set(True)
-
         try:
             if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
-                self.__gpu_draw_debug__()
+                gpu_draw_begin()
+                try:
+                    self.__gpu_draw_debug__()
+                finally:
+                    gpu_draw_end()
         except ReferenceError:
             ...
 
@@ -124,16 +124,16 @@ class GestureGpuDraw(DrawDebug):
 
     def __gpu_draw__(self):
         """Main GPU draw entry."""
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
-        gpu.state.depth_mask_set(True)
-
         try:
             if len(bpy.context.screen.areas) > 8:
                 if bpy.context.area != self.area:
                     return
             if self.is_draw_gpu:
-                self.gpu_draw_gesture()
+                gpu_draw_begin()
+                try:
+                    self.gpu_draw_gesture()
+                finally:
+                    gpu_draw_end()
         except ReferenceError:
             ...
 
@@ -213,9 +213,13 @@ class GestureGpuDraw(DrawDebug):
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_point(self):
-        """Draw gesture trajectory points."""
+        """Draw gesture trajectory origin/knot markers as circles."""
         tree = self.trajectory_tree
-        self.draw_2d_points(tree.points_list)
+        if not tree.points_list:
+            return
+        scale = bpy.context.preferences.view.ui_scale
+        size = max(6.0, 8.0 * scale)
+        self.draw_2d_points(tree.points_list, point_size=size, color=(1.0, 1.0, 1.0, 1.0))
 
     def gpu_draw_last_item_name(self):
         """Draw last element label."""
@@ -276,38 +280,29 @@ class GestureGpuDraw(DrawDebug):
         if self.session.phase.shows_radial_ui:
             center = self.__circle_center_region_position__
             if center is None:
-                # #region agent log
-                from .gesture_input import _agent_dbg
-                _agent_dbg("B", "gesture_draw_gpu.py:center_none", "radial draw aborted: center None", {
-                    "is_draw_gpu": bool(self.is_draw_gpu),
-                    "snap_draw": bool(self.session.snapshot.is_draw_gpu),
-                    "phase": str(self.session.phase),
-                    "last": list(self.__last_window_position__) if self.__last_window_position__ else None,
-                    "circle": list(self.__circle_center_window_position__) if self.__circle_center_window_position__ else None,
-                })
-                # #endregion
                 return
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(center)
                 if self.is_window_region_type:
-                    self.draw_circle((0, 0), threshold, line_width=2, segments=64)
+                    # Threshold ring: keep it clearly visible against the viewport.
+                    ring_color = self.draw_property.text_default_color
+                    ring_width = max(2.5, 2.75 * scale)
+                    self.draw_circle(
+                        (0, 0), threshold,
+                        color=ring_color,
+                        line_width=ring_width,
+                        segments=72,
+                    )
                     angle = self.angle_unsigned
                     if self.session.snapshot.threshold_zone.is_beyond and angle is not None:
-                        self.draw_arc((0, 0), threshold, angle, 45, line_width=10, segments=64)
+                        self.draw_arc(
+                            (0, 0), threshold, angle, 45,
+                            color=self.draw_property.trajectory_gesture_color,
+                            line_width=max(5.0, 5.5 * scale),
+                            segments=48,
+                        )
 
                 draw_items = list(self.direction_items.values())
-                # #region agent log
-                if getattr(self, "_dbg_draw_logged", 0) < 3:
-                    from .gesture_input import _agent_dbg
-                    self._dbg_draw_logged = getattr(self, "_dbg_draw_logged", 0) + 1
-                    keys = list(self.direction_items.keys())
-                    _agent_dbg("B", "gesture_draw_gpu.py:draw_radial", "drawing radial items", {
-                        "keys": keys,
-                        "has_9": "9" in keys,
-                        "hover": [getattr(x, "name", str(x)) for x in self.session.extension_hover],
-                        "n": len(draw_items),
-                    })
-                # #endregion
                 for item in draw_items:
                     with gpu.matrix.push_pop():
                         item.draw_gpu_item(self)

@@ -7,7 +7,8 @@ from mathutils import Vector
 
 from .bpu_debug import BpuDebug
 from .bpu_prop_layout import BpuPropLayout
-from ....utils.public_gpu import PublicGpu
+from .bpu_property import BpuProperty
+from ....utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 
 
 def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[int], list[int], list[int]]:
@@ -29,49 +30,55 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def sync_input(self, offset_position, mouse_position) -> None:
+        """Update offset/mouse on this node and descendants (for retained layouts)."""
+        self.offset_position = offset_position
+        self.mouse_position = mouse_position
+        children = self.__temp_children__ if self.type.is_parent else self.__draw_children__
+        for child in children:
+            child.sync_input(offset_position, mouse_position)
+
     def __gpu_draw__(self):
         """Main GPU draw entry."""
-        if IS_DEBUG_DRAW:
-            ...
-
         area = bpy.context.region
+        BpuProperty.__menu_haver__.clear()
         self.__measure__()
         self.__layout_haver__ = list()
-        with gpu.matrix.push_pop():
-            gpu.matrix.translate([-area.x, -area.y])
-            gpu.matrix.translate(self.offset_position)
+        gpu_draw_begin()
+        try:
+            with gpu.matrix.push_pop():
+                gpu.matrix.translate([-area.x, -area.y])
+                gpu.matrix.translate(self.offset_position)
 
-            if IS_DEBUG_INFO:
-                self.draw_2d_points(Vector((0, 0)), color=(1, 0, 0, 0.3), point_size=50)
+                if IS_DEBUG_INFO:
+                    self.draw_2d_points(Vector((0, 0)), color=(1, 0, 0, 0.3), point_size=50)
 
-            gpu.matrix.translate(self.__quadrant_translate__)
-            self.__layout__()
+                gpu.matrix.translate(self.__quadrant_translate__)
+                self.__layout__()
 
-            if IS_DEBUG_INFO:
-                with gpu.matrix.push_pop():
-                    gpu.matrix.translate((-500, 100))
-                    for index, i in enumerate((
-                            getattr(bpy.context, "button_pointer", None),
-                            getattr(bpy.context, "button_prop", None),
-                            getattr(bpy.context, "button_operator", None),
-                            str(bpy.context.area.type),
-                            str(self.offset_position),
-                            str(self.mouse_position),
-                            str(self.__active_operator__),
-                            f"haver:{self.__menu_haver__}",
-                            f"{self.__layout_haver__}",)
-                    ):
-                        self.draw_text(text=i, position=[0, 50 + -50 * index], font_id=self.font_id)
+                if IS_DEBUG_INFO:
+                    with gpu.matrix.push_pop():
+                        gpu.matrix.translate((-500, 100))
+                        for index, i in enumerate((
+                                getattr(bpy.context, "button_pointer", None),
+                                getattr(bpy.context, "button_prop", None),
+                                getattr(bpy.context, "button_operator", None),
+                                str(bpy.context.area.type),
+                                str(self.offset_position),
+                                str(self.mouse_position),
+                                str(self.__active_operator__),
+                                f"haver:{self.__menu_haver__}",
+                                f"{self.__layout_haver__}",)
+                        ):
+                            self.draw_text(text=i, position=[0, 50 + -50 * index], font_id=self.font_id)
+        finally:
+            gpu_draw_end()
         self.__layout_haver_histories__ = self.__layout_haver__
 
     def __layout__(self) -> None:
         """
         Measure size first, then draw children.
         """
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
-        gpu.state.depth_mask_set(True)
-
         if self.type.is_parent:
             self.__draw_layout__()
         elif self.type.is_separator:
@@ -149,15 +156,17 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             self.__draw_haver_position_debug__()
 
     def __draw_layout__(self) -> None:
-        """Draw layout background."""
+        """Draw layout background (flat fill + outline)."""
         with gpu.matrix.push_pop():
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
-            self.draw_rounded_rectangle_area(
+            self.draw_rounded_rectangle_outlined(
                 [0, 0],
+                fill=self.__background_normal_color__,
+                stroke=self.__outline_color__,
                 radius=self.__layout_radius__,
-                color=self.__background_normal_color__,
                 width=self.__draw_width__,
                 height=self.__draw_height__,
+                line_width=self.__outline_width__,
                 segments=self.__layout_segments__)
         if IS_DEBUG_DRAW:
             with gpu.matrix.push_pop():
@@ -209,10 +218,16 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             w, h = self.parent.__child_max_width__, self.__draw_height__
         with gpu.matrix.push_pop():
             gpu.matrix.translate((w / 2, h / 2))
-            self.draw_rounded_rectangle_area([0, 0], radius=5,
-                                             color=color,
-                                             width=w,
-                                             height=h, segments=24)
+            self.draw_rounded_rectangle_outlined(
+                [0, 0],
+                fill=color,
+                stroke=self.__outline_active_color__,
+                radius=5,
+                width=w,
+                height=h,
+                line_width=self.__outline_width__,
+                segments=self.__layout_segments__,
+            )
 
     def __draw_menu__(self) -> None:
         """
@@ -232,15 +247,15 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                 with gpu.matrix.push_pop():
                     w = self.__child_max_width__ + self.layout_margin * 2
                     h = self.__child_sum_height__ + self.layout_margin * 2
-
                     gpu.matrix.translate((w / 2, h / 2))
-                    self.__draw_layout__()
-                    self.draw_rounded_rectangle_area(
+                    self.draw_rounded_rectangle_outlined(
                         [0, 0],
+                        fill=self.__background_normal_color__,
+                        stroke=self.__outline_color__,
                         radius=self.__layout_radius__,
-                        color=self.__background_normal_color__,
                         width=w,
                         height=h,
+                        line_width=self.__outline_width__,
                         segments=self.__layout_segments__)
 
                 if IS_DEBUG_DRAW:
