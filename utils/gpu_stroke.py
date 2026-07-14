@@ -231,10 +231,8 @@ def draw_smooth_stroke(points, color, line_width: float, *, is_cycle: bool = Fal
     shader.bind()
     mvp = gpu.matrix.get_projection_matrix() @ gpu.matrix.get_model_view_matrix()
     shader.uniform_float("ModelViewProjectionMatrix", mvp)
-    c = tuple(color)
-    if len(c) == 3:
-        c = (c[0], c[1], c[2], 1.0)
-    shader.uniform_float("color", c)
+    from .color import color_to_gpu
+    shader.uniform_float("color", color_to_gpu(color))
     shader.uniform_float("lineWidth", lw)
     batch.draw(shader)
     return True
@@ -270,15 +268,13 @@ def draw_blender_polyline(points, color, line_width: float, *, is_cycle: bool = 
     else:
         viewport = tuple(float(v) for v in gpu.state.viewport_get()[2:])
 
-    c = tuple(color)
-    if len(c) == 3:
-        c = (c[0], c[1], c[2], 1.0)
+    from .color import color_to_gpu
 
     gpu.state.blend_set("ALPHA")
     batch = batch_for_shader(shader, "LINES", {"pos": paired})
     shader.bind()
     shader.uniform_float("viewportSize", viewport)
     shader.uniform_float("lineWidth", max(1.0, float(line_width)))
-    shader.uniform_float("color", c)
+    shader.uniform_float("color", color_to_gpu(color))
     batch.draw(shader)
     return True

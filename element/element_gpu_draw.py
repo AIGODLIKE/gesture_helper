@@ -14,7 +14,7 @@ from ..utils.gpu import get_now_2d_offset_position
 from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
-from ..utils.color import color_to_gpu, color_to_srgb
+from ..utils.color import color_to_srgb
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
 
@@ -242,15 +242,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             return self.icon
         return None
 
-    def gpu_draw_icon(self, use_offset=True):
+    def gpu_draw_icon(self, use_offset=True, icon_size=None):
         icon = self._gpu_draw_icon_name()
         if not icon:
             return
-        icon_size = self.content_icon_size
-        if self.is_draw_context_toggle_operator_bool and self.parent_is_extension:
-            layout = getattr(self.parent_element, "_extension_layout_cache", None)
-            if layout is not None:
-                icon_size = layout.icon_size
+        if icon_size is None:
+            icon_size = self.content_icon_size
+            if self.is_draw_context_toggle_operator_bool and self.parent_is_extension:
+                layout = getattr(self.parent_element, "_extension_layout_cache", None)
+                if layout is not None:
+                    icon_size = layout.icon_size
         texture = Texture.get_texture(icon)
         if texture is None:
             return
@@ -278,7 +279,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         scale = bpy.context.preferences.view.ui_scale
         stroke = draw.outline_active_color if active else draw.outline_color
         # Keep sub-pixel widths so POLYLINE AA stays thin and faint.
-        return color_to_gpu(stroke), max(0.5, float(draw.outline_width) * scale)
+        return stroke, max(0.5, float(draw.outline_width) * scale)
 
     def gpu_draw_margin(self):
         w, h = self.draw_dimensions
@@ -291,7 +292,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             stroke, line_width = self._outline_colors(active=self.is_active_direction)
             self.draw_rounded_rectangle_outlined(
                 (0, 0),
-                fill=color_to_gpu(self.background_color),
+                fill=self.background_color,
                 stroke=stroke,
                 radius=radius,
                 width=w + wm * 2,
@@ -377,12 +378,20 @@ class ElementGpuExtensionItem:
     _CHEVRON_FRAC = 0.78
     # Extra vertical space inside each row; total row height = icon * (1 + interval).
     _ROW_INTERVAL = 0.4
+    # Padding above and below a dividing line (fraction of icon size each side).
+    _SEP_PAD_FRAC = 0.2
 
     @property
     def dividing_line_height(self) -> float:
         dividing_line_height = self.draw_property.dividing_line_height
         scale = bpy.context.preferences.view.ui_scale
         return dividing_line_height * scale
+
+    def _separator_metrics(self, icon_size: float) -> tuple[float, float]:
+        """Return (line thickness, total separator step) with equal pad above/below."""
+        dh = self.dividing_line_height
+        pad = float(icon_size) * self._SEP_PAD_FRAC
+        return dh, dh + pad * 2.0
 
     @property
     def max_height_dimensions(self) -> float:
@@ -432,7 +441,8 @@ class ElementGpuExtensionItem:
         content_h = 0.0
         for item in items:
             if item.is_dividing_line:
-                content_h += self.dividing_line_height + icon_size * self._ROW_INTERVAL
+                _dh, sep_step = self._separator_metrics(icon_size)
+                content_h += sep_step
             else:
                 content_h += row_h
 
@@ -479,11 +489,12 @@ class ElementGpuExtensionItem:
                 item.ops = ops
 
                 if item.is_dividing_line:
-                    color = color_to_gpu(self.draw_property.dividing_line_color)
-                    dh = self.dividing_line_height
-                    step = dh + lay.icon_size * self._ROW_INTERVAL
+                    color = self.draw_property.dividing_line_color
+                    dh, step = self._separator_metrics(lay.icon_size)
+                    pad = (step - dh) * 0.5
                     with gpu.matrix.push_pop():
-                        gpu.matrix.translate((w * 0.5, -dh * 0.5))
+                        # Center the line in the separator slot (equal gap above/below).
+                        gpu.matrix.translate((w * 0.5, -(pad + dh * 0.5)))
                         self.draw_rounded_rectangle_area(
                             (0, 0),
                             color=color,
@@ -499,7 +510,7 @@ class ElementGpuExtensionItem:
                     stroke, line_width = self._outline_colors(active=True)
                     self.draw_rounded_rectangle_outlined(
                         (w * 0.5, -row_h * 0.5),
-                        fill=color_to_gpu(item.extension_background_color),
+                        fill=item.extension_background_color,
                         stroke=stroke,
                         radius=min(self.text_radius, row_h * 0.5),
                         width=w,
@@ -521,9 +532,7 @@ class ElementGpuExtensionItem:
                                     s = lay.icon_size
                                     self.draw_rounded_rectangle_outlined(
                                         (s * 0.5, -s * 0.5),
-                                        fill=color_to_gpu(
-                                            self.draw_property.background_child_active_color
-                                        ),
+                                        fill=self.draw_property.background_child_active_color,
                                         stroke=stroke,
                                         radius=s * 0.5,
                                         width=s,
@@ -532,12 +541,20 @@ class ElementGpuExtensionItem:
                                     )
                             with gpu.matrix.push_pop():
                                 gpu.matrix.translate((cursor_x, 0))
-                                item.gpu_draw_icon(False)
+                                # Same slot size for every row so icons share one column.
+                                item.gpu_draw_icon(False, icon_size=lay.icon_size)
                         cursor_x += lay.icon_size + lay.gap
 
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate((cursor_x, 0))
-                        item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=True)
+                        # Center label in the icon band. Skip per-glyph fix_offset
+                        # (CJK vs Latin used different nudges and looked uneven).
+                        _tw, th = item.text_dimensions
+                        if th < lay.icon_size:
+                            gpu.matrix.translate((0, -(lay.icon_size - th) * 0.5))
+                        # BLF baseline sits low in the em-box; slight lift matches icon.
+                        gpu.matrix.translate((0, lay.icon_size * 0.12))
+                        item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
 
                     if lay.has_chevron_col and item.is_child_gesture:
                         tex = Texture.get_texture("1")
@@ -580,7 +597,7 @@ class ElementGpuExtensionItem:
         stroke, line_width = self._outline_colors(active=False)
         self.draw_rounded_rectangle_outlined(
             (w / 2, -h / 2),
-            fill=color_to_gpu(draw.background_child_color),
+            fill=draw.background_child_color,
             stroke=stroke,
             radius=self.text_radius,
             width=w + mx * 2,

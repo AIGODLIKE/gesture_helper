@@ -1,16 +1,18 @@
 """Scene-linear ColorProperty → display / GPU uniforms.
 
 Blender ``subtype='COLOR'`` stores scene-linear values. The preference picker
-hex uses IEC 61966-2-1 sRGB (e.g. ``#27b3aa``).
+hex uses IEC 61966-2-1 sRGB.
 
-Viewport overlays use builtin ``UNIFORM_COLOR`` which runs
-``blender_srgb_to_framebuffer_space`` (IEC sRGB→linear), then the sRGB
-framebuffer encodes linear→bytes. A plain IEC round-trip is correct when that
-encode is also IEC. On common GPU paths the encode approximates **gamma 2.2**,
-which shifts the picker hex (``#27b3aa`` → ``#2bb2a9``). ``color_to_gpu``
-pre-emphasizes so the encode lands on the picker color.
+GPU overlays (``UNIFORM_COLOR`` / custom stroke) run IEC sRGB→linear
+(``blender_srgb_to_framebuffer_space``), then the framebuffer encodes to bytes.
+When that encode approximates gamma 2.2, a plain IEC round-trip shifts picker
+hex (e.g. ``#27b3aa`` → ``#2bb2a9``). ``color_to_gpu`` pre-emphasizes so the
+final pixels match the picker.
 
-BLF expects plain IEC display sRGB — use ``color_to_srgb``, not ``color_to_gpu``.
+**Call sites should pass scene-linear colors.** Conversion is applied once in
+``public_gpu._as_rgba`` and the stroke color upload — do not pre-convert.
+
+BLF text does not use the GPU sRGB path — use ``color_to_srgb`` (plain IEC).
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ def linear_to_srgb_tuple(r: float, g: float, b: float, a: float = 1.0) -> tuple[
 
 
 def color_to_srgb(color) -> tuple[float, float, float, float]:
-    """Scene-linear → IEC display sRGB (BLF / picker-matched, no GPU pre-emphasis)."""
+    """Scene-linear → IEC display sRGB (BLF only)."""
     c = tuple(color)
     if len(c) == 3:
         return linear_to_srgb_tuple(c[0], c[1], c[2], 1.0)
@@ -48,8 +50,15 @@ def _gpu_uniform_from_srgb(r: float, g: float, b: float, a: float) -> tuple[floa
 
 
 def color_to_gpu(color) -> tuple[float, float, float, float]:
-    """Scene-linear → GPU overlay uniform (IEC picker hex after framebuffer encode)."""
-    srgb = color_to_srgb(color)
+    """Scene-linear → GPU overlay uniform (picker hex after framebuffer encode)."""
+    # bpy_prop_array / Color are not hashable — normalize before cache keys.
+    c = tuple(float(x) for x in color)
+    if len(c) == 3:
+        r, g, b = c
+        a = 1.0
+    else:
+        r, g, b, a = c[0], c[1], c[2], c[3]
+    srgb = linear_to_srgb_tuple(r, g, b, a)
     return _gpu_uniform_from_srgb(srgb[0], srgb[1], srgb[2], srgb[3])
 
 
