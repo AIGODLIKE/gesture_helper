@@ -371,8 +371,23 @@ class ElementGpuExtensionItem:
         w, h = self.extension_dimensions
         margin_x, margin_y = self.draw_property.margin
         with gpu.matrix.push_pop():
+            # Keep hover stack in sync while painting (nested menus + release hit-test).
+            self.ops = ops
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
+            # #region agent log
+            if not getattr(ops, "_dbg_ext_draw_logged", False):
+                from ..gesture.gesture_input import _agent_dbg
+                ops._dbg_ext_draw_logged = True
+                items = list(self.extension_items)
+                _agent_dbg("D", "element_gpu_draw.py:ext_draw", "drawing extension panel", {
+                    "self": getattr(self, "name", None),
+                    "dir": getattr(self, "direction", None),
+                    "n_items": len(items),
+                    "item_names": [getattr(i, "name", None) for i in items[:8]],
+                    "hover": [getattr(x, "name", str(x)) for x in ops.extension_hover],
+                })
+            # #endregion
             draw_debug_point()
             self.draw_gpu_extension_margin()
 
