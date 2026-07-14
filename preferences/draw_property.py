@@ -80,16 +80,16 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
 
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=18, min=5, max=120)
+    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=14, min=5, max=120)
     text_gpu_draw_radius: IntProperty(
         name='Rounded corner size',
         description='Gpu Draw Radius Size',
-        default=8, min=2, max=60,
+        default=6, min=2, max=60,
     )
     margin: IntVectorProperty(
         name='Margin',
         description='Gpu Draw Margin Size',
-        default=(12, 10),
+        default=(10, 6),
         min=0,
         max=120,
         size=2,
