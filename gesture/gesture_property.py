@@ -61,12 +61,29 @@ class GestureProperty(PublicProperty):
         return self.trajectory_tree.last_point
 
     @property
+    def __circle_center_window_position__(self) -> Vector:
+        """Stable window position for the radial menu circle center."""
+        center = getattr(self, '_gesture_circle_center', None)
+        if center is not None:
+            return center
+        return self.__last_window_position__
+
+    @property
     def __last_region_position__(self) -> Vector:
         """Last mouse region position."""
         region = bpy.context.region
         if self.is_draw_gpu:
             x, y = self.__last_window_position__
             return Vector(((x - region.x), (y - region.y)))
+        return False
+
+    @property
+    def __circle_center_region_position__(self) -> Vector | bool:
+        """Stable region position for the radial menu circle center."""
+        region = bpy.context.region
+        if self.is_draw_gpu:
+            x, y = self.__circle_center_window_position__
+            return Vector((x - region.x, y - region.y))
         return False
 
     @property

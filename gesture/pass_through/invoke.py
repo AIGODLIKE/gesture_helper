@@ -111,23 +111,6 @@ def invoke_operator_now(
         return False
 
 
-def preferences_window_exists() -> bool:
-    wm = getattr(bpy.context, 'window_manager', None)
-    if wm is None:
-        return False
-    for win in wm.windows:
-        screen = getattr(win, 'screen', None)
-        if screen is None:
-            continue
-        for area in screen.areas:
-            try:
-                if area.type == 'PREFERENCES':
-                    return True
-            except ReferenceError:
-                continue
-    return False
-
-
 def _needs_area_pin(idname: str) -> bool:
     """Menus/panels need the gesture area; window-opening ops must not pin it."""
     if not idname:
@@ -174,13 +157,10 @@ def defer_operator_call(
 
     def _invoke(*_args):
         try:
-            # Re-opening Preferences while it already exists steals/fights focus.
-            if is_prefs and preferences_window_exists():
-                return None
-
             func = getattr(getattr(bpy.ops, prefix), suffix)
             # Preferences / new-window ops: do NOT pin gesture area/region —
             # that keeps input focus on the old View3D after the popup opens.
+            # Still invoke even if Preferences already exists so it can refocus.
             if is_prefs or not pin_area:
                 result = func(operator_context, True, **properties)
             else:
