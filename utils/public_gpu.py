@@ -112,10 +112,12 @@ def _polyline_positions(vertex, is_cycle=True):
 
 
 def _as_rgba(color):
+    """Scene-linear ColorProperty / RGBA → GPU overlay uniform."""
+    from .color import color_to_gpu
     c = tuple(color)
     if len(c) == 3:
-        return c[0], c[1], c[2], 1.0
-    return c[0], c[1], c[2], c[3]
+        c = (c[0], c[1], c[2], 1.0)
+    return color_to_gpu(c)
 
 
 def draw_line(vertex, color, line_width, is_cycle=True) -> None:
