@@ -5,18 +5,16 @@ from functools import cache
 import blf
 import bpy
 import gpu
-import numpy as np
 from bl_operators.wm import context_path_validate
 from gpu_extras.presets import draw_circle_2d
 from mathutils import Vector
 
 from ..utils import including_chinese, has_special_characters, contains_uppercase
-from ..utils.color import linear_to_srgb
 from ..utils.gpu import get_now_2d_offset_position
 from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
-from ..utils.public_gpu import PublicGpu
+from ..utils.public_gpu import PublicGpu, color_to_srgb
 from ..utils.texture import Texture
 
 
@@ -264,6 +262,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((self.icon_offset_width, 0))
 
+    def _outline_colors(self, *, active: bool = False):
+        draw = self.draw_property
+        scale = bpy.context.preferences.view.ui_scale
+        stroke = draw.outline_active_color if active else draw.outline_color
+        # Keep sub-pixel widths so POLYLINE AA stays thin and faint.
+        return color_to_srgb(stroke), max(0.5, float(draw.outline_width) * scale)
+
     def gpu_draw_margin(self):
         w, h = self.draw_dimensions
         wm, hm = self.text_margin
@@ -272,15 +277,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             draw_debug_point()
 
             radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
-
-            rounded_rectangle = {
-                "radius": radius,
-                "position": (0, 0),
-                "width": w + wm * 2,
-                "height": h + hm * 2,
-                "color": linear_to_srgb(np.array(self.background_color, dtype=np.float32)),
-            }
-            self.draw_rounded_rectangle_area(**rounded_rectangle)
+            stroke, line_width = self._outline_colors(active=self.is_active_direction)
+            self.draw_rounded_rectangle_outlined(
+                (0, 0),
+                fill=color_to_srgb(self.background_color),
+                stroke=stroke,
+                radius=radius,
+                width=w + wm * 2,
+                height=h + hm * 2,
+                line_width=line_width,
+            )
 
     icon_interval = .5
 
@@ -375,19 +381,6 @@ class ElementGpuExtensionItem:
             self.ops = ops
             if self not in ops.extension_hover:
                 ops.extension_hover.append(self)
-            # #region agent log
-            if not getattr(ops, "_dbg_ext_draw_logged", False):
-                from ..gesture.gesture_input import _agent_dbg
-                ops._dbg_ext_draw_logged = True
-                items = list(self.extension_items)
-                _agent_dbg("D", "element_gpu_draw.py:ext_draw", "drawing extension panel", {
-                    "self": getattr(self, "name", None),
-                    "dir": getattr(self, "direction", None),
-                    "n_items": len(items),
-                    "item_names": [getattr(i, "name", None) for i in items[:8]],
-                    "hover": [getattr(x, "name", str(x)) for x in ops.extension_hover],
-                })
-            # #endregion
             draw_debug_point()
             self.draw_gpu_extension_margin()
 
@@ -396,32 +389,31 @@ class ElementGpuExtensionItem:
                 wi, hi = self.max_dimensions
 
                 if item.is_dividing_line:
-                    # Active item color
-                    color = linear_to_srgb(np.array(self.draw_property.dividing_line_color, dtype=np.float32))
+                    color = color_to_srgb(self.draw_property.dividing_line_color)
                     hs = self.dividing_line_height / 2
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate((w / 2, -(self.dividing_line_height + self.extension_icon_interval / 2)))
-                        rounded_rectangle = {
-                            "radius": hs,
-                            "position": (0, 0),
-                            "width": w,
-                            "height": self.dividing_line_height,
-                            "color": color,
-                        }
-                        self.draw_rounded_rectangle_area(**rounded_rectangle)
+                        self.draw_rounded_rectangle_area(
+                            (0, 0),
+                            color=color,
+                            radius=hs,
+                            width=w,
+                            height=self.dividing_line_height,
+                        )
                     gpu.matrix.translate((0, -(self.dividing_line_height + self.extension_icon_interval)))
                 else:
                     if item.extension_by_child_is_hover:
-                        color = linear_to_srgb(np.array(item.extension_background_color, dtype=np.float32))
+                        stroke, line_width = self._outline_colors(active=True)
                         dh = hi + hi * self.extension_interval
-                        rounded_rectangle = {
-                            "radius": self.text_radius,
-                            "position": (w / 2, -dh / 2),
-                            "width": w + margin_x,
-                            "height": dh,
-                            "color": color,
-                        }
-                        self.draw_rounded_rectangle_area(**rounded_rectangle)
+                        self.draw_rounded_rectangle_outlined(
+                            (w / 2, -dh / 2),
+                            fill=color_to_srgb(item.extension_background_color),
+                            stroke=stroke,
+                            radius=self.text_radius,
+                            width=w + margin_x,
+                            height=dh,
+                            line_width=line_width,
+                        )
 
                     with gpu.matrix.push_pop():
                         s = self.extension_icon_size
@@ -431,16 +423,16 @@ class ElementGpuExtensionItem:
                                 if item.get_operator_wm_context_toggle_property_bool:
                                     sp = (hi * self.extension_interval) / 2
                                     dh = hi + sp
-                                    color = linear_to_srgb(
-                                        np.array(self.draw_property.background_child_active_color, dtype=np.float32))
-                                    rounded_rectangle = {
-                                        "radius": max(dh / 2, self.text_radius),
-                                        "position": (dh / 2 - sp / 2, -dh / 2 + sp / 2),
-                                        "width": dh,
-                                        "height": dh,
-                                        "color": color,
-                                    }
-                                    self.draw_rounded_rectangle_area(**rounded_rectangle)
+                                    stroke, line_width = self._outline_colors(active=True)
+                                    self.draw_rounded_rectangle_outlined(
+                                        (dh / 2 - sp / 2, -dh / 2 + sp / 2),
+                                        fill=color_to_srgb(self.draw_property.background_child_active_color),
+                                        stroke=stroke,
+                                        radius=max(dh / 2, self.text_radius),
+                                        width=dh,
+                                        height=dh,
+                                        line_width=line_width,
+                                    )
                             item.gpu_draw_icon(False)
 
                         gpu.matrix.translate((self.extension_icon_size + self.extension_icon_interval, 0))
@@ -473,25 +465,23 @@ class ElementGpuExtensionItem:
 
     def draw_gpu_extension_margin(self):
         draw = self.draw_property
-
-        margin_x, margin_y = self.draw_property.margin
-
-        gpu.state.blend_set('ALPHA')
-        gpu.state.depth_test_set('ALWAYS')
+        margin_x, margin_y = draw.margin
         w, h = self.extension_dimensions
         x, y = get_now_2d_offset_position()
         self.extension_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_x]
 
         if len(self.extension_items) == 0:
             return
-        rounded_rectangle = {
-            "radius": self.text_radius,
-            "position": (w / 2, -h / 2),
-            "width": w + margin_x * 2,
-            "height": h + margin_y * 2,
-            "color": linear_to_srgb(np.array(draw.background_child_color, dtype=np.float32)),
-        }
-        self.draw_rounded_rectangle_area(**rounded_rectangle)
+        stroke, line_width = self._outline_colors(active=False)
+        self.draw_rounded_rectangle_outlined(
+            (w / 2, -h / 2),
+            fill=color_to_srgb(draw.background_child_color),
+            stroke=stroke,
+            radius=self.text_radius,
+            width=w + margin_x * 2,
+            height=h + margin_y * 2,
+            line_width=line_width,
+        )
 
 
 def draw_debug_point(color=(0, 1, 1, 1), radius=1):

@@ -1,7 +1,15 @@
+from functools import lru_cache
+
 import blf
 from mathutils import Vector
 
 from .bpu_property import BpuProperty
+
+
+@lru_cache(maxsize=512)
+def _cached_text_dimensions(font_id: int, font_size: int, text: str) -> tuple[float, float]:
+    blf.size(font_id, font_size)
+    return blf.dimensions(font_id, text)
 
 
 class BpuOffset:
@@ -61,6 +69,7 @@ class BpuMeasure(BpuProperty, BpuOffset):
         self.__child_width_list__ = []
         self.__text_width__ = -100
         self.__text_height__ = -100
+        self._hit_rect = None
 
     # Total child width/height
     @property
@@ -111,8 +120,10 @@ class BpuMeasure(BpuProperty, BpuOffset):
         """Measure text size."""
         if not text:
             text = self.__text__
-        blf.size(self.font_id, self.font_size)
-        (self.__text_width__, self.__text_height__) = blf.dimensions(self.font_id, self.___translation_text___(text))
+        translated = self.___translation_text___(text)
+        self.__text_width__, self.__text_height__ = _cached_text_dimensions(
+            self.font_id, self.font_size, translated,
+        )
 
     def __measure_children__(self) -> None:
         """Measure children."""
@@ -230,16 +241,14 @@ class BpuMeasure(BpuProperty, BpuOffset):
         else:
             return Vector((margin, margin))
 
-    @property
-    def is_haver(self) -> bool:
-        """Return whether item is active."""
+    def _compute_hit_rect(self) -> tuple[float, float, float, float]:
         offset = self.offset_position if self.type.is_parent else self.__offset__
         start_x, start_y = start = offset + self.parent_top.__quadrant_translate__
         if self.parent is not None:
             pt = self.parent.type
-            if pt.is_horizontal_layout:  # Horizontal row
+            if pt.is_horizontal_layout:
                 end_x, end_y = start_x + self.__draw_width__, start_y + self.parent.__child_max_height__
-            elif pt.is_vertical_layout or pt.is_parent:  # Vertical column
+            elif pt.is_vertical_layout or pt.is_parent:
                 end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
             elif pt.is_menu:
                 end_x, end_y = start_x + self.parent.__child_max_width__, start_y + self.__draw_height__
@@ -247,11 +256,18 @@ class BpuMeasure(BpuProperty, BpuOffset):
                 end_x, end_y = start + self.__draw_size__
         else:
             end_x, end_y = start + self.__draw_size__
+        return start_x, start_y, end_x, end_y
 
+    @property
+    def is_haver(self) -> bool:
+        """Return whether item is hovered (hit rect cached per measure pass)."""
+        rect = getattr(self, '_hit_rect', None)
+        if rect is None:
+            rect = self._compute_hit_rect()
+            self._hit_rect = rect
+        start_x, start_y, end_x, end_y = rect
         x, y = self.mouse_position
-        in_x = start_x < x < end_x
-        in_y = start_y < y < end_y
-        return in_x and in_y
+        return start_x < x < end_x and start_y < y < end_y
 
     @property
     def __child_menu_is_haver__(self) -> bool:

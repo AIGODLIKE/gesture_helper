@@ -26,9 +26,8 @@ class BpuProperty(BpuColor):
 
     text_margin = 8  # Text margin
     layout_margin = 20  # Layout margin
-    __menu_haver__ = dict()  # Menu hover state
-    __layout_haver__ = list()  # Layout hover stack
-    __layout_haver_histories__ = list()  # Layout hover history
+    # Shared menu hover map (legacy); cleared on each parent __gpu_draw__.
+    __menu_haver__ = {}
 
     active = False  # Active item
     alert = False  # Alert styling
@@ -112,6 +111,8 @@ class BpuProperty(BpuColor):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.__layout_haver__ = []
+        self.__layout_haver_histories__ = []
         self.__clear_children__()
         self.active = False
         self.alert = False
@@ -176,9 +177,6 @@ class BpuProperty(BpuColor):
     def __mt__(self):
         return self.__margin__ * 2
 
-    __draw_children__ = []  # Children to draw
-    __temp_children__ = []  # Temporary children while building
-
     def __clear_children__(self) -> None:
         """Clear child layouts."""
         self.__draw_children__ = []
@@ -188,9 +186,9 @@ class BpuProperty(BpuColor):
     @property
     def __children__(self):
         if self.type.is_parent:
-            return self.__temp_children__
-        else:
-            return self.__draw_children__
+            # During build items land in temp; after __exit__ draw aliases temp.
+            return self.__temp_children__ or self.__draw_children__
+        return self.__draw_children__
 
     @property
     def is_layout(self) -> bool:

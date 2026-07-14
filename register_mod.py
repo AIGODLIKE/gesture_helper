@@ -106,6 +106,10 @@ def register():
 
     clear_pref_cache()
     SessionState.clear()
+    from .utils.texture import Texture
+    from .utils.gpu_stroke import clear_stroke_shader_cache
+    Texture.clear()
+    clear_stroke_shader_cache()
     icons.Icons.register()
 
     for module in module_list:

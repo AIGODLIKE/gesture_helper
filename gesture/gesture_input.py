@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import math
 import time
 
@@ -15,39 +14,6 @@ from .gesture_session import (
     threshold_zone_from_distance,
 )
 
-# #region agent log
-import tempfile
-from pathlib import Path
-
-_DBG_LOG_PATHS = [
-    Path(__file__).resolve().parent.parent / "debug-49d6b3.log",
-    Path(r"d:\Development\Blender Addons\gesture_helper\debug-49d6b3.log"),
-    Path(tempfile.gettempdir()) / "gesture_helper_debug-49d6b3.log",
-]
-_DBG_PERF_ACC = {"n": 0, "on_event_ms": 0.0, "refresh_ms": 0.0, "hover_ms": 0.0}
-
-
-def _agent_dbg(hypothesis_id: str, location: str, message: str, data: dict | None = None, *, run_id: str = "pre"):
-    try:
-        payload = {
-            "sessionId": "49d6b3",
-            "runId": run_id,
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data or {},
-            "timestamp": int(time.time() * 1000),
-        }
-        line = json.dumps(payload, ensure_ascii=False, default=str) + "\n"
-        for path in _DBG_LOG_PATHS:
-            try:
-                with open(path, "a", encoding="utf-8") as f:
-                    f.write(line)
-            except Exception:
-                continue
-    except Exception:
-        pass
-# #endregion
 
 
 def _mouse_moved_enough(current: Vector, previous: Vector | None, *, min_dist: float = 1.0) -> bool:
@@ -179,6 +145,11 @@ def ensure_trajectory_seed(session: GestureSession):
         session._gesture_circle_center = press
         session._last_trajectory_mouse = press.copy()
         tree.append(None, press)
+        # Seed mouse trail at the same press point so the drawn line starts
+        # on the origin marker (not at the first MOUSEMOVE sample).
+        if not session.trajectory_mouse_move:
+            session.trajectory_mouse_move.append(press.copy())
+            session.trajectory_mouse_move_time.append(time.time())
     except (AttributeError, ReferenceError, TypeError):
         ...
 
@@ -307,78 +278,6 @@ def update_extension_hover(session: GestureSession, ops):
     if ext not in session.extension_hover:
         session.extension_hover.insert(0, ext)
 
-    # #region agent log
-    # N-panel coordinate hypothesis: compare event.mouse_region_* vs WINDOW-derived.
-    if session.move_count % 5 == 0:
-        try:
-            event = getattr(ops, "event", None) or session.event
-            area = session.area
-            ctx_region = getattr(bpy.context, "region", None)
-            win_region = None
-            ui_w = 0
-            if area is not None:
-                for r in area.regions:
-                    if r.type == "WINDOW":
-                        win_region = r
-                    elif r.type == "UI":
-                        ui_w = r.width
-            mr = (
-                [event.mouse_region_x, event.mouse_region_y] if event is not None else None
-            )
-            win_mouse = None
-            if event is not None and win_region is not None:
-                win_mouse = [event.mouse_x - win_region.x, event.mouse_y - win_region.y]
-            ext_area = getattr(ext, "extension_draw_area", None)
-            hit_region = False
-            hit_win = False
-            if ext_area and mr:
-                x1, y1, x2, y2 = ext_area
-                hit_region = x1 < mr[0] < x2 and y1 < mr[1] < y2
-            if ext_area and win_mouse:
-                x1, y1, x2, y2 = ext_area
-                hit_win = x1 < win_mouse[0] < x2 and y1 < win_mouse[1] < y2
-            item_hits = []
-            for item in getattr(ext, "extension_items", []) or []:
-                item.ops = ops
-                area_box = getattr(item, "extension_by_child_draw_area", None)
-                if not area_box:
-                    continue
-                x1, y1, x2, y2 = area_box
-                item_hits.append({
-                    "name": getattr(item, "name", None),
-                    "box": list(area_box),
-                    "hit_mr": bool(mr and x1 < mr[0] < x2 and y1 < mr[1] < y2),
-                    "hit_win": bool(win_mouse and x1 < win_mouse[0] < x2 and y1 < win_mouse[1] < y2),
-                })
-            _agent_dbg("N", "gesture_input.py:npanel_coords", "extension hit coord compare", {
-                "run": "post-fix",
-                "ui_region_w": ui_w,
-                "npanel_open": ui_w > 1,
-                "ctx_region_type": getattr(ctx_region, "type", None),
-                "ctx_region_xy": [getattr(ctx_region, "x", None), getattr(ctx_region, "y", None)],
-                "ctx_region_wh": [getattr(ctx_region, "width", None), getattr(ctx_region, "height", None)],
-                "win_region_xy": [getattr(win_region, "x", None), getattr(win_region, "y", None)] if win_region else None,
-                "win_region_wh": [getattr(win_region, "width", None), getattr(win_region, "height", None)] if win_region else None,
-                "mouse_xy": [event.mouse_x, event.mouse_y] if event else None,
-                "mouse_region": mr,
-                "mouse_via_window": win_mouse,
-                "ext_area": list(ext_area) if ext_area else None,
-                "hit_panel_mr": hit_region,
-                "hit_panel_win": hit_win,
-                "live_hover_props": [
-                    bool(getattr(i, "extension_by_child_is_hover", False))
-                    for i in (getattr(ext, "extension_items", []) or [])[:6]
-                ],
-                "item_hits": item_hits[:6],
-                "delta_mr_win": (
-                    [mr[0] - win_mouse[0], mr[1] - win_mouse[1]]
-                    if mr and win_mouse else None
-                ),
-            }, run_id="post-fix")
-        except Exception as e:
-            _agent_dbg("N", "gesture_input.py:npanel_coords", "coord log error", {"err": str(e)})
-    # #endregion
-
     guard = 0
     while session.extension_hover and guard < 16:
         guard += 1
@@ -506,15 +405,9 @@ class GestureInputProcessor:
 
     def on_event(self, session: GestureSession, ops, event) -> bool:
         """Update session from *event*. Returns whether a redraw is needed."""
-        # #region agent log
-        _t0 = time.perf_counter()
-        _t_refresh = 0.0
-        _t_hover = 0.0
-        # #endregion
         session.event = event
         visual_dirty = False
         moved = False
-
         if event.type == "MOUSEMOVE":
             session.move_count += 1
             session.last_mouse_mouse_time = time.time()
@@ -524,62 +417,42 @@ class GestureInputProcessor:
                 moved = True
                 session._last_trajectory_mouse = emp.copy()
                 session.advance_to_tracking()
+            else:
+                # Sub-pixel jitter: bump timeout only, skip snapshot/redraw work.
+                return False
 
         session.event_count += 1
 
-        prev_direction = session.snapshot.direction
+        prev = session.snapshot
+        prev_direction = prev.direction
+        prev_distance = prev.distance
+        prev_zone = prev.threshold_zone
         prev_phase = session.phase
-        # #region agent log
-        _tr = time.perf_counter()
-        # #endregion
         refresh_snapshot(session, ops)
-        # #region agent log
-        _t_refresh += time.perf_counter() - _tr
-        # #endregion
+        snap = session.snapshot
+
+        snap_changed = (
+            snap.direction != prev_direction
+            or snap.threshold_zone is not prev_zone
+            or abs(snap.distance - prev_distance) >= 1.0
+            or session.phase is not prev_phase
+        )
 
         if not moved:
-            if (
-                session.snapshot.direction != prev_direction
-                or session.phase is not prev_phase
-            ):
+            if snap_changed:
                 visual_dirty = True
             if session.phase.shows_radial_ui:
                 before = list(session.extension_hover)
-                # #region agent log
-                _th = time.perf_counter()
-                # #endregion
                 update_extension_hover(session, ops)
-                # #region agent log
-                _t_hover += time.perf_counter() - _th
-                # #endregion
                 if session.extension_hover != before:
                     visual_dirty = True
                     refresh_snapshot(session, ops)
-            # #region agent log
-            _DBG_PERF_ACC["n"] += 1
-            _DBG_PERF_ACC["on_event_ms"] += (time.perf_counter() - _t0) * 1000
-            _DBG_PERF_ACC["refresh_ms"] += _t_refresh * 1000
-            _DBG_PERF_ACC["hover_ms"] += _t_hover * 1000
-            if _DBG_PERF_ACC["n"] >= 20:
-                n = _DBG_PERF_ACC["n"]
-                _agent_dbg("PERF", "gesture_input.py:perf", "on_event avg (idle/tiny moves)", {
-                    "n": n,
-                    "avg_ms": round(_DBG_PERF_ACC["on_event_ms"] / n, 3),
-                    "avg_refresh_ms": round(_DBG_PERF_ACC["refresh_ms"] / n, 3),
-                    "avg_hover_ms": round(_DBG_PERF_ACC["hover_ms"] / n, 3),
-                    "moved": False,
-                })
-                _DBG_PERF_ACC["n"] = 0
-                _DBG_PERF_ACC["on_event_ms"] = 0.0
-                _DBG_PERF_ACC["refresh_ms"] = 0.0
-                _DBG_PERF_ACC["hover_ms"] = 0.0
-            # #endregion
             return visual_dirty
 
+        # Significant mouse move: trail / child enter / hover updates.
         visual_dirty = True
         emp = session.snapshot.mouse_window
         operator_gesture = ops.operator_gesture
-        need_refresh_after = False
 
         if session.event_count > 2:
             snap = session.snapshot
@@ -605,11 +478,6 @@ class GestureInputProcessor:
                         ops.pref.gesture_property.timeout / 1000
                     )
                     if last_timeout and not snap.is_beyond_extension_offset:
-                        # #region agent log
-                        _agent_dbg("A", "gesture_input.py:enter_child_dir7", "ENTER child via dir7 gate", {
-                            "name": getattr(de, "name", None),
-                        })
-                        # #endregion
                         session.trajectory_tree.append(de, emp)
                         session._gesture_circle_center = emp.copy()
                         invalidate_derived_caches(session, operator_gesture, ops=ops)
@@ -617,13 +485,6 @@ class GestureInputProcessor:
                         refresh_snapshot(session, ops)
                         snap = session.snapshot
                 else:
-                    # #region agent log
-                    _agent_dbg("A", "gesture_input.py:enter_child", "ENTER child (non-dir7 path)", {
-                        "dir": getattr(de, "direction", None),
-                        "name": getattr(de, "name", None),
-                        "have_ext": snap.is_have_extension_item,
-                    })
-                    # #endregion
                     session.trajectory_tree.append(de, emp)
                     session._gesture_circle_center = emp.copy()
                     invalidate_derived_caches(session, operator_gesture, ops=ops)
@@ -639,58 +500,8 @@ class GestureInputProcessor:
                     refresh_snapshot(session, ops)
 
             before_hover = list(session.extension_hover)
-            # #region agent log
-            _th = time.perf_counter()
-            # #endregion
             update_extension_hover(session, ops)
-            # #region agent log
-            _t_hover += time.perf_counter() - _th
-            # #endregion
             if session.extension_hover != before_hover:
-                need_refresh_after = True
-            if need_refresh_after:
                 refresh_snapshot(session, ops)
-            # #region agent log
-            if session.phase.shows_radial_ui and session.move_count % 8 == 0:
-                s = session.snapshot
-                _agent_dbg(
-                    "E",
-                    "gesture_input.py:mousemove_sample",
-                    "ui-visible mousemove sample",
-                    {
-                        "dir": s.direction,
-                        "de": getattr(s.direction_element, "name", None),
-                        "de_dir": getattr(s.direction_element, "direction", None),
-                        "have_ext": s.is_have_extension_item,
-                        "ext": getattr(s.extension_element, "name", None),
-                        "beyond_ext": s.is_beyond_extension_offset,
-                        "ext_off": s.extension_offset_distance,
-                        "dist": s.distance,
-                        "hover": [getattr(x, "name", str(x)) for x in session.extension_hover],
-                        "zone": str(s.threshold_zone),
-                        "is_draw_gpu": s.is_draw_gpu,
-                        "live_draw": bool(getattr(ops, "is_draw_gpu", False)),
-                    },
-                )
-            # #endregion
 
-        # #region agent log
-        _DBG_PERF_ACC["n"] += 1
-        _DBG_PERF_ACC["on_event_ms"] += (time.perf_counter() - _t0) * 1000
-        _DBG_PERF_ACC["refresh_ms"] += _t_refresh * 1000
-        _DBG_PERF_ACC["hover_ms"] += _t_hover * 1000
-        if _DBG_PERF_ACC["n"] >= 20:
-            n = _DBG_PERF_ACC["n"]
-            _agent_dbg("PERF", "gesture_input.py:perf", "on_event avg (moved)", {
-                "n": n,
-                "avg_ms": round(_DBG_PERF_ACC["on_event_ms"] / n, 3),
-                "avg_refresh_ms": round(_DBG_PERF_ACC["refresh_ms"] / n, 3),
-                "avg_hover_ms": round(_DBG_PERF_ACC["hover_ms"] / n, 3),
-                "moved": True,
-            })
-            _DBG_PERF_ACC["n"] = 0
-            _DBG_PERF_ACC["on_event_ms"] = 0.0
-            _DBG_PERF_ACC["refresh_ms"] = 0.0
-            _DBG_PERF_ACC["hover_ms"] = 0.0
-        # #endregion
         return visual_dirty

@@ -2,22 +2,9 @@
 
 from __future__ import annotations
 
-import json
-import time
-
 import bpy
 
 from .gesture_session import GestureSession, UiHandoff
-
-# #region agent log
-_DBG_LOG_PATHS = None
-
-
-def _agent_dbg(hypothesis_id: str, location: str, message: str, data: dict | None = None, *, run_id: str = "pre"):
-    # Reuse input logger paths so verification lands in the same files.
-    from .gesture_input import _agent_dbg as _input_dbg
-    _input_dbg(hypothesis_id, location, message, data, run_id=run_id)
-# #endregion
 
 
 class GestureExecutor:
@@ -76,28 +63,9 @@ class GestureExecutor:
         # Prefer extension-menu hover operators when the radial UI is up.
         if session.phase.shows_radial_ui and snap.extension_element and session.extension_hover:
             last = session.extension_hover[-1]
-            hover_hits = []
             for item in getattr(last, 'extension_items', []) or []:
                 item.ops = ops
-                hit = bool(item.extension_by_child_is_hover)
-                area = getattr(item, "extension_by_child_draw_area", None)
-                hover_hits.append({
-                    "name": getattr(item, "name", None),
-                    "is_op": bool(getattr(item, "is_operator", False)),
-                    "hit": hit,
-                    "area": list(area) if area else None,
-                })
-                if hit and item.is_operator:
-                    # #region agent log
-                    mx = getattr(getattr(ops, "event", None), "mouse_region_x", None)
-                    my = getattr(getattr(ops, "event", None), "mouse_region_y", None)
-                    _agent_dbg("C", "gesture_executor.py:ext_run", "run extension operator", {
-                        "item": getattr(item, "name", None),
-                        "mouse": [mx, my],
-                        "hits": hover_hits,
-                        "hover": [getattr(x, "name", str(x)) for x in session.extension_hover],
-                    })
-                    # #endregion
+                if item.extension_by_child_is_hover and item.is_operator:
                     run(item)
                     return True
             # Mouse is over the extension panel but not an operator row —
@@ -119,46 +87,14 @@ class GestureExecutor:
                         break
                 if in_extension:
                     break
-            # #region agent log
-            mx = getattr(getattr(ops, "event", None), "mouse_region_x", None)
-            my = getattr(getattr(ops, "event", None), "mouse_region_y", None)
-            _agent_dbg("C", "gesture_executor.py:ext_miss", "extension path no op hit", {
-                "in_extension": in_extension,
-                "mouse": [mx, my],
-                "hits": hover_hits,
-                "hover": [getattr(x, "name", str(x)) for x in session.extension_hover],
-                "ext_area": list(getattr(snap.extension_element, "extension_draw_area", None) or []) or None,
-                "dir_el": getattr(snap.direction_element, "name", None),
-                "zone": str(snap.threshold_zone),
-            })
-            # #endregion
             if in_extension:
                 return False
 
         element = snap.direction_element
         if element and element.is_operator and (
                 snap.threshold_zone.is_confirm or getattr(element, 'mouse_is_in_area', False)):
-            # #region agent log
-            _agent_dbg("C", "gesture_executor.py:dir_run", "run direction operator", {
-                "element": getattr(element, "name", None),
-                "dir": getattr(element, "direction", None),
-                "zone": str(snap.threshold_zone),
-                "hover_len": len(session.extension_hover),
-                "phase": str(session.phase),
-                "has_ext": bool(snap.extension_element),
-            })
-            # #endregion
             run(element)
             return True
-        # #region agent log
-        _agent_dbg("C", "gesture_executor.py:none", "no operator run", {
-            "phase": str(session.phase),
-            "has_ext": bool(snap.extension_element),
-            "hover_len": len(session.extension_hover),
-            "dir_el": getattr(snap.direction_element, "name", None),
-            "zone": str(snap.threshold_zone),
-        })
-        # #endregion
         return False
 
     def try_immediate_implementation(self, session: GestureSession, ops) -> bool:

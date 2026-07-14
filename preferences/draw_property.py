@@ -83,7 +83,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     text_gpu_draw_radius: IntProperty(
         name='Rounded corner size',
         description='Gpu Draw Radius Size',
-        default=5, min=2, max=60,
+        default=8, min=2, max=60,
     )
     margin: IntVectorProperty(
         name='Margin',
@@ -93,36 +93,46 @@ class DrawProperty(bpy.types.PropertyGroup):
         max=120,
         size=2,
     )
-    line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=3, min=1, max=20)
+    line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=2, min=1, max=20)
+    outline_width: FloatProperty(
+        name='Outline Width',
+        description='Stroke width for flat outlined gesture buttons',
+        default=0.75, min=0.25, max=4.0, step=5, precision=2,
+    )
     dividing_line_height: IntProperty(
         name='Dividing Line Height',
         description='Gpu Draw Dividing Line Height',
-        default=3, min=1, max=10,
+        default=2, min=1, max=10,
     )
 
+    # Dark flat defaults (linear-ish RGB); users can override in preferences.
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
-                                                   default=[0.009134, 0.009134, 0.009134, 1.000000])
+                                                   default=[0.035, 0.035, 0.038, 1.0])
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
-                                                          default=[0.063012, 0.168268, 0.450780, 1.000000])
+                                                          default=[0.02, 0.45, 0.40, 1.0])
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
-                                                default=[0.009134, 0.009134, 0.009134, 1.000000])
+                                                default=[0.035, 0.035, 0.038, 1.0])
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
-                                                       default=[0.063012, 0.168268, 0.450780, 1.000000])
+                                                       default=[0.28, 0.18, 0.75, 1.0])
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
-                                              default=[0.063012, 0.168268, 0.450780, 1.000000])
+                                              default=[0.02, 0.45, 0.40, 1.0])
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
-                                               default=[0.009134, 0.009134, 0.009134, 1.000000])
+                                               default=[0.035, 0.035, 0.038, 1.0])
 
-    text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(.8, .8, .8, 1))
+    text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(0.92, 0.92, 0.94, 1))
     text_active_color: FloatVectorProperty(name='Text Active Color', **public_color, default=(1, 1, 1, 1))
 
     trajectory_mouse_color: FloatVectorProperty(name='Mouse Track Color', **public_color,
-                                                default=[0.100000, 0.900000, 1.000000, 1.000000])
+                                                default=[0.08, 0.85, 0.95, 1.0])
     trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
-                                                  default=[0.689335, 0.275156, 0.793810, 1.000000])
+                                                  default=[0.75, 0.35, 0.95, 1.0])
 
     dividing_line_color: FloatVectorProperty(name='Dividing Line Color', **public_color,
-                                             default=[0.143718, 0.143718, 0.143718, 1.000000])
+                                             default=[0.22, 0.22, 0.24, 1.0])
+    outline_color: FloatVectorProperty(name='Outline Color', **public_color,
+                                       default=[0.55, 0.55, 0.58, 0.28])
+    outline_active_color: FloatVectorProperty(name='Outline Active Color', **public_color,
+                                              default=[0.75, 0.75, 0.78, 0.42])
 
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
@@ -173,6 +183,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         col.separator()
         col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')
+        col.prop(draw, 'outline_width')
         if radius_is_alert:
             cb = col.box()
             cb.alert = True
@@ -209,3 +220,5 @@ class DrawProperty(bpy.types.PropertyGroup):
 
         bb = box.column(align=True)
         bb.prop(draw, 'dividing_line_color')
+        bb.prop(draw, 'outline_color')
+        bb.prop(draw, 'outline_active_color')

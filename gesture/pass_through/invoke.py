@@ -112,22 +112,18 @@ def invoke_operator_now(
 
 
 def _needs_area_pin(idname: str) -> bool:
-    """Menus/panels need the gesture area; window-opening ops must not pin it."""
+    """Deferred ops need the gesture area so ``context.space_data`` is valid.
+
+    Timer callbacks otherwise run with a bare window context (area/space_data
+    None), which breaks VIEW_3D operators (e.g. MACHIN3tools). Preferences /
+    new-window ops must not pin — that steals OS focus from the new window.
+    """
     if not idname:
         return False
-    if idname.startswith('wm.call_'):
-        return True
-    if idname in {
-        'wm.call_menu',
-        'wm.call_panel',
-        'wm.call_menu_pie',
-        'wm.call_menu_pie_drag_only',
-        'wm.search_menu',
-        'wm.search_operator',
-        'wm.search_single_menu',
-    }:
-        return True
-    return False
+    from .ui_filter import is_preferences_op
+    if is_preferences_op(idname):
+        return False
+    return True
 
 
 def defer_operator_call(
