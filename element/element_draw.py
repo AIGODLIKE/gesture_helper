@@ -242,7 +242,7 @@ class ElementDraw:
             layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
             if is_change:
                 layout.alert = True
-                layout.label(text='Properties have changed, please synchronize or turn on the auto update button.',
+                layout.label(text='Properties have changed. Sync them, or enable Auto Update.',
                              icon='ERROR')
                 layout.alert = False
             if is_modal:

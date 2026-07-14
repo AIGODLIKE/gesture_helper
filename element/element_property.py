@@ -123,22 +123,30 @@ class ElementExtension:
                 return True
         return False
 
+    def _ops_mouse_xy(self, ops=None):
+        from ..utils.region_mouse import ops_window_mouse
+        return ops_window_mouse(ops or getattr(self, "ops", None))
+
     @property
     def extension_by_child_is_hover(self) -> bool:
         """Return whether extension child is hovered."""
         ops = getattr(self, "ops", None)
         area = getattr(self, "extension_by_child_draw_area", None)
-        if ops and area:
+        mouse = self._ops_mouse_xy(ops)
+        if ops and area and mouse is not None:
             x1, y1, x2, y2 = area
-            x, y = ops.event.mouse_region_x, ops.event.mouse_region_y
+            x, y = mouse
             return x1 < x < x2 and y1 < y < y2
         return False
 
     @property
     def mouse_is_in_area(self) -> bool:
         if item := getattr(self, "item_draw_area", None):
+            mouse = self._ops_mouse_xy()
+            if mouse is None:
+                return False
             x1, y1, x2, y2 = item
-            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            x, y = mouse
             return x1 < x < x2 and y1 < y < y2
         return False
 
@@ -146,8 +154,11 @@ class ElementExtension:
     def mouse_is_in_extension_area(self) -> bool:
         """Return whether mouse is inside extension child draw area."""
         if item := getattr(self, "extension_draw_area", None):
+            mouse = self._ops_mouse_xy()
+            if mouse is None:
+                return False
             x1, y1, x2, y2 = item
-            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
+            x, y = mouse
             return x1 < x < x2 and y1 < y < y2
         return False
 
@@ -155,44 +166,43 @@ class ElementExtension:
     def mouse_is_in_extension_vertical_outside_area(self) -> bool:
         """Return whether mouse is outside extension area vertically."""
         if item := getattr(self, "extension_draw_area", None):
+            mouse = self._ops_mouse_xy()
+            if mouse is None:
+                return False
             w, h = self.extension_dimensions
             x1, y1, x2, y2 = item
-            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
-
+            x, y = mouse
             yl = y1 - h < y < y1
             yu = y2 < y < y2 + h
-
-            y_ok = yl or yu
-            x_ok = x1 < x < x2
-            return x_ok and y_ok
+            return (x1 < x < x2) and (yl or yu)
         return False
 
     @property
     def mouse_is_in_extension_vertical_area(self) -> bool:
         """Return whether mouse is in extension vertical band."""
         if item := getattr(self, "extension_draw_area", None):
+            mouse = self._ops_mouse_xy()
+            if mouse is None:
+                return False
             x1, y1, x2, y2 = item
-            x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
-            x_ok = x1 < x < x2
-            return x_ok
+            x, y = mouse
+            return x1 < x < x2
         return False
 
     @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
-        """
-        Return whether mouse is outside extension area on the right (last item).
-        """
+        """Return whether mouse is outside extension area on the right (last item)."""
         if extension_hover := getattr(self.ops, "extension_hover", None):
             is_last = len(extension_hover) > 1 and extension_hover[-1] == self
             if is_last:
                 if item := getattr(self, "extension_draw_area", None):
+                    mouse = self._ops_mouse_xy()
+                    if mouse is None:
+                        return False
                     w, h = self.extension_dimensions
                     x1, y1, x2, y2 = item
-                    x, y = self.ops.event.mouse_region_x, self.ops.event.mouse_region_y
-
-                    y_ok = y1 - h < y < y2 + h
-                    x_ok = x2 < x < x2 + w
-                    return x_ok and y_ok
+                    x, y = mouse
+                    return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
         return False
 
 

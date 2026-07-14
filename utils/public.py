@@ -231,17 +231,18 @@ class PublicProperty(PublicCacheFunc):
 
 
 class PublicOperator(bpy.types.Operator):
-    event: 'bpy.types.Event'
-    _invoke_event_type: str
+    # Do not put plain type annotations on Operator class bodies — Blender 5.x
+    # walks annotations via typing.get_type_hints and unresolved / non-prop
+    # annotations break RNA property registration on subclasses.
 
     def init_invoke(self, event):
-        self.event = event
+        object.__setattr__(self, "event", event)
         # Remember the key/button that started the gesture so WINDOW_DEACTIVATE
         # / other RELEASE events cannot abort it and re-run operators.
-        self._invoke_event_type = event.type
+        object.__setattr__(self, "_invoke_event_type", event.type)
 
     def init_modal(self, event):
-        self.event = event
+        object.__setattr__(self, "event", event)
 
     @property
     def is_right_mouse(self):

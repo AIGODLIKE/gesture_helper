@@ -1,63 +1,60 @@
-import time
+"""Gesture handle helpers — timeout cancel + thin adapters for preview/operator."""
 
-import bpy
-from mathutils import Vector
+from __future__ import annotations
 
-from ..gesture.gesture_point_kd_tree import GesturePointKDTree
+from .gesture_input import (
+    cancel_timeout_timer,
+    ensure_trajectory_seed,
+    schedule_timeout_timer,
+    tag_redraw_gesture_screen,
+)
+from .gesture_session import GestureSession
 
 
 class GestureHandle:
-    trajectory_mouse_move: []  # Mouse move trajectory points
-    trajectory_mouse_move_time: []  # Mouse move timestamps
-    trajectory_tree: "GesturePointKDTree"  # Trajectory KD-tree
-    event_count: 0  # Event counter
-    draw_trajectory_mouse_move: bool
+    """Compatibility helpers shared by gesture modal operators.
+
+    Canonical state lives on ``self.session``; prefer ``GestureInputProcessor``
+    for event handling. This mixin keeps timeout/redraw utilities and a thin
+    trajectory adapter used by gesture preview.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.screen = None
-        self.area = None
-        self._gesture_timeout_timer = None
+        # Non-RNA attrs must use object.__setattr__ on Blender 5.x Operators.
+        try:
+            session = object.__getattribute__(self, 'session')
+        except AttributeError:
+            session = None
+        if session is None:
+            object.__setattr__(self, 'session', GestureSession())
+        try:
+            object.__getattribute__(self, '_input_processor')
+        except AttributeError:
+            object.__setattr__(self, '_input_processor', None)
+
+    def _get_input_processor(self):
+        try:
+            proc = object.__getattribute__(self, '_input_processor')
+        except AttributeError:
+            proc = None
+        if proc is None:
+            from .gesture_input import GestureInputProcessor
+            proc = GestureInputProcessor()
+            object.__setattr__(self, '_input_processor', proc)
+        return proc
 
     def _tag_redraw_gesture_screen(self):
-        """Redraw the screen that started this gesture (timer may have wrong context)."""
-        screen = getattr(self, 'screen', None)
-        if screen is not None:
-            try:
-                for area in screen.areas:
-                    area.tag_redraw()
-                return
-            except ReferenceError:
-                ...
-        from ..utils.public import tag_redraw
-        tag_redraw()
+        tag_redraw_gesture_screen(self.session)
 
     def tag_redraw(self):
         self._tag_redraw_gesture_screen()
 
     def _ensure_trajectory_seed(self):
-        """Ensure GPU draw has an anchor point before the first mouse move."""
-        tree = getattr(self, 'trajectory_tree', None)
-        if tree is None or len(tree):
-            return
-        try:
-            # Window coords (mouse_x/y). mouse_prev_press_* is region space.
-            press = self.__mouse_position__.copy()
-            self._gesture_circle_center = press
-            self._last_trajectory_mouse = press.copy()
-            tree.append(None, press)
-        except (AttributeError, ReferenceError, TypeError):
-            ...
+        ensure_trajectory_seed(self.session)
 
     def _cancel_gesture_timeout_timer(self):
-        timer = getattr(self, '_gesture_timeout_timer', None)
-        if timer is None:
-            return
-        try:
-            bpy.app.timers.unregister(timer)
-        except ValueError:
-            ...
-        self._gesture_timeout_timer = None
+        cancel_timeout_timer(self.session)
 
     @classmethod
     def cancel_active_gesture_timeout_timer(cls) -> None:
@@ -71,180 +68,18 @@ class GestureHandle:
             cancel()
 
     def _schedule_gesture_timeout_timer(self):
-        self._cancel_gesture_timeout_timer()
-        if getattr(self, 'draw_trajectory_mouse_move', False):
-            return
-        timeout = self.pref.gesture_property.timeout / 1000
-        if timeout <= 0:
-            return
-
-        def _on_timeout(*_args):
-            self._gesture_timeout_timer = None
-            try:
-                self.draw_trajectory_mouse_move = True
-                self._ensure_trajectory_seed()
-                self._tag_redraw_gesture_screen()
-            except (AttributeError, ReferenceError):
-                ...
-            return None
-
-        self._gesture_timeout_timer = _on_timeout
-        bpy.app.timers.register(_on_timeout, first_interval=timeout)
-
-    def check_return_previous(self):
-        """Check returning to a previous gesture point."""
-        point, index, distance = self.find_closest_point
-        points_kd_tree = self.trajectory_tree
-        scale = bpy.context.preferences.view.ui_scale
-        return_distance = self.gesture_property.return_distance * scale
-        if (distance < return_distance) and (index + 1 != len(points_kd_tree.child_element)):
-            points_kd_tree.remove(index)
-            self.invalidate_derived_caches(force=True)
-
-    def _derived_invalidation_key(self):
-        """Cache key for derived direction/extension data."""
-        return self._direction_items_context_id()
-
-    def invalidate_derived_caches(self, *, force=False):
-        """Clear direction/extension caches only when modal context actually changed."""
-        key = self._derived_invalidation_key()
-        if not force and getattr(self, '_derived_cache_key', None) == key:
-            return
-        self._derived_cache_key = key
-        self._direction_items_memo = None
-        self._gpu_extension_items_cache = None
-        self.gesture_direction_cache_clear()
-        self.gesture_extension_cache_clear()
-
-    def try_running_operator(self, ops):
-        """Try to run gesture operator(s)."""
-
-        def run(i):
-            from .pass_through import (
-                defer_gesture_element_operator,
-                should_defer_gesture_operator,
-            )
-            from ..element.element_operator import resolve_operator_bl_idname
-
-            if i.operator_is_operator or i.operator_is_modal:
-                if i.operator_func is None:
-                    # English msgid only — do not pre-translate (avoids Windows console mojibake).
-                    ops.report(
-                        {'ERROR'},
-                        "Operator not found, please check the operator id in gesture settings "
-                        f"{self.operator_gesture.name} -> {i.name} bpy.ops.{i.operator_bl_idname}",
-                    )
-                    return
-
-            if i.check_operator_poll():
-                idname = resolve_operator_bl_idname(i.operator_bl_idname)
-                from .pass_through.ui_filter import is_preferences_op
-
-                is_prefs = is_preferences_op(idname)
-                if i.operator_is_operator and should_defer_gesture_operator(idname):
-                    area = getattr(self, 'area', None) or getattr(ops, 'area', None)
-                    if defer_gesture_element_operator(bpy.context, area, i):
-                        ops._gesture_deferred_ui = True
-                        return
-                # Sync Preferences open must keep the user-click OS focus context.
-                # Keep _opening_ui until modal exit so WINDOW_DEACTIVATE does not
-                # cancel before FINISHED+INTERFACE is returned.
-                if is_prefs:
-                    ops._opening_ui = True
-                    ops._gesture_deferred_ui = True
-                error = i.running_operator()
-                if error is not None:
-                    if is_prefs:
-                        ops._opening_ui = False
-                        ops._gesture_deferred_ui = False
-                    ops.report({'ERROR'}, "Operator Run Error,Please check the console")
-                    return
-            else:
-                ops.report(
-                    {'ERROR'},
-                    "Operator context error, please ensure that the operator is available in this context "
-                    f"{self.operator_gesture.name} -> {i.name} bpy.ops.{i.operator_bl_idname}.poll()",
-                )
-
-        # Run extension menu operators
-        if self.extension_element and len(self.extension_hover):
-            last = self.extension_hover[-1]
-            for item in last.extension_items:
-                if item.extension_by_child_is_hover and item.is_operator:
-                    run(item)
-                    return True
-
-        element = self.direction_element
-        if element and element.is_operator and (self.is_beyond_threshold_confirm or element.mouse_is_in_area):
-            run(element)
-            return True
-        return False
+        schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
 
     def init_trajectory(self):
-        """Initialize trajectory state."""
-        self.event_count = 1
-        self.move_count = 1
-        self.trajectory_mouse_move = []
-        self.trajectory_mouse_move_time = []
-        self.trajectory_tree = GesturePointKDTree()
-        self.draw_trajectory_mouse_move = False
-        self.last_mouse_mouse_time = time.time()
-        self._derived_cache_key = None
-        self._direction_items_memo = None
-        self._gesture_circle_center = None
-        self._last_trajectory_mouse = None
-
-    @staticmethod
-    def _mouse_moved_enough(current: Vector, previous: Vector | None, *, min_dist: float = 1.0) -> bool:
-        if previous is None:
-            return True
-        return (current - previous).length >= min_dist
+        """Initialize trajectory state on the session."""
+        gesture_name = getattr(self, 'gesture', '') or ''
+        event = getattr(self, 'event', None)
+        area = getattr(self, 'area', None)
+        screen = getattr(self, 'screen', None)
+        self.session.reset(event, area, screen, gesture_name)
 
     def trajectory_event_update(self, context, event):
-        """Update trajectory from modal event."""
-        # Do not overwrite invoke-time area/screen here. Pass-through and
-        # deferred operators need the area that started the gesture; modal
-        # context.area can be None or a different editor on RELEASE.
-        moved = False
-        if event.type == "MOUSEMOVE":
-            self.move_count += 1
-            self.last_mouse_mouse_time = time.time()
-            self._schedule_gesture_timeout_timer()
-            emp = self.__mouse_position__
-            if self._mouse_moved_enough(emp, self._last_trajectory_mouse):
-                moved = True
-                self._last_trajectory_mouse = emp.copy()
-        self.event_count += 1
-        if not moved:
+        """Update trajectory from modal event (preview / legacy entry)."""
+        dirty = self._get_input_processor().on_event(self.session, self, event)
+        if dirty:
             self.tag_redraw()
-            return
-
-        emp = self.__mouse_position__
-        if self.event_count > 2:
-            not_draw = not self.is_draw_gesture
-            if not len(self.trajectory_mouse_move) or self.trajectory_mouse_move[-1] != emp:
-                if not_draw:
-                    self.trajectory_mouse_move.append(emp)
-                    self.trajectory_mouse_move_time.append(time.time())
-            if not len(self.trajectory_tree):
-                self.trajectory_tree.append(None, emp)
-                if self._gesture_circle_center is None:
-                    self._gesture_circle_center = emp.copy()
-            if self.is_access_child_gesture:
-
-                if self.is_have_extension_item and self.direction_element.direction == "7":
-                    if self.last_move_mouse_timeout and not self.is_beyond_extension_offset_distance:
-                        self.trajectory_tree.append(self.direction_element, emp)
-                        self._gesture_circle_center = emp.copy()
-                        self.invalidate_derived_caches()
-                else:
-                    self.trajectory_tree.append(self.direction_element, emp)
-                    self._gesture_circle_center = emp.copy()
-                    self.invalidate_derived_caches()
-            if self.is_draw_gesture:
-                self.check_return_previous()
-        self.tag_redraw()
-
-    @property
-    def is_have_extension_item(self) -> bool:
-        return self.is_draw_gesture and "9" in self._raw_direction_items_dict()

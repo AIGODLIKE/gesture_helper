@@ -69,11 +69,11 @@ class DrawDebug(PublicGpu):
             data.insert(0, 'direction_items:' + str(self.direction_items))
             data.insert(0, 'last_element:' + str(self.trajectory_tree.last_element))
             data.append('--')
+            data.append('phase:' + str(self.session.phase))
+            data.append('handoff:' + str(self.session.handoff))
+            data.append('threshold_zone:' + str(self.session.snapshot.threshold_zone))
             data.append('is_draw_gpu:' + str(self.is_draw_gpu))
-            data.append('is_draw_gesture:' + str(self.is_draw_gesture))
             data.append('is_window_region_type:' + str(self.is_window_region_type))
-            data.append('is_beyond_threshold:' + str(self.is_beyond_threshold))
-            data.append('is_beyond_threshold_confirm:' + str(self.is_beyond_threshold_confirm))
             data.append('--')
             data.append('__last_region_position__:' + str(self.__last_region_position__))
             data.append('__last_window_position__:' + str(self.__last_window_position__))
@@ -177,9 +177,13 @@ class GestureGpuDraw(DrawDebug):
     @classmethod
     def unregister_draw(cls):
         """Cancel GPU draw handler when the last modal session ends."""
+        from ..utils.public import tag_redraw as tag_redraw_all
+
         GestureGpuDraw.__modal_draw_count__ = max(0, GestureGpuDraw.__modal_draw_count__ - 1)
         if GestureGpuDraw.__modal_draw_count__ > 0:
-            cls.tag_redraw()
+            # Must not call cls.tag_redraw() — subclasses override it as an
+            # instance method (Blender 4.2 / 5.x both).
+            tag_redraw_all()
             return
         GestureGpuDraw.__active_draw_instance__ = None
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
@@ -190,7 +194,7 @@ class GestureGpuDraw(DrawDebug):
                 c.draw_handler_remove(value, key)
         GestureGpuDraw.__temp_draw_class__.clear()
         GestureGpuDraw.__temp_debug_draw_class__.clear()
-        cls.tag_redraw()
+        tag_redraw_all()
 
     def gpu_draw_trajectory_mouse_move(self):
         """Draw mouse-move trajectory line."""
@@ -239,69 +243,88 @@ class GestureGpuDraw(DrawDebug):
 
                 self.draw_text(tn, size=size)
 
-    def extension_rollback(self):
-        extension_hover = self.extension_hover
-        while len(extension_hover):
-            last = extension_hover[-1]
-            hover_len = len(extension_hover)
-            if not last.extension_by_child_is_hover and not last.mouse_is_in_extension_area:
-                is_vertical_outside = last.mouse_is_in_extension_vertical_outside_area
-                is_right_outside = last.mouse_is_in_extension_right_outside_area
-                if (is_vertical_outside or is_right_outside) and hover_len > 1:
-                    return
-                extension_hover.pop()
-            else:
-                return
-
     def gpu_draw_gesture(self):
-        """Draw gesture overlay."""
+        """Draw gesture overlay; extension_hover is pruned then re-seeded while painting."""
+        if getattr(self, 'session', None) is None:
+            return
+        region = bpy.context.region
+        if region is None:
+            return
+
+        from .gesture_input import extension_rollback
+
         gp = self.gesture_property
         scale = bpy.context.preferences.view.ui_scale
-        self.extension_rollback()
         threshold = gp.threshold * scale
         from ..src.translate import __name_translate__
 
-        region = bpy.context.region
+        # Match legacy: prune stack from previous-frame hit boxes before redraw.
+        for el in self.session.extension_hover:
+            el.ops = self
+        extension_rollback(self.session)
+
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
             self.gpu_draw_direction_element()
-            if self.is_draw_gesture:
+            if self.session.phase.shows_radial_ui:
                 self.gpu_draw_trajectory_gesture_line()
             else:
                 if self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
             self.gpu_draw_trajectory_gesture_point()
             self.gpu_draw_last_item_name()
-        if self.is_draw_gesture:
+        if self.session.phase.shows_radial_ui:
+            center = self.__circle_center_region_position__
+            if center is None:
+                # #region agent log
+                from .gesture_input import _agent_dbg
+                _agent_dbg("B", "gesture_draw_gpu.py:center_none", "radial draw aborted: center None", {
+                    "is_draw_gpu": bool(self.is_draw_gpu),
+                    "snap_draw": bool(self.session.snapshot.is_draw_gpu),
+                    "phase": str(self.session.phase),
+                    "last": list(self.__last_window_position__) if self.__last_window_position__ else None,
+                    "circle": list(self.__circle_center_window_position__) if self.__circle_center_window_position__ else None,
+                })
+                # #endregion
+                return
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(self.__circle_center_region_position__)
+                gpu.matrix.translate(center)
                 if self.is_window_region_type:
                     self.draw_circle((0, 0), threshold, line_width=2, segments=64)
-                    if self.is_beyond_threshold:
-                        self.draw_arc((0, 0), threshold, self.angle_unsigned, 45, line_width=10, segments=64)
+                    angle = self.angle_unsigned
+                    if self.session.snapshot.threshold_zone.is_beyond and angle is not None:
+                        self.draw_arc((0, 0), threshold, angle, 45, line_width=10, segments=64)
 
-                draw_items = self.direction_items.values()
+                draw_items = list(self.direction_items.values())
+                # #region agent log
+                if getattr(self, "_dbg_draw_logged", 0) < 3:
+                    from .gesture_input import _agent_dbg
+                    self._dbg_draw_logged = getattr(self, "_dbg_draw_logged", 0) + 1
+                    keys = list(self.direction_items.keys())
+                    _agent_dbg("B", "gesture_draw_gpu.py:draw_radial", "drawing radial items", {
+                        "keys": keys,
+                        "has_9": "9" in keys,
+                        "hover": [getattr(x, "name", str(x)) for x in self.session.extension_hover],
+                        "n": len(draw_items),
+                    })
+                # #endregion
                 for item in draw_items:
                     with gpu.matrix.push_pop():
                         item.draw_gpu_item(self)
 
-                if not len(self.operator_gesture.element):
+                og = self.operator_gesture
+                if og is None or not len(og.element):
                     text = __name_translate__('There are currently no elements for gestures, please add them')
                     self.draw_text(text)
                 elif not len(draw_items):
                     self.draw_text(__name_translate__('No gestures under current conditions, please add'))
-
-        if self.extension_element:
-            item = getattr(self.extension_element, "extension_draw_area", None)
-            if item:
-                x1, y1, x2, y2 = item
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""
         element = self.direction_element
         scale = bpy.context.preferences.view.ui_scale
 
-        if element and not self.is_draw_gesture:
+        if element and not self.session.phase.shows_radial_ui:
             size = self.pref.draw_property.text_gpu_draw_size * scale
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.__mouse_position__)
