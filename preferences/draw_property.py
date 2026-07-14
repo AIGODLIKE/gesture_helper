@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty, StringProperty, IntVectorProperty
 
+from ..utils import theme_defaults
 from ..utils.public import get_pref
 
 
@@ -97,7 +98,7 @@ class DrawProperty(bpy.types.PropertyGroup):
     outline_width: FloatProperty(
         name='Outline Width',
         description='Stroke width for flat outlined gesture buttons',
-        default=0.75, min=0.25, max=4.0, step=5, precision=2,
+        default=theme_defaults.OUTLINE_WIDTH, min=0.25, max=4.0, step=5, precision=2,
     )
     dividing_line_height: IntProperty(
         name='Dividing Line Height',
@@ -105,34 +106,36 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=2, min=1, max=10,
     )
 
-    # Dark flat defaults (linear-ish RGB); users can override in preferences.
+    # Scene-linear defaults (shared with BPU via theme_defaults); GPU draw converts to sRGB.
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
-                                                   default=[0.035, 0.035, 0.038, 1.0])
+                                                   default=theme_defaults.BACKGROUND)
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
-                                                          default=[0.02, 0.45, 0.40, 1.0])
+                                                          default=theme_defaults.OPERATOR_ACTIVE)
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
-                                                default=[0.035, 0.035, 0.038, 1.0])
+                                                default=theme_defaults.BACKGROUND)
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
-                                                       default=[0.28, 0.18, 0.75, 1.0])
+                                                       default=theme_defaults.CHILD_ACTIVE)
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
-                                              default=[0.02, 0.45, 0.40, 1.0])
+                                              default=theme_defaults.OPERATOR_ACTIVE)
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
-                                               default=[0.035, 0.035, 0.038, 1.0])
+                                               default=theme_defaults.BACKGROUND)
 
-    text_default_color: FloatVectorProperty(name='Text Default Color', **public_color, default=(0.92, 0.92, 0.94, 1))
-    text_active_color: FloatVectorProperty(name='Text Active Color', **public_color, default=(1, 1, 1, 1))
+    text_default_color: FloatVectorProperty(name='Text Default Color', **public_color,
+                                            default=theme_defaults.TEXT_DEFAULT)
+    text_active_color: FloatVectorProperty(name='Text Active Color', **public_color,
+                                           default=theme_defaults.TEXT_ACTIVE)
 
     trajectory_mouse_color: FloatVectorProperty(name='Mouse Track Color', **public_color,
-                                                default=[0.08, 0.85, 0.95, 1.0])
+                                                default=theme_defaults.TRAJECTORY_MOUSE)
     trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
-                                                  default=[0.75, 0.35, 0.95, 1.0])
+                                                  default=theme_defaults.TRAJECTORY_GESTURE)
 
     dividing_line_color: FloatVectorProperty(name='Dividing Line Color', **public_color,
-                                             default=[0.22, 0.22, 0.24, 1.0])
+                                             default=theme_defaults.DIVIDING_LINE)
     outline_color: FloatVectorProperty(name='Outline Color', **public_color,
-                                       default=[0.55, 0.55, 0.58, 0.28])
+                                       default=theme_defaults.OUTLINE)
     outline_active_color: FloatVectorProperty(name='Outline Active Color', **public_color,
-                                              default=[0.75, 0.75, 0.78, 0.42])
+                                              default=theme_defaults.OUTLINE_ACTIVE)
 
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel

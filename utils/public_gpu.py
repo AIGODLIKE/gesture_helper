@@ -1,19 +1,20 @@
 import math
-from functools import cache, lru_cache
+from functools import cache
 
 import blf
 import bpy
 import gpu
 from gpu_extras.batch import batch_for_shader
-from mathutils import Euler
+from .color import clear_color_cache, color_to_gpu, color_to_srgb, linear_to_srgb_tuple
 
 # Default corner tessellation (segments per 90° quadrant).
 DEFAULT_ROUND_SEGMENTS = 48
 DEFAULT_CIRCLE_SEGMENTS = 64
 
 _SHADER_CACHE: dict[str, object] = {}
-_ROUNDED_FILL_BATCH: dict[tuple, object] = {}
-_IMAGE_BATCH_CACHE: dict[tuple[float, float], object] = {}
+# key -> (shader_identity, batch); rebuild when shader instance changes after reload.
+_ROUNDED_FILL_BATCH: dict[tuple, tuple] = {}
+_IMAGE_BATCH_CACHE: dict[tuple[float, float], tuple] = {}
 
 _GPU_DRAW_DEPTH = 0
 _SAVED_BLEND = None
@@ -28,18 +29,32 @@ def _get_shader(name: str):
     return shader
 
 
-def _polyline_shader():
-    try:
-        return _get_shader('POLYLINE_UNIFORM_COLOR')
-    except Exception:
-        return _get_shader('POLYLINE_SMOOTH_COLOR')
-
-
 def _point_shader():
     try:
         return _get_shader('POINT_UNIFORM_COLOR')
     except Exception:
         return _get_shader('UNIFORM_COLOR')
+
+
+def clear_gpu_caches() -> None:
+    """Drop module-level GPU batches/shaders and geometry caches (reload-safe)."""
+    global _GPU_DRAW_DEPTH, _SAVED_BLEND, _SAVED_DEPTH_TEST
+    _SHADER_CACHE.clear()
+    _ROUNDED_FILL_BATCH.clear()
+    _IMAGE_BATCH_CACHE.clear()
+    from_segments_generator_circle_vertex.cache_clear()
+    get_rounded_rectangle_vertex.cache_clear()
+    get_arc_vertex.cache_clear()
+    get_rounded_fill_mesh.cache_clear()
+    clear_color_cache()
+    _GPU_DRAW_DEPTH = 0
+    _SAVED_BLEND = None
+    _SAVED_DEPTH_TEST = None
+    try:
+        from .gpu_stroke import clear_stroke_shader_cache
+        clear_stroke_shader_cache()
+    except Exception:
+        pass
 
 
 def gpu_draw_begin():
@@ -77,10 +92,6 @@ def from_segments_generator_circle_vertex(segments) -> tuple:
     from math import sin, cos, pi
     mul = (1.0 / (segments - 1)) * (pi * 2)
     return tuple((sin(i * mul), cos(i * mul), 0) for i in range(segments))
-
-
-def _viewport_size():
-    return gpu.state.viewport_get()[2:]
 
 
 def _as_vec3(v):
@@ -135,6 +146,7 @@ def draw_line(vertex, color, line_width, is_cycle=True) -> None:
         pass
     batch.draw(shader)
 
+
 @cache
 def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) -> tuple:
     """Outline vertices for a centered rounded rect (CCW, Y-up)."""
@@ -161,10 +173,11 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) 
 
 @cache
 def get_arc_vertex(arc, segments=40):
+    """Unit-circle arc from 0° to ``arc`` degrees (inclusive endpoints)."""
+    segments = max(1, int(segments))
     vertex = []
-    angle_step = arc / max(1, segments)
-    for i in range(segments):
-        b = math.radians(angle_step * (1 + i))
+    for i in range(segments + 1):
+        b = math.radians(float(arc) * i / segments)
         vertex.append((math.cos(b), math.sin(b)))
     return tuple(vertex)
 
@@ -188,13 +201,13 @@ def _rounded_radius(radius):
 
 def _get_rounded_fill_batch(radius, width, height, segments):
     key = (round(radius, 3), round(width, 3), round(height, 3), int(segments))
-    batch = _ROUNDED_FILL_BATCH.get(key)
-    if batch is not None:
-        return batch
-    verts, indices = get_rounded_fill_mesh(radius, width, height, segments)
     shader = _get_shader('UNIFORM_COLOR')
+    entry = _ROUNDED_FILL_BATCH.get(key)
+    if entry is not None and entry[0] is shader:
+        return entry[1]
+    verts, indices = get_rounded_fill_mesh(radius, width, height, segments)
     batch = batch_for_shader(shader, 'TRIS', {"pos": verts}, indices=indices)
-    _ROUNDED_FILL_BATCH[key] = batch
+    _ROUNDED_FILL_BATCH[key] = (shader, batch)
     return batch
 
 
@@ -212,24 +225,17 @@ def _draw_rounded_fill(position, color, radius, width, height, segments):
         batch.draw(shader)
 
 
-@lru_cache(maxsize=256)
-def linear_to_srgb_tuple(r, g, b, a=1.0):
-    """Cached linear→sRGB for preference colors (hot path without numpy)."""
-
-    def ch(c):
-        c = max(0.0, min(1.0, float(c)))
-        if c <= 0.0031308:
-            return 12.92 * c
-        return 1.055 * (c ** (1.0 / 2.4)) - 0.055
-
-    return (ch(r), ch(g), ch(b), float(a))
-
-
-def color_to_srgb(color) -> tuple:
-    c = tuple(color)
-    if len(c) == 3:
-        return linear_to_srgb_tuple(c[0], c[1], c[2], 1.0)
-    return linear_to_srgb_tuple(c[0], c[1], c[2], c[3])
+# Re-export for existing call sites.
+__all__ = [
+    'PublicGpu',
+    'color_to_srgb',
+    'color_to_gpu',
+    'linear_to_srgb_tuple',
+    'clear_gpu_caches',
+    'draw_line',
+    'gpu_draw_begin',
+    'gpu_draw_end',
+]
 
 
 class PublicGpu:
@@ -237,12 +243,15 @@ class PublicGpu:
     def draw_image(position, height, width, texture):
         if texture is None:
             return
-        # Icons must always blend; polyline draws can leave GPU state dirty.
-        _ensure_alpha_blend()
+        # Always force ALPHA — icon textures rely on straight alpha; never inherit
+        # a dirty blend state from prior stroke/fill draws.
+        gpu.state.blend_set('ALPHA')
         key = (float(width), float(height))
-        batch = _IMAGE_BATCH_CACHE.get(key)
         shader = _get_shader('IMAGE')
-        if batch is None:
+        entry = _IMAGE_BATCH_CACHE.get(key)
+        if entry is not None and entry[0] is shader:
+            batch = entry[1]
+        else:
             batch = batch_for_shader(
                 shader, 'TRI_FAN',
                 {
@@ -250,7 +259,7 @@ class PublicGpu:
                     "texCoord": ((0, 0), (1, 0), (1, 1), (0, 1)),
                 },
             )
-            _IMAGE_BATCH_CACHE[key] = batch
+            _IMAGE_BATCH_CACHE[key] = (shader, batch)
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
             shader.bind()
@@ -259,8 +268,8 @@ class PublicGpu:
 
     @staticmethod
     def draw_text(
-            text="Hello Word",
-            position=[0, 0],
+            text="",
+            position=(0, 0),
             size=25,
             color=(1, 1, 1, 1),
             font_id=0,
@@ -306,6 +315,7 @@ class PublicGpu:
     def draw_circle(position, radius, *, color=(1, 1, 1, 1.0), line_width=2, segments=DEFAULT_CIRCLE_SEGMENTS):
         from math import pi, ceil, acos
 
+        radius = float(radius)
         if segments is None:
             max_pixel_error = 0.25
             segments = int(ceil(pi / acos(1.0 - max_pixel_error / max(radius, 1e-6))))
@@ -315,36 +325,31 @@ class PublicGpu:
         if segments <= 0:
             raise ValueError("Amount of segments must be greater than 0.")
 
+        # Bake radius into vertices. Custom stroke expands in *vertex* space; a
+        # matrix scale would multiply line_width by radius (sunburst / huge ring).
+        unit = from_segments_generator_circle_vertex(segments)
+        verts = tuple((x * radius, y * radius) for x, y, *_ in unit)
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            gpu.matrix.scale_uniform(radius)
-            verts = from_segments_generator_circle_vertex(segments)
             draw_line(verts, color, line_width, is_cycle=True)
 
     @staticmethod
     def draw_arc(position, radius, angle, arc, color=(0.4, 0.3, 0.8, 1), line_width=2,
                  segments=DEFAULT_CIRCLE_SEGMENTS):
+        """Draw an arc of ``arc`` degrees centered on compass ``angle`` (degrees)."""
+        radius = float(radius)
+        mid = math.radians(float(angle) - float(arc) * 0.5)
+        cos_m = math.cos(mid)
+        sin_m = math.sin(mid)
+        # Rotate + scale in Python so stroke width stays in pixel units.
+        verts = []
+        for x, y in get_arc_vertex(arc, segments):
+            xr = x * cos_m - y * sin_m
+            yr = x * sin_m + y * cos_m
+            verts.append((xr * radius, yr * radius))
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            gpu.matrix.scale_uniform(radius)
-            a = Euler((0, 0, -arc * 2 / 360), 'XYZ').to_matrix()
-            e = Euler((0, 0, angle * 3 / 180), 'XYZ').to_matrix()
-            gpu.matrix.multiply_matrix(e.to_4x4() @ a.to_4x4())
-            verts = get_arc_vertex(arc, segments)
             draw_line(verts, color, line_width, is_cycle=False)
-
-    @staticmethod
-    def draw_rounded_rectangle_frame(
-            position, *, color=(0, 0, 0, 1), line_width=2, radius=10, width=200, height=200,
-            segments=DEFAULT_ROUND_SEGMENTS,
-    ):
-        if segments <= 0:
-            raise ValueError("Amount of segments must be greater than 0.")
-        r = _rounded_radius(radius)
-        with gpu.matrix.push_pop():
-            gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(r, width, height, segments)
-            draw_line(vertex, color, line_width=line_width, is_cycle=True)
 
     @staticmethod
     def draw_rounded_rectangle_area(

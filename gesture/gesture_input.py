@@ -255,11 +255,7 @@ def extension_rollback(session: GestureSession):
 
 
 def update_extension_hover(session: GestureSession, ops):
-    """Sync extension_hover from hit areas before execute / between events.
-
-    Draw also prunes + appends while painting (legacy contract). This path keeps
-    nested open state and release dispatch aligned with the latest mouse event.
-    """
+    """Sync extension_hover from hit areas before execute / between events."""
     if not session.phase.shows_radial_ui:
         session.extension_hover.clear()
         return
@@ -468,7 +464,14 @@ class GestureInputProcessor:
                 refresh_snapshot(session, ops)
                 snap = session.snapshot
 
-            if snap.is_access_child_gesture and snap.direction_element is not None:
+            # While browsing extension flyouts, do not enter a radial child
+            # gesture — that would clear extension_hover and collapse nesting.
+            in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
+            if (
+                    snap.is_access_child_gesture
+                    and snap.direction_element is not None
+                    and not in_extension_ui
+            ):
                 de = snap.direction_element
                 if snap.is_have_extension_item and de.direction == "7":
                     # Legacy gate: enter bottom child only after timeout while

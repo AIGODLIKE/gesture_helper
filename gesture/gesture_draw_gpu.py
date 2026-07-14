@@ -11,6 +11,8 @@ from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 class DrawDebug(PublicGpu):
     def gpu_draw_debug(self):
         try:
+            if self.area is not None and bpy.context.area != self.area:
+                return
             if self.is_window_region_type and self.pref.debug_property.debug_draw_gpu_mode:
                 gpu_draw_begin()
                 try:
@@ -123,11 +125,13 @@ class GestureGpuDraw(DrawDebug):
             ...
 
     def __gpu_draw__(self):
-        """Main GPU draw entry."""
+        """Main GPU draw entry — only paint in the area that owns this gesture."""
         try:
-            if len(bpy.context.screen.areas) > 8:
-                if bpy.context.area != self.area:
-                    return
+            # Space draw handlers run for every area of that type; always bind to
+            # the invoke area so multi-window / multi-VIEW_3D layouts do not
+            # duplicate or misplace the overlay.
+            if self.area is not None and bpy.context.area != self.area:
+                return
             if self.is_draw_gpu:
                 gpu_draw_begin()
                 try:
@@ -198,17 +202,19 @@ class GestureGpuDraw(DrawDebug):
 
     def gpu_draw_trajectory_mouse_move(self):
         """Draw mouse-move trajectory line."""
+        from ..utils.color import color_to_gpu
         draw = self.draw_property
-        color = draw.trajectory_mouse_color
+        color = color_to_gpu(draw.trajectory_mouse_color)
         scale = bpy.context.preferences.view.ui_scale
         line_width = draw.line_width * scale
         self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
         """Draw gesture trajectory polyline."""
+        from ..utils.color import color_to_gpu
         draw = self.draw_property
         scale = bpy.context.preferences.view.ui_scale
-        color = draw.trajectory_gesture_color
+        color = color_to_gpu(draw.trajectory_gesture_color)
         line_width = draw.line_width * scale
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=line_width)
 
@@ -256,13 +262,14 @@ class GestureGpuDraw(DrawDebug):
             return
 
         from .gesture_input import extension_rollback
+        from ..utils.color import color_to_gpu
 
         gp = self.gesture_property
         scale = bpy.context.preferences.view.ui_scale
         threshold = gp.threshold * scale
         from ..src.translate import __name_translate__
 
-        # Match legacy: prune stack from previous-frame hit boxes before redraw.
+        # Prune stack from previous-frame hit boxes before redraw (legacy contract).
         for el in self.session.extension_hover:
             el.ops = self
         extension_rollback(self.session)
@@ -285,7 +292,7 @@ class GestureGpuDraw(DrawDebug):
                 gpu.matrix.translate(center)
                 if self.is_window_region_type:
                     # Threshold ring: keep it clearly visible against the viewport.
-                    ring_color = self.draw_property.text_default_color
+                    ring_color = color_to_gpu(self.draw_property.text_default_color)
                     ring_width = max(2.5, 2.75 * scale)
                     self.draw_circle(
                         (0, 0), threshold,
@@ -297,7 +304,7 @@ class GestureGpuDraw(DrawDebug):
                     if self.session.snapshot.threshold_zone.is_beyond and angle is not None:
                         self.draw_arc(
                             (0, 0), threshold, angle, 45,
-                            color=self.draw_property.trajectory_gesture_color,
+                            color=color_to_gpu(self.draw_property.trajectory_gesture_color),
                             line_width=max(5.0, 5.5 * scale),
                             segments=48,
                         )

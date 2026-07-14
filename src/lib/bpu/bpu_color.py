@@ -1,15 +1,18 @@
-class BpuColor:
-    # Dark flat defaults aligned with gesture draw theme.
-    __background_normal_color__ = [0.035, 0.035, 0.038, 1.0]
-    __background_active_color__ = [0.02, 0.45, 0.40, 1.0]  # self.active
-    __background_haver_color__ = [0.28, 0.18, 0.75, 0.85]
-    __background_property_haver_color__ = [0.02, 0.45, 0.40, 0.7]
-    __background_property_normal_color__ = [0.05, 0.05, 0.055, 1.0]
-    __background_alert_color__ = [0.85, 0.15, 0.15, 1.0]  # self.alert
+from ....utils import theme_defaults
 
-    __outline_color__ = [0.55, 0.55, 0.58, 0.28]
-    __outline_active_color__ = [0.75, 0.75, 0.78, 0.42]
-    __outline_width__ = 0.75
+
+class BpuColor:
+    # Dark flat defaults aligned with gesture draw theme (scene-linear).
+    __background_normal_color__ = list(theme_defaults.BACKGROUND)
+    __background_active_color__ = list(theme_defaults.OPERATOR_ACTIVE)
+    __background_haver_color__ = list(theme_defaults.BACKGROUND_HOVER)
+    __background_property_haver_color__ = list(theme_defaults.BACKGROUND_PROPERTY_HOVER)
+    __background_property_normal_color__ = list(theme_defaults.BACKGROUND_PROPERTY)
+    __background_alert_color__ = list(theme_defaults.BACKGROUND_ALERT)
+
+    __outline_color__ = list(theme_defaults.OUTLINE)
+    __outline_active_color__ = list(theme_defaults.OUTLINE_ACTIVE)
+    __outline_width__ = theme_defaults.OUTLINE_WIDTH
 
     __debug_layout_bound_color__ = [.6, .1, .1, 1]
     __debug_layout_margin_color__ = [.1, .2, 1, 1]
@@ -19,11 +22,11 @@ class BpuColor:
     __debug_menu_bound_color__ = [.1, .2, 1, 1]
     __debug_menu_margin_color__ = [.5, .5, .5, 1]
 
-    __text_normal_color__ = [0.92, 0.92, 0.94, 1]
-    __text_haver_color__ = [1, 1, 1, 1]
-    __text_alert_color__ = [1, 0.3, 0.3, 1]
+    __text_normal_color__ = list(theme_defaults.TEXT_DEFAULT)
+    __text_haver_color__ = list(theme_defaults.TEXT_ACTIVE)
+    __text_alert_color__ = list(theme_defaults.TEXT_ALERT)
 
-    __separator_color__ = [0.35, 0.35, 0.38, 1]
+    __separator_color__ = list(theme_defaults.SEPARATOR)
 
     __layout_radius__ = 10
     __layout_segments__ = 48
@@ -33,7 +36,7 @@ class BpuColor:
     __normal_line__ = 1
 
     @property
-    def ___text_color___(self) -> list[int]:
+    def ___text_color___(self) -> list:
         if self.type.is_clickable or self.type.is_operator or self.type.is_prop:
             if self.is_haver:
                 return self.__text_haver_color__

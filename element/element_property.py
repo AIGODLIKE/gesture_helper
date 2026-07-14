@@ -191,19 +191,38 @@ class ElementExtension:
 
     @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
-        """Return whether mouse is outside extension area on the right (last item)."""
-        if extension_hover := getattr(self.ops, "extension_hover", None):
-            is_last = len(extension_hover) > 1 and extension_hover[-1] == self
-            if is_last:
-                if item := getattr(self, "extension_draw_area", None):
-                    mouse = self._ops_mouse_xy()
-                    if mouse is None:
-                        return False
-                    w, h = self.extension_dimensions
-                    x1, y1, x2, y2 = item
-                    x, y = mouse
-                    return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
-        return False
+        """Return whether mouse is in the right tolerance band (or next flyout)."""
+        extension_hover = getattr(self.ops, "extension_hover", None)
+        if not extension_hover:
+            return False
+        try:
+            idx = extension_hover.index(self)
+        except ValueError:
+            return False
+
+        mouse = self._ops_mouse_xy()
+        if mouse is None:
+            return False
+        x, y = mouse
+
+        # Next stack panel already open to the right — treat as still in UI.
+        if idx + 1 < len(extension_hover):
+            nxt = extension_hover[idx + 1]
+            child_area = getattr(nxt, "extension_draw_area", None)
+            if child_area is not None:
+                cx1, cy1, cx2, cy2 = child_area
+                if cx1 < x < cx2 and cy1 < y < cy2:
+                    return True
+
+        # Only the current top panel uses the legacy right-side band.
+        if extension_hover[-1] != self or len(extension_hover) <= 1:
+            return False
+        item = getattr(self, "extension_draw_area", None)
+        if item is None:
+            return False
+        w, h = self.extension_dimensions
+        x1, y1, x2, y2 = item
+        return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
 
 
 class ElementProperty(
