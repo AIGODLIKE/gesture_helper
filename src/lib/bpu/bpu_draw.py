@@ -1,5 +1,3 @@
-import re
-
 import blf
 import bpy
 import gpu
@@ -8,16 +6,13 @@ from mathutils import Vector
 from .bpu_debug import BpuDebug
 from .bpu_prop_layout import BpuPropLayout
 from .bpu_property import BpuProperty
+from ....utils import including_chinese
+from ....utils.color import color_to_gpu, color_to_srgb
 from ....utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 
 
 def __box_path__(width: int, height: int) -> tuple[list[int], list[int], list[int], list[int], list[int]]:
     return [0, 0], [0, height], [width, height], [width, 0], [0, 0]
-
-
-def contains_chinese(text):
-    pattern = re.compile(r'[\u4e00-\u9fff]+')
-    return bool(pattern.search(text))
 
 
 IS_DEBUG_DRAW: bool = False  # Draw debug overlay
@@ -118,7 +113,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             elif pt.is_vertical_layout or pt.is_parent:
                 gpu.matrix.translate((0, self.__draw_height__ / 2))
 
-            self.draw_2d_line(vs, color=self.__separator_color__, line_width=2)
+            self.draw_2d_line(vs, color=color_to_gpu(self.__separator_color__), line_width=2)
         self.__draw_haver_position_debug__()
 
     def __draw_item__(self) -> None:
@@ -142,14 +137,14 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                     color=self.__debug_item_bound_color__,
                     line_width=self.__debug_line__)
 
-            if contains_chinese(self.__text__):
+            if including_chinese(self.__text__):
                 pt = self.parent.type
                 if pt.is_vertical_layout or pt.is_parent or pt.is_menu:
                     gpu.matrix.translate(Vector([0, self.__text_height__ * 0.1]))
 
             font_id = self.font_id
             blf.position(font_id, 0, 0, self.level)
-            blf.color(font_id, *self.___text_color___)
+            blf.color(font_id, *color_to_srgb(self.___text_color___))
             blf.size(font_id, self.font_size)
             blf.draw(font_id, self.__text__)
         if not self.type.is_prop:
@@ -161,8 +156,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
             self.draw_rounded_rectangle_outlined(
                 [0, 0],
-                fill=self.__background_normal_color__,
-                stroke=self.__outline_color__,
+                fill=color_to_gpu(self.__background_normal_color__),
+                stroke=color_to_gpu(self.__outline_color__),
                 radius=self.__layout_radius__,
                 width=self.__draw_width__,
                 height=self.__draw_height__,
@@ -173,11 +168,11 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                 gpu.matrix.translate(self.parent_offset())
                 self.draw_2d_line(
                     self.__bound_box__,
-                    color=self.__debug_layout_margin_color__,
+                    color=color_to_gpu(self.__debug_layout_margin_color__),
                     line_width=self.__debug_line__)
             self.draw_2d_line(
                 self.__margin_box__,
-                color=self.__debug_layout_bound_color__,
+                color=color_to_gpu(self.__debug_layout_bound_color__),
                 line_width=self.__debug_line__
             )
 
@@ -220,8 +215,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             gpu.matrix.translate((w / 2, h / 2))
             self.draw_rounded_rectangle_outlined(
                 [0, 0],
-                fill=color,
-                stroke=self.__outline_active_color__,
+                fill=color_to_gpu(color),
+                stroke=color_to_gpu(self.__outline_active_color__),
                 radius=5,
                 width=w,
                 height=h,
@@ -250,8 +245,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                     gpu.matrix.translate((w / 2, h / 2))
                     self.draw_rounded_rectangle_outlined(
                         [0, 0],
-                        fill=self.__background_normal_color__,
-                        stroke=self.__outline_color__,
+                        fill=color_to_gpu(self.__background_normal_color__),
+                        stroke=color_to_gpu(self.__outline_color__),
                         radius=self.__layout_radius__,
                         width=w,
                         height=h,

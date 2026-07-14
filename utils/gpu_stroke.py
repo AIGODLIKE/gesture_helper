@@ -36,12 +36,23 @@ void main()
 """
 
 _FRAG = """
+/* Match builtin UNIFORM_COLOR: IEC sRGB → linear for sRGB framebuffer encode. */
+vec4 gesture_srgb_to_framebuffer_space(vec4 in_color)
+{
+    vec3 c = max(in_color.rgb, vec3(0.0));
+    vec3 c1 = c * (1.0 / 12.92);
+    vec3 c2 = pow((c + 0.055) * (1.0 / 1.055), vec3(2.4));
+    in_color.rgb = mix(c1, c2, step(vec3(0.04045), c));
+    return in_color;
+}
+
 void main()
 {
     /* Radial distance from stroke center (strip: |y|; join/cap: length). */
     float dist = length(vLineCoord);
     float half_width = (lineWidth + SMOOTH_WIDTH) * 0.5;
-    vec4 col = color;
+    /* Decode before AA so fringe blends in linear (same as sRGB FB blending). */
+    vec4 col = gesture_srgb_to_framebuffer_space(color);
     col.a *= clamp(half_width - dist, 0.0, 1.0);
     fragColor = col;
 }

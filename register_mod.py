@@ -103,19 +103,18 @@ def register():
     from .utils.pref import clear_pref_cache
     from .utils.session_state import SessionState
     from .utils import icons
+    from .utils.texture import Texture
+    from .utils.public_gpu import clear_gpu_caches
 
     clear_pref_cache()
     SessionState.clear()
-    from .utils.texture import Texture
-    from .utils.gpu_stroke import clear_stroke_shader_cache
     Texture.clear()
-    clear_stroke_shader_cache()
+    clear_gpu_caches()
     icons.Icons.register()
 
     for module in module_list:
         module.register()
 
-    clear_pref_cache()
     clear_temp_keymap()
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
@@ -173,4 +172,8 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
+    from .utils.texture import Texture
+    from .utils.public_gpu import clear_gpu_caches
+    Texture.clear()
+    clear_gpu_caches()
     clear_temp_keymap()

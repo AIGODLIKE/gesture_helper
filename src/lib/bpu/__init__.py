@@ -6,11 +6,10 @@ from .bpu_draw import BpuDraw
 from .bpu_event import BpuEvent
 from .bpu_operator import BpuOperator, OperatorProperties
 from .bpu_property import BpuProperty
-from .bpu_register import BpuRegister
 from .bpu_type import BPUType, Quadrant
 
 
-class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
+class BpuLayout(BpuDraw, BpuOperator, BpuEvent):
 
     def __init__(self, quadrant: Quadrant = Quadrant.ONE):
         super().__init__()
@@ -42,7 +41,7 @@ class BpuLayout(BpuDraw, BpuOperator, BpuRegister, BpuEvent):
         layout.__clear_children__()
         return layout
 
-    def label(self, text="Hollow Word", alert=False):
+    def label(self, text="", alert=False):
         """Add label."""
         lab = self.__child_layout__(BPUType.LABEL)
         lab.text = text
