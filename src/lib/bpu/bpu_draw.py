@@ -7,7 +7,7 @@ from .bpu_debug import BpuDebug
 from .bpu_prop_layout import BpuPropLayout
 from .bpu_property import BpuProperty
 from ....utils import including_chinese
-from ....utils.color import color_to_gpu, color_to_srgb
+from ....utils.color import color_to_srgb
 from ....utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 
 
@@ -113,7 +113,7 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             elif pt.is_vertical_layout or pt.is_parent:
                 gpu.matrix.translate((0, self.__draw_height__ / 2))
 
-            self.draw_2d_line(vs, color=color_to_gpu(self.__separator_color__), line_width=2)
+            self.draw_2d_line(vs, color=self.__separator_color__, line_width=2)
         self.__draw_haver_position_debug__()
 
     def __draw_item__(self) -> None:
@@ -156,8 +156,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             gpu.matrix.translate((self.__draw_width__ / 2, self.__draw_height__ / 2))
             self.draw_rounded_rectangle_outlined(
                 [0, 0],
-                fill=color_to_gpu(self.__background_normal_color__),
-                stroke=color_to_gpu(self.__outline_color__),
+                fill=self.__background_normal_color__,
+                stroke=self.__outline_color__,
                 radius=self.__layout_radius__,
                 width=self.__draw_width__,
                 height=self.__draw_height__,
@@ -168,11 +168,11 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                 gpu.matrix.translate(self.parent_offset())
                 self.draw_2d_line(
                     self.__bound_box__,
-                    color=color_to_gpu(self.__debug_layout_margin_color__),
+                    color=self.__debug_layout_margin_color__,
                     line_width=self.__debug_line__)
             self.draw_2d_line(
                 self.__margin_box__,
-                color=color_to_gpu(self.__debug_layout_bound_color__),
+                color=self.__debug_layout_bound_color__,
                 line_width=self.__debug_line__
             )
 
@@ -215,8 +215,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
             gpu.matrix.translate((w / 2, h / 2))
             self.draw_rounded_rectangle_outlined(
                 [0, 0],
-                fill=color_to_gpu(color),
-                stroke=color_to_gpu(self.__outline_active_color__),
+                fill=color,
+                stroke=self.__outline_active_color__,
                 radius=5,
                 width=w,
                 height=h,
@@ -245,8 +245,8 @@ class BpuDraw(BpuPropLayout, PublicGpu, BpuDebug):
                     gpu.matrix.translate((w / 2, h / 2))
                     self.draw_rounded_rectangle_outlined(
                         [0, 0],
-                        fill=color_to_gpu(self.__background_normal_color__),
-                        stroke=color_to_gpu(self.__outline_color__),
+                        fill=self.__background_normal_color__,
+                        stroke=self.__outline_color__,
                         radius=self.__layout_radius__,
                         width=w,
                         height=h,
