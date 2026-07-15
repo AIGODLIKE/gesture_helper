@@ -80,6 +80,12 @@ class GestureElementPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         layout = self.layout
         layout.enabled = self.pref.enabled
         GestureDraw.draw_element(layout, include_modal=False)
+        tip = layout.box()
+        tip.alert = True
+        tip.label(
+            text="Close this panel when not editing gestures to avoid performance issues",
+            icon='INFO',
+        )
 
 
 class GestureModalEventPanel(bpy.types.Panel, PrefAccess, ActiveSelection):

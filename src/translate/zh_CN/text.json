@@ -41,6 +41,7 @@
   "No gestures under current conditions, please add": "在当前条件下没有手势,请添加",
   "Gesture is running (avoiding impact on operator performance)": "手势运行中（避免影响操作符性能）",
   "Animation playing (avoiding impact on operator performance)": "动画播放中（避免影响操作符性能）",
+  "Close this panel when not editing gestures to avoid performance issues": "不修改手势时请关闭此面板，避免性能问题",
   "Not key": "无快捷键",
   "Import gesture": "导入手势",
   "Export gesture": "导出手势",

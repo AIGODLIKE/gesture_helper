@@ -142,9 +142,12 @@ class PublicProperty(PrefAccess, ActiveSelection, StructureCacheOps):
 
     @staticmethod
     def __get_icon__(key) -> int:
-        """Get icon id for key."""
+        """Get icon id for key; never raise during UI draw."""
         from .icons import Icons
-        return Icons.get(key).icon_id
+        try:
+            return Icons.get(key).icon_id
+        except KeyError:
+            return 0
 
     @property
     def ___dict_data___(self) -> dict:
