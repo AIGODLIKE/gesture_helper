@@ -124,7 +124,6 @@ def defer_operator_call(
 
     Deferred ops pin the gesture area/region by default so ``context.space_data``
     stays valid (timer callbacks otherwise see a bare window context).
-    Window-open ops stay on the sync path (see ``window_focus``), not here.
     """
     override = pass_override(context, area)
     if override is None:

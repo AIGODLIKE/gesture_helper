@@ -45,6 +45,7 @@ class GestureOperator(
         object.__setattr__(self, "session", GestureSession())
         object.__setattr__(self, "_input", GestureInputProcessor())
         object.__setattr__(self, "_executor", GestureExecutor())
+        object.__setattr__(self, "_modal_cleaned", False)
 
     def tag_redraw(self):
         """Redraw the gesture screen (override PublicOperator.tag_redraw)."""
@@ -65,14 +66,14 @@ class GestureOperator(
         if pass_right_mouse := self.try_pass_paint_texture_stencil(context, event):
             return pass_right_mouse
 
-        # Preferences / other utility windows must not start a gesture modal —
-        # opening prefs from a gesture while already in prefs breaks focus.
+        # Preferences / other utility windows must not start a gesture modal.
         area = context.area
         if area is not None and area.type in {'PREFERENCES', 'FILE_BROWSER'}:
             return {'CANCELLED'}
 
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
+        object.__setattr__(self, "_modal_cleaned", False)
         if self.operator_gesture is None:
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
@@ -99,16 +100,32 @@ class GestureOperator(
         debug_print(self.bl_idname, event.type, event.value, key='modal')
         return {'RUNNING_MODAL'}
 
+    def _mark_modal_done(self) -> None:
+        """Mark this session finished so leftover handler calls force-end."""
+        self.session.modal_report_done = True
+
+    def _finish_leftover_modal(self, event) -> set:
+        """Blender may keep delivering events after we already returned FINISHED."""
+        # Idempotent: draw/timer already torn down on the real exit path.
+        self.__exit_modal__()
+        return {'FINISHED'}
+
     def modal(self, context, event):
-        # Focus left this window (e.g. Preferences popup took focus): cancel
-        # cleanly without running gesture operators — avoids focus fights.
+        """
+        Modal state machine (keep this small — focus heuristics belong elsewhere):
+
+        1. ``modal_report_done`` → always FINISHED (zombie-handler guard)
+        2. ``WINDOW_DEACTIVATE`` → RUNNING_MODAL (never CANCELLED; is_exit
+           already ignores non-invoke RELEASE)
+        3. immediate / is_exit → cleanup + exit path
+        4. else RUNNING_MODAL
+        """
+        done = bool(getattr(self.session, 'modal_report_done', False))
+        if done:
+            return self._finish_leftover_modal(event)
+
         if event.type == 'WINDOW_DEACTIVATE':
-            # While sync-opening Preferences (or other deferred UI), ignore
-            # deactivate so exit() can still return FINISHED+INTERFACE.
-            if self.session.handoff.ignore_window_deactivate:
-                return {'RUNNING_MODAL'}
-            self.__exit_modal__()
-            return {'CANCELLED'}
+            return {'RUNNING_MODAL'}
 
         self.init_modal(event)
         dirty = self._input.on_event(self.session, self, event)
@@ -120,14 +137,26 @@ class GestureOperator(
             "\tprev", event.type_prev, event.value_prev, key='modal',
         )
         if self._executor.try_immediate_implementation(self.session, self):
-            self.__exit_modal__()
+            # Mark before any further work — immediate already ran the op.
+            return self._finish_from_dispatch(context, event, from_immediate=True)
+        if self.is_exit:
+            # Mark FIRST (before cleanup/ops) so prefs sync cannot re-enter.
+            self._mark_modal_done()
+            return self._finish_from_dispatch(context, event, from_immediate=False)
+        return {'RUNNING_MODAL'}
+
+    def _finish_from_dispatch(self, context, event, *, from_immediate: bool) -> set:
+        """Shared finish: mark done early, cleanup, run exit dispatch once."""
+        # Mark done BEFORE cleanup/ops so a re-entrant modal call during
+        # prefs/window open cannot start a second dispatch on this session.
+        self._mark_modal_done()
+        self.__exit_modal__()
+        if from_immediate:
+            # Immediate path already ran the operator inside try_immediate.
             if self.session.handoff.needs_interface:
                 return {'FINISHED', 'INTERFACE'}
-            return {"FINISHED"}
-        if self.is_exit:
-            self.__exit_modal__()
-            return self.exit(context, event)
-        return {'RUNNING_MODAL'}
+            return {'FINISHED'}
+        return self.exit(context, event)
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
         # Refresh snapshot once more with the release event before dispatch.
@@ -137,7 +166,14 @@ class GestureOperator(
         from ..gesture.gesture_input import update_extension_hover
         update_extension_hover(self.session, self)
 
-        ops = self._executor.try_running_operator(self.session, self)
+        # Ensure done even if caller forgot (cancel / odd paths).
+        self._mark_modal_done()
+
+        ops = False
+        try:
+            ops = self._executor.try_running_operator(self.session, self)
+        finally:
+            self._mark_modal_done()
 
         if self.is_debug:
             debug_print('ops', ops, key='modal')
@@ -171,15 +207,29 @@ class GestureOperator(
                     key='modal',
                 )
             if self.try_pass_through_keymap(context, event) == 'handled':
-                return {'FINISHED', 'INTERFACE'}
-        if self.session.handoff.needs_interface:
-            return {'FINISHED', 'INTERFACE'}
-        return {'FINISHED'}
+                ret = {'FINISHED', 'INTERFACE'}
+            elif self.session.handoff.needs_interface:
+                ret = {'FINISHED', 'INTERFACE'}
+            else:
+                ret = {'FINISHED'}
+        elif self.session.handoff.needs_interface:
+            # Deferred menu/panel/search only.
+            ret = {'FINISHED', 'INTERFACE'}
+        else:
+            # Sync operators: plain FINISHED. INTERFACE here can leave the
+            # modal handler alive until WINDOW_DEACTIVATE (zombie input).
+            ret = {'FINISHED'}
+        return ret
 
     def cancel(self, context):
+        # ESC / system cancel: mark done so leftover events cannot resume.
+        self._mark_modal_done()
         self.__exit_modal__()
 
     def __exit_modal__(self):
+        if getattr(self, "_modal_cleaned", False):
+            return
+        object.__setattr__(self, "_modal_cleaned", True)
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
         # Keep session.handoff until invoke reset — exit()/immediate still read it

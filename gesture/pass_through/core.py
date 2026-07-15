@@ -86,21 +86,8 @@ class GesturePassThroughKeymap:
             if is_ui_pass_idname(kmi.idname) or should_defer_gesture_operator(kmi.idname):
                 if defer_kmi_pass_through(context, area, kmi, PASS_THROUGH_UI_IDNAMES):
                     return True
-            else:
-                session = getattr(self, 'session', None)
-                props = get_kmi_operator_properties(kmi)
-                if session is not None:
-                    from .window_focus import begin_sync_op, end_sync_op
-                    begin_sync_op(session)
-                    ok = invoke_operator_now(context, area, kmi.idname, props)
-                    if ok:
-                        end_sync_op(session)
-                    else:
-                        session.clear_handoff()
-                    if ok:
-                        return True
-                elif invoke_operator_now(context, area, kmi.idname, props):
-                    return True
+            elif invoke_operator_now(context, area, kmi.idname, get_kmi_operator_properties(kmi)):
+                return True
         return False
 
     def try_pass_through_keymap(self, context: bpy.types.Context, event: bpy.types.Event) -> str | None:
