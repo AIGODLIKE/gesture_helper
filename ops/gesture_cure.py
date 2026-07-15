@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
@@ -46,7 +47,7 @@ class GestureCURE:
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
                 count = add_all_preset()
-                self.report({'INFO'}, f"Import preset {count}")
+                self.report({'INFO'}, pgettext("Imported %d presets") % count)
                 return {'FINISHED'}
             return self.execute(context)
 
@@ -92,7 +93,7 @@ class GestureCURE:
                     self,
                     event,
                     context,
-                    title="Confirm deletion gesture?",
+                    title="Delete this gesture?",
                     message=f"{self.active_gesture.name}",
                 )
             return self.execute(context)

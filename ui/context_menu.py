@@ -30,7 +30,7 @@ class ContextMenu(bpy.types.Menu):
 
         if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
-            layout.label(text="Dynamic enumeration properties cannot be added!!")
+            layout.label(text="Dynamic enum properties cannot be added")
         elif (show_operator or show_property) and show:
             layout.context_pointer_set('show_gesture_add_menu', self)
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")

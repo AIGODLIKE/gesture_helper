@@ -3,7 +3,7 @@ from bpy.props import IntProperty
 import bpy
 class RestoreKey(bpy.types.Operator):
     bl_idname = 'wm.gesture_restore_key'
-    bl_label = 'Restore key'
+    bl_label = 'Restore Key'
     bl_description = 'Restore the active gesture keymap binding to its saved default'
     bl_options = {'REGISTER'}
 
