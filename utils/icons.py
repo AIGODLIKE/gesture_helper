@@ -139,26 +139,24 @@ def index_from_folder(icon_folder_path: str, icon_type: str) -> None:
 
 
 def get_all_icons() -> list[str]:
+    """Return icon names that can be drawn as gesture textures (PNG previews)."""
     global icons_map
     Icons._ensure_registered()
-    names = list(get_builtin_icon_names())
-    names.extend(icons_map['ADDON'])
+    names = list(icons_map['ADDON'])
+    names.extend(icons_map['BLENDER'])
     names.extend(icons_map['CUSTOM'])
     return names
 
 
 def get_blender_icons() -> list[str]:
-    return sorted(get_builtin_icon_names())
+    """Return Blender-style icons that have PNG previews under ``src/icon/blender``."""
+    Icons._ensure_registered()
+    return sorted(icons_map['BLENDER'])
 
 
 def check_icon(icon_identifier: str) -> bool:
-    name = normalize_icon_name(icon_identifier)
-    if not name:
-        return False
-    if is_builtin_icon(name):
-        return True
-    Icons._ensure_registered()
-    return name.lower() in icons_path_map
+    """Return whether *icon_identifier* can be drawn as a gesture texture."""
+    return has_preview_icon(icon_identifier)
 
 
 def _preview_is_empty(preview) -> bool:
@@ -206,13 +204,13 @@ class Icons:
         if icons is not None:
             return
         icons = bpy.utils.previews.new()
-        icons_map = {"ADDON": [], "CUSTOM": []}
+        icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         icons_path_map = {}
         from ..utils.public import ADDON_FOLDER
 
         icon_root = os.path.join(ADDON_FOLDER, 'src', 'icon')
         index_from_folder(icon_root, "ADDON")
-        index_from_folder(os.path.join(icon_root, 'blender'), "ADDON")
+        index_from_folder(os.path.join(icon_root, 'blender'), "BLENDER")
         index_from_folder(get_custom_icons_folder(), "CUSTOM")
 
     @staticmethod
