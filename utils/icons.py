@@ -149,7 +149,7 @@ def get_all_icons() -> list[str]:
 
 
 def get_blender_icons() -> list[str]:
-    """Return Blender-style icons that have PNG previews under ``src/icon/blender``."""
+    """Return Blender-style icons that have PNG previews under ``src/icons/blender``."""
     Icons._ensure_registered()
     return sorted(icons_map['BLENDER'])
 
@@ -208,7 +208,7 @@ class Icons:
         icons_path_map = {}
         from ..utils.public import ADDON_FOLDER
 
-        icon_root = os.path.join(ADDON_FOLDER, 'src', 'icon')
+        icon_root = os.path.join(ADDON_FOLDER, 'src', 'icons')
         index_from_folder(icon_root, "ADDON")
         index_from_folder(os.path.join(icon_root, 'blender'), "BLENDER")
         index_from_folder(get_custom_icons_folder(), "CUSTOM")
