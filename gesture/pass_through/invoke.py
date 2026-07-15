@@ -111,21 +111,6 @@ def invoke_operator_now(
         return False
 
 
-def _needs_area_pin(idname: str) -> bool:
-    """Deferred ops need the gesture area so ``context.space_data`` is valid.
-
-    Timer callbacks otherwise run with a bare window context (area/space_data
-    None), which breaks VIEW_3D operators (e.g. MACHIN3tools). Preferences /
-    new-window ops must not pin — that steals OS focus from the new window.
-    """
-    if not idname:
-        return False
-    from .ui_filter import is_preferences_op
-    if is_preferences_op(idname):
-        return False
-    return True
-
-
 def defer_operator_call(
         context,
         area,
@@ -133,11 +118,14 @@ def defer_operator_call(
         properties: dict | None = None,
         *,
         operator_context: str = 'INVOKE_DEFAULT',
-        pin_area: bool | None = None,
+        pin_area: bool = True,
 ) -> bool:
-    """Schedule operator invocation after the modal handler finishes."""
-    from .ui_filter import is_preferences_op
+    """Schedule operator invocation after the modal handler finishes.
 
+    Deferred ops pin the gesture area/region by default so ``context.space_data``
+    stays valid (timer callbacks otherwise see a bare window context).
+    Window-open ops stay on the sync path (see ``window_focus``), not here.
+    """
     override = pass_override(context, area)
     if override is None:
         return False
@@ -147,17 +135,11 @@ def defer_operator_call(
     window = override.get('window')
     captured_area = override.get('area')
     captured_region = override.get('region')
-    if pin_area is None:
-        pin_area = _needs_area_pin(idname)
-    is_prefs = is_preferences_op(idname)
 
     def _invoke(*_args):
         try:
             func = getattr(getattr(bpy.ops, prefix), suffix)
-            # Preferences / new-window ops: do NOT pin gesture area/region —
-            # that keeps input focus on the old View3D after the popup opens.
-            # Still invoke even if Preferences already exists so it can refocus.
-            if is_prefs or not pin_area:
+            if not pin_area:
                 result = func(operator_context, True, **properties)
             else:
                 ov = {'window': window}
