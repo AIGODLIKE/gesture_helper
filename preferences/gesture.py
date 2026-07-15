@@ -3,7 +3,7 @@ from bpy.props import BoolProperty, IntProperty
 
 
 def _gen_gesture_prop(default, subtype='PIXEL'):
-    return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 10}
+    return {'max': 10000, 'default': default, 'subtype': subtype, 'min': 10}
 
 
 class GestureProperty(bpy.types.PropertyGroup):
@@ -37,7 +37,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     return_distance: IntProperty(
         name='Return Previous Gesture Distance',
         description='Distance to move back toward the center to return to the previous gesture level',
-        **_gen_gesture_prop(20),
+        **_gen_gesture_prop(10),
     )
 
     immediate_implementation: BoolProperty(
