@@ -60,16 +60,14 @@ class GestureExecutor:
                 if item.extension_by_child_is_hover and item.is_operator:
                     run(item)
                     return True
-            # Mouse is over the extension panel but not an operator row —
-            # do not fall through to radial direction confirm.
+            # Only the real panel (or nested right flyout band) blocks radial
+            # confirm. Vertical outside is a travel tolerance for nested menus —
+            # treating it as "in extension" swallowed direction operators when a
+            # bottom extension exists (dead zone above the panel).
             in_extension = False
             for el in session.extension_hover:
                 el.ops = ops
-                if (
-                        el.mouse_is_in_extension_area
-                        or el.mouse_is_in_extension_vertical_outside_area
-                        or el.mouse_is_in_extension_right_outside_area
-                ):
+                if el.mouse_is_in_extension_area or el.mouse_is_in_extension_right_outside_area:
                     in_extension = True
                     break
                 for item in getattr(el, 'extension_items', []) or []:
