@@ -266,6 +266,8 @@ def update_extension_hover(session: GestureSession, ops):
     """Sync extension_hover from hit areas before execute / between events."""
     if not session.phase.shows_radial_ui:
         session.extension_hover.clear()
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(session, ops)
         return
 
     for el in session.extension_hover:
@@ -277,6 +279,8 @@ def update_extension_hover(session: GestureSession, ops):
     extension_rollback(session)
 
     if ext is None:
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(session, ops)
         return
 
     if ext not in session.extension_hover:
@@ -297,6 +301,9 @@ def update_extension_hover(session: GestureSession, ops):
             session.extension_hover.append(found)
             continue
         break
+
+    from .draw_frame_context import refresh_draw_ctx_extension_flag
+    refresh_draw_ctx_extension_flag(session, ops)
 
 
 def check_return_previous(session: GestureSession, return_distance: float, operator_gesture, ops=None):
@@ -475,7 +482,11 @@ class GestureInputProcessor:
 
             # While browsing extension flyouts, do not enter a radial child
             # gesture — that would clear extension_hover and collapse nesting.
-            in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
+            draw_ctx = getattr(session, "draw_ctx", None)
+            if draw_ctx is not None:
+                in_extension_ui = draw_ctx.in_extension_ui
+            else:
+                in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
             if (
                     snap.is_access_child_gesture
                     and snap.direction_element is not None

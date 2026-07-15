@@ -4,10 +4,12 @@ from bpy.props import BoolProperty
 from ..gesture import GestureKeymap
 from ..utils.public import (
     PublicOperator,
-    PublicProperty,
     poll_addon_preferences,
     poll_message_active_gesture,
 )
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.structure_cache_ops import StructureCacheOps
 
 
 def add_all_preset():
@@ -25,13 +27,13 @@ def add_all_preset():
 class GestureCURE:
     """CRUD operations for gestures."""
 
-    class GesturePoll(PublicOperator, PublicProperty):
+    class GesturePoll(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
 
         @classmethod
         def poll(cls, _):
             return poll_message_active_gesture(cls)
 
-    class ADD(PublicOperator, PublicProperty):
+    class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
         bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
         bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'

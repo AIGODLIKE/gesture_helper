@@ -4,10 +4,11 @@ from bpy.props import EnumProperty, StringProperty
 from ..utils.public import (
     PublicOperator,
     get_pref,
-    PublicProperty,
     debug_print,
     poll_message_active_gesture,
 )
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
 from ..utils.public_ui import icon_two
 
 # Matches default gesture keymaps and other frequent editor contexts.
@@ -34,7 +35,7 @@ COMMON_GESTURE_KEYMAPS = frozenset({
 })
 
 
-class OperatorSetKeyMaps(PublicOperator, PublicProperty):
+class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
     bl_idname = 'wm.gesture_set_key_maps'
     bl_label = 'Set keymaps'
     bl_description = 'Choose which keymap contexts can trigger the active gesture'

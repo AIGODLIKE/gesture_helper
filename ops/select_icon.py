@@ -10,7 +10,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from ..utils.public import get_pref, PublicProperty, poll_message_active_element, poll_addon_preferences
+from ..utils.public import get_pref, poll_message_active_element, poll_addon_preferences
 from ..utils.icons import icon_layout_kwargs, CUSTOM_ICONS_EXPORT_FILENAME
 
 DPI = 72
@@ -31,7 +31,7 @@ def get_num_cols(num_icons):
     return round(1.3 * math.sqrt(num_icons))
 
 
-class SelectIcon(bpy.types.Operator, PublicProperty):
+class SelectIcon(bpy.types.Operator):
     bl_idname = 'wm.gesture_select_icon'
     bl_label = 'Select Icon'
     bl_description = 'Pick an icon with a drawable texture preview for the active element'
