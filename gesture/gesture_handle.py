@@ -47,6 +47,8 @@ class GestureHandle:
 
     def _cancel_gesture_timeout_timer(self):
         cancel_timeout_timer(self.session)
+        from .gesture_input import cancel_bottom_child_dwell_timer
+        cancel_bottom_child_dwell_timer(self.session)
 
     @classmethod
     def cancel_active_gesture_timeout_timer(cls) -> None:

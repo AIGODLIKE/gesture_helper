@@ -79,16 +79,29 @@ def raw_direction_items_dict(session: GestureSession, operator_gesture) -> dict:
 
 
 def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gpu: bool) -> dict:
-    raw = raw_direction_items_dict(session, operator_gesture)
     if not is_draw_gpu:
-        return raw
+        return raw_direction_items_dict(session, operator_gesture)
+    from ..utils.gesture_items import poll_context_fingerprint
     from ..utils.public_cache import PublicCache
-    key = (direction_items_context_id(session, operator_gesture), PublicCache.__derived_generation__)
+    key = (
+        direction_items_context_id(session, operator_gesture),
+        PublicCache.__derived_generation__,
+        poll_context_fingerprint(),
+    )
     memo = session._direction_items_memo
     if memo is not None and memo[0] == key:
         return memo[1]
+    raw = raw_direction_items_dict(session, operator_gesture)
     session._direction_items_memo = (key, raw)
     return raw
+
+
+def clear_gesture_item_memos(session: GestureSession, ops=None) -> None:
+    """Drop direction/extension item memos (call on gesture exit / reset)."""
+    session._direction_items_memo = None
+    session._gpu_extension_items_cache = None
+    if ops is not None:
+        ops._gpu_extension_items_cache = None
 
 
 def invalidate_derived_caches(session: GestureSession, operator_gesture, *, force=False, ops=None):
@@ -97,10 +110,7 @@ def invalidate_derived_caches(session: GestureSession, operator_gesture, *, forc
     if not force and session._derived_cache_key == key:
         return
     session._derived_cache_key = key
-    session._direction_items_memo = None
-    session._gpu_extension_items_cache = None
-    if ops is not None:
-        ops._gpu_extension_items_cache = None
+    clear_gesture_item_memos(session, ops)
 
 
 def tag_redraw_gesture_screen(session: GestureSession):
@@ -167,6 +177,72 @@ def cancel_timeout_timer(session: GestureSession):
     session._gesture_timeout_deadline = None
 
 
+def cancel_bottom_child_dwell_timer(session: GestureSession):
+    timer = getattr(session, "_bottom_child_dwell_timer", None)
+    if timer is None:
+        session._bottom_child_dwell_deadline = None
+        return
+    try:
+        bpy.app.timers.unregister(timer)
+    except ValueError:
+        ...
+    session._bottom_child_dwell_timer = None
+    session._bottom_child_dwell_deadline = None
+
+
+def _arm_bottom_child_dwell(session: GestureSession, timeout_ms: float, ops) -> None:
+    """Wait *timeout_ms* of no re-arm, then enter Down child if still hovering it.
+
+    Only used when radial UI is up and a bottom extension exists — drag-through
+    must not dive; stop and wait for the same gesture timeout to enter.
+    """
+    timeout = max(timeout_ms, 1) / 1000.0
+    session._bottom_child_dwell_deadline = time.time() + timeout
+    if session._bottom_child_dwell_timer is not None:
+        return
+
+    def _on_dwell(*_args):
+        try:
+            deadline = getattr(session, "_bottom_child_dwell_deadline", None)
+            if deadline is None:
+                session._bottom_child_dwell_timer = None
+                return None
+            remaining = deadline - time.time()
+            if remaining > 0.01:
+                return remaining
+            session._bottom_child_dwell_timer = None
+            session._bottom_child_dwell_deadline = None
+            if getattr(session, "modal_report_done", False):
+                return None
+            snap = session.snapshot
+            de = snap.direction_element
+            draw_ctx = getattr(session, "draw_ctx", None)
+            in_ext = bool(draw_ctx is not None and draw_ctx.in_extension_ui)
+            if (
+                    session.phase.shows_radial_ui
+                    and snap.is_have_extension_item
+                    and snap.is_access_child_gesture
+                    and de is not None
+                    and de.direction == "7"
+                    and not in_ext
+            ):
+                session.trajectory_tree.append(de, snap.mouse_window)
+                session._gesture_circle_center = snap.mouse_window.copy()
+                invalidate_derived_caches(
+                    session, getattr(ops, "operator_gesture", None), ops=ops,
+                )
+                session.extension_hover.clear()
+                refresh_snapshot(session, ops)
+                tag_redraw_gesture_screen(session)
+        except (AttributeError, ReferenceError):
+            session._bottom_child_dwell_timer = None
+            session._bottom_child_dwell_deadline = None
+        return None
+
+    session._bottom_child_dwell_timer = _on_dwell
+    bpy.app.timers.register(_on_dwell, first_interval=timeout)
+
+
 def schedule_timeout_timer(session: GestureSession, timeout_ms: float, ops=None):
     """Schedule UI timeout. ``timeout_ms <= 0`` means show radial UI immediately.
 
@@ -212,16 +288,15 @@ def schedule_timeout_timer(session: GestureSession, timeout_ms: float, ops=None)
 
 
 def _promote_ui_visible(session: GestureSession, ops=None) -> bool:
-    """IDLE/TRACKING → UI_VISIBLE, seed trajectory, optional snapshot refresh, redraw."""
+    """IDLE/TRACKING → UI_VISIBLE, seed trajectory, redraw.
+
+    Do not refresh_snapshot here: timer callbacks have a bare context and would
+    re-evaluate poll into an empty direction_items, wiping the invoke-time result.
+    Modal mouse events recalculate; session memos are cleared on reset/exit.
+    """
     if not session.advance_to_ui_visible():
         return False
     ensure_trajectory_seed(session)
-    if ops is not None:
-        try:
-            refresh_snapshot(session, ops)
-            update_extension_hover(session, ops)
-        except (AttributeError, ReferenceError, TypeError, RuntimeError):
-            ...
     tag_redraw_gesture_screen(session)
     return True
 
@@ -493,27 +568,27 @@ class GestureInputProcessor:
                     and not in_extension_ui
             ):
                 de = snap.direction_element
-                if snap.is_have_extension_item and de.direction == "7":
-                    # Legacy gate: enter bottom child only after timeout while
-                    # still inside extension offset (rarely true on the same
-                    # MOUSEMOVE that just refreshed last_mouse_mouse_time).
-                    last_timeout = (time.time() - session.last_mouse_mouse_time) > (
-                        ops.pref.gesture_property.timeout / 1000
+                # UI up + bottom extension + Down child: drag goes to the
+                # extension list; only enter the child after idle timeout.
+                need_dwell = (
+                    session.phase.shows_radial_ui
+                    and snap.is_have_extension_item
+                    and de.direction == "7"
+                )
+                if need_dwell:
+                    _arm_bottom_child_dwell(
+                        session, ops.pref.gesture_property.timeout, ops,
                     )
-                    if last_timeout and not snap.is_beyond_extension_offset:
-                        session.trajectory_tree.append(de, emp)
-                        session._gesture_circle_center = emp.copy()
-                        invalidate_derived_caches(session, operator_gesture, ops=ops)
-                        session.extension_hover.clear()
-                        refresh_snapshot(session, ops)
-                        snap = session.snapshot
                 else:
+                    cancel_bottom_child_dwell_timer(session)
                     session.trajectory_tree.append(de, emp)
                     session._gesture_circle_center = emp.copy()
                     invalidate_derived_caches(session, operator_gesture, ops=ops)
                     session.extension_hover.clear()
                     refresh_snapshot(session, ops)
                     snap = session.snapshot
+            else:
+                cancel_bottom_child_dwell_timer(session)
 
             if session.phase.shows_radial_ui:
                 scale = bpy.context.preferences.view.ui_scale

@@ -34,7 +34,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     scripts/startup/bl_operators/wm.py
     """
     bl_idname = 'wm.gesture_modal_mouse_operator'
-    bl_label = 'Mouse Modal Modify Value'
+    bl_label = 'Adjust Value with Mouse'
     bl_description = 'Drag the mouse to change a property value on a data path'
     bl_options = {'GRAB_CURSOR', 'BLOCKING', 'UNDO', 'INTERNAL'}
 
@@ -44,7 +44,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     )
     header_text: StringProperty(
         name="Header Text",
-        description="Text to display in header during scale",
+        description="Text to display in the header while dragging",
         options={'SKIP_SAVE'},
         default="Header Text",
     )

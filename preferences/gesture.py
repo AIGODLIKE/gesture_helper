@@ -3,13 +3,13 @@ from bpy.props import BoolProperty, IntProperty
 
 
 def _gen_gesture_prop(default, subtype='PIXEL'):
-    return {'max': 114514, 'default': default, 'subtype': subtype, 'min': 10}
+    return {'max': 10000, 'default': default, 'subtype': subtype, 'min': 10}
 
 
 class GestureProperty(bpy.types.PropertyGroup):
     timeout: IntProperty(
-        name='Gesture Timeout(ms)',
-        description='Idle timeout before the gesture trajectory is finalized',
+        name='Gesture Timeout (ms)',
+        description='Idle time before the radial gesture UI appears',
         **_gen_gesture_prop(200, 'TIME'),
     )
     modal_operator_target_fps: IntProperty(
@@ -22,7 +22,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     radius: IntProperty(
         name='Gesture Radius',
         description='Radius of the gesture pie / direction ring',
-        **{**_gen_gesture_prop(70), "max": 500},
+        **{**_gen_gesture_prop(90), "max": 500},
     )
     threshold: IntProperty(
         name='Threshold',
@@ -31,18 +31,18 @@ class GestureProperty(bpy.types.PropertyGroup):
     )
     threshold_confirm: IntProperty(
         name='Confirm Threshold',
-        description='Extra mouse travel past the start threshold required to confirm (arm) a direction item',
-        **_gen_gesture_prop(20),
+        description='Extra mouse travel past the start threshold required to confirm a direction item',
+        **_gen_gesture_prop(50),
     )
     return_distance: IntProperty(
-        name='Return Previous Gesture Distance',
+        name='Return to Previous Level Distance',
         description='Distance to move back toward the center to return to the previous gesture level',
-        **_gen_gesture_prop(20),
+        **_gen_gesture_prop(10),
     )
 
     immediate_implementation: BoolProperty(
-        name="Immediate Implementation",
-        description="Immediately executes the operator when the mouse exceeds the confirm threshold",
+        name="Run Immediately",
+        description="Run the selected operator once the mouse passes the confirm threshold (radial UI must be visible)",
         default=False,
     )
     show_gesture_keymaps: BoolProperty(
@@ -53,7 +53,7 @@ class GestureProperty(bpy.types.PropertyGroup):
 
     modal_pass_view_rotation: BoolProperty(
         name='Allow view rotation in modal',
-        description="Will occupy the middle key operation",
+        description="Allow middle-mouse view rotation while a modal gesture is active",
         default=True,
     )
 

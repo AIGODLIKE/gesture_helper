@@ -50,14 +50,14 @@ ENUM_GESTURE_DIRECTION = [
     ('1', 'Right', ''),
     ('3', 'Up', ''),
     ('7', 'Down', ''),
-    ('4', 'Left Top', ''),
-    ('2', 'Right Top', ''),
-    ('6', 'Left Down', ''),
-    ('8', 'Right Down', ''),
+    ('4', 'Top Left', ''),
+    ('2', 'Top Right', ''),
+    ('6', 'Bottom Left', ''),
+    ('8', 'Bottom Right', ''),
     ('9', 'Bottom', ''),
 ]
 ENUM_ELEMENT_TYPE = [
-    ('SELECTED_STRUCTURE', 'Sel Structure', 'Select structure'),
+    ('SELECTED_STRUCTURE', 'Structure', 'Structure element'),
     ('CHILD_GESTURE', 'Child', 'Child gesture'),
     ('OPERATOR', 'Op', 'Operator'),
     ('DIVIDING_LINE', 'Div', 'Dividing line'),
@@ -66,21 +66,21 @@ ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
     ('ROOT', 'Root', 'Add to root'),
-    ('SAME', 'Same', 'Add to same'),
+    ('SAME', 'Same', 'Add as sibling'),
     ('CHILD', 'Child', 'Add to child'),
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title_items(OPERATOR_CONTEXT_ELEMENT)
 
 ENUM_OPERATOR_TYPE = [
-    ('OPERATOR', 'Operator', 'Enter Blender own operator bl_idname'),
-    ('MODAL', 'Modal', 'Use modal run operator'),
+    ('OPERATOR', 'Operator', 'Use a Blender operator by bl_idname'),
+    ('MODAL', 'Modal', 'Use a modal operator'),
 ]
 
 ENUM_NUMBER_VALUE_CHANGE_MODE = [
-    ("SET_VALUE", "Set Value", "Setting an attribute to a specified value"),
-    ("MOUSE_CHANGES_HORIZONTAL", "Mouse Interaction Change (Horizontal)", "Horizontal Modifier"),
-    ("MOUSE_CHANGES_VERTICAL", "Mouse Interaction Change (Vertical)", "Vertical Modifier"),
-    ("MOUSE_CHANGES_ARBITRARY", "Mouse Interaction Change (Any Direction)", "Modify Value In Any Direction"),
+    ("SET_VALUE", "Set Value", "Set the property to a fixed value"),
+    ("MOUSE_CHANGES_HORIZONTAL", "Change with horizontal mouse move", "Horizontal Modifier"),
+    ("MOUSE_CHANGES_VERTICAL", "Change with vertical mouse move", "Vertical Modifier"),
+    ("MOUSE_CHANGES_ARBITRARY", "Change with mouse move in any direction", "Modify Value In Any Direction"),
 ]
 ENUM_BOOL_VALUE_CHANGE_MODE = [
     ('SET_TRUE', 'Set to True', ''),

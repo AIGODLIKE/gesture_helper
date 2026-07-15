@@ -39,7 +39,7 @@ class DrawGpu:
                             o.data_path = "window_manager.gesture_index"
                             o.value = g.index
                     else:
-                        bpu.label(__name_translate__("No Gestures, Please Add"), alert=True)
+                        bpu.label(__name_translate__("No gestures. Please add one."), alert=True)
                     bpu.separator()
                     bpu.label(__name_translate__("Select Gesture"))
                 self._bpu_content_key = content_key
@@ -55,7 +55,7 @@ class DrawGpu:
                 for text in [
                     "Right-click on the operator or property you want to add and click Add to Gesture to add it.",
                     "Selecting elements in the 3D view toolbar",
-                    "Gesture preview mode Blank space Right click to exit"
+                    "Gesture preview: Space-drag to move, right-click to exit"
                 ]:
                     tips.label(pgettext_iface(text))
                 if tips.check_event(event):

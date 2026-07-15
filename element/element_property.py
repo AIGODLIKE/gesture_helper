@@ -62,8 +62,8 @@ class ElementAddProperty:
 
 
 class ElementIcon:
-    icon: StringProperty(name='Show Icon', default='COLOR_ERROR')
-    enabled_icon: BoolProperty(name='Enabled Icon', default=False)
+    icon: StringProperty(name='Show icon', default='COLOR_ERROR')
+    enabled_icon: BoolProperty(name='Show Icon', default=False)
 
     @property
     def is_have_icon(self):
@@ -180,5 +180,5 @@ class ElementProperty(
         update=lambda self, context: self.clear_derived_cache(),
     )
 
-    show_child: BoolProperty(name='Show child', default=False)
+    show_child: BoolProperty(name='Show Children', default=False)
     level: IntProperty(name="Element Level", default=0)

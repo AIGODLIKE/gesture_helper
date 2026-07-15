@@ -338,7 +338,7 @@ class GestureGpuDraw(DrawDebug):
                         line_width=ring_width,
                         segments=72,
                     )
-                    confirm_ring = (*ring_color[:3], 0.006)
+                    confirm_ring = (*ring_color[:3], 0.003)
                     self.draw_circle(
                         (0, 0), confirm_r,
                         color=confirm_ring,
@@ -348,11 +348,12 @@ class GestureGpuDraw(DrawDebug):
                     angle = self.angle_unsigned
                     zone = self.session.snapshot.threshold_zone
                     if zone.is_beyond and angle is not None:
-                        # Three states: no tip / growing transition tip / full confirm tip.
+                        # Direction tip grows inside the start (inner) ring only —
+                        # BEYOND maps progress → 0..threshold; CONFIRM sits on threshold.
                         tip_color = draw.trajectory_gesture_color
                         if zone.is_confirm:
                             tip_width = max(5.0, 5.5 * scale)
-                            tip_r = confirm_r
+                            tip_r = threshold
                         else:
                             tip_width = max(2.5, 3.0 * scale)
                             tip_color = (
@@ -360,7 +361,9 @@ class GestureGpuDraw(DrawDebug):
                                 tip_color[3] * 0.55 if len(tip_color) > 3 else 0.55,
                             )
                             dist = float(self.session.snapshot.distance)
-                            tip_r = max(threshold, min(dist, confirm_r))
+                            span = max(1e-6, confirm_r - threshold)
+                            t = (dist - threshold) / span
+                            tip_r = max(1.0, threshold * min(1.0, max(0.0, t)))
                         self.draw_arc(
                             (0, 0), tip_r, angle, 45,
                             color=tip_color,
@@ -375,10 +378,10 @@ class GestureGpuDraw(DrawDebug):
 
                 og = self.operator_gesture
                 if og is None or not len(og.element):
-                    text = __name_translate__('There are currently no elements for gestures, please add them')
+                    text = __name_translate__('This gesture has no elements. Please add some.')
                     self.draw_text(text)
                 elif not len(draw_items):
-                    self.draw_text(__name_translate__('No gestures under current conditions, please add'))
+                    self.draw_text(__name_translate__('No gestures match the current conditions. Please add one.'))
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""

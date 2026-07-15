@@ -152,8 +152,9 @@ class ElementCURE:
         bl_label = 'Remove element item'
         bl_idname = 'wm.gesture_element_remove'
         bl_description = (
-            'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture. '
-            'You will be asked to confirm. This cannot be undone.'
+            'Remove the active element. '
+            'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture '
+            '(confirmation required; cannot be undone)'
         )
         bl_options = {'REGISTER'}
 
@@ -176,7 +177,7 @@ class ElementCURE:
                     self,
                     event,
                     context,
-                    title="Confirm To Delete The Element?",
+                    title="Delete this element?",
                     message=f"{self.active_element.name}",
                 )
             return self.execute(context)
@@ -368,7 +369,7 @@ class ElementCURE:
 
     class SwitchShowChild(ElementPoll):
         bl_idname = 'wm.gesture_element_switch_show_child'
-        bl_label = 'Switch show child'
+        bl_label = 'Toggle Show Children'
         bl_description = 'Show or hide child elements for every item in the active gesture'
         bl_options = {'REGISTER'}
 

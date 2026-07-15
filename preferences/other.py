@@ -15,7 +15,7 @@ class OtherProperty(bpy.types.PropertyGroup):
         update=update_auto_update_element_operator_properties,
     )
     init_addon: BoolProperty(
-        name="Initialized addon",
+        name="Add-on Initialized",
         description='Internal flag set after the first successful add-on initialization',
         default=False,
     )
