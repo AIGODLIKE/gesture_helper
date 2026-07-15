@@ -4,12 +4,14 @@ from bpy.props import BoolProperty
 from .element_property import ElementAddProperty
 from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import (
-    PublicProperty,
     PublicOperator,
     get_pref,
     poll_message_active_element,
     poll_message_active_gesture,
 )
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 from ..utils.cache_state import CacheState
 from ..utils.translate import translate_lines_text
@@ -66,13 +68,13 @@ class ElementCURE:
         """Return whether this item can be cut."""
         return self.is_child_gesture or self.is_selected_structure
 
-    class ElementPoll(PublicProperty, PublicOperator, PublicCacheFunc):
+    class ElementPoll(PrefAccess, ActiveSelection, StructureCacheOps, PublicOperator, PublicCacheFunc):
 
         @classmethod
         def poll(cls, _):
             return poll_message_active_element(cls)
 
-    class ADD(PublicOperator, PublicProperty, ElementAddProperty):
+    class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps, ElementAddProperty):
         bl_label = 'Add element item'
         bl_idname = 'wm.gesture_element_add'
         bl_options = {'REGISTER'}

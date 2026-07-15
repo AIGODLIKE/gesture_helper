@@ -21,11 +21,12 @@ from ..utils.backups import (
 )
 from ..utils.public import (
     PublicOperator,
-    PublicProperty,
     get_pref,
     debug_print,
     poll_addon_preferences,
 )
+from ..utils.pref_access import PrefAccess
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = (
@@ -111,7 +112,7 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
     return gesture_data
 
 
-class PublicFileOperator(PublicOperator, PublicProperty):
+class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN', 'SKIP_SAVE'}, )
     preset_show: BoolProperty(options={'HIDDEN', 'SKIP_SAVE'}, )
     filename_ext = ".json"
@@ -169,7 +170,8 @@ class Import(PublicFileOperator):
         if not self.gesture_import():
             return {'CANCELLED'}
         self.cache_clear()
-        self.update_state()
+        from ..utils.public import PublicProperty
+        PublicProperty.update_state()
         GestureKeymap.key_restart()
         from ..utils.gesture_persistence import (
             cancel_scheduled_gesture_save,

@@ -4,10 +4,11 @@ import bpy
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
-from ..utils.public import get_debug, debug_print
+from ..utils.public import get_debug, debug_print, PublicSortAndRemovePropertyGroup
 from ..utils.public_cache import cache_update_lock, PublicCache
-from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
-from ..utils.property import __get_property__, set_property, __set_property__
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.property import get_property, set_property, __get_property__, __set_property__
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
 from ..src.translate import __keymap_translate__
 from bpy.app.translations import pgettext_iface
@@ -450,7 +451,7 @@ class EventRelationship(
     def copy(self):
         """Copy element."""
         add = self.parent_element.modal_events.add()
-        data = self.active_event.___dict_data___
+        data = get_property(self.active_event)
         add.control_property = self.control_property  # Avoid enum init errors
         set_property(add, data)
 
@@ -485,9 +486,8 @@ class EventRelationship(
 
 class ElementModalOperatorEventItem(
     bpy.types.PropertyGroup,
-    PublicProperty,
-    # PublicCacheFunc,
-    # ElementRelationship,
+    PrefAccess,
+    ActiveSelection,
 
     NumberControl,
     FloatControl,

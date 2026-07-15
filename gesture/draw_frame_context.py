@@ -19,8 +19,20 @@ class DrawFrameContext:
     gesture_radius: float = 0.0
     threshold: float = 0.0
     threshold_confirm: float = 0.0
+    # Scaled highlight gate (legacy: threshold * 0.7, now scale-correct).
+    threshold_active: float = 0.0
     # WINDOW-region mouse for hit tests (same space as GPU POST_PIXEL boxes).
     mouse_region: tuple[float, float] | None = None
+    # Once-per-frame extension UI hit (panel / right band / child row).
+    in_extension_ui: bool = False
+
+
+def _compute_in_extension_ui(session, ops) -> bool:
+    hover = getattr(session, "extension_hover", None)
+    if not hover:
+        return False
+    from ..element.extension_hit import stack_any_ui
+    return stack_any_ui(hover, ops, include_vertical_travel=False)
 
 
 def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
@@ -38,6 +50,7 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
     from ..utils.region_mouse import ops_window_mouse
     mouse = ops_window_mouse(ops)
 
+    threshold = float(gp.threshold) * scale
     ctx = DrawFrameContext(
         ui_scale=scale,
         text_gpu_draw_size=float(draw.text_gpu_draw_size) * scale,
@@ -45,12 +58,22 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
         margin_x=float(mx) * scale,
         margin_y=float(my) * scale,
         gesture_radius=float(gp.radius) * scale,
-        threshold=float(gp.threshold) * scale,
+        threshold=threshold,
         threshold_confirm=float(gp.threshold_confirm) * scale,
+        threshold_active=threshold * 0.7,
         mouse_region=mouse,
+        in_extension_ui=_compute_in_extension_ui(session, ops),
     )
     session.draw_ctx = ctx
     return ctx
+
+
+def refresh_draw_ctx_extension_flag(session, ops) -> None:
+    """Recompute in_extension_ui after hover stack changes (e.g. rollback)."""
+    ctx = getattr(session, "draw_ctx", None)
+    if ctx is None:
+        return
+    ctx.in_extension_ui = _compute_in_extension_ui(session, ops)
 
 
 def draw_ctx_from_ops(ops) -> DrawFrameContext | None:
