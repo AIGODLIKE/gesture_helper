@@ -53,24 +53,20 @@ class ThresholdZone(Enum):
 class UiHandoff(Enum):
     """How the gesture modal hands off to Blender UI on exit.
 
-    NONE            normal finish
-    DEFERRED        timer-deferred menu / operator (FINISHED+INTERFACE)
-    BUSY            sync op in progress — ignore WINDOW_DEACTIVATE only
-    FOCUS_CHANGED   sync op added/changed wm.windows — FINISHED+INTERFACE
+    NONE       normal finish
+    DEFERRED   timer-deferred menu / operator (FINISHED+INTERFACE)
     """
 
     NONE = auto()
     DEFERRED = auto()
-    BUSY = auto()
-    FOCUS_CHANGED = auto()
 
     @property
     def needs_interface(self) -> bool:
-        return self in (UiHandoff.DEFERRED, UiHandoff.FOCUS_CHANGED)
+        return self is UiHandoff.DEFERRED
 
     @property
     def ignore_window_deactivate(self) -> bool:
-        return self in (UiHandoff.DEFERRED, UiHandoff.BUSY)
+        return self is UiHandoff.DEFERRED
 
 
 def threshold_zone_from_distance(distance: float, threshold: float, threshold_confirm: float) -> ThresholdZone:
@@ -112,6 +108,7 @@ class GestureSession:
         self.snapshot = InputSnapshot()
         self.phase = GesturePhase.IDLE
         self.handoff = UiHandoff.NONE
+        self.modal_report_done = False
 
         self.area = None
         self.screen = None
@@ -139,6 +136,7 @@ class GestureSession:
         self.snapshot = InputSnapshot()
         self.phase = GesturePhase.IDLE
         self.handoff = UiHandoff.NONE
+        self.modal_report_done = False
 
         self.area = area
         self.screen = screen
@@ -156,8 +154,6 @@ class GestureSession:
         self._gpu_extension_items_cache = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
-        if hasattr(self, '_window_focus_before'):
-            delattr(self, '_window_focus_before')
 
     # ---- phase transitions (single write path) ----
 

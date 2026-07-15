@@ -21,7 +21,7 @@ class DebugProperty(bpy.types.PropertyGroup):
         default=False,
     )
     debug_draw_gpu_mode: BoolProperty(
-        name='Debug draw gpu mode',
+        name='Debug draw GPU mode',
         description='Show GPU draw debug overlays while using gestures',
         default=False,
     )
@@ -41,7 +41,7 @@ class DebugProperty(bpy.types.PropertyGroup):
         default=False,
     )
     debug_poll: BoolProperty(
-        name='Debug Poll',
+        name='Debug poll',
         description='Log poll / condition expression evaluation',
         default=False,
     )
@@ -51,7 +51,7 @@ class DebugProperty(bpy.types.PropertyGroup):
         default=False,
     )
     debug_extension: BoolProperty(
-        name='Debug Extension',
+        name='Debug extension',
         description='Log extension menu hover and layout',
         default=False,
     )
