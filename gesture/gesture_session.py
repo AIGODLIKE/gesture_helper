@@ -53,22 +53,20 @@ class ThresholdZone(Enum):
 class UiHandoff(Enum):
     """How the gesture modal hands off to Blender UI on exit.
 
-    NONE           normal finish
-    DEFERRED       timer-deferred menu / operator (FINISHED+INTERFACE)
-    OPENING_SYNC   sync Preferences (or similar) — ignore WINDOW_DEACTIVATE
+    NONE       normal finish
+    DEFERRED   timer-deferred menu / operator (FINISHED+INTERFACE)
     """
 
     NONE = auto()
     DEFERRED = auto()
-    OPENING_SYNC = auto()
 
     @property
     def needs_interface(self) -> bool:
-        return self is not UiHandoff.NONE
+        return self is UiHandoff.DEFERRED
 
     @property
     def ignore_window_deactivate(self) -> bool:
-        return self in (UiHandoff.DEFERRED, UiHandoff.OPENING_SYNC)
+        return self is UiHandoff.DEFERRED
 
 
 def threshold_zone_from_distance(distance: float, threshold: float, threshold_confirm: float) -> ThresholdZone:
@@ -110,6 +108,7 @@ class GestureSession:
         self.snapshot = InputSnapshot()
         self.phase = GesturePhase.IDLE
         self.handoff = UiHandoff.NONE
+        self.modal_report_done = False
 
         self.area = None
         self.screen = None
@@ -137,6 +136,7 @@ class GestureSession:
         self.snapshot = InputSnapshot()
         self.phase = GesturePhase.IDLE
         self.handoff = UiHandoff.NONE
+        self.modal_report_done = False
 
         self.area = area
         self.screen = screen
