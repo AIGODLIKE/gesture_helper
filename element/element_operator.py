@@ -436,7 +436,8 @@ class ElementOperator(OperatorProperty, ModalProperty, RunOperator, RunOperatorP
                 return False
             if not poll:
                 context = bpy.context
-                at = context.area.type
+                area = getattr(context, "area", None)
+                at = area.type if area is not None else None
                 debug_print(
                     f"Gesture poll failed {self.parent_gesture} {self.operator_bl_idname} "
                     f"area:{at} mode:{context.mode}",
