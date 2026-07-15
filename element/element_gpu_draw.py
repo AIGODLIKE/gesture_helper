@@ -183,15 +183,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
     @property
     def extension_items(self) -> list:
         """Extension items (bottom menu), memoized per modal draw generation."""
+        from ..utils.gesture_items import poll_context_fingerprint
         ops = getattr(self, 'ops', None)
-        derived_gen = PublicCache.__derived_generation__
+        cache_key = (self, PublicCache.__derived_generation__, poll_context_fingerprint())
         if ops is not None:
             cache = getattr(ops, '_gpu_extension_items_cache', None)
-            if cache is not None and cache[0] is self and cache[1] == derived_gen:
-                return cache[2]
+            if cache is not None and cache[0] == cache_key:
+                return cache[1]
         items = get_gesture_extension_items(self.element)
         if ops is not None:
-            ops._gpu_extension_items_cache = (self, derived_gen, items)
+            ops._gpu_extension_items_cache = (cache_key, items)
         return items
 
     def draw_gpu_item(self, ops):

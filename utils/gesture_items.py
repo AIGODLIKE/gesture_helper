@@ -1,9 +1,44 @@
-"""Cached gesture direction / extension item walks."""
+"""Gesture direction / extension item walks (poll-aware, not permanently cached).
 
-from functools import cache
+Selection-structure ``poll_bool`` depends on live Blender context (mode, object,
+tool, …). Results must not be frozen with ``functools.cache`` keyed only on the
+collection — that made poll look like it stopped working after the first eval.
+Per-frame / per-event callers memoize via session keys that include
+``poll_context_fingerprint``.
+"""
+
+from __future__ import annotations
+
+import bpy
 
 
-@cache
+def poll_context_fingerprint() -> tuple:
+    """Lightweight fingerprint of context values poll expressions commonly read."""
+    context = bpy.context
+    obj = getattr(context, 'object', None)
+    mode = getattr(context, 'mode', None)
+    mesh_select_mode = None
+    tool_settings = getattr(context, 'tool_settings', None)
+    if tool_settings is not None:
+        try:
+            mesh_select_mode = tuple(tool_settings.mesh_select_mode)
+        except (AttributeError, TypeError):
+            mesh_select_mode = None
+    try:
+        from .expression import get_active_tool_idname
+        active_tool = get_active_tool_idname(context)
+    except (AttributeError, RuntimeError, TypeError, ImportError):
+        active_tool = None
+    selected = getattr(context, 'selected_objects', None) or ()
+    return (
+        mode,
+        id(obj) if obj is not None else 0,
+        mesh_select_mode,
+        active_tool,
+        len(selected),
+    )
+
+
 def get_gesture_direction_items(iteration):
     direction = {}
     last_selected_structure = None  # Tracks consecutive selection structures
@@ -25,7 +60,6 @@ def get_gesture_direction_items(iteration):
     return direction
 
 
-@cache
 def get_gesture_extension_items(iteration):
     extension = []
     last_selected_structure = None  # Tracks consecutive selection structures
