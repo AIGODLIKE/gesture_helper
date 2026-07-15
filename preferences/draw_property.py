@@ -28,13 +28,13 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=0.2, max=0.95, min=0.01, step=0.01,
     )
     gesture_remove_tips: BoolProperty(
-        name='Gesture remove tips',
+        name='Confirm gesture delete',
         default=True,
-        description="If you turn on \n, a pop-up will appear when you delete it.",
+        description='Ask for confirmation before deleting a gesture',
     )
     gesture_point_name_size: IntProperty(
-        name='Gesture Point Name Size',
-        description='Gpu Draw Point Name Size',
+        name='Direction label size',
+        description='Font size for direction labels on the gesture ring',
         default=15, min=5, max=60,
     )
 
@@ -49,7 +49,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
     element_show_left_side: BoolProperty(
-        name='Show in left side',
+        name='Show on the left',
         description='Show the element property panel on the left side of the layout',
         default=False,
     )
@@ -59,9 +59,9 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
     element_remove_tips: BoolProperty(
-        name='Element remove tips',
+        name='Confirm element delete',
         default=True,
-        description="If you turn on \n, a pop-up will appear when you delete it.",
+        description='Ask for confirmation before deleting an element',
     )
     element_extension_item_offset: FloatProperty(
         name='Extension Offset',
@@ -70,39 +70,47 @@ class DrawProperty(bpy.types.PropertyGroup):
     )
 
     element_draw_child_icon: BoolProperty(
-        name="Child Icon",
-        description="Draw Child Icon",
+        name='Child icon',
+        description='Show an icon on elements that have child items',
         default=True,
     )
     element_draw_property_toggle_icon: BoolProperty(
-        name='Property Icon',
-        description="Draw Toggle property operator icon",
+        name='Property icon',
+        description='Show an icon on property toggle elements',
         default=True,
     )
 
-    text_gpu_draw_size: IntProperty(name='Text', description='Gpu Draw Text Size', default=14, min=5, max=120)
+    text_gpu_draw_size: IntProperty(
+        name='Text',
+        description='Font size for GPU-drawn gesture text',
+        default=14, min=5, max=120,
+    )
     text_gpu_draw_radius: IntProperty(
-        name='Rounded corner size',
-        description='Gpu Draw Radius Size',
+        name='Corner radius',
+        description='Rounded corner radius for GPU-drawn gesture buttons',
         default=6, min=2, max=60,
     )
     margin: IntVectorProperty(
         name='Margin',
-        description='Gpu Draw Margin Size',
+        description='Inner padding for GPU-drawn gesture buttons',
         default=(10, 6),
         min=0,
         max=120,
         size=2,
     )
-    line_width: IntProperty(name='Line Width', description='Gpu Draw Width Size', default=2, min=1, max=20)
+    line_width: IntProperty(
+        name='Line Width',
+        description='Stroke width for GPU-drawn gesture outlines',
+        default=2, min=1, max=20,
+    )
     outline_width: FloatProperty(
         name='Outline Width',
         description='Stroke width for flat outlined gesture buttons',
         default=theme_defaults.OUTLINE_WIDTH, min=0.25, max=4.0, step=5, precision=2,
     )
     dividing_line_height: IntProperty(
-        name='Dividing Line Height',
-        description='Gpu Draw Dividing Line Height',
+        name='Divider height',
+        description='Height of divider lines between gesture UI sections',
         default=2, min=1, max=10,
     )
 
@@ -142,7 +150,7 @@ class DrawProperty(bpy.types.PropertyGroup):
         update_panel()
 
     panel_enable: BoolProperty(
-        name='Enabled Panel',
+        name='Enable Panel',
         description='Show the Gesture Helper panel in the N-panel sidebar',
         default=True,
         update=__update_panel_name__,
@@ -190,8 +198,8 @@ class DrawProperty(bpy.types.PropertyGroup):
         if radius_is_alert:
             cb = col.box()
             cb.alert = True
-            cb.label(text="Error, rounded corners are larger than the margins")
-            cb.label(text="The size of the rounded corners is clamped by the margins")
+            cb.label(text="Corner radius is larger than the margin")
+            cb.label(text="Corners are clamped to the smaller margin")
         col.separator()
         col.prop(draw, 'dividing_line_height')
 

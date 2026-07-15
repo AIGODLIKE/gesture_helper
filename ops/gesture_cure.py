@@ -37,7 +37,10 @@ class GestureCURE:
     class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
         bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
-        bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+        bl_description = (
+            'Add a new gesture. '
+            'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+        )
         bl_options = {'REGISTER'}
 
         @classmethod
@@ -69,8 +72,9 @@ class GestureCURE:
         bl_idname = 'wm.gesture_remove'
         bl_label = 'Remove gesture'
         bl_description = (
-            'Hold Ctrl+Alt+Shift while clicking to remove all gestures. '
-            'You will be asked to confirm. This cannot be undone.'
+            'Remove the active gesture. '
+            'Hold Ctrl+Alt+Shift while clicking to remove all gestures '
+            '(confirmation required; cannot be undone)'
         )
         bl_options = {'REGISTER'}
 

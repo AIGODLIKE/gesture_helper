@@ -28,7 +28,10 @@ class ElementModalOperatorEventCRUE:
     class ADD(ModalPoll):
         bl_label = 'Add modal event item'
         bl_idname = 'wm.gesture_element_modal_add'
-        bl_description = 'Hold Ctrl+Alt+Shift while clicking to add modal events for every operator property'
+        bl_description = (
+            'Add a modal event for the active element. '
+            'Hold Ctrl+Alt+Shift while clicking to add events for every operator property'
+        )
         bl_options = {'REGISTER'}
         control_property: bpy.props.StringProperty(name="Control Property")
 
@@ -101,8 +104,9 @@ class ElementModalOperatorEventCRUE:
         bl_label = 'Remove element modal item'
         bl_idname = 'wm.gesture_element_modal_remove'
         bl_description = (
-            'Hold Ctrl+Alt+Shift while clicking to remove all modal events. '
-            'You will be asked to confirm. This cannot be undone.'
+            'Remove the active modal event. '
+            'Hold Ctrl+Alt+Shift while clicking to remove all modal events '
+            '(confirmation required; cannot be undone)'
         )
         bl_options = {'REGISTER'}
 
