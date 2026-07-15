@@ -35,15 +35,26 @@ class GesturePhase(Enum):
 
 
 class ThresholdZone(Enum):
-    """Distance from gesture center vs preference thresholds."""
+    """Distance from gesture center vs preference thresholds.
 
-    INSIDE = auto()    # within start threshold
-    BEYOND = auto()    # past start threshold
-    CONFIRM = auto()   # past confirm threshold
+    INSIDE     distance <= start threshold
+    BEYOND     start < distance <= start + confirm delta  (transition / preview)
+    CONFIRM    distance > start + confirm delta           (armed / fire-ready)
+    """
+
+    INSIDE = auto()
+    BEYOND = auto()
+    CONFIRM = auto()
 
     @property
     def is_beyond(self) -> bool:
+        """Past the start threshold (transition or confirm)."""
         return self is not ThresholdZone.INSIDE
+
+    @property
+    def is_transition(self) -> bool:
+        """In the band between start and confirm — selected but not armed."""
+        return self is ThresholdZone.BEYOND
 
     @property
     def is_confirm(self) -> bool:
@@ -70,7 +81,9 @@ class UiHandoff(Enum):
 
 
 def threshold_zone_from_distance(distance: float, threshold: float, threshold_confirm: float) -> ThresholdZone:
-    if distance > (threshold_confirm + threshold):
+    """Map distance to zone. *threshold_confirm* is the extra delta past *threshold*."""
+    confirm_r = threshold + threshold_confirm
+    if distance > confirm_r:
         return ThresholdZone.CONFIRM
     if distance > threshold:
         return ThresholdZone.BEYOND

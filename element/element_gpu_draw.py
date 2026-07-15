@@ -75,13 +75,34 @@ class ElementGpuProperty:
 
     @property
     def is_active_direction(self):
+        """Selected in the transition band (BEYOND) or confirm zone — not yet fire-ready alone."""
+        if self != self.ops.direction_element:
+            return False
+        session = getattr(self.ops, "session", None)
+        snap = getattr(session, "snapshot", None) if session is not None else None
+        if snap is not None:
+            return snap.threshold_zone.is_beyond
         ctx = self._draw_frame_ctx()
         if ctx is not None:
-            distance_ok = self.ops.distance > ctx.threshold_active
-        else:
-            scale = bpy.context.preferences.view.ui_scale
-            distance_ok = self.ops.distance > self.gesture_property.threshold * scale * 0.7
-        return self == self.ops.direction_element and distance_ok
+            return self.ops.distance > ctx.threshold
+        scale = bpy.context.preferences.view.ui_scale
+        return self.ops.distance > self.gesture_property.threshold * scale
+
+    @property
+    def is_confirm_direction(self):
+        """Past confirm threshold — matches executor / child-enter gate."""
+        if self != self.ops.direction_element:
+            return False
+        session = getattr(self.ops, "session", None)
+        snap = getattr(session, "snapshot", None) if session is not None else None
+        if snap is not None:
+            return snap.threshold_zone.is_confirm
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return self.ops.distance > (ctx.threshold + ctx.threshold_confirm)
+        scale = bpy.context.preferences.view.ui_scale
+        gp = self.gesture_property
+        return self.ops.distance > (gp.threshold + gp.threshold_confirm) * scale
 
     @property
     def is_draw_context_toggle_operator_bool(self) -> bool:
@@ -130,7 +151,8 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
-        if self.is_active_direction and not self._in_extension_ui():
+        # Full active fill only in CONFIRM — BEYOND keeps outline via is_active_direction.
+        if self.is_confirm_direction and not self._in_extension_ui():
             if self.is_operator:
                 return draw.background_operator_active_color
             elif self.is_child_gesture:
@@ -319,7 +341,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             draw_debug_point()
 
             radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
-            stroke, line_width = self._outline_colors(active=self.is_active_direction)
+            # BEYOND: active outline only; CONFIRM: outline + filled background.
+            stroke, line_width = self._outline_colors(
+                active=self.is_active_direction and not self._in_extension_ui(),
+            )
+            if self.is_active_direction and not self.is_confirm_direction:
+                # Softer outline in the transition band.
+                stroke = (*stroke[:3], stroke[3] * 0.65 if len(stroke) > 3 else 0.65)
             self.draw_rounded_rectangle_outlined(
                 (0, 0),
                 fill=self.background_color,
