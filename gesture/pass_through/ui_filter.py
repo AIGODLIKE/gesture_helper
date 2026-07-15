@@ -12,7 +12,6 @@ PASS_THROUGH_UI_IDNAMES = (
 )
 
 # Operators that open UI while the gesture modal is still on the stack.
-# Window-open ops (Preferences) stay sync — see window_focus.SYNC_WINDOW_OPEN_IDNAMES.
 _DEFER_GESTURE_OPERATOR_IDNAMES = frozenset({
     'wm.call_menu',
     'wm.call_panel',
@@ -53,19 +52,25 @@ _SYNC_GESTURE_OPERATOR_PREFIXES = (
 )
 
 
+# Built-ins that open a Preferences OS window — stay sync (not deferred).
+_SYNC_WINDOW_OPEN_IDNAMES = frozenset({
+    'screen.userpref_show',
+    'preferences.addon_show',
+})
+
+
 def should_defer_gesture_operator(idname: str) -> bool:
     """Return True if *idname* should run after the gesture modal exits.
 
     Only defer known UI openers (menus/panels/search). Normal operators such as
     ``wm.context_toggle`` / panel switching must stay sync so they keep area
-    context. Explicit window-open idnames stay sync (see ``window_focus``).
+    context. Built-in Preferences openers stay sync.
     """
     if not idname:
         return False
     if idname.startswith(_SYNC_GESTURE_OPERATOR_PREFIXES):
         return False
-    from .window_focus import is_sync_window_open_idname
-    if is_sync_window_open_idname(idname):
+    if idname in _SYNC_WINDOW_OPEN_IDNAMES:
         return False
     if idname in _DEFER_GESTURE_OPERATOR_IDNAMES:
         return True

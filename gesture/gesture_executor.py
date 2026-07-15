@@ -18,7 +18,6 @@ class GestureExecutor:
                 defer_gesture_element_operator,
                 should_defer_gesture_operator,
             )
-            from .pass_through.window_focus import begin_sync_op, end_sync_op
             from ..element.element_operator import resolve_operator_bl_idname
 
             if i.operator_is_operator or i.operator_is_modal:
@@ -39,13 +38,10 @@ class GestureExecutor:
                     if defer_gesture_element_operator(bpy.context, area, i):
                         session.set_handoff(UiHandoff.DEFERRED)
                         return
-                begin_sync_op(session)
                 error = i.running_operator()
                 if error is not None:
-                    session.clear_handoff()
                     ops.report({'ERROR'}, "Operator Run Error,Please check the console")
                     return
-                end_sync_op(session)
             else:
                 og = ops.operator_gesture
                 name = og.name if og is not None else "?"
