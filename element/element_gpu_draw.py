@@ -35,18 +35,31 @@ def get_position(direction, radius):
 
 class ElementGpuProperty:
 
+    def _draw_frame_ctx(self):
+        from ..gesture.draw_frame_context import draw_ctx_from_ops
+        return draw_ctx_from_ops(getattr(self, "ops", None))
+
     @property
     def text_size(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.text_gpu_draw_size
         scale = bpy.context.preferences.view.ui_scale
         return self.draw_property.text_gpu_draw_size * scale
 
     @property
     def text_margin(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return [ctx.margin_x, ctx.margin_y]
         scale = bpy.context.preferences.view.ui_scale
         return [i * scale for i in self.draw_property.margin]
 
     @property
     def text_radius(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.text_gpu_draw_radius
         scale = bpy.context.preferences.view.ui_scale
         return self.draw_property.text_gpu_draw_radius * scale
 
@@ -158,9 +171,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
         direction = self.direction
         if direction == '9':
-            scale = bpy.context.preferences.view.ui_scale
-            pref = get_pref()
-            radius = pref.gesture_property.radius * scale
+            ctx = self._draw_frame_ctx()
+            radius = ctx.gesture_radius if ctx is not None else (
+                get_pref().gesture_property.radius * bpy.context.preferences.view.ui_scale
+            )
             position = get_position("7", radius)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(position)
@@ -177,12 +191,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 gpu.matrix.translate((-w / 2, 0))
                 self.draw_gpu_extension_item(ops)
             return
-        scale = bpy.context.preferences.view.ui_scale
-
-        radius = get_pref().gesture_property.radius * scale
+        ctx = self._draw_frame_ctx()
+        radius = ctx.gesture_radius if ctx is not None else (
+            get_pref().gesture_property.radius * bpy.context.preferences.view.ui_scale
+        )
         position = get_position(self.direction, radius)
 
-        margin_x, margin_y = self.draw_property.margin
+        margin_x, margin_y = self.text_margin
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
@@ -276,7 +291,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     def _outline_colors(self, *, active: bool = False):
         draw = self.draw_property
-        scale = bpy.context.preferences.view.ui_scale
+        ctx = self._draw_frame_ctx()
+        scale = ctx.ui_scale if ctx is not None else bpy.context.preferences.view.ui_scale
         stroke = draw.outline_active_color if active else draw.outline_color
         # Keep sub-pixel widths so POLYLINE AA stays thin and faint.
         return stroke, max(0.5, float(draw.outline_width) * scale)
@@ -384,7 +400,8 @@ class ElementGpuExtensionItem:
     @property
     def dividing_line_height(self) -> float:
         dividing_line_height = self.draw_property.dividing_line_height
-        scale = bpy.context.preferences.view.ui_scale
+        ctx = self._draw_frame_ctx()
+        scale = ctx.ui_scale if ctx is not None else bpy.context.preferences.view.ui_scale
         return dividing_line_height * scale
 
     def _separator_metrics(self, icon_size: float) -> tuple[float, float]:

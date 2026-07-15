@@ -3,10 +3,13 @@ from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
 from .public_cache import PublicCacheFunc, cache_update_lock
-from .cache_state import CacheState
 from . import pref
 from . import gesture_items as _gesture_items
-from .selection import resolve_active_element
+from .pref_access import PrefAccess
+from .active_selection import ActiveSelection
+from .structure_cache_ops import StructureCacheOps
+
+# Re-export mixins for ``from ..utils.public import PrefAccess`` etc.
 
 # Re-exported for ``from ..utils.public import ...`` (keep explicit assignments).
 ADDON_FOLDER = pref.ADDON_FOLDER
@@ -76,89 +79,12 @@ def update_effect(func):
     return w
 
 
-class PublicProperty(PublicCacheFunc):
+class PublicProperty(PrefAccess, ActiveSelection, StructureCacheOps):
+    """Facade: pref + selection + structure cache + UI helpers.
 
-    @staticmethod
-    def _pref():
-        return get_pref()
-
-    @classmethod
-    def mutation_batch(cls):
-        """Batch structural cache invalidation until the block exits."""
-        return CacheState.batch()
-
-    def _gesture_for_cache(self, gesture=None):
-        if gesture is not None:
-            return gesture
-        try:
-            element = self.active_element
-            if element is not None:
-                return element.parent_gesture
-        except AttributeError:
-            ...
-        try:
-            return self.active_gesture
-        except AttributeError:
-            ...
-        return None
-
-    def structure_changed(self, gesture=None):
-        """Rebuild structure cache for the active or given gesture."""
-        PublicCacheFunc.structure_changed(self._gesture_for_cache(gesture))
-
-    def cache_clear(self, gesture=None):
-        """Rebuild structure cache (single gesture when context is available)."""
-        self.structure_changed(gesture)
-
-    @property
-    def pref(self):
-        return self._pref()
-
-    @property
-    def draw_property(self):
-        return self._pref().draw_property
-
-    @property
-    def debug_property(self):
-        return self._pref().debug_property
-
-    @property
-    def backups_property(self):
-        return self._pref().backups_property
-
-    @property
-    def other_property(self):
-        return self._pref().other_property
-
-    @property
-    def gesture_property(self):
-        return self._pref().gesture_property
-
-    @property
-    def active_gesture(self):
-        """Return active gesture from the session WM store."""
-        from .gesture_store import get_gesture_store
-        try:
-            store = get_gesture_store()
-            if store is None:
-                return None
-            index = getattr(store, "index_gesture", None)
-            if index is not None:
-                return store.gesture[index]
-        except IndexError:
-            ...
-
-    @property
-    def active_element(self):
-        """Return active element (cached per gesture, index-synced)."""
-        return resolve_active_element(self.active_gesture)
-
-    @property
-    def active_event(self):
-        """Return active modal event on active element."""
-        if self.active_element:
-            return self.active_element.active_event
-        return None
+    Prefer importing PrefAccess / ActiveSelection / StructureCacheOps directly
+    for new code; this class remains for broad compatibility.
+    """
 
     @classmethod
     def update_state(cls):
@@ -190,10 +116,6 @@ class PublicProperty(PublicCacheFunc):
         """Translate preset name."""
         from ..src.translate import __preset_translate__
         return __preset_translate__(text)
-
-    @property
-    def is_debug(self) -> bool:
-        return get_debug()
 
     @property
     def __is_move_element__(self) -> bool:
@@ -423,6 +345,9 @@ __all__ = [
     "PublicProperty",
     "PublicSortAndRemovePropertyGroup",
     "PublicUniqueNamePropertyGroup",
+    "PrefAccess",
+    "ActiveSelection",
+    "StructureCacheOps",
     "by_path_set_value",
     "clear_pref_cache",
     "debug_print",
