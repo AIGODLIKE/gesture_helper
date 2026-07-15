@@ -5,11 +5,12 @@ import bpy
 from bpy.props import EnumProperty, StringProperty
 
 from ...utils.panel import iter_menu_classes, iter_panel_classes
-from ...utils.public import PublicOperator, PublicProperty, get_pref, poll_message_active_gesture
+from ...utils.public import PublicOperator, get_pref, poll_message_active_gesture
+from ...utils.structure_cache_ops import StructureCacheOps
 from ...utils.session_state import SessionState
 
 
-class CreatePanelMenu(PublicOperator, PublicProperty):
+class CreatePanelMenu(PublicOperator, StructureCacheOps):
     bl_label = 'Create Panel Menu'
     bl_idname = 'wm.gesture_create_panel_menu'
     bl_description = 'Show a quick-add button on Blender panels and menus'

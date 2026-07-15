@@ -75,7 +75,12 @@ class ElementGpuProperty:
 
     @property
     def is_active_direction(self):
-        distance_ok = self.ops.distance > self.gesture_property.threshold * 0.7
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            distance_ok = self.ops.distance > ctx.threshold_active
+        else:
+            scale = bpy.context.preferences.view.ui_scale
+            distance_ok = self.ops.distance > self.gesture_property.threshold * scale * 0.7
         return self == self.ops.direction_element and distance_ok
 
     @property
@@ -109,6 +114,15 @@ class ElementGpuProperty:
         draw = self.draw_property
         return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
+    def _in_extension_ui(self) -> bool:
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.in_extension_ui
+        ops = getattr(self, "ops", None)
+        if ops is None:
+            return False
+        return bool(getattr(ops, "mouse_is_in_extension_any_area", False))
+
     @property
     def background_color(self):
         """
@@ -116,7 +130,7 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
-        if self.is_active_direction and not self.ops.mouse_is_in_extension_any_area:
+        if self.is_active_direction and not self._in_extension_ui():
             if self.is_operator:
                 return draw.background_operator_active_color
             elif self.is_child_gesture:

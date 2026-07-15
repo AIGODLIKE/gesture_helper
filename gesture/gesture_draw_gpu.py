@@ -248,7 +248,11 @@ class GestureGpuDraw(DrawDebug):
         scale = self._draw_ui_scale()
         tree = self.trajectory_tree
         size = self.pref.draw_property.gesture_point_name_size * scale
-        threshold = self.pref.gesture_property.threshold * scale
+        session = getattr(self, "session", None)
+        draw_ctx = getattr(session, "draw_ctx", None) if session is not None else None
+        threshold = draw_ctx.threshold if draw_ctx is not None else (
+            self.pref.gesture_property.threshold * scale
+        )
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
@@ -298,6 +302,8 @@ class GestureGpuDraw(DrawDebug):
         for el in self.session.extension_hover:
             el.ops = self
         extension_rollback(self.session)
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(self.session, self)
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])

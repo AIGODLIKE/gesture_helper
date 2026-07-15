@@ -2,10 +2,12 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 
 from ..utils.poll_data import PollData
-from ..utils.public import PublicOperator, PublicProperty, poll_message_active_element
+from ..utils.public import PublicOperator, poll_message_active_element
+from ..utils.active_selection import ActiveSelection
+from ..src.translate import __name_translate__
 
 
-class SetPollExpression(PublicProperty, PublicOperator, PollData):
+class SetPollExpression(ActiveSelection, PublicOperator, PollData):
     bl_label = 'Setting Conditional Expressions'
     bl_idname = 'wm.gesture_set_poll_expression'
     bl_description = 'Edit the poll expression that controls when this element is shown'
@@ -94,7 +96,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
         if is_alert:
             cc.label(text='Invalid expression', icon='ERROR')
             cc.operator_context = "EXEC_DEFAULT"
-            cc.operator(self.bl_idname, text=self.__tn__("Clear")).clear = True
+            cc.operator(self.bl_idname, text=__name_translate__("Clear")).clear = True
         self.draw_logical_operator(col)
 
     def draw_list_items(self, layout: 'bpy.types.UILayout'):
@@ -133,7 +135,7 @@ class SetPollExpression(PublicProperty, PublicOperator, PollData):
             poll_string = f'({poll_string})'
 
         layout.operator_context = "EXEC_DEFAULT"
-        op = layout.operator(self.bl_idname, text=self.__tn__(name))
+        op = layout.operator(self.bl_idname, text=__name_translate__(name))
         op.poll_string = poll_string
 
     def invoke(self, context, _):

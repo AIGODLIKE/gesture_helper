@@ -5,7 +5,7 @@ from ...utils.panel import (
     get_ui_panel_categories,
     get_ui_panels_by_space,
 )
-from ...utils.public import PublicProperty, poll_message_active_gesture
+from ...utils.public import poll_message_active_gesture
 from ...utils.session_state import SessionState
 from .switch_panel_category import GestureSwitchPanelCategory
 
@@ -56,7 +56,7 @@ def _space_type_items(self, context):
     return SessionState.switch_panel_enum_items
 
 
-class CreateSwitchPanel(bpy.types.Operator, PublicProperty):
+class CreateSwitchPanel(bpy.types.Operator):
     bl_label = 'Switch Panel Operator'
     bl_description = 'Create a gesture element that switches the N-panel tab in an editor'
     bl_options = {'REGISTER'}
