@@ -3,12 +3,15 @@ import bpy
 from bpy.props import BoolProperty
 
 from ..utils.cache_state import CacheState
-from ..utils.public import PublicProperty, poll_message_active_element
+from ..utils.public import poll_message_active_element
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import PublicCache
 
 
 class ElementModalOperatorEventCRUE:
-    class ModalPoll(bpy.types.Operator, PublicProperty, PublicCache):
+    class ModalPoll(bpy.types.Operator, PrefAccess, ActiveSelection, StructureCacheOps, PublicCache):
         @classmethod
         def poll(cls, context):
             if not poll_message_active_element(cls):

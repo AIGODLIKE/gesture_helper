@@ -124,105 +124,47 @@ class ElementExtension:
         return False
 
     def _ops_mouse_xy(self, ops=None):
-        from ..utils.region_mouse import ops_window_mouse
-        return ops_window_mouse(ops or getattr(self, "ops", None))
+        from .extension_hit import _mouse_for
+        return _mouse_for(self, ops or getattr(self, "ops", None))
+
+    def _extension_hit_flags(self) -> int:
+        from .extension_hit import hit_test_extension
+        return hit_test_extension(self)
 
     @property
     def extension_by_child_is_hover(self) -> bool:
         """Return whether extension child is hovered."""
-        ops = getattr(self, "ops", None)
-        area = getattr(self, "extension_by_child_draw_area", None)
-        mouse = self._ops_mouse_xy(ops)
-        if ops and area and mouse is not None:
-            x1, y1, x2, y2 = area
-            x, y = mouse
-            return x1 < x < x2 and y1 < y < y2
-        return False
+        from .extension_hit import hit_test_child_row
+        return hit_test_child_row(self)
 
     @property
     def mouse_is_in_area(self) -> bool:
-        if item := getattr(self, "item_draw_area", None):
-            mouse = self._ops_mouse_xy()
-            if mouse is None:
-                return False
-            x1, y1, x2, y2 = item
-            x, y = mouse
-            return x1 < x < x2 and y1 < y < y2
-        return False
+        from .extension_hit import point_in_rect
+        return point_in_rect(self._ops_mouse_xy(), getattr(self, "item_draw_area", None))
 
     @property
     def mouse_is_in_extension_area(self) -> bool:
-        """Return whether mouse is inside extension child draw area."""
-        if item := getattr(self, "extension_draw_area", None):
-            mouse = self._ops_mouse_xy()
-            if mouse is None:
-                return False
-            x1, y1, x2, y2 = item
-            x, y = mouse
-            return x1 < x < x2 and y1 < y < y2
-        return False
+        """Return whether mouse is inside extension panel draw area."""
+        from .extension_hit import PANEL
+        return bool(self._extension_hit_flags() & PANEL)
 
     @property
     def mouse_is_in_extension_vertical_outside_area(self) -> bool:
-        """Return whether mouse is outside extension area vertically."""
-        if item := getattr(self, "extension_draw_area", None):
-            mouse = self._ops_mouse_xy()
-            if mouse is None:
-                return False
-            w, h = self.extension_dimensions
-            x1, y1, x2, y2 = item
-            x, y = mouse
-            yl = y1 - h < y < y1
-            yu = y2 < y < y2 + h
-            return (x1 < x < x2) and (yl or yu)
-        return False
+        """Return whether mouse is in vertical travel tolerance outside the panel."""
+        from .extension_hit import VERTICAL_TRAVEL
+        return bool(self._extension_hit_flags() & VERTICAL_TRAVEL)
 
     @property
     def mouse_is_in_extension_vertical_area(self) -> bool:
         """Return whether mouse is in extension vertical band."""
-        if item := getattr(self, "extension_draw_area", None):
-            mouse = self._ops_mouse_xy()
-            if mouse is None:
-                return False
-            x1, y1, x2, y2 = item
-            x, y = mouse
-            return x1 < x < x2
-        return False
+        from .extension_hit import VERTICAL_BAND
+        return bool(self._extension_hit_flags() & VERTICAL_BAND)
 
     @property
     def mouse_is_in_extension_right_outside_area(self) -> bool:
         """Return whether mouse is in the right tolerance band (or next flyout)."""
-        extension_hover = getattr(self.ops, "extension_hover", None)
-        if not extension_hover:
-            return False
-        try:
-            idx = extension_hover.index(self)
-        except ValueError:
-            return False
-
-        mouse = self._ops_mouse_xy()
-        if mouse is None:
-            return False
-        x, y = mouse
-
-        # Next stack panel already open to the right — treat as still in UI.
-        if idx + 1 < len(extension_hover):
-            nxt = extension_hover[idx + 1]
-            child_area = getattr(nxt, "extension_draw_area", None)
-            if child_area is not None:
-                cx1, cy1, cx2, cy2 = child_area
-                if cx1 < x < cx2 and cy1 < y < cy2:
-                    return True
-
-        # Only the current top panel uses the legacy right-side band.
-        if extension_hover[-1] != self or len(extension_hover) <= 1:
-            return False
-        item = getattr(self, "extension_draw_area", None)
-        if item is None:
-            return False
-        w, h = self.extension_dimensions
-        x1, y1, x2, y2 = item
-        return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
+        from .extension_hit import RIGHT_BAND
+        return bool(self._extension_hit_flags() & RIGHT_BAND)
 
 
 class ElementProperty(

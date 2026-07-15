@@ -35,18 +35,31 @@ def get_position(direction, radius):
 
 class ElementGpuProperty:
 
+    def _draw_frame_ctx(self):
+        from ..gesture.draw_frame_context import draw_ctx_from_ops
+        return draw_ctx_from_ops(getattr(self, "ops", None))
+
     @property
     def text_size(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.text_gpu_draw_size
         scale = bpy.context.preferences.view.ui_scale
         return self.draw_property.text_gpu_draw_size * scale
 
     @property
     def text_margin(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return [ctx.margin_x, ctx.margin_y]
         scale = bpy.context.preferences.view.ui_scale
         return [i * scale for i in self.draw_property.margin]
 
     @property
     def text_radius(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.text_gpu_draw_radius
         scale = bpy.context.preferences.view.ui_scale
         return self.draw_property.text_gpu_draw_radius * scale
 
@@ -62,8 +75,34 @@ class ElementGpuProperty:
 
     @property
     def is_active_direction(self):
-        distance_ok = self.ops.distance > self.gesture_property.threshold * 0.7
-        return self == self.ops.direction_element and distance_ok
+        """Selected in the transition band (BEYOND) or confirm zone — not yet fire-ready alone."""
+        if self != self.ops.direction_element:
+            return False
+        session = getattr(self.ops, "session", None)
+        snap = getattr(session, "snapshot", None) if session is not None else None
+        if snap is not None:
+            return snap.threshold_zone.is_beyond
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return self.ops.distance > ctx.threshold
+        scale = bpy.context.preferences.view.ui_scale
+        return self.ops.distance > self.gesture_property.threshold * scale
+
+    @property
+    def is_confirm_direction(self):
+        """Past confirm threshold — matches executor / child-enter gate."""
+        if self != self.ops.direction_element:
+            return False
+        session = getattr(self.ops, "session", None)
+        snap = getattr(session, "snapshot", None) if session is not None else None
+        if snap is not None:
+            return snap.threshold_zone.is_confirm
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return self.ops.distance > (ctx.threshold + ctx.threshold_confirm)
+        scale = bpy.context.preferences.view.ui_scale
+        gp = self.gesture_property
+        return self.ops.distance > (gp.threshold + gp.threshold_confirm) * scale
 
     @property
     def is_draw_context_toggle_operator_bool(self) -> bool:
@@ -96,6 +135,15 @@ class ElementGpuProperty:
         draw = self.draw_property
         return draw.text_active_color if self.is_active_direction else draw.text_default_color
 
+    def _in_extension_ui(self) -> bool:
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.in_extension_ui
+        ops = getattr(self, "ops", None)
+        if ops is None:
+            return False
+        return bool(getattr(ops, "mouse_is_in_extension_any_area", False))
+
     @property
     def background_color(self):
         """
@@ -103,7 +151,8 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
-        if self.is_active_direction and not self.ops.mouse_is_in_extension_any_area:
+        # Full active fill only in CONFIRM — BEYOND keeps outline via is_active_direction.
+        if self.is_confirm_direction and not self._in_extension_ui():
             if self.is_operator:
                 return draw.background_operator_active_color
             elif self.is_child_gesture:
@@ -158,9 +207,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
         direction = self.direction
         if direction == '9':
-            scale = bpy.context.preferences.view.ui_scale
-            pref = get_pref()
-            radius = pref.gesture_property.radius * scale
+            ctx = self._draw_frame_ctx()
+            radius = ctx.gesture_radius if ctx is not None else (
+                get_pref().gesture_property.radius * bpy.context.preferences.view.ui_scale
+            )
             position = get_position("7", radius)
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(position)
@@ -177,12 +227,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 gpu.matrix.translate((-w / 2, 0))
                 self.draw_gpu_extension_item(ops)
             return
-        scale = bpy.context.preferences.view.ui_scale
-
-        radius = get_pref().gesture_property.radius * scale
+        ctx = self._draw_frame_ctx()
+        radius = ctx.gesture_radius if ctx is not None else (
+            get_pref().gesture_property.radius * bpy.context.preferences.view.ui_scale
+        )
         position = get_position(self.direction, radius)
 
-        margin_x, margin_y = self.draw_property.margin
+        margin_x, margin_y = self.text_margin
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
@@ -276,7 +327,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     def _outline_colors(self, *, active: bool = False):
         draw = self.draw_property
-        scale = bpy.context.preferences.view.ui_scale
+        ctx = self._draw_frame_ctx()
+        scale = ctx.ui_scale if ctx is not None else bpy.context.preferences.view.ui_scale
         stroke = draw.outline_active_color if active else draw.outline_color
         # Keep sub-pixel widths so POLYLINE AA stays thin and faint.
         return stroke, max(0.5, float(draw.outline_width) * scale)
@@ -289,7 +341,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             draw_debug_point()
 
             radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
-            stroke, line_width = self._outline_colors(active=self.is_active_direction)
+            # BEYOND: active outline only; CONFIRM: outline + filled background.
+            stroke, line_width = self._outline_colors(
+                active=self.is_active_direction and not self._in_extension_ui(),
+            )
+            if self.is_active_direction and not self.is_confirm_direction:
+                # Softer outline in the transition band.
+                stroke = (*stroke[:3], stroke[3] * 0.65 if len(stroke) > 3 else 0.65)
             self.draw_rounded_rectangle_outlined(
                 (0, 0),
                 fill=self.background_color,
@@ -384,7 +442,8 @@ class ElementGpuExtensionItem:
     @property
     def dividing_line_height(self) -> float:
         dividing_line_height = self.draw_property.dividing_line_height
-        scale = bpy.context.preferences.view.ui_scale
+        ctx = self._draw_frame_ctx()
+        scale = ctx.ui_scale if ctx is not None else bpy.context.preferences.view.ui_scale
         return dividing_line_height * scale
 
     def _separator_metrics(self, icon_size: float) -> tuple[float, float]:

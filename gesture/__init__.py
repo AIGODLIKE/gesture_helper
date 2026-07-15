@@ -11,7 +11,6 @@ from ..element import ElementCURE
 from ..element.element_modal_operator import ElementModalOperatorEventItem
 from ..element.element_modal_operator_cure import ElementModalOperatorEventCRUE
 from ..ops.gesture_cure import GestureCURE
-from ..utils.public import PublicProperty
 from ..utils.gesture_store import WM_STORE_ATTR
 
 
@@ -19,8 +18,6 @@ class Gesture(
     GestureKeymap,
     GestureProperty,
     GestureRelationship,
-
-    PublicProperty,
 
     bpy.types.PropertyGroup,
 ):

@@ -11,9 +11,25 @@ from ..utils.public_cache import cache_update_lock
 from ..utils.expression import literal_to_dict, parse_operator_properties
 
 
+def migrate_legacy_operator_bl_idname(bl_idname: str) -> str:
+    """Map legacy ``gesture.*`` operator ids to ``wm.gesture_*``.
+
+    Examples:
+        gesture.switch_mode -> wm.gesture_switch_mode
+        gesture.gesture_import -> wm.gesture_import
+        gesture.operator -> wm.gesture_operator
+    """
+    if not isinstance(bl_idname, str) or not bl_idname.startswith('gesture.'):
+        return bl_idname
+    suffix = bl_idname.split('.', 1)[1]
+    if suffix.startswith('gesture_'):
+        suffix = suffix[len('gesture_'):]
+    return 'wm.gesture_' + suffix
+
+
 def resolve_operator_bl_idname(bl_idname: str) -> str:
     """Return the operator bl_idname used at runtime."""
-    return bl_idname
+    return migrate_legacy_operator_bl_idname(bl_idname)
 
 
 class ModalProperty:
