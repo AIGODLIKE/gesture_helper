@@ -16,6 +16,7 @@ from ..gesture.gesture_input import (
 from ..gesture.gesture_runtime import GestureRuntimeMixin
 from ..gesture.gesture_session import GestureSession
 from ..gesture.pass_through import GesturePassThroughKeymap
+from ..utils.adapter import operator_setattr
 from ..utils.public import PublicOperator, debug_print
 
 
@@ -39,13 +40,13 @@ class GestureOperator(
         return poll_addon_preferences(cls)
 
     def __init__(self, *args, **kwargs):
-        # Blender 5.x: call Operator __init__ first, then attach plain Python
-        # state via object.__setattr__ (RNA __setattr__ rejects unknown attrs).
+        # Call Operator __init__ first (Blender 4.4+), then attach plain Python
+        # state. Use operator_setattr — object.__setattr__ fails on 4.x bpy_struct.
         super().__init__(*args, **kwargs)
-        object.__setattr__(self, "session", GestureSession())
-        object.__setattr__(self, "_input", GestureInputProcessor())
-        object.__setattr__(self, "_executor", GestureExecutor())
-        object.__setattr__(self, "_modal_cleaned", False)
+        operator_setattr(self, "session", GestureSession())
+        operator_setattr(self, "_input", GestureInputProcessor())
+        operator_setattr(self, "_executor", GestureExecutor())
+        operator_setattr(self, "_modal_cleaned", False)
 
     def tag_redraw(self):
         """Redraw the gesture screen (override PublicOperator.tag_redraw)."""
@@ -73,16 +74,16 @@ class GestureOperator(
 
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
-        object.__setattr__(self, "_modal_cleaned", False)
+        operator_setattr(self, "_modal_cleaned", False)
         if self.operator_gesture is None:
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
                                               icon="INFO")
             return {'CANCELLED'}
 
-        # Rebuild structure cache before the first snapshot so direction walks
-        # see a consistent generation (avoid clear-after-refresh stale memo).
-        self.cache_clear()
+        # Ensure this gesture's structure cache exists; skip full rebuild when warm.
+        from ..utils.public_cache import PublicCacheFunc
+        PublicCacheFunc.ensure_gesture_structure(self.operator_gesture)
         ensure_trajectory_seed(self.session)
         refresh_snapshot(self.session, self)
         schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
@@ -229,7 +230,7 @@ class GestureOperator(
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):
             return
-        object.__setattr__(self, "_modal_cleaned", True)
+        operator_setattr(self, "_modal_cleaned", True)
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
         # Keep session.handoff until invoke reset — exit()/immediate still read it
@@ -237,22 +238,11 @@ class GestureOperator(
 
     @property
     def mouse_is_in_extension_any_area(self) -> bool:
-        if self.extension_element and self.extension_hover:
-            for last in self.extension_hover:
-                if (
-                        last.extension_by_child_is_hover or
-                        last.mouse_is_in_extension_area or
-                        last.mouse_is_in_extension_vertical_outside_area or
-                        last.mouse_is_in_extension_right_outside_area
-                ):
-                    return True
+        """True when mouse is in extension panel / right band / child row.
 
-                for item in last.extension_items:
-                    if (
-                            item.extension_by_child_is_hover or
-                            item.mouse_is_in_extension_area or
-                            item.mouse_is_in_extension_vertical_outside_area or
-                            item.mouse_is_in_extension_right_outside_area
-                    ):
-                        return True
-        return False
+        Excludes vertical travel (same subset as GestureExecutor radial block).
+        """
+        if not self.extension_element or not self.extension_hover:
+            return False
+        from ..element.extension_hit import stack_any_ui
+        return stack_any_ui(self.extension_hover, self, include_vertical_travel=False)

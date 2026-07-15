@@ -2,7 +2,8 @@ import bpy
 
 from ...element.element_cure import ElementCURE
 from ...utils.property import collect_operator_property_overrides
-from ...utils.public import PublicOperator, PublicProperty, get_pref, debug_print
+from ...utils.public import PublicOperator, get_pref, debug_print
+from ...utils.structure_cache_ops import StructureCacheOps
 from ...utils.public_cache import PublicCache
 
 
@@ -53,7 +54,7 @@ class CreateModalOperator:
             layout.label(text=f"{identifier} {value}")
 
 
-class CreateElementOperator(PublicOperator, PublicProperty, CreateModalOperator):
+class CreateElementOperator(PublicOperator, StructureCacheOps, CreateModalOperator):
     bl_label = 'Create Operator Element'
     bl_idname = 'wm.gesture_create_element_operator'
     bl_description = 'Add a gesture element from a right-clicked operator button'

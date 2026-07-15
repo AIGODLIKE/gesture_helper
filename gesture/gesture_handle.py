@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ..utils.adapter import operator_getattr, operator_setattr
 from .gesture_input import (
     cancel_timeout_timer,
     ensure_trajectory_seed,
@@ -21,27 +22,18 @@ class GestureHandle:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Non-RNA attrs must use object.__setattr__ on Blender 5.x Operators.
-        try:
-            session = object.__getattribute__(self, 'session')
-        except AttributeError:
-            session = None
-        if session is None:
-            object.__setattr__(self, 'session', GestureSession())
-        try:
-            object.__getattribute__(self, '_input_processor')
-        except AttributeError:
-            object.__setattr__(self, '_input_processor', None)
+        # Non-RNA attrs: use operator_setattr (4.x / 5.x compatible).
+        if operator_getattr(self, 'session', None) is None:
+            operator_setattr(self, 'session', GestureSession())
+        if not hasattr(self, '_input_processor'):
+            operator_setattr(self, '_input_processor', None)
 
     def _get_input_processor(self):
-        try:
-            proc = object.__getattribute__(self, '_input_processor')
-        except AttributeError:
-            proc = None
+        proc = operator_getattr(self, '_input_processor', None)
         if proc is None:
             from .gesture_input import GestureInputProcessor
             proc = GestureInputProcessor()
-            object.__setattr__(self, '_input_processor', proc)
+            operator_setattr(self, '_input_processor', proc)
         return proc
 
     def _tag_redraw_gesture_screen(self):

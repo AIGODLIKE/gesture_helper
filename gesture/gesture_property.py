@@ -2,11 +2,13 @@
 
 from bpy.props import IntProperty, BoolProperty
 
-from ..utils.public import PublicProperty
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import cache_update_lock
 
 
-class GestureProperty(PublicProperty):
+class GestureProperty(PrefAccess, ActiveSelection, StructureCacheOps):
     """Persisted gesture fields used by the Gesture PropertyGroup."""
 
     timer = None

@@ -240,14 +240,22 @@ def maybe_promote_phase_on_timeout(session: GestureSession, timeout_ms: float, o
 
 def extension_rollback(session: GestureSession):
     """Pop extension hover stack when mouse leaves panels."""
+    from ..element.extension_hit import (
+        CHILD_ROW,
+        PANEL,
+        RIGHT_BAND,
+        VERTICAL_TRAVEL,
+        hit_test_extension,
+    )
+
     extension_hover = session.extension_hover
     while len(extension_hover):
         last = extension_hover[-1]
         hover_len = len(extension_hover)
-        if not last.extension_by_child_is_hover and not last.mouse_is_in_extension_area:
-            is_vertical_outside = last.mouse_is_in_extension_vertical_outside_area
-            is_right_outside = last.mouse_is_in_extension_right_outside_area
-            if (is_vertical_outside or is_right_outside) and hover_len > 1:
+        flags = hit_test_extension(last)
+        if not (flags & (CHILD_ROW | PANEL)):
+            # Stay on stack while traveling vertically/right between nested panels.
+            if (flags & (VERTICAL_TRAVEL | RIGHT_BAND)) and hover_len > 1:
                 return
             extension_hover.pop()
         else:
@@ -258,6 +266,8 @@ def update_extension_hover(session: GestureSession, ops):
     """Sync extension_hover from hit areas before execute / between events."""
     if not session.phase.shows_radial_ui:
         session.extension_hover.clear()
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(session, ops)
         return
 
     for el in session.extension_hover:
@@ -269,6 +279,8 @@ def update_extension_hover(session: GestureSession, ops):
     extension_rollback(session)
 
     if ext is None:
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(session, ops)
         return
 
     if ext not in session.extension_hover:
@@ -289,6 +301,9 @@ def update_extension_hover(session: GestureSession, ops):
             session.extension_hover.append(found)
             continue
         break
+
+    from .draw_frame_context import refresh_draw_ctx_extension_flag
+    refresh_draw_ctx_extension_flag(session, ops)
 
 
 def check_return_previous(session: GestureSession, return_distance: float, operator_gesture, ops=None):
@@ -325,7 +340,8 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
 
     pref = ops.pref
     gp = pref.gesture_property
-    scale = bpy.context.preferences.view.ui_scale
+    from .draw_frame_context import refresh_draw_frame_context
+    draw_ctx = refresh_draw_frame_context(session, ops)
 
     angle = compute_angle(last_point, mouse) if is_draw_gpu else None
     angle_unsigned = compute_angle_unsigned(angle) if is_draw_gpu else None
@@ -336,8 +352,8 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
 
     zone = threshold_zone_from_distance(
         distance,
-        gp.threshold * scale,
-        gp.threshold_confirm * scale,
+        draw_ctx.threshold,
+        draw_ctx.threshold_confirm,
     )
 
     operator_gesture = ops.operator_gesture
@@ -466,7 +482,11 @@ class GestureInputProcessor:
 
             # While browsing extension flyouts, do not enter a radial child
             # gesture — that would clear extension_hover and collapse nesting.
-            in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
+            draw_ctx = getattr(session, "draw_ctx", None)
+            if draw_ctx is not None:
+                in_extension_ui = draw_ctx.in_extension_ui
+            else:
+                in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
             if (
                     snap.is_access_child_gesture
                     and snap.direction_element is not None

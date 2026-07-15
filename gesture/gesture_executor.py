@@ -60,24 +60,10 @@ class GestureExecutor:
                 if item.extension_by_child_is_hover and item.is_operator:
                     run(item)
                     return True
-            # Only the real panel (or nested right flyout band) blocks radial
-            # confirm. Vertical outside is a travel tolerance for nested menus —
-            # treating it as "in extension" swallowed direction operators when a
-            # bottom extension exists (dead zone above the panel).
-            in_extension = False
-            for el in session.extension_hover:
-                el.ops = ops
-                if el.mouse_is_in_extension_area or el.mouse_is_in_extension_right_outside_area:
-                    in_extension = True
-                    break
-                for item in getattr(el, 'extension_items', []) or []:
-                    item.ops = ops
-                    if item.extension_by_child_is_hover:
-                        in_extension = True
-                        break
-                if in_extension:
-                    break
-            if in_extension:
+            # Panel / right band / child row block radial confirm — not vertical
+            # travel (nested-menu tolerance; see extension_hit.BLOCKS_RADIAL).
+            from ..element.extension_hit import stack_blocks_radial
+            if stack_blocks_radial(session.extension_hover, ops):
                 return False
 
         element = snap.direction_element

@@ -13,7 +13,9 @@ from ...utils.property_data import (
     resolve_id_data_context_path,
     resolve_view_layer_data_path,
 )
-from ...utils.public import get_pref, PublicOperator, PublicProperty, debug_print
+from ...utils.public import get_pref, PublicOperator, debug_print
+from ...utils.pref_access import PrefAccess
+from ...utils.structure_cache_ops import StructureCacheOps
 
 
 class Enum:
@@ -125,7 +127,7 @@ class OpsProperty(Enum):
         return ElementCURE.ADD.last_element
 
 
-class Draw(PublicOperator, PublicProperty, OpsProperty):
+class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
     def draw(self, context):
         from ...utils.session_state import SessionState
 

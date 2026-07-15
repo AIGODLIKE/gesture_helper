@@ -4,10 +4,11 @@ import bpy
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
 all_id = list((i[0] for i in all_event))
-from ..utils.public import get_debug, debug_print
-from ..utils.public_cache import cache_update_lock, PublicCache
-from ..utils.public import PublicSortAndRemovePropertyGroup, PublicProperty
-from ..utils.property import __get_property__, set_property, __set_property__
+from ..utils.public import get_debug, debug_print, PublicSortAndRemovePropertyGroup
+from ..utils.public_cache import cache_update_lock, PublicCache, PublicCacheFunc
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.property import get_property, set_property, __get_property__, __set_property__
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
 from ..src.translate import __keymap_translate__
 from bpy.app.translations import pgettext_iface
@@ -450,7 +451,7 @@ class EventRelationship(
     def copy(self):
         """Copy element."""
         add = self.parent_element.modal_events.add()
-        data = self.active_event.___dict_data___
+        data = get_property(self.active_event)
         add.control_property = self.control_property  # Avoid enum init errors
         set_property(add, data)
 
@@ -468,26 +469,28 @@ class EventRelationship(
 
     @property
     def parent_element(self):
-        if self not in PublicCache.__element_parent_element_cache__:
-            self.init_cache()
-            if get_debug('cache'):
+        # Event items are not PublicCacheFunc subclasses — never call
+        # self.init_cache(). Match Relationship.parent_element.
+        cache = PublicCache.__element_parent_element_cache__
+        if self not in cache:
+            PublicCacheFunc.ensure_item_structure(self)
+            if get_debug('cache') and self not in cache:
                 debug_print(
                     "parent_element key error", self,
-                    self not in PublicCache.__element_parent_element_cache__,
-                    PublicCache.__element_parent_element_cache__.get(self),
+                    self not in cache,
+                    cache.get(self),
                     key='modal',
                 )
                 debug_print("\tw", key='modal')
-                for k, v in PublicCache.__element_parent_element_cache__.items():
+                for k, v in cache.items():
                     debug_print("\t", k, v, key='modal')
-        return PublicCache.__element_parent_element_cache__[self]
+        return cache.get(self)
 
 
 class ElementModalOperatorEventItem(
     bpy.types.PropertyGroup,
-    PublicProperty,
-    # PublicCacheFunc,
-    # ElementRelationship,
+    PrefAccess,
+    ActiveSelection,
 
     NumberControl,
     FloatControl,

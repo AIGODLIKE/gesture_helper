@@ -50,6 +50,7 @@ operator_list = (
     export_import.ExportPreferences,
     export_import.ImportPreferences,
     export_import.SaveGesturesAndUserPref,
+    export_import.ShowGesturePreferences,
 
     restore_key.RestoreKey,
 
