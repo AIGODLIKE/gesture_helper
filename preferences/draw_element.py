@@ -75,11 +75,11 @@ class DrawElement:
         mi = ElementCURE.MOVE.move_item
 
         column = layout.column(align=True)
-        column.label(text="In mobile gestures")
+        column.label(text="While moving a gesture")
         column.separator()
         column.label(text=pgettext("Move gesture: %s") % mi.name)
         if mi.is_root:
-            column.label(text="The gesture term is the root level")
+            column.label(text="This item is at the root level")
 
         row = column.row(align=True)
         mr = row.row(align=True)
@@ -119,7 +119,7 @@ class DrawElement:
         column = layout.box().column(align=True)
         column.label(text='Add element')
 
-        row = draw_label(column, 'Elemental Relationship:')
+        row = draw_label(column, 'Element relationship:')
         row.prop(add, 'relationship', expand=True)
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
