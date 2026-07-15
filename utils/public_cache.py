@@ -7,14 +7,19 @@ def cache_update_lock(func, cache_clear=False):
     cls = PublicCache
 
     def wap(*args, **kwargs):
-        if cls.__is_updatable__:
-            cls.__is_updatable__ = False
-            func_return = func(*args, **kwargs)
+        if not cls.__is_updatable__:
+            return None
+        cls.__is_updatable__ = False
+        try:
+            result = func(*args, **kwargs)
+        finally:
+            # Always unlock; flush pending invalidations even if *func* failed
+            # mid-mutation so structure/derived dirty flags are not stranded.
             cls.__is_updatable__ = True
-            if cache_clear:
-                PublicCacheFunc.cache_clear()
             CacheState.flush_after_lock()
-            return func_return
+        if cache_clear:
+            PublicCacheFunc.cache_clear()
+        return result
 
     return wap
 
