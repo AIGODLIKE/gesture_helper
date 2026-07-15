@@ -142,13 +142,13 @@ class ElementDraw:
                 alert_list.append(f'{pgettext_iface("Condition error")}: {self.poll_string}')
                 alert_list.append(self.__poll_exception_info__)
             if not get_available_selected_structure(self):
-                alert_list.append('Wrong choice of structure')
+                alert_list.append('Invalid structure selection')
                 alert_list.append('Previous element may not be a selection structure')
                 alert_list.append('Or an expression error in the previous structure')
                 if self.is_selected_elif:
-                    alert_list.append('The previous selection structure of elif needs to be either if or elif.')
+                    alert_list.append('elif must follow if or elif')
                 elif self.is_selected_else:
-                    alert_list.append('The previous selection structure of else needs to be an if or elif.')
+                    alert_list.append('else must follow if or elif')
                 else:
                     alert_list.append("I don't know what's wrong there either :>")
                     alert_list.append("Maybe it's not enabled")
@@ -156,7 +156,7 @@ class ElementDraw:
             if self.operator_type == "OPERATOR":
                 if not self.__operator_id_name_is_validity__:
                     alert_list.append(f'Operator Error')
-                    alert_list.append(f'{pgettext_iface("Not find operator")}: {self.operator_bl_idname}')
+                    alert_list.append(f'{pgettext_iface("Operator not found")}: {self.operator_bl_idname}')
                 if not self.__operator_properties_is_validity__:
                     alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
         if alert_list:

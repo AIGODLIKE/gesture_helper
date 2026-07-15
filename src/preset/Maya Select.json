@@ -152,7 +152,7 @@
               }
             },
             "2": {
-              "name": "Left Top",
+              "name": "Top Left",
               "element_type": "CHILD_GESTURE",
               "icon": "4",
               "enabled_icon": true,
@@ -180,7 +180,7 @@
               }
             },
             "3": {
-              "name": "Right Top",
+              "name": "Top Right",
               "element_type": "CHILD_GESTURE",
               "icon": "2",
               "enabled_icon": true,

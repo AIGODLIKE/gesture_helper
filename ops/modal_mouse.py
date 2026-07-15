@@ -44,7 +44,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     )
     header_text: StringProperty(
         name="Header Text",
-        description="Text to display in header during scale",
+        description="Text to display in the header while dragging",
         options={'SKIP_SAVE'},
         default="Header Text",
     )

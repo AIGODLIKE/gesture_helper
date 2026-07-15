@@ -378,10 +378,10 @@ class GestureGpuDraw(DrawDebug):
 
                 og = self.operator_gesture
                 if og is None or not len(og.element):
-                    text = __name_translate__('There are currently no elements for gestures, please add them')
+                    text = __name_translate__('This gesture has no elements. Please add some.')
                     self.draw_text(text)
                 elif not len(draw_items):
-                    self.draw_text(__name_translate__('No gestures under current conditions, please add'))
+                    self.draw_text(__name_translate__('No gestures match the current conditions. Please add one.'))
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""
