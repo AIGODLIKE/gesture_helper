@@ -12,7 +12,7 @@ TRAJECTORY_MOUSE = (0.08, 0.85, 0.95, 1.0)
 TRAJECTORY_GESTURE = (0.75, 0.35, 0.95, 1.0)
 
 DIVIDING_LINE = (0.22, 0.22, 0.24, 1.0)
-OUTLINE = (0.55, 0.55, 0.58, 0.28)
+OUTLINE = (0.55, 0.55, 0.58, 0.01)
 OUTLINE_ACTIVE = (0.75, 0.75, 0.78, 0.42)
 
 # BPU-only accents (still scene-linear)
