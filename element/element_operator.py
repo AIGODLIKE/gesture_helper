@@ -362,6 +362,8 @@ class OperatorProperty:
         """Return whether operator bl_idname is valid."""
         try:
             fun = self.operator_func
+            if fun is None:
+                return False
             fun.get_rna_type()
             return fun is not None
         except Exception as e:

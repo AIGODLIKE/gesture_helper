@@ -162,23 +162,13 @@ class PublicCacheFunc(PublicCache):
         element_modal_operator.EnumControl.___enum_items___.clear()
 
     @staticmethod
-    def gesture_direction_cache_clear():
-        from .gesture_items import get_gesture_direction_items
-        get_gesture_direction_items.cache_clear()
-
-    @staticmethod
-    def gesture_extension_cache_clear():
-        from .gesture_items import get_gesture_extension_items
-        get_gesture_extension_items.cache_clear()
-
-    @staticmethod
     def clear_derived_lru_caches():
         cls = PublicCacheFunc
         cls.gesture_cache_clear()
         cls.element_cache_clear()
         cls.event_cache_clear()
-        cls.gesture_direction_cache_clear()
-        cls.gesture_extension_cache_clear()
+        # direction/extension item walks are not functools-cached (poll is
+        # context-dependent); session/GPU memos use __derived_generation__.
 
     @staticmethod
     def clear_derived_only():
@@ -186,8 +176,7 @@ class PublicCacheFunc(PublicCache):
         cls = PublicCacheFunc
         PublicCache.__derived_generation__ += 1
         cls.element_cache_clear()
-        cls.gesture_direction_cache_clear()
-        cls.gesture_extension_cache_clear()
+        # Bumping __derived_generation__ invalidates session/GPU item memos.
 
     def clear_derived_cache(self):
         """Instance helper for property update callbacks."""
