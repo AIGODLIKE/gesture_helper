@@ -9,8 +9,8 @@ import bpy
 _SYNC_DEBOUNCE_SEC = 0.15
 _pending: dict[str, Callable[[], None]] = {}
 
-_MSG_GESTURE = "Gesture is running (avoiding impact on operator performance)"
-_MSG_ANIMATION = "Animation playing (avoiding impact on operator performance)"
+_MSG_GESTURE = "Gesture is running (UI updates paused)"
+_MSG_ANIMATION = "Animation is playing (UI updates paused)"
 
 
 def is_gesture_modal_active() -> bool:

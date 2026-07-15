@@ -37,11 +37,13 @@ class GestureExecutor:
                     area = getattr(session, 'area', None) or getattr(ops, 'area', None)
                     if defer_gesture_element_operator(bpy.context, area, i):
                         session.set_handoff(UiHandoff.DEFERRED)
+                        ops.report({'INFO'}, i.name_translate)
                         return
                 error = i.running_operator()
                 if error is not None:
-                    ops.report({'ERROR'}, "Operator Run Error,Please check the console")
+                    ops.report({'ERROR'}, "Operator error. Check the console for details.")
                     return
+                ops.report({'INFO'}, i.name_translate)
             else:
                 og = ops.operator_gesture
                 name = og.name if og is not None else "?"

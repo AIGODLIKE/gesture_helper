@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
 from ..gesture import GestureKeymap
@@ -36,7 +37,10 @@ class GestureCURE:
     class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
         bl_idname = 'wm.gesture_add'
         bl_label = 'Add gesture'
-        bl_description = 'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+        bl_description = (
+            'Add a new gesture. '
+            'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+        )
         bl_options = {'REGISTER'}
 
         @classmethod
@@ -46,7 +50,7 @@ class GestureCURE:
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
                 count = add_all_preset()
-                self.report({'INFO'}, f"Import preset {count}")
+                self.report({'INFO'}, pgettext("Imported %d presets") % count)
                 return {'FINISHED'}
             return self.execute(context)
 
@@ -68,8 +72,9 @@ class GestureCURE:
         bl_idname = 'wm.gesture_remove'
         bl_label = 'Remove gesture'
         bl_description = (
-            'Hold Ctrl+Alt+Shift while clicking to remove all gestures. '
-            'You will be asked to confirm. This cannot be undone.'
+            'Remove the active gesture. '
+            'Hold Ctrl+Alt+Shift while clicking to remove all gestures '
+            '(confirmation required; cannot be undone)'
         )
         bl_options = {'REGISTER'}
 
@@ -92,7 +97,7 @@ class GestureCURE:
                     self,
                     event,
                     context,
-                    title="Confirm deletion gesture?",
+                    title="Delete this gesture?",
                     message=f"{self.active_gesture.name}",
                 )
             return self.execute(context)

@@ -245,7 +245,7 @@ class EnumControl:
     enum_value_b: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_reverse: bpy.props.BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
     enum_wrap: bpy.props.BoolProperty(default=True, name="Cycle",
-                                      description="Automatically jumps if it is the last or first value in the loop")
+                                      description="Wrap around when reaching the first or last enum value")
 
     @property
     def enum_explanation(self):
@@ -325,12 +325,12 @@ class EnumControl:
     def cycle_enum_value(self, orig_value):
         enums = list([i[0] for i in self.__get_enum__(None)])
 
-        bpy.ops.wm.context_cycle_enum()
         is_reverse = self.enum_reverse
         is_wrap = self.enum_wrap
-        if orig_value is None:
-            orig_value = enums[0]
-        orig_index = enums.index(orig_value)
+        if orig_value is None or orig_value not in enums:
+            orig_index = 0
+        else:
+            orig_index = enums.index(orig_value)
 
         debug_print("cycle_enum_value", orig_value, orig_index, is_reverse, is_wrap, len(enums), enums, key='modal')
         if is_reverse:

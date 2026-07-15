@@ -354,12 +354,12 @@ class Export(PublicFileOperator):
 
         gesture_data = self.export_data['gesture']
         if not len(gesture_data):
-            self.report({'INFO'}, pgettext("Export Item Not Selected"))
+            self.report({'INFO'}, pgettext("No export items selected"))
             return {'CANCELLED'}
 
         path = self.file_path
         self.write_json_file()
-        self.report({'INFO'}, pgettext("Export Finished! %s") % path)
+        self.report({'INFO'}, pgettext("Exported to %s") % path)
         return {'FINISHED'}
 
     def write_json_file(self):

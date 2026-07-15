@@ -102,7 +102,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         self.__exit_modal__()
 
     def modal_event(self, event):
-        """Handle Space-drag to move the preview UI, and Esc to cancel."""
+        """Handle Space-drag to move the preview UI, and right-click to exit."""
         space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
         mv = (event.type == "MOUSEMOVE" and event.type_prev == "SPACE")
         if space or mv:
@@ -132,6 +132,8 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         SessionState.gesture_preview_active = False
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
+        from ...gesture.gesture_input import clear_gesture_item_memos
+        clear_gesture_item_memos(self.session, self)
 
         window = getattr(bpy.context, 'window', None)
         if window is not None and window.screen is not None:

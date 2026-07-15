@@ -154,6 +154,8 @@ class GestureOperator(
         self.__exit_modal__()
         if from_immediate:
             # Immediate path already ran the operator inside try_immediate.
+            from ..gesture.gesture_input import clear_gesture_item_memos
+            clear_gesture_item_memos(self.session, self)
             if self.session.handoff.needs_interface:
                 return {'FINISHED', 'INTERFACE'}
             return {'FINISHED'}
@@ -164,7 +166,7 @@ class GestureOperator(
         self.session.event = event
         self.event = event
         refresh_snapshot(self.session, self)
-        from ..gesture.gesture_input import update_extension_hover
+        from ..gesture.gesture_input import clear_gesture_item_memos, update_extension_hover
         update_extension_hover(self.session, self)
 
         # Ensure done even if caller forgot (cancel / odd paths).
@@ -174,6 +176,10 @@ class GestureOperator(
         try:
             ops = self._executor.try_running_operator(self.session, self)
         finally:
+            # Clear after dispatch: extension hit boxes live on cached Element
+            # Python proxies; clearing earlier rebuilds fresh proxies without
+            # extension_by_child_draw_area and breaks extension execute.
+            clear_gesture_item_memos(self.session, self)
             self._mark_modal_done()
 
         if self.is_debug:
@@ -226,6 +232,8 @@ class GestureOperator(
         # ESC / system cancel: mark done so leftover events cannot resume.
         self._mark_modal_done()
         self.__exit_modal__()
+        from ..gesture.gesture_input import clear_gesture_item_memos
+        clear_gesture_item_memos(self.session, self)
 
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):
@@ -233,6 +241,8 @@ class GestureOperator(
         operator_setattr(self, "_modal_cleaned", True)
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
+        # Do not clear item memos here — exit() still needs draw-area attrs on
+        # cached extension Element proxies for try_running_operator.
         # Keep session.handoff until invoke reset — exit()/immediate still read it
         # after __exit_modal__ to decide FINISHED+INTERFACE.
 
