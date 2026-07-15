@@ -139,6 +139,8 @@ class GestureSession:
         self._gpu_extension_items_cache = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
+        self._bottom_child_dwell_timer = None
+        self._bottom_child_dwell_deadline = None
         self.draw_ctx = None  # DrawFrameContext | None
 
     def reset(self, event, area, screen, gesture_name: str = ""):
@@ -168,6 +170,8 @@ class GestureSession:
         self._gpu_extension_items_cache = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
+        self._bottom_child_dwell_timer = None
+        self._bottom_child_dwell_deadline = None
         self.draw_ctx = None
 
     # ---- phase transitions (single write path) ----
