@@ -180,9 +180,20 @@ def ensure_preview_loaded(key: str):
     if not lookup:
         return None
 
-    path = icons_path_map.get(lookup)
+    path = icons_path_map.get(lookup) if icons_path_map else None
     if path is None:
-        return None
+        # Hot-reload / zip-drop can register before PNGs finish extracting.
+        Icons._reindex_paths()
+        path = icons_path_map.get(lookup) if icons_path_map else None
+        if path is None:
+            return None
+        if not os.path.isfile(path):
+            return None
+    elif not os.path.isfile(path):
+        Icons._reindex_paths()
+        path = icons_path_map.get(lookup) if icons_path_map else None
+        if path is None or not os.path.isfile(path):
+            return None
 
     try:
         preview = icons[lookup]
@@ -206,6 +217,15 @@ class Icons:
         icons = bpy.utils.previews.new()
         icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         icons_path_map = {}
+        Icons._reindex_paths()
+
+    @staticmethod
+    def _reindex_paths() -> None:
+        """Rebuild PNG path index from disk (keeps already-loaded previews)."""
+        global icons_map, icons_path_map
+        Icons._ensure_registered()
+        icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
+        icons_path_map = {}
         from ..utils.public import ADDON_FOLDER
 
         icon_root = os.path.join(ADDON_FOLDER, 'src', 'icons')
@@ -220,8 +240,15 @@ class Icons:
 
     @staticmethod
     def get(key):
-        """Return preview icon; prefers loaded PNG even when name matches a built-in."""
+        """Return preview icon; prefers loaded PNG even when name matches a built-in.
+
+        Falls back to COLOR_ERROR / NONE so UI draw never crashes on a missing PNG.
+        """
         preview = ensure_preview_loaded(key)
+        if preview is None:
+            preview = ensure_preview_loaded("COLOR_ERROR")
+        if preview is None:
+            preview = ensure_preview_loaded("NONE")
         if preview is None:
             raise KeyError(f"No preview icon for {key!r}")
         return preview
