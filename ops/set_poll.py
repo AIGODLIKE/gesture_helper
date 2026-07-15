@@ -8,12 +8,12 @@ from ..src.translate import __name_translate__
 
 
 class SetPollExpression(ActiveSelection, PublicOperator, PollData):
-    bl_label = 'Setting Conditional Expressions'
+    bl_label = 'Set Conditional Expression'
     bl_idname = 'wm.gesture_set_poll_expression'
     bl_description = 'Edit the poll expression that controls when this element is shown'
     bl_options = {'REGISTER'}
 
-    is_not: BoolProperty(name='Invert', description='It can be interpreted as an inverse')
+    is_not: BoolProperty(name='Invert', description='Invert the condition')
 
     poll_string: StringProperty(
         name='Prerequisite',
@@ -41,7 +41,7 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
         from ..utils.public_ui import draw_extend_ui
         is_draw, lay = draw_extend_ui(layout,
                                       f'draw_logical_operator',
-                                      label='Grammatical explanation',
+                                      label='Syntax help',
                                       default_extend=False,
                                       )
         if is_draw:

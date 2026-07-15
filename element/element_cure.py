@@ -176,7 +176,7 @@ class ElementCURE:
                     self,
                     event,
                     context,
-                    title="Confirm To Delete The Element?",
+                    title="Delete this element?",
                     message=f"{self.active_element.name}",
                 )
             return self.execute(context)
@@ -368,7 +368,7 @@ class ElementCURE:
 
     class SwitchShowChild(ElementPoll):
         bl_idname = 'wm.gesture_element_switch_show_child'
-        bl_label = 'Switch show child'
+        bl_label = 'Toggle Show Children'
         bl_description = 'Show or hide child elements for every item in the active gesture'
         bl_options = {'REGISTER'}
 

@@ -55,7 +55,7 @@ class DrawGpu:
                 for text in [
                     "Right-click on the operator or property you want to add and click Add to Gesture to add it.",
                     "Selecting elements in the 3D view toolbar",
-                    "Gesture preview mode Blank space Right click to exit"
+                    "Gesture preview: Space-drag to move, right-click to exit"
                 ]:
                     tips.label(pgettext_iface(text))
                 if tips.check_event(event):
