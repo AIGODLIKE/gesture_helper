@@ -73,7 +73,7 @@ class Enum:
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_reverse: BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
     enum_wrap: BoolProperty(default=True, name="Cycle",
-                            description="Automatically jumps if it is the last or first value in the loop")
+                            description="Wrap around when reaching the first or last enum value")
 
 
 class OpsProperty(Enum):
@@ -250,7 +250,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         layout.separator()
         if not self.has_enum_items:
             layout.alert = True
-            layout.label(text="Dynamic enumeration properties cannot be added!!")
+            layout.label(text="Dynamic enum properties cannot be added")
             layout.label(text="Unable to add")
             return
 
@@ -411,7 +411,7 @@ class Create(Draw):
             self.report({'ERROR'}, "Multi-select enum (set) is not supported")
             return False
         if pt == "ENUM" and not self.has_enum_items:
-            self.report({'ERROR'}, "Dynamic enumeration properties cannot be added!!")
+            self.report({'ERROR'}, "Dynamic enum properties cannot be added")
             return False
         self.cache_clear()
         with pref.add_element_property.active_radio():

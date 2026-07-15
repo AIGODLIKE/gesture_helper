@@ -8,8 +8,8 @@ def _gen_gesture_prop(default, subtype='PIXEL'):
 
 class GestureProperty(bpy.types.PropertyGroup):
     timeout: IntProperty(
-        name='Gesture Timeout(ms)',
-        description='Idle timeout before the gesture trajectory is finalized',
+        name='Gesture Timeout (ms)',
+        description='Idle time before the radial gesture UI appears',
         **_gen_gesture_prop(200, 'TIME'),
     )
     modal_operator_target_fps: IntProperty(
@@ -41,8 +41,8 @@ class GestureProperty(bpy.types.PropertyGroup):
     )
 
     immediate_implementation: BoolProperty(
-        name="Immediate Implementation",
-        description="Immediately executes the operator when the mouse exceeds the confirm threshold",
+        name="Run Immediately",
+        description="Run the selected operator once the mouse passes the confirm threshold (radial UI must be visible)",
         default=False,
     )
     show_gesture_keymaps: BoolProperty(
@@ -53,7 +53,7 @@ class GestureProperty(bpy.types.PropertyGroup):
 
     modal_pass_view_rotation: BoolProperty(
         name='Allow view rotation in modal',
-        description="Will occupy the middle key operation",
+        description="Uses the middle mouse button while a modal gesture is active",
         default=True,
     )
 

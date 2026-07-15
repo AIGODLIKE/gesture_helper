@@ -67,7 +67,7 @@ class DrawElement:
             if get_debug():
                 active_element.draw_debug(layout)
         else:
-            layout.label(text='Add or select a element')
+            layout.label(text='Add or select an element')
 
     @staticmethod
     def draw_move_element(layout: 'bpy.types.UILayout'):

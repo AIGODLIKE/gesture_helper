@@ -196,4 +196,4 @@ class GestureKeymap(KeymapProperty):
             else:
                 return " ".join(items)
         else:
-            return pgettext("Not key")
+            return pgettext("No keymap")

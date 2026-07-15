@@ -7,7 +7,7 @@ from ..utils.enum import ENUM_RELATIONSHIP
 
 class AddElementProperty(ElementAddProperty, bpy.types.PropertyGroup):
     add_active_radio: bpy.props.BoolProperty(
-        name="Whether or not to set it as an active item when adding an element",
+        name="Activate new element when added",
         description='Select the newly added element after it is created',
         default=False,
     )

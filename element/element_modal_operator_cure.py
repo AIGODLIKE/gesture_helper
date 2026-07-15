@@ -133,7 +133,7 @@ class ElementModalOperatorEventCRUE:
                     self,
                     event,
                     context,
-                    title="Confirm To Delete The Element?",
+                    title="Delete this element?",
                     message=f"{name}",
                 )
             return self.execute(context)

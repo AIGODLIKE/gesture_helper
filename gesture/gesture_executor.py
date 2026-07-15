@@ -40,7 +40,7 @@ class GestureExecutor:
                         return
                 error = i.running_operator()
                 if error is not None:
-                    ops.report({'ERROR'}, "Operator Run Error,Please check the console")
+                    ops.report({'ERROR'}, "Operator error. Check the console for details.")
                     return
             else:
                 og = ops.operator_gesture
