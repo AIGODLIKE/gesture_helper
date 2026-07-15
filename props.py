@@ -44,13 +44,13 @@ class TempDrawProperty(bpy.types.PropertyGroup):
         )
 
     add_ui_extend_bool_property: StringProperty(
-        name='Adding Expanded Properties',
-        description='''When you change this property, you will check if there is any property in this property class.
-    If it doesn't, it will add it, because you can't add properties in the UI, so you use this method to add them.
-    Add the property when updating the property''',
+        name='Add Extended Property',
+        description=(
+            'When changed, adds a Boolean property to this class if it does not already exist.'
+        ),
         update=update_add_ui_extend_bool_property,
     )
-    default_bool_value: BoolProperty(name='Adding default values for Boolean properties')
+    default_bool_value: BoolProperty(name='Default Boolean Value')
 
 
 def __get_gesture_index__(self):

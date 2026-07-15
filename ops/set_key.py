@@ -50,7 +50,7 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
         name='Search',
         description=(
             'Search all keymaps by English or translated name (ignores Frequently Used / All). '
-            'Examples: "3D View" / "3D视图", "Mesh" / "网格", "2d", "Property"'
+            'Examples: "3D View", "Mesh", "2d", "Property"'
         ),
         options={'SKIP_SAVE', 'TEXTEDIT_UPDATE'},
         default='',
@@ -259,8 +259,9 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
 
 class OperatorTempModifierKey(bpy.types.Operator):
     bl_idname = 'wm.gesture_temp_kmi'
-    bl_label = 'Temp Kmi Key Gesture Helper'
+    bl_label = 'Temporary Keymap Item'
     bl_description = 'Internal placeholder keymap item used while editing gesture shortcuts'
+    bl_options = {'INTERNAL'}
 
     gesture: StringProperty()
 

@@ -35,7 +35,7 @@ class GestureProperty(bpy.types.PropertyGroup):
         **_gen_gesture_prop(50),
     )
     return_distance: IntProperty(
-        name='Return Previous Gesture Distance',
+        name='Return to Previous Level Distance',
         description='Distance to move back toward the center to return to the previous gesture level',
         **_gen_gesture_prop(10),
     )
