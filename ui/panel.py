@@ -69,9 +69,11 @@ class GestureElementPanel(bpy.types.Panel, PublicProperty):
     def draw(self, context):
         # ElementUIList walks the same Element RNA the GPU overlay stores hit
         # boxes against; drawing it mid-modal can wipe those transient attrs.
-        from ..utils.ui_draw_sync import is_gesture_modal_active
-        if is_gesture_modal_active():
-            self.layout.label(text="Gesture is running")
+        # Also skip during animation play (UI redraws every frame while playing).
+        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        msg = heavy_panel_skip_message(context)
+        if msg:
+            self.layout.label(text=msg)
             return
         layout = self.layout
         layout.enabled = self.pref.enabled
@@ -99,9 +101,10 @@ class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
         return True
 
     def draw(self, context):
-        from ..utils.ui_draw_sync import is_gesture_modal_active
-        if is_gesture_modal_active():
-            self.layout.label(text="Gesture is running")
+        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        msg = heavy_panel_skip_message(context)
+        if msg:
+            self.layout.label(text=msg)
             return
         get_pref().active_element.draw_operator_modal(self.layout)
 
