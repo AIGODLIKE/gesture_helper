@@ -7,10 +7,10 @@ import time
 import bpy
 from mathutils import Vector
 
-from ..utils.public import PublicProperty
+from ..utils.pref_access import PrefAccess
 
 
-class GestureRuntimeMixin(PublicProperty):
+class GestureRuntimeMixin(PrefAccess):
     """Bridge ``ops.xxx`` used by element/draw to ``self.session``.
 
     Do not annotate ``session`` on the class body — Blender 5.x walks operator

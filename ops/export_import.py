@@ -26,6 +26,8 @@ from ..utils.public import (
     debug_print,
     poll_addon_preferences,
 )
+from ..utils.pref_access import PrefAccess
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import cache_update_lock
 
 EXPORT_PROPERTY_EXCLUDE = (
@@ -98,20 +100,41 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
         del elements[key]
 
 
+def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
+    from ..element.element_operator import migrate_legacy_operator_bl_idname
+
+    for element in elements.values():
+        nested = element.get('element')
+        if nested:
+            _migrate_legacy_operator_ids_in_tree(nested)
+        old_id = element.get('operator_bl_idname')
+        if not old_id:
+            continue
+        new_id = migrate_legacy_operator_bl_idname(old_id)
+        if new_id != old_id:
+            element['operator_bl_idname'] = new_id
+            debug_print(
+                f"Gesture Helper: migrated operator_bl_idname "
+                f"'{old_id}' -> '{new_id}'",
+                key='export_import',
+            )
+
+
 def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Remove legacy SCRIPT elements and radio flags from imported gesture data."""
+    """Remove legacy SCRIPT elements, migrate operator ids, strip radio flags."""
     from ..utils.selection import strip_radio_from_copy_data
 
     for gesture in gesture_data.values():
         elements = gesture.get('element')
         if elements:
             _remove_legacy_script_from_tree(elements)
+            _migrate_legacy_operator_ids_in_tree(elements)
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data
 
 
-class PublicFileOperator(PublicOperator, PublicProperty):
+class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH", options={'HIDDEN', 'SKIP_SAVE'}, )
     preset_show: BoolProperty(options={'HIDDEN', 'SKIP_SAVE'}, )
     filename_ext = ".json"
@@ -169,7 +192,8 @@ class Import(PublicFileOperator):
         if not self.gesture_import():
             return {'CANCELLED'}
         self.cache_clear()
-        self.update_state()
+        from ..utils.public import PublicProperty
+        PublicProperty.update_state()
         GestureKeymap.key_restart()
         from ..utils.gesture_persistence import (
             cancel_scheduled_gesture_save,
@@ -194,7 +218,7 @@ class Import(PublicFileOperator):
         column = layout.column(align=True)
 
         for k, v in self.preset_items.items():
-            ops = column.operator(self.bl_idname, text=self.__tp__(k))
+            ops = column.operator(self.bl_idname, text=PublicProperty.__tp__(k))
             ops.filepath = v
             ops.run_execute = True
             ops.preset_show = False
@@ -477,6 +501,92 @@ class SaveGesturesAndUserPref(bpy.types.Operator):
             return {'FINISHED'}
         self.report({'WARNING'}, pgettext("Gesture file write failed"))
         return {'CANCELLED'}
+
+
+class ShowGesturePreferences(bpy.types.Operator):
+    """Open this add-on's preferences in a fullscreen Preferences area."""
+
+    bl_idname = "wm.gesture_show_preferences"
+    bl_label = "Gesture Preferences"
+    bl_description = "Open Gesture Helper preferences fullscreen"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    @staticmethod
+    def _find_preferences_area(context):
+        """Return (window, screen, area) for a Preferences editor, or None."""
+        # Prefer the window that owns the operator context when several exist.
+        windows = []
+        if context.window is not None:
+            windows.append(context.window)
+        for win in context.window_manager.windows:
+            if win not in windows:
+                windows.append(win)
+        for win in windows:
+            for area in win.screen.areas:
+                if area.type == 'PREFERENCES':
+                    return win, win.screen, area
+        return None
+
+    @staticmethod
+    def _window_region(area):
+        return next((r for r in area.regions if r.type == 'WINDOW'), None)
+
+    @staticmethod
+    def _hide_preferences_sidebar(area) -> None:
+        """Hide Preferences left navigation (Add-ons / Interface / …)."""
+        space = area.spaces.active if area.spaces else None
+        if space is not None and hasattr(space, 'show_region_ui'):
+            space.show_region_ui = False
+
+    def execute(self, context):
+        from .. import __package__ as base_package
+        from bpy.app.translations import pgettext
+
+        try:
+            bpy.ops.preferences.addon_show(module=base_package)
+        except RuntimeError:
+            # Some contexts cannot jump to the add-on tab; open Preferences first.
+            try:
+                bpy.ops.screen.userpref_show('INVOKE_DEFAULT')
+                bpy.ops.preferences.addon_show(module=base_package)
+            except RuntimeError as e:
+                self.report({'ERROR'}, pgettext("Could not open preferences: %s") % e)
+                return {'CANCELLED'}
+
+        found = self._find_preferences_area(context)
+        if found is None:
+            self.report({'WARNING'}, pgettext("Preferences editor was not found"))
+            return {'FINISHED'}
+
+        pref_window, pref_screen, pref_area = found
+        region = self._window_region(pref_area)
+        override = {
+            'window': pref_window,
+            'screen': pref_screen,
+            'area': pref_area,
+        }
+        if region is not None:
+            override['region'] = region
+
+        with context.temp_override(**override):
+            # screen_full_area toggles — only enter, never exit by accident.
+            already_full = bool(getattr(pref_screen, 'show_fullscreen', False))
+            if not already_full and bpy.ops.screen.screen_full_area.poll():
+                bpy.ops.screen.screen_full_area(use_hide_panels=True)
+
+            # Left category bar is independent of use_hide_panels.
+            self._hide_preferences_sidebar(pref_area)
+
+        # Re-resolve after fullscreen (area pointers can change on some builds).
+        found = self._find_preferences_area(context)
+        if found is not None:
+            self._hide_preferences_sidebar(found[2])
+
+        return {'FINISHED'}
 
 
 class ImportPreferences(bpy.types.Operator, ImportHelper):

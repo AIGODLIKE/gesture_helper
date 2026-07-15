@@ -133,6 +133,9 @@ class GestureGpuDraw(DrawDebug):
             if self.area is not None and bpy.context.area != self.area:
                 return
             if self.is_draw_gpu:
+                from .draw_frame_context import refresh_draw_frame_context
+                if getattr(self, "session", None) is not None:
+                    refresh_draw_frame_context(self.session, self)
                 gpu_draw_begin()
                 try:
                     self.gpu_draw_gesture()
@@ -150,15 +153,18 @@ class GestureGpuDraw(DrawDebug):
             return
         cls = space.rna_type
         GestureGpuDraw.__active_draw_instance__ = self
+        debug_gpu = False
+        try:
+            debug_gpu = bool(self.pref.debug_property.debug_draw_gpu_mode)
+        except (AttributeError, KeyError, TypeError):
+            ...
+
         if cls not in GestureGpuDraw.__temp_draw_class__:
             sub_class = {}
-            debug_class = {}
             for identifier in {'WINDOW'}:  # 'TOOLS', 'HEADER', 'UI',
                 try:
                     sub_class[identifier] = cls.draw_handler_add(
                         GestureGpuDraw._gpu_draw_handler, (), identifier, 'POST_PIXEL')
-                    debug_class[identifier] = cls.draw_handler_add(
-                        GestureGpuDraw._gpu_debug_draw_handler, (), identifier, 'POST_PIXEL')
                 except Exception as e:
                     from ..utils.public import get_debug, debug_print
                     from ..utils.debug_util import debug_traceback, debug_trace_stack
@@ -169,7 +175,17 @@ class GestureGpuDraw(DrawDebug):
                         debug_trace_stack(key='gpu')
 
             GestureGpuDraw.__temp_draw_class__[cls] = sub_class
-            GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
+
+        if debug_gpu and cls not in GestureGpuDraw.__temp_debug_draw_class__:
+            debug_class = {}
+            for identifier in {'WINDOW'}:
+                try:
+                    debug_class[identifier] = cls.draw_handler_add(
+                        GestureGpuDraw._gpu_debug_draw_handler, (), identifier, 'POST_PIXEL')
+                except Exception:
+                    ...
+            if debug_class:
+                GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 
         GestureGpuDraw.__modal_draw_count__ += 1
         GestureGpuDraw.__active_draw_instance__ = self
@@ -204,14 +220,14 @@ class GestureGpuDraw(DrawDebug):
         """Draw mouse-move trajectory line."""
         draw = self.draw_property
         color = draw.trajectory_mouse_color
-        scale = bpy.context.preferences.view.ui_scale
+        scale = self._draw_ui_scale()
         line_width = draw.line_width * scale
         self.draw_2d_line(self.trajectory_mouse_move, color=color, line_width=line_width)
 
     def gpu_draw_trajectory_gesture_line(self):
         """Draw gesture trajectory polyline."""
         draw = self.draw_property
-        scale = bpy.context.preferences.view.ui_scale
+        scale = self._draw_ui_scale()
         color = draw.trajectory_gesture_color
         line_width = draw.line_width * scale
         self.draw_2d_line(self.trajectory_tree.points_list, color=color, line_width=line_width)
@@ -221,23 +237,29 @@ class GestureGpuDraw(DrawDebug):
         tree = self.trajectory_tree
         if not tree.points_list:
             return
-        scale = bpy.context.preferences.view.ui_scale
+        scale = self._draw_ui_scale()
         size = max(6.0, 8.0 * scale)
         self.draw_2d_points(tree.points_list, point_size=size, color=(1.0, 1.0, 1.0, 1.0))
 
     def gpu_draw_last_item_name(self):
         """Draw last element label."""
-        scale = bpy.context.preferences.view.ui_scale
+        from ..src.translate import __name_translate__
+
+        scale = self._draw_ui_scale()
         tree = self.trajectory_tree
         size = self.pref.draw_property.gesture_point_name_size * scale
-        threshold = self.pref.gesture_property.threshold * scale
+        session = getattr(self, "session", None)
+        draw_ctx = getattr(session, "draw_ctx", None) if session is not None else None
+        threshold = draw_ctx.threshold if draw_ctx is not None else (
+            self.pref.gesture_property.threshold * scale
+        )
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
                 if not self.operator_gesture:
                     return
                 text = self.operator_gesture.name if (el is None) else el.name
-                tn = self.__tn__(text)
+                tn = __name_translate__(text)
 
                 is_last = pos == tree.points_list[-1]
                 font_id = 0
@@ -251,6 +273,13 @@ class GestureGpuDraw(DrawDebug):
 
                 self.draw_text(tn, size=size)
 
+    def _draw_ui_scale(self) -> float:
+        session = getattr(self, "session", None)
+        draw_ctx = getattr(session, "draw_ctx", None) if session is not None else None
+        if draw_ctx is not None:
+            return draw_ctx.ui_scale
+        return bpy.context.preferences.view.ui_scale
+
     def gpu_draw_gesture(self):
         """Draw gesture overlay; extension_hover is pruned then re-seeded while painting."""
         if getattr(self, 'session', None) is None:
@@ -261,15 +290,20 @@ class GestureGpuDraw(DrawDebug):
 
         from .gesture_input import extension_rollback
 
-        gp = self.gesture_property
-        scale = bpy.context.preferences.view.ui_scale
-        threshold = gp.threshold * scale
+        scale = self._draw_ui_scale()
+        session = self.session
+        draw_ctx = getattr(session, "draw_ctx", None)
+        threshold = draw_ctx.threshold if draw_ctx is not None else (
+            self.gesture_property.threshold * scale
+        )
         from ..src.translate import __name_translate__
 
         # Prune stack from previous-frame hit boxes before redraw (legacy contract).
         for el in self.session.extension_hover:
             el.ops = self
         extension_rollback(self.session)
+        from .draw_frame_context import refresh_draw_ctx_extension_flag
+        refresh_draw_ctx_extension_flag(self.session, self)
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
@@ -288,21 +322,49 @@ class GestureGpuDraw(DrawDebug):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(center)
                 if self.is_window_region_type:
-                    # Threshold ring: keep it clearly visible against the viewport.
-                    ring_color = self.draw_property.text_default_color
+                    # Two rings: start threshold + confirm (threshold + confirm delta).
+                    # The band between them is the BEYOND transition zone.
+                    draw = self.draw_property
+                    ring_color = draw.text_default_color
                     ring_width = max(2.5, 2.75 * scale)
+                    confirm_r = threshold + (
+                        draw_ctx.threshold_confirm if draw_ctx is not None else (
+                            self.gesture_property.threshold_confirm * scale
+                        )
+                    )
                     self.draw_circle(
                         (0, 0), threshold,
                         color=ring_color,
                         line_width=ring_width,
                         segments=72,
                     )
+                    confirm_ring = (*ring_color[:3], 0.006)
+                    self.draw_circle(
+                        (0, 0), confirm_r,
+                        color=confirm_ring,
+                        line_width=max(1.5, 1.75 * scale),
+                        segments=72,
+                    )
                     angle = self.angle_unsigned
-                    if self.session.snapshot.threshold_zone.is_beyond and angle is not None:
+                    zone = self.session.snapshot.threshold_zone
+                    if zone.is_beyond and angle is not None:
+                        # Three states: no tip / growing transition tip / full confirm tip.
+                        tip_color = draw.trajectory_gesture_color
+                        if zone.is_confirm:
+                            tip_width = max(5.0, 5.5 * scale)
+                            tip_r = confirm_r
+                        else:
+                            tip_width = max(2.5, 3.0 * scale)
+                            tip_color = (
+                                *tip_color[:3],
+                                tip_color[3] * 0.55 if len(tip_color) > 3 else 0.55,
+                            )
+                            dist = float(self.session.snapshot.distance)
+                            tip_r = max(threshold, min(dist, confirm_r))
                         self.draw_arc(
-                            (0, 0), threshold, angle, 45,
-                            color=self.draw_property.trajectory_gesture_color,
-                            line_width=max(5.0, 5.5 * scale),
+                            (0, 0), tip_r, angle, 45,
+                            color=tip_color,
+                            line_width=tip_width,
                             segments=48,
                         )
 
@@ -321,7 +383,7 @@ class GestureGpuDraw(DrawDebug):
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""
         element = self.direction_element
-        scale = bpy.context.preferences.view.ui_scale
+        scale = self._draw_ui_scale()
 
         if element and not self.session.phase.shows_radial_ui:
             size = self.pref.draw_property.text_gpu_draw_size * scale
