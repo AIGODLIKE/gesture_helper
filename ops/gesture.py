@@ -233,6 +233,8 @@ class GestureOperator(
         operator_setattr(self, "_modal_cleaned", True)
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
+        from ..gesture.gesture_input import clear_gesture_item_memos
+        clear_gesture_item_memos(self.session, self)
         # Keep session.handoff until invoke reset — exit()/immediate still read it
         # after __exit_modal__ to decide FINISHED+INTERFACE.
 

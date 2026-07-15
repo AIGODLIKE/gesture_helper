@@ -96,16 +96,21 @@ def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gp
     return raw
 
 
+def clear_gesture_item_memos(session: GestureSession, ops=None) -> None:
+    """Drop direction/extension item memos (call on gesture exit / reset)."""
+    session._direction_items_memo = None
+    session._gpu_extension_items_cache = None
+    if ops is not None:
+        ops._gpu_extension_items_cache = None
+
+
 def invalidate_derived_caches(session: GestureSession, operator_gesture, *, force=False, ops=None):
     """Clear direction/extension memo only when tree level actually changed."""
     key = direction_items_context_id(session, operator_gesture)
     if not force and session._derived_cache_key == key:
         return
     session._derived_cache_key = key
-    session._direction_items_memo = None
-    session._gpu_extension_items_cache = None
-    if ops is not None:
-        ops._gpu_extension_items_cache = None
+    clear_gesture_item_memos(session, ops)
 
 
 def tag_redraw_gesture_screen(session: GestureSession):
@@ -217,16 +222,15 @@ def schedule_timeout_timer(session: GestureSession, timeout_ms: float, ops=None)
 
 
 def _promote_ui_visible(session: GestureSession, ops=None) -> bool:
-    """IDLE/TRACKING → UI_VISIBLE, seed trajectory, optional snapshot refresh, redraw."""
+    """IDLE/TRACKING → UI_VISIBLE, seed trajectory, redraw.
+
+    Do not refresh_snapshot here: timer callbacks have a bare context and would
+    re-evaluate poll into an empty direction_items, wiping the invoke-time result.
+    Modal mouse events recalculate; session memos are cleared on reset/exit.
+    """
     if not session.advance_to_ui_visible():
         return False
     ensure_trajectory_seed(session)
-    if ops is not None:
-        try:
-            refresh_snapshot(session, ops)
-            update_extension_hover(session, ops)
-        except (AttributeError, ReferenceError, TypeError, RuntimeError):
-            ...
     tag_redraw_gesture_screen(session)
     return True
 
@@ -498,21 +502,18 @@ class GestureInputProcessor:
                     and not in_extension_ui
             ):
                 de = snap.direction_element
-                if snap.is_have_extension_item and de.direction == "7":
-                    # Legacy gate: enter bottom child only after timeout while
-                    # still inside extension offset (rarely true on the same
-                    # MOUSEMOVE that just refreshed last_mouse_mouse_time).
-                    last_timeout = (time.time() - session.last_mouse_mouse_time) > (
-                        ops.pref.gesture_property.timeout / 1000
-                    )
-                    if last_timeout and not snap.is_beyond_extension_offset:
-                        session.trajectory_tree.append(de, emp)
-                        session._gesture_circle_center = emp.copy()
-                        invalidate_derived_caches(session, operator_gesture, ops=ops)
-                        session.extension_hover.clear()
-                        refresh_snapshot(session, ops)
-                        snap = session.snapshot
-                else:
+                # With a bottom extension, do not enter the Down child once the
+                # pointer has passed the extension panel start — that motion is
+                # aimed at the flyout, not at diving into the radial child.
+                # (A prior idle-timeout gate never fired: last_mouse_mouse_time
+                # is refreshed on the same MOUSEMOVE that evaluates enter.)
+                block_bottom_child = (
+                    snap.is_have_extension_item
+                    and de.direction == "7"
+                    and snap.extension_offset_distance > 0
+                    and snap.is_beyond_extension_offset
+                )
+                if not block_bottom_child:
                     session.trajectory_tree.append(de, emp)
                     session._gesture_circle_center = emp.copy()
                     invalidate_derived_caches(session, operator_gesture, ops=ops)
