@@ -50,10 +50,10 @@ ENUM_GESTURE_DIRECTION = [
     ('1', 'Right', ''),
     ('3', 'Up', ''),
     ('7', 'Down', ''),
-    ('4', 'Left Top', ''),
-    ('2', 'Right Top', ''),
-    ('6', 'Left Down', ''),
-    ('8', 'Right Down', ''),
+    ('4', 'Top Left', ''),
+    ('2', 'Top Right', ''),
+    ('6', 'Bottom Left', ''),
+    ('8', 'Bottom Right', ''),
     ('9', 'Bottom', ''),
 ]
 ENUM_ELEMENT_TYPE = [
@@ -66,14 +66,14 @@ ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
     ('ROOT', 'Root', 'Add to root'),
-    ('SAME', 'Same', 'Add to same'),
+    ('SAME', 'Same', 'Add as sibling'),
     ('CHILD', 'Child', 'Add to child'),
 ]
 ENUM_OPERATOR_CONTEXT = from_each_as_title_items(OPERATOR_CONTEXT_ELEMENT)
 
 ENUM_OPERATOR_TYPE = [
     ('OPERATOR', 'Operator', 'Use a Blender operator by bl_idname'),
-    ('MODAL', 'Modal', 'Use modal run operator'),
+    ('MODAL', 'Modal', 'Use a modal operator'),
 ]
 
 ENUM_NUMBER_VALUE_CHANGE_MODE = [

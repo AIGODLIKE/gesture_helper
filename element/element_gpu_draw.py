@@ -650,7 +650,7 @@ class ElementGpuExtensionItem:
 
             if len(self.extension_items) == 0:
                 self.draw_text(
-                    bpy.app.translations.pgettext_iface("No child level, please add"),
+                    bpy.app.translations.pgettext_iface("No child items. Please add some."),
                     size=self.text_size,
                     position=[0, 0])
 

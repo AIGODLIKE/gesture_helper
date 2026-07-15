@@ -31,7 +31,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     )
     threshold_confirm: IntProperty(
         name='Confirm Threshold',
-        description='Extra mouse travel past the start threshold required to confirm (arm) a direction item',
+        description='Extra mouse travel past the start threshold required to confirm a direction item',
         **_gen_gesture_prop(50),
     )
     return_distance: IntProperty(
@@ -53,7 +53,7 @@ class GestureProperty(bpy.types.PropertyGroup):
 
     modal_pass_view_rotation: BoolProperty(
         name='Allow view rotation in modal',
-        description="Uses the middle mouse button while a modal gesture is active",
+        description="Allow middle-mouse view rotation while a modal gesture is active",
         default=True,
     )
 
