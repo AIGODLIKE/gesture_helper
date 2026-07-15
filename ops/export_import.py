@@ -99,14 +99,35 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
         del elements[key]
 
 
+def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
+    from ..element.element_operator import migrate_legacy_operator_bl_idname
+
+    for element in elements.values():
+        nested = element.get('element')
+        if nested:
+            _migrate_legacy_operator_ids_in_tree(nested)
+        old_id = element.get('operator_bl_idname')
+        if not old_id:
+            continue
+        new_id = migrate_legacy_operator_bl_idname(old_id)
+        if new_id != old_id:
+            element['operator_bl_idname'] = new_id
+            debug_print(
+                f"Gesture Helper: migrated operator_bl_idname "
+                f"'{old_id}' -> '{new_id}'",
+                key='export_import',
+            )
+
+
 def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Remove legacy SCRIPT elements and radio flags from imported gesture data."""
+    """Remove legacy SCRIPT elements, migrate operator ids, strip radio flags."""
     from ..utils.selection import strip_radio_from_copy_data
 
     for gesture in gesture_data.values():
         elements = gesture.get('element')
         if elements:
             _remove_legacy_script_from_tree(elements)
+            _migrate_legacy_operator_ids_in_tree(elements)
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data
