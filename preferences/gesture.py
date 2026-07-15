@@ -22,7 +22,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     radius: IntProperty(
         name='Gesture Radius',
         description='Radius of the gesture pie / direction ring',
-        **{**_gen_gesture_prop(70), "max": 500},
+        **{**_gen_gesture_prop(90), "max": 500},
     )
     threshold: IntProperty(
         name='Threshold',
@@ -32,7 +32,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     threshold_confirm: IntProperty(
         name='Confirm Threshold',
         description='Extra mouse travel past the start threshold required to confirm (arm) a direction item',
-        **_gen_gesture_prop(20),
+        **_gen_gesture_prop(50),
     )
     return_distance: IntProperty(
         name='Return Previous Gesture Distance',
