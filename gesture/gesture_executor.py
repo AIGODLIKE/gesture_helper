@@ -18,6 +18,7 @@ class GestureExecutor:
                 defer_gesture_element_operator,
                 should_defer_gesture_operator,
             )
+            from .pass_through.window_focus import begin_sync_op, end_sync_op
             from ..element.element_operator import resolve_operator_bl_idname
 
             if i.operator_is_operator or i.operator_is_modal:
@@ -33,23 +34,18 @@ class GestureExecutor:
 
             if i.check_operator_poll():
                 idname = resolve_operator_bl_idname(i.operator_bl_idname)
-                from .pass_through.ui_filter import is_preferences_op
-
-                is_prefs = is_preferences_op(idname)
                 if i.operator_is_operator and should_defer_gesture_operator(idname):
                     area = getattr(session, 'area', None) or getattr(ops, 'area', None)
                     if defer_gesture_element_operator(bpy.context, area, i):
                         session.set_handoff(UiHandoff.DEFERRED)
                         return
-                # Sync Preferences open must keep the user-click OS focus context.
-                if is_prefs:
-                    session.set_handoff(UiHandoff.OPENING_SYNC)
+                begin_sync_op(session)
                 error = i.running_operator()
                 if error is not None:
-                    if is_prefs:
-                        session.clear_handoff()
+                    session.clear_handoff()
                     ops.report({'ERROR'}, "Operator Run Error,Please check the console")
                     return
+                end_sync_op(session)
             else:
                 og = ops.operator_gesture
                 name = og.name if og is not None else "?"
