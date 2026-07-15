@@ -152,8 +152,9 @@ class ElementCURE:
         bl_label = 'Remove element item'
         bl_idname = 'wm.gesture_element_remove'
         bl_description = (
-            'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture. '
-            'You will be asked to confirm. This cannot be undone.'
+            'Remove the active element. '
+            'Hold Ctrl+Alt+Shift while clicking to remove all elements in the active gesture '
+            '(confirmation required; cannot be undone)'
         )
         bl_options = {'REGISTER'}
 
