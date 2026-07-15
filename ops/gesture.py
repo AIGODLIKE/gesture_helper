@@ -16,6 +16,7 @@ from ..gesture.gesture_input import (
 from ..gesture.gesture_runtime import GestureRuntimeMixin
 from ..gesture.gesture_session import GestureSession
 from ..gesture.pass_through import GesturePassThroughKeymap
+from ..utils.adapter import operator_setattr
 from ..utils.public import PublicOperator, debug_print
 
 
@@ -39,13 +40,13 @@ class GestureOperator(
         return poll_addon_preferences(cls)
 
     def __init__(self, *args, **kwargs):
-        # Blender 5.x: call Operator __init__ first, then attach plain Python
-        # state via object.__setattr__ (RNA __setattr__ rejects unknown attrs).
+        # Call Operator __init__ first (Blender 4.4+), then attach plain Python
+        # state. Use operator_setattr — object.__setattr__ fails on 4.x bpy_struct.
         super().__init__(*args, **kwargs)
-        object.__setattr__(self, "session", GestureSession())
-        object.__setattr__(self, "_input", GestureInputProcessor())
-        object.__setattr__(self, "_executor", GestureExecutor())
-        object.__setattr__(self, "_modal_cleaned", False)
+        operator_setattr(self, "session", GestureSession())
+        operator_setattr(self, "_input", GestureInputProcessor())
+        operator_setattr(self, "_executor", GestureExecutor())
+        operator_setattr(self, "_modal_cleaned", False)
 
     def tag_redraw(self):
         """Redraw the gesture screen (override PublicOperator.tag_redraw)."""
@@ -73,7 +74,7 @@ class GestureOperator(
 
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
-        object.__setattr__(self, "_modal_cleaned", False)
+        operator_setattr(self, "_modal_cleaned", False)
         if self.operator_gesture is None:
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
@@ -229,7 +230,7 @@ class GestureOperator(
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):
             return
-        object.__setattr__(self, "_modal_cleaned", True)
+        operator_setattr(self, "_modal_cleaned", True)
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
         # Keep session.handoff until invoke reset — exit()/immediate still read it

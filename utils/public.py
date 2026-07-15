@@ -8,6 +8,7 @@ from . import gesture_items as _gesture_items
 from .pref_access import PrefAccess
 from .active_selection import ActiveSelection
 from .structure_cache_ops import StructureCacheOps
+from .adapter import operator_setattr
 
 # Re-export mixins for ``from ..utils.public import PrefAccess`` etc.
 
@@ -158,13 +159,13 @@ class PublicOperator(bpy.types.Operator):
     # annotations break RNA property registration on subclasses.
 
     def init_invoke(self, event):
-        object.__setattr__(self, "event", event)
+        operator_setattr(self, "event", event)
         # Remember the key/button that started the gesture so WINDOW_DEACTIVATE
         # / other RELEASE events cannot abort it and re-run operators.
-        object.__setattr__(self, "_invoke_event_type", event.type)
+        operator_setattr(self, "_invoke_event_type", event.type)
 
     def init_modal(self, event):
-        object.__setattr__(self, "event", event)
+        operator_setattr(self, "event", event)
 
     @property
     def is_right_mouse(self):

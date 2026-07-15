@@ -8,6 +8,7 @@ from ...gesture.gesture_handle import GestureHandle
 from ...gesture.gesture_input import refresh_snapshot
 from ...gesture.gesture_runtime import GestureRuntimeMixin
 from ...gesture.gesture_session import GestureSession
+from ...utils.adapter import operator_setattr
 from ...utils.public import PublicOperator, debug_print
 from ...utils.session_state import SessionState
 
@@ -24,13 +25,13 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        object.__setattr__(self, "session", GestureSession())
-        object.__setattr__(self, "points_list", None)
-        object.__setattr__(self, "mouse_position", None)
-        object.__setattr__(self, "__difference_mouse__", None)
-        object.__setattr__(self, "start_mouse_position", None)
-        object.__setattr__(self, "offset_position", Vector((0, 0)))
-        object.__setattr__(self, "gpu", DrawGpu())
+        operator_setattr(self, "session", GestureSession())
+        operator_setattr(self, "points_list", None)
+        operator_setattr(self, "mouse_position", None)
+        operator_setattr(self, "__difference_mouse__", None)
+        operator_setattr(self, "start_mouse_position", None)
+        operator_setattr(self, "offset_position", Vector((0, 0)))
+        operator_setattr(self, "gpu", DrawGpu())
 
     def __gpu_draw__(self):
         self.gpu.tips.__gpu_draw__()
