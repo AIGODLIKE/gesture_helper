@@ -208,9 +208,16 @@ class PublicCacheFunc(PublicCache):
 
     @staticmethod
     def ensure_gesture_structure(gesture):
-        """Rebuild *gesture* structure cache immediately (safe under update lock)."""
-        if gesture is not None:
-            PublicCacheFunc.rebuild_gesture(gesture)
+        """Ensure *gesture* structure cache exists; rebuild only when missing/dirty."""
+        if gesture is None:
+            return
+        from .cache_state import CacheState
+        # Flush any deferred structure work first so invoke sees a consistent tree.
+        if CacheState._pending_structure or CacheState._lock_deferred:
+            CacheState.flush()
+        if gesture in PublicCache.__gesture_element_iteration__:
+            return
+        PublicCacheFunc.rebuild_gesture(gesture)
 
     @staticmethod
     def ensure_item_structure(item):

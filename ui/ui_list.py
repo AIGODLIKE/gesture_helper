@@ -1,10 +1,11 @@
 import bpy
 
-from ..utils.public import PublicProperty
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
 from ..utils.public_ui import icon_two
 
 
-class GestureUIList(bpy.types.UIList, PublicProperty):
+class GestureUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
     bl_idname = 'GESTURE_UL_gesture_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
@@ -29,7 +30,7 @@ class GestureUIList(bpy.types.UIList, PublicProperty):
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
-class ElementUIList(bpy.types.UIList, PublicProperty):
+class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
     bl_idname = 'GESTURE_UL_element_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
@@ -59,7 +60,7 @@ class ElementUIList(bpy.types.UIList, PublicProperty):
         row.prop(prop, "enable_name_translation", icon="BLANK1")
 
 
-class ElementModalEventUIList(bpy.types.UIList, PublicProperty):
+class ElementModalEventUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
     bl_idname = 'GESTURE_UL_element_modal_items'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
@@ -67,8 +68,7 @@ class ElementModalEventUIList(bpy.types.UIList, PublicProperty):
         item.draw_item(layout.column(align=True))
 
 
-class ImportPresetUIList(bpy.types.UIList,
-                         PublicProperty):
+class ImportPresetUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
     bl_idname = 'GESTURE_UL_preset'
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,

@@ -80,9 +80,9 @@ class GestureOperator(
                                               icon="INFO")
             return {'CANCELLED'}
 
-        # Rebuild structure cache before the first snapshot so direction walks
-        # see a consistent generation (avoid clear-after-refresh stale memo).
-        self.cache_clear()
+        # Ensure this gesture's structure cache exists; skip full rebuild when warm.
+        from ..utils.public_cache import PublicCacheFunc
+        PublicCacheFunc.ensure_gesture_structure(self.operator_gesture)
         ensure_trajectory_seed(self.session)
         refresh_snapshot(self.session, self)
         schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
@@ -237,22 +237,11 @@ class GestureOperator(
 
     @property
     def mouse_is_in_extension_any_area(self) -> bool:
-        if self.extension_element and self.extension_hover:
-            for last in self.extension_hover:
-                if (
-                        last.extension_by_child_is_hover or
-                        last.mouse_is_in_extension_area or
-                        last.mouse_is_in_extension_vertical_outside_area or
-                        last.mouse_is_in_extension_right_outside_area
-                ):
-                    return True
+        """True when mouse is in extension panel / right band / child row.
 
-                for item in last.extension_items:
-                    if (
-                            item.extension_by_child_is_hover or
-                            item.mouse_is_in_extension_area or
-                            item.mouse_is_in_extension_vertical_outside_area or
-                            item.mouse_is_in_extension_right_outside_area
-                    ):
-                        return True
-        return False
+        Excludes vertical travel (same subset as GestureExecutor radial block).
+        """
+        if not self.extension_element or not self.extension_hover:
+            return False
+        from ..element.extension_hit import stack_any_ui
+        return stack_any_ui(self.extension_hover, self, include_vertical_travel=False)

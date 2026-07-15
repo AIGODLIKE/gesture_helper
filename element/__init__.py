@@ -10,8 +10,10 @@ from .element_operator import ElementOperator
 from .element_poll import ElementPoll
 from .element_property import ElementProperty
 from .element_relationship import ElementRelationship
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.property import __set_property__
-from ..utils.public import PublicProperty
 from ..utils.public_cache import cache_update_lock, PublicCacheFunc
 from ..utils.iteration import find_owning_gesture
 
@@ -26,7 +28,9 @@ class Element(ElementCURE,
               ElementProperty,
               ElementRelationship,
 
-              PublicProperty,
+              PrefAccess,
+              ActiveSelection,
+              StructureCacheOps,
 
               bpy.types.PropertyGroup):
     element: CollectionProperty(name='Child element', type=Element)

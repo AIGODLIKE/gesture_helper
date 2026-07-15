@@ -126,6 +126,7 @@ class GestureSession:
         self._gpu_extension_items_cache = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
+        self.draw_ctx = None  # DrawFrameContext | None
 
     def reset(self, event, area, screen, gesture_name: str = ""):
         """Initialize / reset for a new invoke."""
@@ -154,6 +155,7 @@ class GestureSession:
         self._gpu_extension_items_cache = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
+        self.draw_ctx = None
 
     # ---- phase transitions (single write path) ----
 

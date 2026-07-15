@@ -2,11 +2,13 @@ import bpy
 
 from ..preferences.draw import PreferencesDraw
 from ..preferences.draw_gesture import GestureDraw
-from ..utils.public import PublicProperty, get_pref
+from ..utils.pref_access import PrefAccess
+from ..utils.active_selection import ActiveSelection
+from ..utils.public import get_pref
 from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 
 
-class GesturePanel(bpy.types.Panel, PublicProperty):
+class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
     bl_label = "Gesture"
     bl_idname = "GESTURE_PT_Layout"
     bl_space_type = "VIEW_3D"
@@ -32,7 +34,7 @@ class GesturePanel(bpy.types.Panel, PublicProperty):
         ...
 
 
-class GestureItemPanel(bpy.types.Panel, PublicProperty):
+class GestureItemPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
     bl_label = "Item"
     bl_idname = "GESTURE_PT_Item"
     bl_space_type = "VIEW_3D"
@@ -53,7 +55,7 @@ class GestureItemPanel(bpy.types.Panel, PublicProperty):
         GestureDraw.draw_gesture(layout)
 
 
-class GestureElementPanel(bpy.types.Panel, PublicProperty):
+class GestureElementPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
     bl_label = "Element"
     bl_idname = "GESTURE_PT_Element"
     bl_space_type = "VIEW_3D"
@@ -80,7 +82,7 @@ class GestureElementPanel(bpy.types.Panel, PublicProperty):
         GestureDraw.draw_element(layout, include_modal=False)
 
 
-class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
+class GestureModalEventPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
     bl_label = "Modal Event"
     bl_idname = "GESTURE_PT_Modal_Event"
     bl_space_type = "VIEW_3D"
@@ -109,7 +111,7 @@ class GestureModalEventPanel(bpy.types.Panel, PublicProperty):
         get_pref().active_element.draw_operator_modal(self.layout)
 
 
-class GesturePropertyPanel(bpy.types.Panel, PublicProperty):
+class GesturePropertyPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
     bl_label = "Property"
     bl_idname = "GESTURE_PT_Property"
     bl_space_type = "VIEW_3D"
