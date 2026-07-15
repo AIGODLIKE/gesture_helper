@@ -16,26 +16,6 @@ module_list = (
 
 _load_post_handler = None
 _deferred_init_done = False
-_icon_verify_timer = None
-_icon_retry_timer = None
-
-
-def _unregister_timer(timer) -> None:
-    if timer is None:
-        return
-    try:
-        if bpy.app.timers.is_registered(timer):
-            bpy.app.timers.unregister(timer)
-    except (ValueError, RuntimeError, AttributeError):
-        ...
-
-
-def _cancel_icon_timers() -> None:
-    global _icon_verify_timer, _icon_retry_timer
-    _unregister_timer(_icon_verify_timer)
-    _unregister_timer(_icon_retry_timer)
-    _icon_verify_timer = None
-    _icon_retry_timer = None
 
 
 def _register_load_post_handler():
@@ -74,7 +54,6 @@ def _sync_addon_state():
 
 
 def _on_load_post(_dummy):
-    global _icon_retry_timer
     try:
         # WM GestureStore is SKIP_SAVE: File > Open often resets it to empty.
         # Reload from CONFIG only when the session store was wiped.
@@ -89,34 +68,9 @@ def _on_load_post(_dummy):
             if gestures is None or len(gestures) == 0:
                 load_gestures_from_disk()
             _sync_addon_state()
-        from .utils.icons import ensure_icons_loaded
-        if ensure_icons_loaded():
-            def _retry_icons():
-                global _icon_retry_timer
-                _icon_retry_timer = None
-                ensure_icons_loaded()
-                return None
-            _unregister_timer(_icon_retry_timer)
-            _icon_retry_timer = _retry_icons
-            bpy.app.timers.register(_retry_icons, first_interval=1.0)
     except (KeyError, AttributeError, RuntimeError):
         ...
     return None
-
-
-def _schedule_icon_verify():
-    global _icon_verify_timer
-    from .utils.icons import ensure_icons_loaded
-
-    def _verify():
-        global _icon_verify_timer
-        _icon_verify_timer = None
-        ensure_icons_loaded()
-        return None
-
-    _unregister_timer(_icon_verify_timer)
-    _icon_verify_timer = _verify
-    bpy.app.timers.register(_verify, first_interval=0.5)
 
 
 def init_register():
@@ -143,22 +97,24 @@ def init_register():
         _sync_addon_state()
 
     _register_load_post_handler()
-    _schedule_icon_verify()
 
 
 def register():
     from .utils.pref import clear_pref_cache
     from .utils.session_state import SessionState
     from .utils import icons
+    from .utils.texture import Texture
+    from .utils.public_gpu import clear_gpu_caches
 
     clear_pref_cache()
     SessionState.clear()
+    Texture.clear()
+    clear_gpu_caches()
     icons.Icons.register()
 
     for module in module_list:
         module.register()
 
-    clear_pref_cache()
     clear_temp_keymap()
     public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_legacy()
@@ -186,7 +142,6 @@ def unregister():
     from .utils.ui_draw_sync import cancel_all as cancel_ui_draw_sync
 
     _unregister_load_post_handler()
-    _cancel_icon_timers()
     cancel_poll_cache_timer()
     cancel_scheduled_gesture_save()
     cancel_ui_draw_sync()
@@ -217,4 +172,8 @@ def unregister():
     for module in module_list:
         module.unregister()
     icons.Icons.unregister()
+    from .utils.texture import Texture
+    from .utils.public_gpu import clear_gpu_caches
+    Texture.clear()
+    clear_gpu_caches()
     clear_temp_keymap()

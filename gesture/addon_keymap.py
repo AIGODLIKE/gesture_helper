@@ -39,8 +39,17 @@ class AddonKeymapRegistry:
 
 
 def _set_kmi_properties(prop: dict, kmi_properties) -> None:
+    """Apply stored KMI property values; skip unknown/invalid keys safely."""
+    if kmi_properties is None or not prop:
+        return
     for key, value in prop.items():
-        setattr(kmi_properties, key, value)
+        if not hasattr(kmi_properties, key):
+            debug_print(f"skip missing kmi prop: {key}", key='key')
+            continue
+        try:
+            setattr(kmi_properties, key, value)
+        except (AttributeError, TypeError, OverflowError, ValueError) as exc:
+            debug_print(f"skip kmi prop {key}: {exc}", key='key')
 
 
 def get_kmi_operator_properties(kmi: bpy.types.KeyMapItem) -> dict:

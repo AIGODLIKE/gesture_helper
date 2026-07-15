@@ -1,24 +1,37 @@
-# Display operator,
-# toggle
+# Display operator — thin orchestration over Session / Input / Execute / Draw
 
 import bpy
 from bpy.app.translations import pgettext_iface
 from bpy.props import StringProperty
 
-from ..gesture import GestureProperty
 from ..gesture.gesture_draw_gpu import GestureGpuDraw
+from ..gesture.gesture_executor import GestureExecutor
 from ..gesture.gesture_handle import GestureHandle
+from ..gesture.gesture_input import (
+    GestureInputProcessor,
+    ensure_trajectory_seed,
+    refresh_snapshot,
+    schedule_timeout_timer,
+)
+from ..gesture.gesture_runtime import GestureRuntimeMixin
+from ..gesture.gesture_session import GestureSession
 from ..gesture.pass_through import GesturePassThroughKeymap
 from ..utils.public import PublicOperator, debug_print
 
 
-class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty, GesturePassThroughKeymap, ):
+class GestureOperator(
+    PublicOperator,
+    GestureHandle,
+    GestureGpuDraw,
+    GestureRuntimeMixin,
+    GesturePassThroughKeymap,
+):
     bl_idname = 'wm.gesture_operator'
     bl_label = 'Gesture Operator'
     bl_description = 'Run the active gesture from its keymap shortcut'
     bl_options = {'BLOCKING'}
+    # Must use annotation form — Blender reads bpy.props from __annotations__.
     gesture: StringProperty()
-    extension_hover = []
 
     @classmethod
     def poll(cls, context):
@@ -26,10 +39,16 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         return poll_addon_preferences(cls)
 
     def __init__(self, *args, **kwargs):
+        # Blender 5.x: call Operator __init__ first, then attach plain Python
+        # state via object.__setattr__ (RNA __setattr__ rejects unknown attrs).
         super().__init__(*args, **kwargs)
-        self.extension_hover = []
-        self.screen = None
-        self.area = None
+        object.__setattr__(self, "session", GestureSession())
+        object.__setattr__(self, "_input", GestureInputProcessor())
+        object.__setattr__(self, "_executor", GestureExecutor())
+
+    def tag_redraw(self):
+        """Redraw the gesture screen (override PublicOperator.tag_redraw)."""
+        self._tag_redraw_gesture_screen()
 
     def draw_error(self, __):
         layout = self.layout
@@ -52,19 +71,20 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         if area is not None and area.type in {'PREFERENCES', 'FILE_BROWSER'}:
             return {'CANCELLED'}
 
+        self.init_invoke(event)
+        self.session.reset(event, context.area, context.screen, self.gesture)
         if self.operator_gesture is None:
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
                                               icon="INFO")
             return {'CANCELLED'}
 
-        self.init_trajectory()
-        self.init_invoke(event)
-        self._ensure_trajectory_seed()
-        self.area = context.area
-        self.screen = context.screen
+        # Rebuild structure cache before the first snapshot so direction walks
+        # see a consistent generation (avoid clear-after-refresh stale memo).
         self.cache_clear()
-        self._schedule_gesture_timeout_timer()
+        ensure_trajectory_seed(self.session)
+        refresh_snapshot(self.session, self)
+        schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
         self.register_draw()
 
         debug_print(
@@ -85,17 +105,23 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         if event.type == 'WINDOW_DEACTIVATE':
             # While sync-opening Preferences (or other deferred UI), ignore
             # deactivate so exit() can still return FINISHED+INTERFACE.
-            if getattr(self, '_opening_ui', False) or getattr(self, '_gesture_deferred_ui', False):
+            if self.session.handoff.ignore_window_deactivate:
                 return {'RUNNING_MODAL'}
             self.__exit_modal__()
             return {'CANCELLED'}
 
-        self.trajectory_event_update(context, event)
         self.init_modal(event)
-        debug_print(self.bl_idname, f"\tmodal\t{event.value}\t{event.type}", "\tprev", event.type_prev, event.value_prev, key='modal')
-        if self.try_immediate_implementation():
+        dirty = self._input.on_event(self.session, self, event)
+        if dirty:
+            self.tag_redraw()
+
+        debug_print(
+            self.bl_idname, f"\tmodal\t{event.value}\t{event.type}",
+            "\tprev", event.type_prev, event.value_prev, key='modal',
+        )
+        if self._executor.try_immediate_implementation(self.session, self):
             self.__exit_modal__()
-            if getattr(self, '_gesture_deferred_ui', False):
+            if self.session.handoff.needs_interface:
                 return {'FINISHED', 'INTERFACE'}
             return {"FINISHED"}
         if self.is_exit:
@@ -104,13 +130,20 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
         return {'RUNNING_MODAL'}
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
-        ops = self.try_running_operator(self)
+        # Refresh snapshot once more with the release event before dispatch.
+        self.session.event = event
+        self.event = event
+        refresh_snapshot(self.session, self)
+        from ..gesture.gesture_input import update_extension_hover
+        update_extension_hover(self.session, self)
+
+        ops = self._executor.try_running_operator(self.session, self)
 
         if self.is_debug:
             debug_print('ops', ops, key='modal')
             debug_print(
-                self.is_draw_gesture, self.is_beyond_threshold_confirm,
-                self.is_draw_gpu, self.is_beyond_threshold,
+                self.session.phase, self.session.snapshot.threshold_zone,
+                self.is_draw_gpu, self.session.handoff,
                 key='modal',
             )
 
@@ -123,14 +156,14 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 view_type = getattr(context.space_data, "view_type", None)
                 view = getattr(context.space_data, "view", None)
                 mode = getattr(context.space_data, "mode", None)
-
-                region_type = bpy.context.region.type
+                region = getattr(bpy.context, 'region', None)
+                region_type = region.type if region is not None else None
                 debug_print(
                     f'PASS_THROUGH EVENT\tTYPE:{self.event.type}\t\tVALUE:{self.event.value}',
                     key='modal',
                 )
                 debug_print(
-                    f"Context Mode:{context.mode}\tAREA:{area.type}\tREGION:{region_type}",
+                    f"Context Mode:{context.mode}\tAREA:{getattr(area, 'type', None)}\tREGION:{region_type}",
                     key='modal',
                 )
                 debug_print(
@@ -139,7 +172,7 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
                 )
             if self.try_pass_through_keymap(context, event) == 'handled':
                 return {'FINISHED', 'INTERFACE'}
-        if getattr(self, '_gesture_deferred_ui', False):
+        if self.session.handoff.needs_interface:
             return {'FINISHED', 'INTERFACE'}
         return {'FINISHED'}
 
@@ -149,21 +182,13 @@ class GestureOperator(PublicOperator, GestureHandle, GestureGpuDraw, GestureProp
     def __exit_modal__(self):
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
-        self._opening_ui = False
-
-    def try_immediate_implementation(self):
-        """Try to run operator immediately."""
-        if self.gesture_property.immediate_implementation:
-            de = self.direction_element
-            if de and self.is_beyond_threshold_confirm and self.is_draw_gesture:
-                if de.is_operator:
-                    res = self.try_running_operator(self)
-                    return True
+        # Keep session.handoff until invoke reset — exit()/immediate still read it
+        # after __exit_modal__ to decide FINISHED+INTERFACE.
 
     @property
     def mouse_is_in_extension_any_area(self) -> bool:
-        if self.extension_element and len(self.extension_hover):
-            for (index, last) in enumerate(self.extension_hover):
+        if self.extension_element and self.extension_hover:
+            for last in self.extension_hover:
                 if (
                         last.extension_by_child_is_hover or
                         last.mouse_is_in_extension_area or
