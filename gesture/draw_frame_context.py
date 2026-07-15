@@ -18,9 +18,8 @@ class DrawFrameContext:
     margin_y: float = 0.0
     gesture_radius: float = 0.0
     threshold: float = 0.0
+    # Extra delta past *threshold* (confirm radius = threshold + threshold_confirm).
     threshold_confirm: float = 0.0
-    # Scaled highlight gate (legacy: threshold * 0.7, now scale-correct).
-    threshold_active: float = 0.0
     # WINDOW-region mouse for hit tests (same space as GPU POST_PIXEL boxes).
     mouse_region: tuple[float, float] | None = None
     # Once-per-frame extension UI hit (panel / right band / child row).
@@ -60,7 +59,6 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
         gesture_radius=float(gp.radius) * scale,
         threshold=threshold,
         threshold_confirm=float(gp.threshold_confirm) * scale,
-        threshold_active=threshold * 0.7,
         mouse_region=mouse,
         in_extension_ui=_compute_in_extension_ui(session, ops),
     )

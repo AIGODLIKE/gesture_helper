@@ -322,21 +322,49 @@ class GestureGpuDraw(DrawDebug):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(center)
                 if self.is_window_region_type:
-                    # Threshold ring: keep it clearly visible against the viewport.
-                    ring_color = self.draw_property.text_default_color
+                    # Two rings: start threshold + confirm (threshold + confirm delta).
+                    # The band between them is the BEYOND transition zone.
+                    draw = self.draw_property
+                    ring_color = draw.text_default_color
                     ring_width = max(2.5, 2.75 * scale)
+                    confirm_r = threshold + (
+                        draw_ctx.threshold_confirm if draw_ctx is not None else (
+                            self.gesture_property.threshold_confirm * scale
+                        )
+                    )
                     self.draw_circle(
                         (0, 0), threshold,
                         color=ring_color,
                         line_width=ring_width,
                         segments=72,
                     )
+                    confirm_ring = (*ring_color[:3], 0.009)
+                    self.draw_circle(
+                        (0, 0), confirm_r,
+                        color=confirm_ring,
+                        line_width=max(1.5, 1.75 * scale),
+                        segments=72,
+                    )
                     angle = self.angle_unsigned
-                    if self.session.snapshot.threshold_zone.is_beyond and angle is not None:
+                    zone = self.session.snapshot.threshold_zone
+                    if zone.is_beyond and angle is not None:
+                        # Three states: no tip / growing transition tip / full confirm tip.
+                        tip_color = draw.trajectory_gesture_color
+                        if zone.is_confirm:
+                            tip_width = max(5.0, 5.5 * scale)
+                            tip_r = confirm_r
+                        else:
+                            tip_width = max(2.5, 3.0 * scale)
+                            tip_color = (
+                                *tip_color[:3],
+                                tip_color[3] * 0.55 if len(tip_color) > 3 else 0.55,
+                            )
+                            dist = float(self.session.snapshot.distance)
+                            tip_r = max(threshold, min(dist, confirm_r))
                         self.draw_arc(
-                            (0, 0), threshold, angle, 45,
-                            color=self.draw_property.trajectory_gesture_color,
-                            line_width=max(5.0, 5.5 * scale),
+                            (0, 0), tip_r, angle, 45,
+                            color=tip_color,
+                            line_width=tip_width,
                             segments=48,
                         )
 

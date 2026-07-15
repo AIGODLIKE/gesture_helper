@@ -7,10 +7,6 @@ def _gen_gesture_prop(default, subtype='PIXEL'):
 
 
 class GestureProperty(bpy.types.PropertyGroup):
-    def update_threshold_confirm(self, _):
-        if self.threshold > self.threshold_confirm:
-            self['threshold_confirm'] = self.threshold_confirm + 20
-
     timeout: IntProperty(
         name='Gesture Timeout(ms)',
         description='Idle timeout before the gesture trajectory is finalized',
@@ -30,12 +26,12 @@ class GestureProperty(bpy.types.PropertyGroup):
     )
     threshold: IntProperty(
         name='Threshold',
-        description='Mouse move distance before the gesture UI starts drawing',
+        description='Mouse move distance before a direction item is preview-selected',
         **_gen_gesture_prop(20),
     )
     threshold_confirm: IntProperty(
         name='Confirm Threshold',
-        description='Mouse move distance required to confirm a direction item',
+        description='Extra mouse travel past the start threshold required to confirm (arm) a direction item',
         **_gen_gesture_prop(70),
     )
     return_distance: IntProperty(
@@ -46,7 +42,7 @@ class GestureProperty(bpy.types.PropertyGroup):
 
     immediate_implementation: BoolProperty(
         name="Immediate Implementation",
-        description="Immediately executes the operator when the mouse exceeds the threshold value",
+        description="Immediately executes the operator when the mouse exceeds the confirm threshold",
         default=False,
     )
     show_gesture_keymaps: BoolProperty(
