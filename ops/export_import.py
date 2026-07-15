@@ -503,6 +503,92 @@ class SaveGesturesAndUserPref(bpy.types.Operator):
         return {'CANCELLED'}
 
 
+class ShowGesturePreferences(bpy.types.Operator):
+    """Open this add-on's preferences in a fullscreen Preferences area."""
+
+    bl_idname = "wm.gesture_show_preferences"
+    bl_label = "Gesture Preferences"
+    bl_description = "Open Gesture Helper preferences fullscreen"
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(cls, context):
+        return poll_addon_preferences(cls)
+
+    @staticmethod
+    def _find_preferences_area(context):
+        """Return (window, screen, area) for a Preferences editor, or None."""
+        # Prefer the window that owns the operator context when several exist.
+        windows = []
+        if context.window is not None:
+            windows.append(context.window)
+        for win in context.window_manager.windows:
+            if win not in windows:
+                windows.append(win)
+        for win in windows:
+            for area in win.screen.areas:
+                if area.type == 'PREFERENCES':
+                    return win, win.screen, area
+        return None
+
+    @staticmethod
+    def _window_region(area):
+        return next((r for r in area.regions if r.type == 'WINDOW'), None)
+
+    @staticmethod
+    def _hide_preferences_sidebar(area) -> None:
+        """Hide Preferences left navigation (Add-ons / Interface / …)."""
+        space = area.spaces.active if area.spaces else None
+        if space is not None and hasattr(space, 'show_region_ui'):
+            space.show_region_ui = False
+
+    def execute(self, context):
+        from .. import __package__ as base_package
+        from bpy.app.translations import pgettext
+
+        try:
+            bpy.ops.preferences.addon_show(module=base_package)
+        except RuntimeError:
+            # Some contexts cannot jump to the add-on tab; open Preferences first.
+            try:
+                bpy.ops.screen.userpref_show('INVOKE_DEFAULT')
+                bpy.ops.preferences.addon_show(module=base_package)
+            except RuntimeError as e:
+                self.report({'ERROR'}, pgettext("Could not open preferences: %s") % e)
+                return {'CANCELLED'}
+
+        found = self._find_preferences_area(context)
+        if found is None:
+            self.report({'WARNING'}, pgettext("Preferences editor was not found"))
+            return {'FINISHED'}
+
+        pref_window, pref_screen, pref_area = found
+        region = self._window_region(pref_area)
+        override = {
+            'window': pref_window,
+            'screen': pref_screen,
+            'area': pref_area,
+        }
+        if region is not None:
+            override['region'] = region
+
+        with context.temp_override(**override):
+            # screen_full_area toggles — only enter, never exit by accident.
+            already_full = bool(getattr(pref_screen, 'show_fullscreen', False))
+            if not already_full and bpy.ops.screen.screen_full_area.poll():
+                bpy.ops.screen.screen_full_area(use_hide_panels=True)
+
+            # Left category bar is independent of use_hide_panels.
+            self._hide_preferences_sidebar(pref_area)
+
+        # Re-resolve after fullscreen (area pointers can change on some builds).
+        found = self._find_preferences_area(context)
+        if found is not None:
+            self._hide_preferences_sidebar(found[2])
+
+        return {'FINISHED'}
+
+
 class ImportPreferences(bpy.types.Operator, ImportHelper):
     bl_idname = "wm.gesture_import_preferences"
     bl_label = "Import Preferences"

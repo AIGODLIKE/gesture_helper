@@ -30,6 +30,12 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         rr.prop(pref, 'enabled', text="", emboss=True)
         rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
 
+    def draw_header_preset(self, context):
+        """Right side of the panel title — open add-on preferences."""
+        layout = self.layout
+        layout.operator_context = "EXEC_DEFAULT"
+        layout.operator("wm.gesture_show_preferences", text="", icon="PREFERENCES")
+
     def draw(self, context):
         ...
 
@@ -80,12 +86,6 @@ class GestureElementPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         layout = self.layout
         layout.enabled = self.pref.enabled
         GestureDraw.draw_element(layout, include_modal=False)
-        tip = layout.box()
-        tip.alert = True
-        tip.label(
-            text="Close this panel when not editing gestures to avoid performance issues",
-            icon='INFO',
-        )
 
 
 class GestureModalEventPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
