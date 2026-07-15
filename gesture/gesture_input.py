@@ -79,14 +79,19 @@ def raw_direction_items_dict(session: GestureSession, operator_gesture) -> dict:
 
 
 def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gpu: bool) -> dict:
-    raw = raw_direction_items_dict(session, operator_gesture)
     if not is_draw_gpu:
-        return raw
+        return raw_direction_items_dict(session, operator_gesture)
+    from ..utils.gesture_items import poll_context_fingerprint
     from ..utils.public_cache import PublicCache
-    key = (direction_items_context_id(session, operator_gesture), PublicCache.__derived_generation__)
+    key = (
+        direction_items_context_id(session, operator_gesture),
+        PublicCache.__derived_generation__,
+        poll_context_fingerprint(),
+    )
     memo = session._direction_items_memo
     if memo is not None and memo[0] == key:
         return memo[1]
+    raw = raw_direction_items_dict(session, operator_gesture)
     session._direction_items_memo = (key, raw)
     return raw
 
