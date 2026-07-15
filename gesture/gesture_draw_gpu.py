@@ -338,7 +338,7 @@ class GestureGpuDraw(DrawDebug):
                         line_width=ring_width,
                         segments=72,
                     )
-                    confirm_ring = (*ring_color[:3], 0.009)
+                    confirm_ring = (*ring_color[:3], 0.006)
                     self.draw_circle(
                         (0, 0), confirm_r,
                         color=confirm_ring,
