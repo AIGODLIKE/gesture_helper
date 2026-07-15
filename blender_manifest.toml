@@ -6,7 +6,7 @@ license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
     "2024 ACGGIT Community",
     "2014 roaoao (Icon Viewer / development_icon_get)",
-    "2002 Blender Foundation (icons in src/icon/blender)",
+    "2002 Blender Foundation (icons in src/icons/blender)",
 ]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
