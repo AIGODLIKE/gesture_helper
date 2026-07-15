@@ -506,6 +506,12 @@ class ElementGpuExtensionItem:
                     continue
 
                 row_h = lay.row_h
+                mx, my = lay.margin_x, lay.margin_y
+                # Panel chrome is content + (mx, my). Top gap above the first row
+                # is ``my``; keep the same inset on left/right so hover padding
+                # matches on X and Y.
+                hover_w = max(1.0, w + mx * 2.0 - my * 2.0)
+                side_inset = my
                 if item.extension_by_child_is_hover:
                     stroke, line_width = self._outline_colors(active=True)
                     self.draw_rounded_rectangle_outlined(
@@ -513,7 +519,7 @@ class ElementGpuExtensionItem:
                         fill=item.extension_background_color,
                         stroke=stroke,
                         radius=min(self.text_radius, row_h * 0.5),
-                        width=w,
+                        width=hover_w,
                         height=row_h,
                         line_width=line_width,
                     )
@@ -564,8 +570,13 @@ class ElementGpuExtensionItem:
                             y = -(lay.icon_size + s) * 0.5
                             self.draw_image([chev_x, y], s, s, texture=tex)
 
-                # Row hit box = this row only (sample before nested flyout).
-                item.extension_by_child_draw_area = [sx, sy - row_h, sx + w, sy]
+                # Hit box matches the inset hover rect.
+                item.extension_by_child_draw_area = [
+                    sx - mx + side_inset,
+                    sy - row_h,
+                    sx + w + mx - side_inset,
+                    sy,
+                ]
 
                 if item.is_child_gesture and (
                         item.extension_by_child_is_hover or item in ops.extension_hover

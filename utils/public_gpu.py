@@ -149,12 +149,26 @@ def draw_line(vertex, color, line_width, is_cycle=True) -> None:
     batch.draw(shader)
 
 
+def _round_rect_segments(radius: float, segments: int) -> int:
+    """Adaptive corner tessellation — small radii need fewer steps."""
+    # ~0.35px chord error: segments ≈ π*r / (2*sqrt(2*r*err))
+    r = max(0.5, float(radius))
+    auto = int(math.ceil(math.pi * r / (2.0 * math.sqrt(max(2.0 * r * 0.35, 1e-4)))))
+    return max(4, min(int(segments), auto, 32))
+
+
 @cache
 def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) -> tuple:
-    """Outline vertices for a centered rounded rect (CCW, Y-up)."""
+    """Outline vertices for a centered rounded rect (CCW, Y-up).
+
+    Each corner contributes ``segments`` samples (start inclusive, end exclusive)
+    so straight edges between corners are single segments — no duplicated joints
+    that break stroke joins into zero-length cracks.
+    """
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
     radius = float(max(0.01, min(radius, width * 0.5, height * 0.5)))
+    segments = _round_rect_segments(radius, segments)
     hw = width * 0.5 - radius
     hh = height * 0.5 - radius
     # Corner centers: TR, TL, BL, BR — each arc covers 90°.
@@ -167,7 +181,7 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) 
     vertex = []
     step = 90.0 / segments
     for cx, cy, start in corners:
-        for j in range(segments + 1):
+        for j in range(segments):
             a = math.radians(start + step * j)
             vertex.append((cx + radius * math.cos(a), cy + radius * math.sin(a)))
     return tuple(vertex)
@@ -187,7 +201,8 @@ def get_arc_vertex(arc, segments=40):
 @cache
 def get_rounded_fill_mesh(radius, width, height, segments):
     """Center-fan mesh for a filled rounded rect."""
-    outline = get_rounded_rectangle_vertex(radius, width, height, segments)
+    segs = _round_rect_segments(radius, segments)
+    outline = get_rounded_rectangle_vertex(radius, width, height, segs)
     verts = ((0.0, 0.0),) + outline
     n = len(outline)
     indices = tuple((0, i, i + 1) for i in range(1, n)) + ((0, n, 1),)
@@ -202,12 +217,13 @@ def _rounded_radius(radius):
 
 
 def _get_rounded_fill_batch(radius, width, height, segments):
-    key = (round(radius, 3), round(width, 3), round(height, 3), int(segments))
+    segs = _round_rect_segments(radius, segments)
+    key = (round(radius, 3), round(width, 3), round(height, 3), int(segs))
     shader = _get_shader('UNIFORM_COLOR')
     entry = _ROUNDED_FILL_BATCH.get(key)
     if entry is not None and entry[0] is shader:
         return entry[1]
-    verts, indices = get_rounded_fill_mesh(radius, width, height, segments)
+    verts, indices = get_rounded_fill_mesh(radius, width, height, segs)
     batch = batch_for_shader(shader, 'TRIS', {"pos": verts}, indices=indices)
     _ROUNDED_FILL_BATCH[key] = (shader, batch)
     return batch
@@ -373,18 +389,19 @@ class PublicGpu:
             line_width=0.8,
             segments=DEFAULT_ROUND_SEGMENTS,
     ):
-        """Flat filled rounded rect with a thin anti-aliased outline."""
+        """Flat filled rounded rect with a thin anti-aliased outline.
+
+        Draw fill at full size first, then stroke on top. Insetting the fill
+        under an AA stroke left corner gaps (panel chrome showing through).
+        """
         r = _rounded_radius(radius)
         lw = max(0.5, float(line_width))
-        # Inset fill so the AA stroke covers hard triangle edges.
-        inset = min(lw * 0.5, r * 0.35, width * 0.25, height * 0.25)
-        fill_w = max(1.0, width - inset * 2)
-        fill_h = max(1.0, height - inset * 2)
-        fill_r = max(0.01, r - inset)
-        _draw_rounded_fill(position, fill, fill_r, fill_w, fill_h, segments)
+        segs = _round_rect_segments(r, segments)
+        # Full-size fill — stroke AA covers the hard triangle silhouette.
+        _draw_rounded_fill(position, fill, r, width, height, segs)
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(r, width, height, segments)
+            vertex = get_rounded_rectangle_vertex(r, width, height, segs)
             draw_line(vertex, stroke, line_width=lw, is_cycle=True)
 
     @staticmethod

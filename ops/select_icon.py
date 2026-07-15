@@ -34,7 +34,7 @@ def get_num_cols(num_icons):
 class SelectIcon(bpy.types.Operator, PublicProperty):
     bl_idname = 'wm.gesture_select_icon'
     bl_label = 'Select Icon'
-    bl_description = 'Pick a built-in Blender icon or a custom add-on icon for the active element'
+    bl_description = 'Pick an icon with a drawable texture preview for the active element'
     bl_options = {'REGISTER'}
     filtered_icons = []
 
@@ -129,14 +129,15 @@ class SelectIcon(bpy.types.Operator, PublicProperty):
         history_num_cols = int((self.width - POPUP_PADDING) / (ui_scale() * ICON_SIZE))
         num_cols = max(min(get_num_cols(len(self.filtered_icons)), history_num_cols), 20)
 
-        if HISTORY:
+        from ..utils.icons import has_preview_icon, icons_map
+
+        history = [name for name in HISTORY if has_preview_icon(name)]
+        if history:
             hi = col.box().row(align=True)
             hi.alignment = 'CENTER'
             hi.label(text='History')
-            self.draw_icons(hi.column(align=True), num_cols, icons=HISTORY)
+            self.draw_icons(hi.column(align=True), num_cols, icons=history)
             hi.operator(ClearHistory.bl_idname, icon='PANEL_CLOSE')
-
-        from ..utils.icons import icons_map
 
         row = col.box().row()
         row.alignment = 'CENTER'
