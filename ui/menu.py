@@ -2,7 +2,7 @@ import bpy
 
 
 class GESTURE_MT_add_element_menu(bpy.types.Menu):
-    bl_label = "Other Element"
+    bl_label = "Other Elements"
 
     def draw(self, context):
         from ..ops.quick_add.create_switch_panel import CreateSwitchPanel
