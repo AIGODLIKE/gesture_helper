@@ -132,6 +132,8 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         SessionState.gesture_preview_active = False
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()
+        from ...gesture.gesture_input import clear_gesture_item_memos
+        clear_gesture_item_memos(self.session, self)
 
         window = getattr(bpy.context, 'window', None)
         if window is not None and window.screen is not None:
