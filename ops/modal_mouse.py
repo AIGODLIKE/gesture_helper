@@ -139,14 +139,20 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         blf.size(font_id, size)
         width, height = blf.dimensions(font_id, text)
         padding = 8 * scale
+        # draw_rounded_rectangle_area is centered on `position`; keep text in the same space.
+        box_w = width + padding * 2
+        box_h = height + padding
         self.draw_rounded_rectangle_area(
             position,
             color=(0.0, 0.0, 0.0, 0.65),
-            width=width + padding * 2,
-            height=height + padding,
+            width=box_w,
+            height=box_h,
             radius=int(4 * scale),
         )
-        self.draw_text(text, position=(position.x + padding, position.y + padding * 0.5), size=size)
+        # draw_text places baseline at y - size; center the label inside the pill.
+        text_x = position.x - width / 2
+        text_y = position.y + size - height / 2
+        self.draw_text(text, position=(text_x, text_y), size=size)
 
     def register_draw(self, context):
         if self._draw_handle is not None:

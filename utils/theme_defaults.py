@@ -1,0 +1,26 @@
+"""Shared dark-flat theme defaults (scene-linear RGBA for ColorProperty / BPU)."""
+
+# Panels / buttons
+BACKGROUND = (0.035, 0.035, 0.038, 1.0)
+OPERATOR_ACTIVE = (0.02, 0.45, 0.40, 1.0)
+CHILD_ACTIVE = (0.28, 0.18, 0.75, 1.0)
+
+TEXT_DEFAULT = (0.92, 0.92, 0.94, 1.0)
+TEXT_ACTIVE = (1.0, 1.0, 1.0, 1.0)
+
+TRAJECTORY_MOUSE = (0.08, 0.85, 0.95, 1.0)
+TRAJECTORY_GESTURE = (0.75, 0.35, 0.95, 1.0)
+
+DIVIDING_LINE = (0.22, 0.22, 0.24, 1.0)
+OUTLINE = (0.55, 0.55, 0.58, 0.28)
+OUTLINE_ACTIVE = (0.75, 0.75, 0.78, 0.42)
+
+# BPU-only accents (still scene-linear)
+BACKGROUND_HOVER = (0.28, 0.18, 0.75, 0.85)
+BACKGROUND_PROPERTY_HOVER = (0.02, 0.45, 0.40, 0.7)
+BACKGROUND_PROPERTY = (0.05, 0.05, 0.055, 1.0)
+BACKGROUND_ALERT = (0.85, 0.15, 0.15, 1.0)
+SEPARATOR = (0.35, 0.35, 0.38, 1.0)
+TEXT_ALERT = (1.0, 0.3, 0.3, 1.0)
+
+OUTLINE_WIDTH = 0.75

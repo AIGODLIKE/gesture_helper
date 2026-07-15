@@ -3,32 +3,34 @@ from bpy.props import StringProperty
 from mathutils import Vector
 
 from .draw_gpu import DrawGpu
-from ...gesture import GestureProperty
 from ...gesture.gesture_draw_gpu import GestureGpuDraw
 from ...gesture.gesture_handle import GestureHandle
+from ...gesture.gesture_input import refresh_snapshot
+from ...gesture.gesture_runtime import GestureRuntimeMixin
+from ...gesture.gesture_session import GestureSession
 from ...utils.public import PublicOperator, debug_print
 from ...utils.session_state import SessionState
 
 
-class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureProperty):
+class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRuntimeMixin):
     bl_idname = "wm.gesture_preview"
     bl_label = "Gesture preview"
     bl_description = "Preview gesture layout and directions without running operators"
 
+    # Must use annotation form — Blender reads bpy.props from __annotations__.
     gesture: StringProperty()
 
     offset = Vector([300, 0])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.points_list = None
-        self.mouse_position = None
-        self.__difference_mouse__ = None
-
-        self.start_mouse_position = None
-        self.offset_position = Vector((0, 0))
-
-        self.gpu = DrawGpu()
+        object.__setattr__(self, "session", GestureSession())
+        object.__setattr__(self, "points_list", None)
+        object.__setattr__(self, "mouse_position", None)
+        object.__setattr__(self, "__difference_mouse__", None)
+        object.__setattr__(self, "start_mouse_position", None)
+        object.__setattr__(self, "offset_position", Vector((0, 0)))
+        object.__setattr__(self, "gpu", DrawGpu())
 
     def __gpu_draw__(self):
         self.gpu.tips.__gpu_draw__()
@@ -46,33 +48,26 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GesturePrope
     def is_exit(self):
         return self.is_right_mouse
 
-    @property
-    def is_draw_gesture(self) -> bool:
-        """Return whether to draw gesture preview."""
-        if self.draw_trajectory_mouse_move:
-            return True
-        return self.last_move_mouse_timeout
-
     def __sync_gesture__(self):
         """Sync gesture name from preview."""
         ag = self.pref.active_gesture
         if ag and self.gesture != ag.name:
             self.gesture = ag.name
+            self.session.gesture_name = ag.name
             tree = self.trajectory_tree
             if len(tree) >= 2:
                 debug_print(tree, key='modal')
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
-        self.area = context.area
-        self.screen = context.screen
         self.init_invoke(event)
+        self.session.reset(event, context.area, context.screen, self.gesture)
 
         self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
         self.offset_position = self.start_mouse_position
 
-        self.init_trajectory()
         self._schedule_gesture_timeout_timer()
         self._ensure_trajectory_seed()
+        refresh_snapshot(self.session, self)
         self.trajectory_event_update(context, event)
         self.register_draw()
 

@@ -42,10 +42,14 @@ class GesturePassThroughKeymap:
         - After the gesture UI is shown (timeout or draw) → **no pass**
         - After the mouse is dragged beyond the threshold → **no pass**
         """
-        if getattr(self, 'is_draw_gesture', False):
+        session = getattr(self, 'session', None)
+        if session is None:
+            return False
+        if session.phase.shows_radial_ui:
             debug_print("can_pass_through_keymap: blocked (gesture drawn/timeout)", key='key')
             return False
-        if getattr(self, 'is_beyond_threshold', False):
+        snap = getattr(session, 'snapshot', None)
+        if snap is not None and snap.threshold_zone.is_beyond:
             debug_print("can_pass_through_keymap: blocked (beyond threshold)", key='key')
             return False
         return True

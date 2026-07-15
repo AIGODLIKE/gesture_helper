@@ -9,30 +9,46 @@ class DrawGpu:
         self.gesture_bpu = BpuLayout(Quadrant.LIFT)
         self.gesture_bpu.font_size = 20
         self.tips = GestureShowTips()
+        self._bpu_content_key = None
+
+    def _gesture_content_key(self, gesture_list):
+        return tuple(
+            (g.index, bool(g.is_active), g.name, getattr(g, '__key_str__', ''))
+            for g in gesture_list
+        )
 
     def draw_run(self, ops, event) -> set:
         try:
             from ...src.translate import __name_translate__
-            with self.gesture_bpu as bpu:
-                bpu.translate = False
-                bpu.offset_position = ops.offset_position - ops.offset
-                bpu.mouse_position = ops.mouse_position
-                from ...utils.gesture_store import get_gestures
-                gestures = get_gestures()
-                gesture_list = gestures.values() if gestures is not None else []
-                if gesture_list:
-                    for g in reversed(gesture_list):
-                        name = f"{g.name}({g.__key_str__})"
-                        o = bpu.operator("wm.context_set_int", name, active=g.is_active)
-                        o.data_path = "window_manager.gesture_index"
-                        o.value = g.index
-                else:
-                    bpu.label(__name_translate__("No Gestures, Please Add"), alert=True)
-                bpu.separator()
-                bpu.label(__name_translate__("Select Gesture"))
+            from ...utils.gesture_store import get_gestures
+            gestures = get_gestures()
+            gesture_list = list(gestures.values()) if gestures is not None else []
+            content_key = self._gesture_content_key(gesture_list)
+            offset = ops.offset_position - ops.offset
+            mouse = ops.mouse_position
 
-                if bpu.check_event(event):
-                    return {'RUNNING_MODAL'}
+            if content_key != self._bpu_content_key or not self.gesture_bpu.__draw_children__:
+                with self.gesture_bpu as bpu:
+                    bpu.translate = False
+                    bpu.offset_position = offset
+                    bpu.mouse_position = mouse
+                    if gesture_list:
+                        for g in reversed(gesture_list):
+                            name = f"{g.name}({g.__key_str__})"
+                            o = bpu.operator("wm.context_set_int", name, active=g.is_active)
+                            o.data_path = "window_manager.gesture_index"
+                            o.value = g.index
+                    else:
+                        bpu.label(__name_translate__("No Gestures, Please Add"), alert=True)
+                    bpu.separator()
+                    bpu.label(__name_translate__("Select Gesture"))
+                self._bpu_content_key = content_key
+            else:
+                self.gesture_bpu.sync_input(offset, mouse)
+
+            if self.gesture_bpu.check_event(event):
+                return {'RUNNING_MODAL'}
+
             with self.tips as tips:
                 tips.translate = True
                 from bpy.app.translations import pgettext_iface
