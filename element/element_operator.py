@@ -302,9 +302,14 @@ class OperatorProperty:
         debug_print("update_operator_properties:", self.operator_properties, key='operator')
         self.to_operator_tmp_kmi()
 
-    operator_bl_idname: StringProperty(name='Operator bl_idname',
-                                       description='Default is to add the monkey head \n only take the back identifier \nbpy.ops.mesh.primitive_monkey_add -> mesh.primitive_monkey_add',
-                                       update=lambda self, context: self.update_operator())
+    operator_bl_idname: StringProperty(
+        name='Operator bl_idname',
+        description=(
+            'Operator idname without the bpy.ops. prefix '
+            '(e.g. mesh.primitive_monkey_add).'
+        ),
+        update=lambda self, context: self.update_operator(),
+    )
 
     operator_context: EnumProperty(name='Operator Context',
                                    items=ENUM_OPERATOR_CONTEXT)
