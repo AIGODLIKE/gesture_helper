@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import bpy
+from bpy.app.translations import pgettext
 
 from .gesture_session import GestureSession, UiHandoff
 
@@ -26,8 +27,10 @@ class GestureExecutor:
                     name = og.name if og is not None else "?"
                     ops.report(
                         {'ERROR'},
-                        "Operator not found, please check the operator id in gesture settings "
-                        f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}",
+                        pgettext(
+                            "Operator not found, please check the operator id in gesture settings: %s"
+                        )
+                        % f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}",
                     )
                     return
 
@@ -41,7 +44,7 @@ class GestureExecutor:
                         return
                 error = i.running_operator()
                 if error is not None:
-                    ops.report({'ERROR'}, "Operator error. Check the console for details.")
+                    ops.report({'ERROR'}, pgettext("Operator error. Check the console for details."))
                     return
                 ops.report({'INFO'}, i.name_translate)
             else:
@@ -49,8 +52,10 @@ class GestureExecutor:
                 name = og.name if og is not None else "?"
                 ops.report(
                     {'ERROR'},
-                    "Operator context error, please ensure that the operator is available in this context "
-                    f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}.poll()",
+                    pgettext(
+                        "Operator context error, please ensure that the operator is available in this context: %s"
+                    )
+                    % f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}.poll()",
                 )
 
         snap = session.snapshot
