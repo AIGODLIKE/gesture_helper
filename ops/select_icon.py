@@ -62,24 +62,24 @@ class SelectIcon(bpy.types.Operator):
     icon: StringProperty(options={"SKIP_SAVE"})
 
     filter: StringProperty(
-        description="Filter",
+        description="Filter icons by name",
         default="",
         update=update_icons,
         options={'TEXTEDIT_UPDATE', 'SKIP_SAVE'})
     show_history: BoolProperty(
         name="Show History",
-        description="Show history", default=True)
+        description="Show recently selected icons", default=True)
     show_brush_icons: BoolProperty(
         name="Show Brush Icons",
-        description="Show brush icons", default=True,
+        description="Show brush preview icons", default=True,
         update=update_icons)
     show_matcap_icons: BoolProperty(
         name="Show Matcap Icons",
-        description="Show matcap icons", default=True,
+        description="Show matcap preview icons", default=True,
         update=update_icons)
     show_event_icons: BoolProperty(
         name="Show Event Icons",
-        description="Show event icons", default=True,
+        description="Show event and keyboard icons", default=True,
         update=update_icons)
     show_colorset_icons: BoolProperty(
         name="Show Colorset Icons",
@@ -87,7 +87,7 @@ class SelectIcon(bpy.types.Operator):
         update=update_icons)
     copy_on_select: BoolProperty(
         name="Copy Icon On Click",
-        description="Copy icon on click", default=True)
+        description="Copy the icon name to the clipboard when selected", default=True)
 
     @classmethod
     def poll(cls, context):
