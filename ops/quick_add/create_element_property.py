@@ -71,7 +71,7 @@ class Enum:
 
     enum_value_a: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
-    enum_reverse: BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
+    enum_reverse: BoolProperty(default=False, name="Invert", description="Reverse the enum cycling order")
     enum_wrap: BoolProperty(default=True, name="Cycle",
                             description="Wrap around when reaching the first or last enum value")
 

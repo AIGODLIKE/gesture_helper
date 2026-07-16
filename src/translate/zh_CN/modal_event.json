@@ -23,6 +23,6 @@
   "Will occupy the middle click operation": "将会占用中键点击操作",
   "Allow middle-mouse view rotation while a modal gesture is active": "模态手势激活时允许用中键旋转视图",
   "Remove element item": "删除元素项",
-  "Running operators consumes too much time": "运行操作符消耗了太多时间",
+  "Operator execution took too long (%.3f s)": "操作符执行耗时过长 (%.3f 秒)",
   "Cycle Enum": "循环枚举"
 }

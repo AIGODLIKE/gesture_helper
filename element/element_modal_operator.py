@@ -243,7 +243,7 @@ class EnumControl:
 
     enum_value_a: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
     enum_value_b: bpy.props.EnumProperty(options={'HIDDEN', 'SKIP_SAVE'}, items=__get_enum__)
-    enum_reverse: bpy.props.BoolProperty(default=False, name="Invert", description="Reverse enumeration order on loop")
+    enum_reverse: bpy.props.BoolProperty(default=False, name="Invert", description="Reverse the enum cycling order")
     enum_wrap: bpy.props.BoolProperty(default=True, name="Cycle",
                                       description="Wrap around when reaching the first or last enum value")
 

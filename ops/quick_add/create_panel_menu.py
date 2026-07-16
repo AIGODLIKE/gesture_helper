@@ -11,9 +11,9 @@ from ...utils.session_state import SessionState
 
 
 class CreatePanelMenu(PublicOperator, StructureCacheOps):
-    bl_label = 'Create Panel Menu'
+    bl_label = 'Quick-Add Panel or Menu'
     bl_idname = 'wm.gesture_create_panel_menu'
-    bl_description = 'Show a quick-add button on Blender panels and menus'
+    bl_description = 'Show quick-add buttons on panels and menus to create gesture elements'
     bl_options = {'REGISTER'}
 
     type: EnumProperty(items=[("PANEL", "Panel", ""), ("MENU", "Menu", "")])

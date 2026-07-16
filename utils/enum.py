@@ -78,9 +78,9 @@ ENUM_OPERATOR_TYPE = [
 
 ENUM_NUMBER_VALUE_CHANGE_MODE = [
     ("SET_VALUE", "Set Value", "Set the property to a fixed value"),
-    ("MOUSE_CHANGES_HORIZONTAL", "Change with horizontal mouse move", "Horizontal Modifier"),
-    ("MOUSE_CHANGES_VERTICAL", "Change with vertical mouse move", "Vertical Modifier"),
-    ("MOUSE_CHANGES_ARBITRARY", "Change with mouse move in any direction", "Modify Value In Any Direction"),
+    ("MOUSE_CHANGES_HORIZONTAL", "Change with horizontal mouse movement", "Horizontal Modifier"),
+    ("MOUSE_CHANGES_VERTICAL", "Change with vertical mouse movement", "Vertical Modifier"),
+    ("MOUSE_CHANGES_ARBITRARY", "Change with mouse movement in any direction", "Modify Value In Any Direction"),
 ]
 ENUM_BOOL_VALUE_CHANGE_MODE = [
     ('SET_TRUE', 'Set to True', ''),

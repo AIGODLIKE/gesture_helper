@@ -10,7 +10,7 @@ class OtherProperty(bpy.types.PropertyGroup):
             ae.to_operator_tmp_kmi()
 
     auto_update_element_operator_properties: BoolProperty(
-        name='Auto Update Operator Property',
+        name='Auto-update Operator Properties',
         description='Automatically sync operator properties from the temporary keymap preview',
         update=update_auto_update_element_operator_properties,
     )
