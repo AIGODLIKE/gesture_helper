@@ -77,6 +77,15 @@ class GestureDraw:
     @staticmethod
     def draw_element(layout: bpy.types.UILayout, *, include_modal: bool = True) -> None:
         from ..ui.ui_list import ElementUIList
+        from ..utils.ui_draw_sync import heavy_panel_skip_message
+
+        # Same guard as GestureElementPanel: ElementUIList walks Element RNA that
+        # the GPU overlay stamps with transient hit boxes; drawing mid-modal
+        # churns Python proxies and wipes extension hover.
+        msg = heavy_panel_skip_message(bpy.context)
+        if msg:
+            layout.label(text=msg)
+            return
 
         pref = get_pref()
         ag = pref.active_gesture
