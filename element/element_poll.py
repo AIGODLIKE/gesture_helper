@@ -5,17 +5,7 @@ from bpy.props import StringProperty
 from ..utils.debug_util import debug_print, debug_trace_stack, debug_traceback
 from ..utils.expression import evaluate_condition
 
-_POLL_STRING_DESCRIPTION = (
-    "Poll expression template. Leave empty to fail the poll (structure inactive).\n"
-    "{'bpy': bpy,\n"
-    "'C': bpy.context,\n"
-    "'D': bpy.data,\n"
-    "'O': bpy.context.object,\n"
-    "'mode': bpy.context.mode,\n"
-    "'tool': bpy.context.tool_settings,\n"
-    "'active_tool': current workspace tool idname (e.g. \"builtin.move\"),\n"
-    "}"
-)
+_POLL_STRING_DESCRIPTION = "Leave empty to fail the poll (structure inactive)."
 
 _POLL_CACHE_TIMER = None
 

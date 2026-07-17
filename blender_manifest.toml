@@ -10,7 +10,7 @@ copyright = [
 ]
 maintainer = "ACGGIT Community(小萌新)"
 name = "Gesture Helper"
-tagline = "Use gestures to run operators or change properties"
+tagline = "Use gestures to run Blender operators or change properties"
 type = "add-on"
 version = "2.3.6"
 tags = ["3D View", "User Interface"]
