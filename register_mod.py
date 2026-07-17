@@ -139,6 +139,8 @@ def unregister():
     from .ops.quick_add import create_panel_menu
     from .element.element_poll import cancel_poll_cache_timer
     from .gesture.gesture_handle import GestureHandle
+    from .gesture.gesture_draw_gpu import GestureGpuDraw
+    from .gesture.pass_through import cancel_deferred_operator_timers
     from .utils.ui_draw_sync import cancel_all as cancel_ui_draw_sync
 
     _unregister_load_post_handler()
@@ -146,6 +148,8 @@ def unregister():
     cancel_scheduled_gesture_save()
     cancel_ui_draw_sync()
     GestureHandle.cancel_active_gesture_timeout_timer()
+    cancel_deferred_operator_timers()
+    GestureGpuDraw.force_unregister_draw()
 
     global _deferred_init_done
     _deferred_init_done = False

@@ -14,7 +14,7 @@ class ClearAllEdgeProperties(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         if context.mode != 'EDIT_MESH':
-            cls.poll_message_set("Edit Mesh mode required")
+            cls.poll_message_set("Mesh Edit Mode required")
             return False
         return True
 

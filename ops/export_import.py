@@ -257,7 +257,7 @@ class Import(PublicFileOperator):
             from bpy.app.translations import pgettext
 
             text = pgettext(
-                r"Imported successfully! Imported %s of data Author:%s Comments:%s Exported data addon version:%s"
+                r"Imported %s gesture(s). Author: %s. Description: %s. Exported with add-on version %s."
             ) % (len(restore), auth, des, ver)
             self.report({'INFO'}, text)
             return True
@@ -279,7 +279,7 @@ class Export(PublicFileOperator):
     bl_idname = 'wm.gesture_export'
     bl_description = 'Export selected gestures to a JSON preset file'
 
-    description: StringProperty(name='Description', default='This is a description')
+    description: StringProperty(name='Description', default='')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -474,7 +474,7 @@ class ExportPreferences(bpy.types.Operator, ExportHelper):
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
             debug_print(e.args, key='export_import')
-            self.report({'ERROR'}, pgettext("Export error, please check path %s") % self.filepath)
+            self.report({'ERROR'}, pgettext("Export failed. Check the path: %s") % self.filepath)
             return {'CANCELLED'}
         return {"FINISHED"}
 
@@ -636,7 +636,7 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
             debug_print(e.args, key='export_import')
             self.report(
                 {'ERROR'},
-                pgettext("Import error, please select preference settings file"),
+                pgettext("Import error: select a preferences backup file"),
             )
             return {'CANCELLED'}
 

@@ -23,24 +23,23 @@ class Enum:
     _enum_items_prop_id: int | None = None
 
     _ENUM_MODE_DRAW_ITEMS = (
-        ('SET', 'Direct setting of enumeration values'),
-        ('CYCLE', 'Cyclic setting of the enumeration value'),
-        ('TOGGLE', 'Toggle setting Enumeration values'),
+        ('SET', 'Set Value'),
+        ('CYCLE', 'Cycle Values'),
+        ('TOGGLE', 'Toggle Between Two Values'),
         ('MENU', 'Menu'),
         ('PIE', 'Pie Menu'),
     )
 
     enum_mode: EnumProperty(
         items=[
-            ('SET', 'Direct setting of enumeration values', 'Use bpy.ops.wm.context_set_enum operator'),
-            ('CYCLE',
-             'Cyclic setting of the enumeration value (if the set value is the same as the current value, the enumeration switches to the previous value)',
-             'Use bpy.ops.wm.context_cycle_enum operator'),
-            ('TOGGLE', 'Toggle setting Enumeration values (toggle between two enumeration values)',
-             'Use bpy.ops.wm.context_toggle_enum operator'),
-            ('MENU', 'Menu', 'Using the menu display enumeration with the bpy.ops.wm.context_menu_enum operator'),
-            ('PIE', 'Pie Menu',
-             'Using the bpy.ops.wm.context_pie_enum operator Use the pie menu to display the enumeration (up to 8 items)'),
+            ('SET', 'Set Value', 'Set the enumeration with wm.context_set_enum'),
+            ('CYCLE', 'Cycle Values',
+             'Cycle enum values with wm.context_cycle_enum'),
+            ('TOGGLE', 'Toggle Between Two Values',
+             'Toggle between two values with wm.context_toggle_enum'),
+            ('MENU', 'Show as Menu', 'Show as a menu with wm.context_menu_enum'),
+            ('PIE', 'Show as Pie Menu',
+             'Show as a pie menu with wm.context_pie_enum (up to 8 items)'),
         ],
         name='Enum mode',
         options={'HIDDEN', 'SKIP_SAVE'})
@@ -87,9 +86,9 @@ class OpsProperty(Enum):
 
     property_type: EnumProperty(items=[
         ("BOOLEAN", "Boolean", ""),
-        ("INT", " Integer", ""),
+        ("INT", "Integer", ""),
         ("FLOAT", "Float", ""),
-        ("STRING", " String", ""),
+        ("STRING", "String", ""),
         ("ENUM", "Enumeration", ""),
         # ("POINTER", " Pointer", ""),
         # ("COLLECTION", "Collection", ""),
@@ -172,13 +171,13 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
                     if prop.is_enum_flag:
                         layout.alert = True
                         layout.label(text="Multi-select enum (set) is not supported")
-                        layout.label(text="Unable to add")
+                        layout.label(text="Cannot add this property")
                     else:
                         self.draw_enum(layout)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
-                layout.label(text="Unable to add")
+                layout.label(text="Cannot add this property")
 
             if self.debug_property.debug_mode:
                 text = pgettext(prop.name, prop.translation_context)
@@ -251,7 +250,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         if not self.has_enum_items:
             layout.alert = True
             layout.label(text="Dynamic enum properties cannot be added")
-            layout.label(text="Unable to add")
+            layout.label(text="Cannot add this property")
             return
 
         mode_row = layout.row(align=True)

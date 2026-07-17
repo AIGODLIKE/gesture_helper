@@ -40,6 +40,13 @@ def poll_context_fingerprint() -> tuple:
 
 
 def get_gesture_direction_items(iteration):
+    """Build direction-slot map from a gesture element collection.
+
+    Selection structures (IF / ELIF / ELSE): sibling IFs whose poll passes all
+    merge their children into the same map (later entries overwrite the same
+    direction). ELIF / ELSE only merge when no prior structure in the chain has
+    matched yet. Nested collections are walked recursively with a fresh chain.
+    """
     direction = {}
     last_selected_structure = None  # Tracks consecutive selection structures
     for item in iteration:
@@ -47,6 +54,8 @@ def get_gesture_direction_items(iteration):
             if item.__selected_structure_is_validity__:  # Valid selection structure
                 # Poll passed
                 poll = (item.is_selected_else or item.poll_bool)
+                # Merge when chain is empty, or when this item is another IF
+                # (multiple matching IFs union; ELIF/ELSE stay exclusive).
                 if poll and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_direction_items(item.element)
                     direction.update(child)
@@ -61,6 +70,11 @@ def get_gesture_direction_items(iteration):
 
 
 def get_gesture_extension_items(iteration):
+    """Build extension-menu list from a gesture element collection.
+
+    Same IF/ELIF/ELSE merge rules as ``get_gesture_direction_items``: matching
+    sibling IFs union their children; ELIF/ELSE only apply before any match.
+    """
     extension = []
     last_selected_structure = None  # Tracks consecutive selection structures
     for item in iteration:
@@ -68,6 +82,8 @@ def get_gesture_extension_items(iteration):
             if item.__selected_structure_is_validity__:  # Valid selection structure
                 # Poll passed
                 poll = (item.is_selected_else or item.poll_bool)
+                # Merge when chain is empty, or when this item is another IF
+                # (multiple matching IFs union; ELIF/ELSE stay exclusive).
                 if poll and (not last_selected_structure or item.is_selected_if):
                     child = get_gesture_extension_items(item.element)
                     extension.extend(child)

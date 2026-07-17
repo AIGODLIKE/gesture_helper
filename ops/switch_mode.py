@@ -9,7 +9,7 @@ class SwitchMode(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     type: EnumProperty(items=[
         ('SWITCH_OBJECT_MODE', 'Switch object mode', ''),
-        ('SWITCH_OBJECT_EDIT_MODE', 'Switch object edit mode', ''),
+        ('SWITCH_OBJECT_EDIT_MODE', 'Switch to Edit Mode', ''),
     ])
     select_mode: EnumProperty(items=[
         ('VERT', 'VERT', ''),

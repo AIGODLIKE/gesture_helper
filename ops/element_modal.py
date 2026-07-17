@@ -15,11 +15,20 @@ class State:
     show_region_hud = None
 
     def start_hud(self, context):
-        self.show_region_hud = context.space_data.show_region_hud
-        context.space_data.show_region_hud = False
+        space = getattr(context, "space_data", None)
+        if space is None:
+            self.show_region_hud = None
+            return
+        self.show_region_hud = space.show_region_hud
+        space.show_region_hud = False
 
     def restore_hud(self, context):
-        context.space_data.show_region_hud = self.show_region_hud
+        if self.show_region_hud is None:
+            return
+        space = getattr(context, "space_data", None)
+        if space is None:
+            return
+        space.show_region_hud = self.show_region_hud
 
 
 class KeymapTips(PublicGpu):
@@ -102,16 +111,23 @@ class KeymapTips(PublicGpu):
 
     def register_draw(self):
         try:
-            self.__temp_draw__ = bpy.types.SpaceView3D.draw_handler_add(self.draw_keymap_tips, (), "WINDOW",
-                                                                        'POST_PIXEL')
+            self.__temp_draw__ = bpy.types.SpaceView3D.draw_handler_add(
+                self.draw_keymap_tips, (), "WINDOW", 'POST_PIXEL')
         except Exception as e:
+            self.__temp_draw__ = None
             debug_print(e.args, key='modal')
             import traceback
             traceback.print_exc()
             traceback.print_stack()
 
     def unregister_draw(self):
-        bpy.types.SpaceView3D.draw_handler_remove(self.__temp_draw__, "WINDOW")
+        if self.__temp_draw__ is None:
+            return
+        try:
+            bpy.types.SpaceView3D.draw_handler_remove(self.__temp_draw__, "WINDOW")
+        except (ValueError, RuntimeError, TypeError):
+            ...
+        self.__temp_draw__ = None
         self.tag_redraw()
 
 

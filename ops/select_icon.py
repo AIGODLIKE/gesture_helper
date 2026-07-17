@@ -141,7 +141,7 @@ class SelectIcon(bpy.types.Operator):
 
         row = col.box().row()
         row.alignment = 'CENTER'
-        row.label(text='Addon')
+        row.label(text='Add-on')
         self.draw_icons(row.column(align=True), num_cols, icons=icons_map.get('ADDON'))
 
         box = col.box()
@@ -238,7 +238,7 @@ class RefreshIcons(bpy.types.Operator):
 
 class OpenCustomIconFolder(bpy.types.Operator):
     bl_idname = "wm.gesture_open_custom_icon_folder"
-    bl_label = "Open Custom Folder"
+    bl_label = "Open Custom Icons Folder"
     bl_description = "Open the custom icons folder; create it if missing"
     bl_options = {'REGISTER'}
 
@@ -287,7 +287,7 @@ class ExportCustomIcons(bpy.types.Operator, ExportHelper):
         try:
             count = export_custom_icons_zip(filepath)
         except OSError:
-            self.report({'ERROR'}, pgettext("Export error, please check path %s") % filepath)
+            self.report({'ERROR'}, pgettext("Export failed. Check the path: %s") % filepath)
             return {'CANCELLED'}
 
         if count == 0:

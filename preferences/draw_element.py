@@ -75,7 +75,7 @@ class DrawElement:
         mi = ElementCURE.MOVE.move_item
 
         column = layout.column(align=True)
-        column.label(text="While moving a gesture")
+        column.label(text="While moving an element")
         column.separator()
         column.label(text=pgettext("Move gesture: %s") % mi.name)
         if mi.is_root:
@@ -93,7 +93,7 @@ class DrawElement:
         pref = get_pref()
 
         column = layout.column(align=True)
-        column.label(text="In the cut gesture")
+        column.label(text="While cutting an element")
         column.separator()
 
         row = column.row(align=True)
@@ -103,7 +103,7 @@ class DrawElement:
             icon_value=pref.__get_icon__("CUT"),
             text='Paste to root level'
         ).cancel_cut = False
-        row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel paste').cancel_cut = True
+        row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel cut').cancel_cut = True
 
     @classmethod
     def draw_element_add_property(cls, layout: 'bpy.types.UILayout') -> None:

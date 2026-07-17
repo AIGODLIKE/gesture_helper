@@ -7,7 +7,7 @@ class GestureSwitchPanelCategory(bpy.types.Operator):
     """Switch N-panel tab in the current area (any editor)."""
 
     bl_idname = 'wm.gesture_switch_panel_category'
-    bl_label = 'Switch N Panel Category'
+    bl_label = 'Switch N-Panel Category'
     bl_description = 'Switch the active N-panel tab in the current editor area'
     bl_options = {'INTERNAL'}
 

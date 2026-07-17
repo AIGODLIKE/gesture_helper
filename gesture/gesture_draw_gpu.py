@@ -195,6 +195,29 @@ class GestureGpuDraw(DrawDebug):
         self._tag_redraw_gesture_screen()
 
     @classmethod
+    def _remove_all_draw_handlers(cls):
+        """Remove every registered GPU draw handler and reset counters."""
+        from ..utils.public import tag_redraw as tag_redraw_all
+
+        GestureGpuDraw.__modal_draw_count__ = 0
+        GestureGpuDraw.__active_draw_instance__ = None
+        for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
+            for key, value in sub_class.items():
+                try:
+                    c.draw_handler_remove(value, key)
+                except (ValueError, RuntimeError):
+                    ...
+        for c, debug_class in GestureGpuDraw.__temp_debug_draw_class__.items():
+            for key, value in debug_class.items():
+                try:
+                    c.draw_handler_remove(value, key)
+                except (ValueError, RuntimeError):
+                    ...
+        GestureGpuDraw.__temp_draw_class__.clear()
+        GestureGpuDraw.__temp_debug_draw_class__.clear()
+        tag_redraw_all()
+
+    @classmethod
     def unregister_draw(cls):
         """Cancel GPU draw handler when the last modal session ends."""
         from ..utils.public import tag_redraw as tag_redraw_all
@@ -205,16 +228,12 @@ class GestureGpuDraw(DrawDebug):
             # instance method (Blender 4.2 / 5.x both).
             tag_redraw_all()
             return
-        GestureGpuDraw.__active_draw_instance__ = None
-        for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
-            for key, value in sub_class.items():
-                c.draw_handler_remove(value, key)
-        for c, debug_class in GestureGpuDraw.__temp_debug_draw_class__.items():
-            for key, value in debug_class.items():
-                c.draw_handler_remove(value, key)
-        GestureGpuDraw.__temp_draw_class__.clear()
-        GestureGpuDraw.__temp_debug_draw_class__.clear()
-        tag_redraw_all()
+        cls._remove_all_draw_handlers()
+
+    @classmethod
+    def force_unregister_draw(cls):
+        """Remove all GPU draw handlers (call on add-on unregister)."""
+        cls._remove_all_draw_handlers()
 
     def gpu_draw_trajectory_mouse_move(self):
         """Draw mouse-move trajectory line."""

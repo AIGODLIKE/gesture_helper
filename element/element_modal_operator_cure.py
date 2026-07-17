@@ -137,7 +137,7 @@ class ElementModalOperatorEventCRUE:
                     self,
                     event,
                     context,
-                    title="Delete this element?",
+                    title="Delete this modal event?",
                     message=f"{name}",
                 )
             return self.execute(context)

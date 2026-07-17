@@ -27,7 +27,7 @@ class Gesture(
     # Draw gesture overlay with GPU
     element: CollectionProperty(type=Element)
     selected: BoolProperty(default=True)
-    description: StringProperty(default="This is a gesture...", name="Description")
+    description: StringProperty(default="", name="Description")
 
     @property
     def description_translate(self) -> str:

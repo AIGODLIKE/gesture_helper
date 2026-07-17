@@ -150,8 +150,8 @@ class ElementDraw:
                 elif self.is_selected_else:
                     alert_list.append('else must follow if or elif')
                 else:
-                    alert_list.append("I don't know what's wrong there either :>")
-                    alert_list.append("Maybe it's not enabled")
+                    alert_list.append("Could not determine why this structure item is invalid.")
+                    alert_list.append("Check that the previous structure item is enabled.")
         elif self.is_operator:
             if self.operator_type == "OPERATOR":
                 if not self.__operator_id_name_is_validity__:
@@ -242,7 +242,7 @@ class ElementDraw:
             layout.box().template_keymap_item_properties(self.operator_tmp_kmi)
             if is_change:
                 layout.alert = True
-                layout.label(text='Properties have changed. Sync them, or enable Auto Update.',
+                layout.label(text='Properties have changed. Sync them or enable auto-update.',
                              icon='ERROR')
                 layout.alert = False
             if is_modal:

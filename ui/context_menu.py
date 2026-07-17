@@ -47,7 +47,7 @@ class ContextMenu(bpy.types.Menu):
                 row = layout.column(align=True)
                 rr = row
                 rr.operator_context = "EXEC_DEFAULT"
-                rr.operator(CreateElementOperator.bl_idname, text=pgettext("Add Operator %s To Gesture") % text)
+                rr.operator(CreateElementOperator.bl_idname, text=pgettext("Add Operator %s to Gesture") % text)
                 rr = row
                 rr.operator_context = "INVOKE_DEFAULT"
                 rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
