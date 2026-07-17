@@ -181,7 +181,7 @@ class _ConditionExpressionParser:
 
     def parse(self, expression: str):
         if not expression or not expression.strip():
-            return True
+            return False
         tree = ast.parse(expression, mode='eval')
         return self._parse_node(tree.body)
 
