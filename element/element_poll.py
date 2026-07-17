@@ -6,7 +6,7 @@ from ..utils.debug_util import debug_print, debug_trace_stack, debug_traceback
 from ..utils.expression import evaluate_condition
 
 _POLL_STRING_DESCRIPTION = (
-    "Poll expression template\n"
+    "Poll expression template. Leave empty to fail the poll (structure inactive).\n"
     "{'bpy': bpy,\n"
     "'C': bpy.context,\n"
     "'D': bpy.data,\n"

@@ -11,7 +11,7 @@
     9
   ],
   "author": "\u5c0f\u840c\u65b0",
-  "description": "This is a description",
+  "description": "Switch Object Mode and Edit Mode with right-click gestures",
   "gesture": {
     "0": {
       "name": "Maya Switch Mode",

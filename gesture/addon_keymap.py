@@ -9,6 +9,7 @@ from ..utils.debug_util import debug_print
 
 _GESTURE_OPERATOR_IDNAMES = frozenset({
     "wm.gesture_operator",
+    "gesture.operator",  # legacy idname from older builds
 })
 
 _WARNED_UNKNOWN_PROP_TYPES: set[type] = set()
@@ -153,8 +154,8 @@ def clear_orphan_gesture_kmis() -> int:
     """Remove legacy Gesture Helper keymap items not tracked in the registry.
 
     Only scans ``keyconfigs.addon`` and only removes items whose ``idname`` is in
-    ``_GESTURE_OPERATOR_IDNAMES`` (currently ``wm.gesture_operator``). Other
-    add-ons' shortcuts are never touched.
+    ``_GESTURE_OPERATOR_IDNAMES`` (``wm.gesture_operator`` and legacy
+    ``gesture.operator``). Other add-ons' shortcuts are never touched.
     """
     wm = getattr(bpy.context, "window_manager", None)
     if wm is None:

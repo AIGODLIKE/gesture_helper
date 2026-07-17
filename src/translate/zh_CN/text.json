@@ -45,6 +45,7 @@
   "Author": "作者",
   "Description": "描述",
   "This is a description": "这是一个描述",
+  "Leave empty to fail the poll (structure inactive).": "留空则 poll 失败（结构项不生效）。",
   "Export": "导出",
   "Add gesture": "添加手势",
   "Remove gesture": "删除手势",
