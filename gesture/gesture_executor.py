@@ -28,7 +28,7 @@ class GestureExecutor:
                     ops.report(
                         {'ERROR'},
                         pgettext(
-                            "Operator not found, please check the operator id in gesture settings: %s"
+                            "Operator not found. Check the operator ID in gesture settings: %s"
                         )
                         % f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}",
                     )
@@ -53,7 +53,7 @@ class GestureExecutor:
                 ops.report(
                     {'ERROR'},
                     pgettext(
-                        "Operator context error, please ensure that the operator is available in this context: %s"
+                        "Operator unavailable in this context: %s"
                     )
                     % f"{name} -> {i.name} bpy.ops.{i.operator_bl_idname}.poll()",
                 )

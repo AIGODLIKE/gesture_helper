@@ -202,7 +202,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class MOVE(ElementPoll):
-        bl_label = 'Move gesture item'
+        bl_label = 'Move element'
         bl_idname = 'wm.gesture_element_move'
         bl_description = 'Move the active element to another parent or cancel the move'
         bl_options = {'REGISTER'}
@@ -254,7 +254,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class SORT(ElementPoll):
-        bl_label = 'Sort gesture item'
+        bl_label = 'Sort element'
         bl_idname = 'wm.gesture_element_sort'
         bl_description = 'Move the active element up or down within its parent list'
         bl_options = {'REGISTER'}
@@ -269,7 +269,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class COPY(ElementPoll):
-        bl_label = 'Copy gesture item'
+        bl_label = 'Copy element'
         bl_idname = 'wm.gesture_element_copy'
         bl_description = 'Duplicate the active element within the gesture'
         bl_options = {'REGISTER'}
@@ -296,7 +296,7 @@ class ElementCURE:
             return {'FINISHED'}
 
     class CUT(ElementPoll):
-        bl_label = 'Cut gesture item'
+        bl_label = 'Cut element'
         bl_idname = 'wm.gesture_element_cut'
         bl_description = 'Cut the active element and paste it elsewhere, or cancel the cut'
         bl_options = {'REGISTER'}
@@ -335,8 +335,8 @@ class ElementCURE:
                     self,
                     event,
                     context,
-                    title="Confirm To Cancel The Cut?",
-                    message="Cut Content Will Be Lost",
+                    title="Cancel cut?",
+                    message="The cut buffer will be discarded.",
                 )
             return self.execute(context)
 

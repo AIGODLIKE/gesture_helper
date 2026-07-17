@@ -36,7 +36,7 @@ class ModalProperty:
     modal_events_index: bpy.props.IntProperty(name='Modal Event Index', default=-1)
     modal_events: CollectionProperty(type=ElementModalOperatorEventItem)
 
-    last_modal_operator_property: bpy.props.StringProperty(name='Last Modal Operator Property', default="{}")
+    last_modal_operator_property: bpy.props.StringProperty(name='Last Modal Operator Properties', default="{}")
 
     @property
     def is_not_recommended_as_modal(self):
@@ -183,10 +183,10 @@ class RunOperatorPropertiesSync:
             self['operator_properties_sync_to_properties'] = False
 
     operator_properties_sync_from_temp_properties: BoolProperty(
-        name='From Prop Update',
+        name='Pull from Keymap',
         update=update_operator_properties_sync_from_temp_properties)
     operator_properties_sync_to_properties: BoolProperty(
-        name='Update To Prop',
+        name='Push to Keymap',
         update=update_operator_properties_sync_to_properties)
 
     @property
@@ -314,7 +314,7 @@ class OperatorProperty:
     operator_context: EnumProperty(name='Operator Context',
                                    items=ENUM_OPERATOR_CONTEXT)
 
-    operator_properties: StringProperty(name='Operator Property',
+    operator_properties: StringProperty(name='Operator Properties',
                                         default="{}",
                                         update=lambda self, context: self.update_operator_properties())
 

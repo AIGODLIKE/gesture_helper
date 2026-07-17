@@ -57,7 +57,7 @@ class GestureOperator(
         for text in [
             "No gesture found to draw",
             "Possible errors in keymap",
-            "Please go to the add-on preferences to restore keymap",
+            "Open add-on preferences to restore the keymap",
         ]:
             layout.label(text=text)
 
@@ -234,6 +234,7 @@ class GestureOperator(
         self.__exit_modal__()
         from ..gesture.gesture_input import clear_gesture_item_memos
         clear_gesture_item_memos(self.session, self)
+        return {'CANCELLED'}
 
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):

@@ -12,7 +12,7 @@ class ElementAddProperty:
         items=ENUM_ELEMENT_TYPE,
     )
     selected_type: EnumProperty(
-        name='Select structure type',
+        name='Structure type',
         items=ENUM_SELECTED_TYPE,
         update=lambda self, context: ElementAddProperty.update_selected_type()
     )

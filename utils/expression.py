@@ -67,9 +67,6 @@ def get_condition_names():
     """Build the name mapping used by poll condition expressions."""
     context = bpy.context
     active_object = getattr(context, "object", None)
-    selected_objects = getattr(context, "selected_objects", [])
-    if active_object is None and selected_objects:
-        active_object = selected_objects[-1]
     data = active_object.data if active_object else None
 
     return {

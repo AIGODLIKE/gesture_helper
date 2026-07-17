@@ -7,6 +7,20 @@ import bpy
 from ...utils.debug_util import debug_print
 from ..addon_keymap import get_kmi_operator_properties
 
+# Pending deferred-operator timer callbacks (unregister must cancel these).
+_deferred_operator_timers: set = set()
+
+
+def cancel_deferred_operator_timers() -> None:
+    """Cancel any deferred operator timers still waiting to fire."""
+    for fn in list(_deferred_operator_timers):
+        try:
+            if bpy.app.timers.is_registered(fn):
+                bpy.app.timers.unregister(fn)
+        except (ValueError, RuntimeError):
+            ...
+        _deferred_operator_timers.discard(fn)
+
 
 def _screen_contains_area(screen, area) -> bool:
     """Check whether *screen* still contains *area* (Blender 5.x safe)."""
@@ -136,6 +150,7 @@ def defer_operator_call(
     captured_region = override.get('region')
 
     def _invoke(*_args):
+        _deferred_operator_timers.discard(_invoke)
         try:
             func = getattr(getattr(bpy.ops, prefix), suffix)
             if not pin_area:
@@ -157,6 +172,7 @@ def defer_operator_call(
             debug_print(f"deferred {idname} error", exc.args, key='key')
         return None
 
+    _deferred_operator_timers.add(_invoke)
     bpy.app.timers.register(_invoke, first_interval=0)
     return True
 

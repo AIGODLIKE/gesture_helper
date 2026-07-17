@@ -44,7 +44,7 @@ class GesturePreferences(PublicProperty,
     add_element_property: PointerProperty(type=AddElementProperty)
     enabled: BoolProperty(
         name='Enable gesture',
-        description="""Enable gesture system""",
+        description="Enable the gesture system",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
     show_page: EnumProperty(
         name='Show panel',

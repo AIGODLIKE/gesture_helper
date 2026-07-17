@@ -88,7 +88,7 @@ class NumberControl:
 
 
 class FloatControl:
-    float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Incremental Value", precision=2)
+    float_incremental_value: bpy.props.FloatProperty(default=1, name="Float Step", precision=2)
     float_value: bpy.props.FloatProperty(name="Float Value", default=1, precision=2)
 
     def draw_float(self, layout):
@@ -126,7 +126,7 @@ class FloatControl:
 
 
 class IntControl:
-    int_incremental_value: bpy.props.IntProperty(name="Int Incremental Value", default=1)
+    int_incremental_value: bpy.props.IntProperty(name="Integer Step", default=1)
     int_value: bpy.props.IntProperty(name="Int Value", options={'HIDDEN', 'SKIP_SAVE'}, default=0)
 
     def draw_int(self, layout):
@@ -197,12 +197,11 @@ class BoolControl:
 
 class EnumControl:
     enum_value_mode: bpy.props.EnumProperty(items=[
-        ('SET', 'Direct setting of enumeration values', ''),
-        ('CYCLE',
-         'Cyclic setting of the enumeration value (if the set value is the same as the current value, the enumeration switches to the previous value)',
-         ''),
-        ('TOGGLE', 'Toggle setting Enumeration values (toggle between two enumeration values)',
-         ''),
+        ('SET', 'Set Value', 'Set the enumeration to a specific value'),
+        ('CYCLE', 'Cycle Values',
+         'Cycle to the next value; if already at the target, switch to the previous value'),
+        ('TOGGLE', 'Toggle Between Two Values',
+         'Toggle between two enumeration values'),
     ], default="CYCLE")
 
     ___enum_items___ = {}  # Prevent stale enum cache
@@ -618,7 +617,7 @@ class ElementModalOperatorEventItem(
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
         elif self.control_property_type == "":  # No property set
-            column.label(text=f"Please enter the control property")
+            column.label(text="Enter a control property")
             return
         else:
             column.label(text=f"Unknown {self.control_property}")

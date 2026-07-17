@@ -33,7 +33,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
         description=(
             'On enable, restore add-on preferences from the backup folder. '
             'Gesture data is loaded from the config JSON separately. '
-            'Manual import is unaffected'
+            'Manual import is unaffected.'
         ),
         default=True,
     )
