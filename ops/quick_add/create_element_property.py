@@ -221,7 +221,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         ops.property_type = "INT"
 
     def draw_float(self, layout: bpy.types.UILayout):
-        layout.label(text="Modify float value")
+        layout.label(text="Modify Float Value")
         layout.prop(self, "value_mode", expand=True)
         layout.separator()
         if self.value_mode == "SET_VALUE":

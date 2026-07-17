@@ -45,13 +45,13 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
                                       default_extend=False,
                                       )
         if is_draw:
-            text = 'Can use Python logical operators or expressions'
+            text = 'You can use Python logical operators or expressions'
             lay.label(text=text)
-            text = "and  x and y Boolean 'and' - if x is False, x and y returns the value of x, otherwise it returns the calculated value of y"
+            text = "and  x and y Boolean 'and' - returns x if x is falsy, otherwise y"
             lay.label(text=text)
-            text = "or   x or y Boolean 'or' - if x is True, return True, else return y"
+            text = "or   x or y Boolean 'or' - returns x if x is truthy, otherwise y"
             lay.label(text=text)
-            text = "not  not x Boolean 'not' - if x is True, return False, if x is False return True"
+            text = "not  not x Boolean 'not' - returns False if x is truthy, otherwise True"
             lay.label(text=text)
 
             lay.separator()

@@ -26,7 +26,7 @@ class DebugProperty(bpy.types.PropertyGroup):
         default=False,
     )
     debug_export_import: BoolProperty(
-        name='Debug export import',
+        name='Debug export/import',
         description='Log export, import, and backup operations',
         default=False,
     )

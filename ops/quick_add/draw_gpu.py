@@ -53,8 +53,8 @@ class DrawGpu:
                 tips.translate = True
                 from bpy.app.translations import pgettext_iface
                 for text in [
-                    "Right-click on the operator or property you want to add and click Add to Gesture to add it.",
-                    "Selecting elements in the 3D view toolbar",
+                    "Right-click an operator or property and choose Add to Gesture.",
+                    "Select elements from the 3D View toolbar",
                     "Gesture preview: Space-drag to move, right-click to exit"
                 ]:
                     tips.label(pgettext_iface(text))

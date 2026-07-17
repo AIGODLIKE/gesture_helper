@@ -1,6 +1,5 @@
 {
   "Allow middle-mouse view rotation while a modal gesture is active": "模态手势激活时允许用中键旋转视图",
-  "Allow view rotation in modal": "允许在模态中旋转视图",
   "Arbitrary Move": "任意移动",
   "Boolean Value Mode": "布尔值模式",
   "Control Property": "控制属性",
@@ -16,13 +15,13 @@
   "Is Array": "是数组",
   "Modal Event": "模态事件",
   "No active modal event": "无活动模态事件",
-  "Not recommended as modal operator": "不建议用作模态操作符",
   "Number Value Mode": "数字值模式",
   "Operator execution took too long (%.3f s)": "操作符执行耗时过长 (%.3f 秒)",
-  "Enter a control property": "请输入控制属性",
   "Remove element item": "删除元素项",
   "Set to": "设置为",
-  "The operator contains array properties and cannot be controlled": "操作符含有数组属性，无法控制",
   "Vertical Move": "垂直移动",
-  "Will occupy the middle click operation": "会占用中键点击"
+  "Allow view rotation during modal": "允许在模态期间旋转视图",
+  "Not recommended as a modal operator": "不建议用作模态操作符",
+  "Select a control property": "请选择控制属性",
+  "This operator has array properties and cannot be mapped to modal events": "此操作符含有数组属性，无法映射为模态事件"
 }

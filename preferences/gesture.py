@@ -52,7 +52,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     )
 
     modal_pass_view_rotation: BoolProperty(
-        name='Allow view rotation in modal',
+        name='Allow view rotation during modal',
         description="Allow middle-mouse view rotation while a modal gesture is active",
         default=True,
     )

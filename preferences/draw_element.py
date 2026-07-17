@@ -77,7 +77,7 @@ class DrawElement:
         column = layout.column(align=True)
         column.label(text="While moving an element")
         column.separator()
-        column.label(text=pgettext("Move gesture: %s") % mi.name)
+        column.label(text=pgettext("Move element: %s") % mi.name)
         if mi.is_root:
             column.label(text="This item is at the root level")
 

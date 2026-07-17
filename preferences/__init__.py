@@ -47,7 +47,7 @@ class GesturePreferences(PublicProperty,
         description="Enable the gesture system",
         default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
     show_page: EnumProperty(
-        name='Show panel',
+        name='Preferences page',
         description='Which preferences page to display',
         items=[
             ('GESTURE', 'Gesture', 'Gesture list and element editor'),
