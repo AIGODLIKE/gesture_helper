@@ -234,7 +234,7 @@
                   }
                 },
                 "4": {
-                  "name": "Face Clear",
+                  "name": "Clear Faces",
                   "element_type": "CHILD_GESTURE",
                   "icon": "PARTICLEMODE",
                   "enabled_icon": true,

@@ -65,7 +65,7 @@
                   "operator_properties": "{'select_mode': {'VERT', 'EDGE'}, 'type': 'SWITCH_OBJECT_EDIT_MODE'}"
                 },
                 "4": {
-                  "name": "Multiplicity",
+                  "name": "All Components",
                   "element_type": "OPERATOR",
                   "direction": "8",
                   "operator_bl_idname": "wm.gesture_switch_mode",

@@ -227,7 +227,7 @@
           }
         },
         "7": {
-          "name": "Clear All Property",
+          "name": "Clear All Properties",
           "element_type": "OPERATOR",
           "icon": "PANEL_CLOSE",
           "enabled_icon": true,

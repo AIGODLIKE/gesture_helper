@@ -17,11 +17,11 @@ https://github.com/user-attachments/assets/40e0eeac-7fd7-4a5b-aa2a-21e6b6053ee6
   ![import_preset](https://github.com/user-attachments/assets/2b0dfa04-2470-41ac-ba4a-d6743d4e0d11)
     * Maya Axis & Coordinate: Quick Setup Axes and Coordinates
       ![preset_c_s_r](https://github.com/user-attachments/assets/48d82cdf-e33a-40b3-b591-d89f177e6c5b)
-    * Maya Operator: Active object operator, each mode displays different content
+    * Maya Operator: Context operators for the active object; content changes by mode
       ![preset_s_r](https://github.com/user-attachments/assets/a5a7a20b-28da-49f5-ace8-7d26fcb8d35c)
     * Maya Select: Selection gesture
       ![preset_c_r](https://github.com/user-attachments/assets/46aca90c-2154-4a25-8ca1-c111dd27be3d)
-    * Maya Switch Mode: Use right click to switch mode
+    * Maya Switch Mode: Switch modes with right-click
       ![preset_r](https://github.com/user-attachments/assets/b0e1aa67-c080-430d-9781-b13680479ae6)
     * MX Preset:
       ![preset_mx](https://github.com/user-attachments/assets/962169f0-b489-426e-9b9a-bef89496a07a)

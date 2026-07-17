@@ -508,7 +508,7 @@ class ShowGesturePreferences(bpy.types.Operator):
 
     bl_idname = "wm.gesture_show_preferences"
     bl_label = "Gesture Preferences"
-    bl_description = "Open Gesture Helper preferences fullscreen"
+    bl_description = "Open Gesture Helper preferences in fullscreen"
     bl_options = {'REGISTER'}
 
     @classmethod

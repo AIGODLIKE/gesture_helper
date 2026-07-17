@@ -1028,7 +1028,7 @@
           }
         }
       },
-      "description": "Active object operator, each mode displays different content"
+      "description": "Context operators for the active object; content changes by mode"
     }
   }
 }

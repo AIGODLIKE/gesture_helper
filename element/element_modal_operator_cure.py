@@ -97,7 +97,7 @@ class ElementModalOperatorEventCRUE:
             return {"FINISHED"}
 
     class COPY(ModalPoll):
-        bl_label = 'Copy element modal item'
+        bl_label = 'Copy modal event item'
         bl_idname = 'wm.gesture_element_modal_copy'
         bl_description = 'Duplicate the active modal event on this element'
         bl_options = {'REGISTER'}
@@ -122,7 +122,7 @@ class ElementModalOperatorEventCRUE:
             return {"FINISHED"}
 
     class REMOVE(ModalPoll):
-        bl_label = 'Remove element modal item'
+        bl_label = 'Remove modal event item'
         bl_idname = 'wm.gesture_element_modal_remove'
         bl_description = (
             'Remove the active modal event. '
