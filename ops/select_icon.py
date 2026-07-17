@@ -322,16 +322,16 @@ class ImportCustomIcons(bpy.types.Operator, ImportHelper):
 
         filepath = (self.filepath or "").strip()
         if not filepath:
-            self.report({'ERROR'}, pgettext("Please select a custom icons ZIP file"))
+            self.report({'ERROR'}, pgettext("Please select a custom icon ZIP file"))
             return {'CANCELLED'}
         if not os.path.isfile(filepath):
-            self.report({'ERROR'}, pgettext("Please select a custom icons ZIP file"))
+            self.report({'ERROR'}, pgettext("Please select a custom icon ZIP file"))
             return {'CANCELLED'}
 
         try:
             count = import_custom_icons_zip(filepath)
         except (OSError, zipfile.BadZipFile):
-            self.report({'ERROR'}, pgettext("Import error, please select a valid ZIP file"))
+            self.report({'ERROR'}, pgettext("Import failed. Select a valid ZIP file."))
             return {'CANCELLED'}
 
         if count == 0:
@@ -346,7 +346,7 @@ class ImportCustomIcons(bpy.types.Operator, ImportHelper):
 class ClearHistory(bpy.types.Operator):
     bl_idname = "wm.gesture_clear_icons_history"
     bl_label = "Clear History"
-    bl_description = 'Clear the icon selection history list'
+    bl_description = 'Clear icon selection history'
     bl_options = {'REGISTER'}
 
     @classmethod

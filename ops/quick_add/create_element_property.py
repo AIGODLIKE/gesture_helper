@@ -32,7 +32,7 @@ class Enum:
 
     enum_mode: EnumProperty(
         items=[
-            ('SET', 'Set Value', 'Set the enumeration with wm.context_set_enum'),
+            ('SET', 'Set Value', 'Set the enum value with wm.context_set_enum'),
             ('CYCLE', 'Cycle Values',
              'Cycle enum values with wm.context_cycle_enum'),
             ('TOGGLE', 'Toggle Between Two Values',

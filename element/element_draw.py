@@ -143,7 +143,7 @@ class ElementDraw:
                 alert_list.append(self.__poll_exception_info__)
             if not get_available_selected_structure(self):
                 alert_list.append('Invalid structure selection')
-                alert_list.append('The previous element may not be a structure condition')
+                alert_list.append('The previous element may not be a conditional structure')
                 alert_list.append('There may be an expression error in the previous structure item')
                 if self.is_selected_elif:
                     alert_list.append('elif must follow if or elif')

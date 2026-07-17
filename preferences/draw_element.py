@@ -84,7 +84,7 @@ class DrawElement:
         row = column.row(align=True)
         mr = row.row(align=True)
         mr.enabled = not mi.is_root  # Not root level
-        mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='Moving to the root level').cancel_move = False
+        mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='Move to root level').cancel_move = False
         row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='Cancel move').cancel_move = True
 
     @staticmethod
@@ -143,8 +143,8 @@ class DrawElement:
             column.separator()
             row = column.row(align=True)
             row.enabled = False
-            row.row(align=True).label(text="Cannot add child to 'Operator'")
-            column.label(text="Operator should not have children")
+            row.row(align=True).label(text="Cannot add a child to an operator element")
+            column.label(text="Operators cannot have child elements")
 
     @classmethod
     def draw_element_add_div_property(cls, layout: 'bpy.types.UILayout') -> None:
