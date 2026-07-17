@@ -56,7 +56,7 @@ class GestureOperator(
         layout = self.layout
         for text in [
             "No gesture found to draw",
-            "Possible errors in keymap",
+            "Possible keymap errors",
             "Open add-on preferences to restore the keymap",
         ]:
             layout.label(text=text)

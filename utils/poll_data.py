@@ -126,11 +126,11 @@ class PollData:
             {'name': 'Python Console', 'item': 'CONSOLE', },
             None,
             {'name': 'Node Editor', 'item': 'NODE_EDITOR', },
-            {'name': 'Geometry Node', 'item': 'NODE_EDITOR',
+            {'name': 'Geometry Nodes', 'item': 'NODE_EDITOR',
              'suffix': 'and C.space_data.tree_type == "GeometryNodeTree"', },
-            {'name': 'Compositor Node', 'item': 'NODE_EDITOR',
+            {'name': 'Compositor', 'item': 'NODE_EDITOR',
              'suffix': 'and C.space_data.tree_type == "CompositorNodeTree"', },
-            {'name': 'Shader Node', 'item': 'NODE_EDITOR',
+            {'name': 'Shader Editor', 'item': 'NODE_EDITOR',
              'suffix': 'and C.space_data.tree_type == "ShaderNodeTree"', },
             {'name': 'Texture Node', 'item': 'NODE_EDITOR',
              'suffix': 'and C.space_data.tree_type == "TextureNodeTree"', },
@@ -176,7 +176,7 @@ class PollData:
              'not_str': True},
             None,
             {'item': 'len(C.selected_objects)',
-             'name': 'Is Selected Object',
+             'name': 'Has Selected Object(s)',
              'notation': '',
              'parentheses': False,
              'not_str': True},
@@ -195,7 +195,7 @@ class PollData:
         'name': 'Render engine',
         'items': [
             {'name': 'EEVEE', 'notation': 'in', 'item': '("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE")', 'not_str': True},
-            {'name': 'CYCLE', 'item': '"CYCLES"', 'not_str': True},
+            {'name': 'Cycles', 'item': '"CYCLES"', 'not_str': True},
             {'name': 'Workbench', 'item': '"BLENDER_WORKBENCH"', 'not_str': True},
         ]
     }

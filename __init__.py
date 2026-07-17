@@ -6,7 +6,7 @@ bl_info = {
     "author": "ACGGIT Community(小萌新)",
     "version": (2, 3, 6),
     "blender": (4, 2, 0),
-    "location": "Tool Panel",
+    "location": "View3D Sidebar",
     "support": "COMMUNITY",
     "category": "User Interface",
 }

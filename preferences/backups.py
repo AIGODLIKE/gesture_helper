@@ -88,7 +88,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
 
         box.separator()
         box.label(text=translate(
-            "Preferences are always backed up on disable or exit"
+            "Preferences are always backed up when the add-on is disabled or Blender exits"
         ))
         box.label(text=translate(
             "Gestures are saved under the extension user folder "

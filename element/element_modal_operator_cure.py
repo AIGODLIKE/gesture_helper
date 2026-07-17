@@ -3,7 +3,7 @@ import bpy
 from bpy.props import BoolProperty
 
 from ..utils.cache_state import CacheState
-from ..utils.public import poll_message_active_element
+from ..utils.pref import poll_addon_preferences
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.structure_cache_ops import StructureCacheOps
@@ -13,10 +13,25 @@ from ..utils.public_cache import PublicCache
 class ElementModalOperatorEventCRUE:
     class ModalPoll(bpy.types.Operator, PrefAccess, ActiveSelection, StructureCacheOps, PublicCache):
         @classmethod
+        def modal_element(cls, context):
+            """Element whose modal UI is drawn, else the active element.
+
+            Create-modal popup draws ``ElementCURE.ADD.last_element`` which may
+            differ from preferences selection; layout sets ``gesture_modal_element``.
+            """
+            el = getattr(context, "gesture_modal_element", None)
+            if el is not None:
+                return el
+            return cls._pref().active_element
+
+        @classmethod
         def poll(cls, context):
-            if not poll_message_active_element(cls):
+            if not poll_addon_preferences(cls):
                 return False
-            ae = cls._pref().active_element
+            ae = cls.modal_element(context)
+            if ae is None:
+                cls.poll_message_set("No active element")
+                return False
             if not ae.is_operator:
                 cls.poll_message_set("Active element is not an operator")
                 return False
@@ -38,9 +53,10 @@ class ElementModalOperatorEventCRUE:
         def invoke(self, context, event):
             wm = context.window_manager
             if event.ctrl and event.alt and event.shift:
-                if self.active_element:
+                element = self.modal_element(context)
+                if element:
                     try:
-                        for i in self.active_element.operator_func.get_rna_type().properties:
+                        for i in element.operator_func.get_rna_type().properties:
                             if i.identifier not in ["rna_type", ]:
                                 self.control_property = i.identifier
                                 self.execute(context)
@@ -52,9 +68,11 @@ class ElementModalOperatorEventCRUE:
         def draw(self, context):
             layout = self.layout
             layout.operator_context = "EXEC_DEFAULT"
-            if self.active_element:
+            element = self.modal_element(context)
+            if element:
+                layout.context_pointer_set('gesture_modal_element', element)
                 try:
-                    for i in self.active_element.operator_func.get_rna_type().properties:
+                    for i in element.operator_func.get_rna_type().properties:
                         if i.identifier not in ["rna_type", ]:
                             row = layout.row(align=True)
                             row.label(text=i.type, translate=False)
@@ -68,7 +86,9 @@ class ElementModalOperatorEventCRUE:
         def execute(self, context):
             if self.control_property == "":
                 return {'FINISHED'}
-            element = self.active_element
+            element = self.modal_element(context)
+            if element is None:
+                return {'CANCELLED'}
             gesture = element.parent_gesture
             new = element.modal_events.add()
             new.control_property = self.control_property
@@ -84,12 +104,13 @@ class ElementModalOperatorEventCRUE:
 
         @classmethod
         def poll(cls, context):
-            pref = cls._pref()
-            ae = pref.active_element
-            return super().poll(context) and ae.active_event is not None
+            ae = cls.modal_element(context)
+            return super().poll(context) and ae is not None and ae.active_event is not None
 
         def execute(self, context):
-            element = self.pref.active_element
+            element = self.modal_element(context)
+            if element is None or element.active_event is None:
+                return {'CANCELLED'}
             gesture = element.parent_gesture
             with CacheState.batch():
                 element.active_event.copy()
@@ -114,12 +135,12 @@ class ElementModalOperatorEventCRUE:
 
         @classmethod
         def poll(cls, context):
-            pref = cls._pref()
-            ae = pref.active_element
-            return super().poll(context) and ae.active_event is not None
+            ae = cls.modal_element(context)
+            return super().poll(context) and ae is not None and ae.active_event is not None
 
         def invoke(self, context, event):
             from ..utils.adapter import operator_invoke_confirm
+            element = self.modal_element(context)
             if event.ctrl and event.alt and event.shift:
                 self.bulk_remove = True
                 return operator_invoke_confirm(
@@ -131,7 +152,7 @@ class ElementModalOperatorEventCRUE:
                 )
             self.bulk_remove = False
             if self.pref.draw_property.element_remove_tips:
-                active = self.pref.active_element.active_event
+                active = element.active_event if element else None
                 name = getattr(active, 'control_property', None) or getattr(active, 'event_type', '')
                 return operator_invoke_confirm(
                     self,
@@ -143,16 +164,18 @@ class ElementModalOperatorEventCRUE:
             return self.execute(context)
 
         def execute(self, context):
+            element = self.modal_element(context)
+            if element is None:
+                return {'CANCELLED'}
+            gesture = element.parent_gesture
             if self.bulk_remove:
-                element = self.pref.active_element
-                gesture = element.parent_gesture
                 element.modal_events.clear()
                 self.cache_clear(gesture=gesture)
                 self.bulk_remove = False
                 return {'FINISHED'}
-            element = self.pref.active_element
-            gesture = element.parent_gesture
             active = element.active_event
+            if active is None:
+                return {'CANCELLED'}
             active.remove()
             self.cache_clear(gesture=gesture)
             return {"FINISHED"}
@@ -171,9 +194,11 @@ class ElementModalOperatorEventCRUE:
         def draw(self, context):
             layout = self.layout
             layout.operator_context = "EXEC_DEFAULT"
-            if self.active_element:
+            element = self.modal_element(context)
+            if element:
+                layout.context_pointer_set('gesture_modal_element', element)
                 try:
-                    for i in self.active_element.operator_func.get_rna_type().properties:
+                    for i in element.operator_func.get_rna_type().properties:
                         if i.identifier not in ["rna_type", ]:
                             row = layout.row(align=True)
                             is_flag = i.type == 'ENUM' and getattr(i, 'is_enum_flag', False)
@@ -191,7 +216,7 @@ class ElementModalOperatorEventCRUE:
                     ...
 
         def execute(self, context):
-            element = self.active_element
+            element = self.modal_element(context)
             if element and element.operator_func:
                 try:
                     prop = element.operator_func.get_rna_type().properties.get(self.control_property)
@@ -200,5 +225,8 @@ class ElementModalOperatorEventCRUE:
                         return {'CANCELLED'}
                 except KeyError:
                     ...
-            self.active_event.control_property = self.control_property
+            active_event = element.active_event if element else None
+            if active_event is None:
+                return {'CANCELLED'}
+            active_event.control_property = self.control_property
             return {"FINISHED"}

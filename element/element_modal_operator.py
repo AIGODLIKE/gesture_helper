@@ -617,10 +617,10 @@ class ElementModalOperatorEventItem(
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())
         elif self.control_property_type == "":  # No property set
-            column.label(text="Enter a control property")
+            column.label(text="Select a control property")
             return
         else:
-            column.label(text=f"Unknown {self.control_property}")
+            column.label(text="Unknown property: %s" % self.control_property)
         if dir(self.control_property_rna):
             box = None
             for i in dir(self.control_property_rna):

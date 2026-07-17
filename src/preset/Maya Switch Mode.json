@@ -678,13 +678,13 @@
           "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type in (\"TextureNodeTree\",\"ShaderNodeTree\",\"CompositorNodeTree\",\"GeometryNodeTree\")",
           "element": {
             "0": {
-              "name": "Geometry Node",
+              "name": "Geometry Nodes",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "IF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"GeometryNodeTree\"",
               "element": {
                 "0": {
-                  "name": "Geometry Node",
+                  "name": "Geometry Nodes",
                   "element_type": "CHILD_GESTURE",
                   "icon": "GEOMETRY_SET",
                   "enabled_icon": true,
@@ -713,7 +713,7 @@
               }
             },
             "1": {
-              "name": "Compositor Node",
+              "name": "Compositor",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "ELIF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"CompositorNodeTree\"",
@@ -730,7 +730,7 @@
               }
             },
             "2": {
-              "name": "Shader Node",
+              "name": "Shader Editor",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "ELIF",
               "poll_string": "C.space_data.type == \"NODE_EDITOR\" and C.space_data.tree_type == \"ShaderNodeTree\"",
@@ -824,7 +824,7 @@
               "poll_string": "True"
             },
             "5": {
-              "name": "Geometry Node",
+              "name": "Geometry Nodes",
               "element_type": "OPERATOR",
               "icon": "GEOMETRY_NODES",
               "enabled_icon": true,
@@ -833,7 +833,7 @@
               "operator_properties": "{'data_path': 'area.ui_type', 'value': 'GeometryNodeTree'}"
             },
             "6": {
-              "name": "Shader Node",
+              "name": "Shader Editor",
               "element_type": "OPERATOR",
               "icon": "MATSHADERBALL",
               "enabled_icon": true,
@@ -842,7 +842,7 @@
               "operator_properties": "{'data_path': 'area.ui_type', 'value': 'ShaderNodeTree'}"
             },
             "7": {
-              "name": "Compositor Node",
+              "name": "Compositor",
               "element_type": "OPERATOR",
               "icon": "NODE_COMPOSITING",
               "enabled_icon": true,

@@ -143,8 +143,8 @@ class ElementDraw:
                 alert_list.append(self.__poll_exception_info__)
             if not get_available_selected_structure(self):
                 alert_list.append('Invalid structure selection')
-                alert_list.append('Previous element may not be a selection structure')
-                alert_list.append('Or an expression error in the previous structure')
+                alert_list.append('The previous element may not be a structure condition')
+                alert_list.append('There may be an expression error in the previous structure item')
                 if self.is_selected_elif:
                     alert_list.append('elif must follow if or elif')
                 elif self.is_selected_else:
@@ -179,7 +179,7 @@ class ElementDraw:
         from ..ops.select_icon import SelectIcon
         from ..utils.icons import icon_layout_kwargs
         if self.is_draw_context_toggle_operator_bool:
-            layout.label(text="Use property toggle icon")
+            layout.label(text="Uses the property toggle icon")
         else:
             row = layout.row(align=True)
             row.prop(self, 'enabled_icon')
@@ -249,12 +249,16 @@ class ElementDraw:
                 if self.is_not_recommended_as_modal:
                     column = layout.column(align=True)
                     column.alert = True
-                    column.label(text='Not recommended as modal operator', icon='ERROR')
-                    column.label(text='The operator contains array properties and cannot be controlled')
+                    column.label(text='Not recommended as a modal operator', icon='ERROR')
+                    column.label(text='This operator has array properties and cannot be mapped to modal events')
 
     def draw_operator_modal(self, layout):
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE
         from ..ui.ui_list import ElementModalEventUIList
+
+        # Bind this element for modal ADD/COPY/REMOVE poll (create popup may
+        # draw last_element while preferences selection is still elsewhere).
+        layout.context_pointer_set('gesture_modal_element', self)
 
         column = layout.column(align=True)
         row = column.row(align=True)

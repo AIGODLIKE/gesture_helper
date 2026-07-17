@@ -3,6 +3,7 @@ import bpy
 from ...element.element_cure import ElementCURE
 from ...utils.property import collect_operator_property_overrides
 from ...utils.public import PublicOperator, get_pref, debug_print
+from ...utils.selection import select_element
 from ...utils.structure_cache_ops import StructureCacheOps
 from ...utils.public_cache import PublicCache
 
@@ -24,6 +25,8 @@ class CreateModalOperator:
             last_element = ElementCURE.ADD.last_element
             if last_element:
                 last_element.operator_type = "MODAL"
+                # Keep preferences selection aligned with the element this popup edits.
+                select_element(last_element)
         finally:
             PublicCache._suppress_operator_tmp_kmi = False
 
@@ -54,7 +57,9 @@ class CreateModalOperator:
             layout.label(text=f"{identifier} {value}")
 
 
-class CreateElementOperator(PublicOperator, StructureCacheOps, CreateModalOperator):
+# CreateModalOperator before PublicOperator so invoke/draw are not shadowed by
+# bpy.types.Operator's default invoke (which only calls execute).
+class CreateElementOperator(CreateModalOperator, PublicOperator, StructureCacheOps):
     bl_label = 'Create Operator Element'
     bl_idname = 'wm.gesture_create_element_operator'
     bl_description = 'Add a gesture element from a right-clicked operator button'

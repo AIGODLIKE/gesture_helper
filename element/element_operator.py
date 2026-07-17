@@ -133,8 +133,10 @@ class ModalProperty:
                         value = translate(n)
             return f"{name}:{value}"
 
-        return "    ".join([gkn(k, v) for k, v in properties.items()])
-
+        parts = [gkn(k, v) for k, v in properties.items()]
+        parts.append(translate("LMB: Confirm"))
+        parts.append(translate("Esc/RMB: Cancel"))
+        return "    ".join(parts)
 
 class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
