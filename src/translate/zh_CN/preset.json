@@ -12,7 +12,6 @@
   "Quick Setup Axes and Coordinates": "快速设置轴和坐标",
   "Active object operator, each mode displays different content": "活动物体操作符，每种模式显示不同内容",
   "Selection gesture": "选择手势",
-  "Use right click to switch mode": "使用右键切换模式",
   "Metaball Edit": "融球编辑",
   "Curve Edit": "曲线编辑",
   "Add Tool": "添加工具",
@@ -29,8 +28,7 @@
   "Multiplicity": "多重",
   "Other Mode": "其他模式",
   "Particle System": "粒子系统",
-  "Text Edit": "文字编辑",
-  "If have access to edit mode": "若可进入编辑模式",
+  "Text Edit": "文本编辑",
   "Delete Menu": "删除菜单",
   "Face Clear": "面清理",
   "Wireframe Threshold": "线框阈值",
@@ -60,5 +58,7 @@
   "Selected_Structure If": "选择结构 If",
   "Selected_Structure Elif": "选择结构 Elif",
   "Selected_Structure Else": "选择结构 Else",
-  "Operator": "操作符"
+  "Operator": "操作符",
+  "When edit mode is available": "若可进入编辑模式",
+  "Switch modes with right-click": "用右键切换模式"
 }

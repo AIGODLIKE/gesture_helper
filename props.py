@@ -38,7 +38,7 @@ class TempDrawProperty(bpy.types.PropertyGroup):
             name,
             BoolProperty(
                 name=f'{name} Boolean Property',
-                description='Auto-generated Boolean property name',
+                description='Name of the auto-generated Boolean property',
                 default=self.default_bool_value,
             )
         )
