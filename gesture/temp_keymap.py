@@ -7,21 +7,31 @@ import bpy
 from .addon_keymap import get_kmi_operator_properties
 
 
-def get_temp_keymap() -> bpy.types.KeyMap:
-    keyconfig = bpy.context.window_manager.keyconfigs.addon
+def get_temp_keymap() -> bpy.types.KeyMap | None:
+    window_manager = getattr(bpy.context, "window_manager", None)
+    keyconfigs = getattr(window_manager, "keyconfigs", None)
+    keyconfig = getattr(keyconfigs, "addon", None)
     if keyconfig is None:
-        raise RuntimeError("Add-on keyconfig is not available")
-    return keyconfig.keymaps.get('TEMP', keyconfig.keymaps.new('TEMP'))
+        return None
+    keymap = keyconfig.keymaps.get('TEMP')
+    if keymap is None:
+        keymap = keyconfig.keymaps.new('TEMP')
+    return keymap
 
 
 def clear_temp_keymap() -> None:
     keymap = get_temp_keymap()
+    if keymap is None:
+        return
     for kmi in list(keymap.keymap_items):
         keymap.keymap_items.remove(kmi)
 
 
 def get_temp_kmi_by_id_name(id_name: str) -> bpy.types.KeyMapItem:
-    keymap_items = get_temp_keymap().keymap_items
+    keymap = get_temp_keymap()
+    if keymap is None:
+        raise RuntimeError("Add-on keyconfig is not available")
+    keymap_items = keymap.keymap_items
     for kmi in keymap_items:
         if kmi.idname == id_name:
             return kmi
@@ -35,7 +45,10 @@ def get_temp_kmi(
 ) -> bpy.types.KeyMapItem:
     if kmi_data is None:
         kmi_data = {"type": "A", "value": "PRESS"}
-    keymap_items = get_temp_keymap().keymap_items
+    keymap = get_temp_keymap()
+    if keymap is None:
+        raise RuntimeError("Add-on keyconfig is not available")
+    keymap_items = keymap.keymap_items
     for kmi in keymap_items:
         if kmi.idname == id_name:
             if kmi.properties is None:

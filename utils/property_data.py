@@ -8,7 +8,7 @@ CREATE_ELEMENT_DATA_PATHS = {
     "TransformOrientationSlot": "bpy.context.scene.transform_orientation_slots[0]",
 
     "BrushGpencilSettings": "bpy.context.tool_settings.brush.gpencil_settings",
-    "UnifiedPaintSettings": "bpy.context.tool_settings.unified_paing_settings",
+    "UnifiedPaintSettings": "bpy.context.tool_settings.unified_paint_settings",
 
     "SpaceUVEditor": "bpy.context.space_data.uv_editor",
     "SpaceTextEditor": "bpy.context.space_data",
@@ -175,7 +175,8 @@ def resolve_view_layer_data_path(pointer, prop_identifier: str) -> str | None:
         return None
     for view_layer in scene.view_layers:
         if view_layer == pointer:
-            return f'bpy.context.scene.view_layers["{view_layer.name}"].{prop_identifier}'
+            name = bpy.utils.escape_identifier(view_layer.name)
+            return f'bpy.context.scene.view_layers["{name}"].{prop_identifier}'
     return None
 
 

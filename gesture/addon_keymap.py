@@ -106,7 +106,7 @@ def get_addon_keymap(keymap: str) -> bpy.types.KeyMap | None:
     if wm is None:
         return None
     kc = wm.keyconfigs
-    if kc is None:
+    if kc is None or kc.addon is None:
         return None
     keymaps = kc.addon.keymaps.get(keymap)
     if keymaps is not None:
@@ -161,7 +161,7 @@ def clear_orphan_gesture_kmis() -> int:
     if wm is None:
         return 0
     kcs = wm.keyconfigs
-    if kcs is None:
+    if kcs is None or kcs.addon is None:
         return 0
     registered = {id(kmi) for _, kmi in AddonKeymapRegistry._entries}
     clear_count = 0
