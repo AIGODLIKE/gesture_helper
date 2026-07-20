@@ -39,6 +39,16 @@ def poll_context_fingerprint() -> tuple:
     )
 
 
+def _is_direction_slot_item(item) -> bool:
+    """Element kinds that can occupy a radial direction slot."""
+    return (
+        item.is_child_gesture
+        or item.is_operator
+        or item.is_property_display
+        or item.is_layout_container
+    )
+
+
 def get_gesture_direction_items(iteration):
     """Build direction-slot map from a gesture element collection.
 
@@ -61,7 +71,7 @@ def get_gesture_direction_items(iteration):
                     direction.update(child)
                     last_selected_structure = item
             continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator:  # Child gesture or operator
+        elif _is_direction_slot_item(item):
             if item.enabled:
                 direction[item.direction] = item
         if item.enabled:  # Reset structure chain when enabled
@@ -89,10 +99,18 @@ def get_gesture_extension_items(iteration):
                     extension.extend(child)
                     last_selected_structure = item
             continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
-            # Child gesture, operator, or divider
+        elif _is_direction_slot_item(item) or item.is_dividing_line:
             if item.enabled:
                 extension.append(item)
         if item.enabled:  # Reset structure chain when enabled
             last_selected_structure = None
     return extension
+
+
+def iter_panel_leaves(items):
+    """Yield interactive leaves, flattening row/column/box containers."""
+    for item in items:
+        if item.is_layout_container:
+            yield from iter_panel_leaves(get_gesture_extension_items(item.element))
+        else:
+            yield item

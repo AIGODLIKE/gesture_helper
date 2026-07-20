@@ -98,6 +98,12 @@ class OpsProperty(Enum):
     int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
     float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
     string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")
+    display_property: BoolProperty(
+        options={'HIDDEN', 'SKIP_SAVE'},
+        name="Display Property",
+        description="Add as a property display element instead of an operator",
+        default=False,
+    )
 
     @property
     def __data_path__(self) -> str:
@@ -174,6 +180,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
                         layout.label(text="Cannot add this property")
                     else:
                         self.draw_enum(layout)
+                self.draw_display_property(layout, prop, prop_type)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
@@ -242,6 +249,21 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         ops.data_path = self.data_path
         ops.string_value = self.string_value
         ops.property_type = "STRING"
+
+    def draw_display_property(self, layout: bpy.types.UILayout, prop, prop_type: str):
+        """Add-as-display-row entry (bool click, number drag, enum cycle)."""
+        if prop_type not in {"BOOLEAN", "INT", "FLOAT", "ENUM"}:
+            return
+        if getattr(prop, "is_array", False) or getattr(prop, "is_enum_flag", False):
+            return
+        layout.separator()
+        box = layout.box().column(align=True)
+        box.label(text="Show in Gesture Layout")
+        box.label(text="Shows the live value; click or drag it in the gesture panel")
+        ops = box.operator(CreateElementProperty.bl_idname, text="Add Display Property")
+        ops.display_property = True
+        ops.data_path = self.data_path
+        ops.property_type = prop_type
 
     def draw_enum(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Enumeration")
@@ -409,11 +431,20 @@ class Create(Draw):
         if pt == "ENUM" and self.button_prop and self.button_prop.is_enum_flag:
             self.report({'ERROR'}, "Multi-select enum (set) is not supported")
             return False
-        if pt == "ENUM" and not self.has_enum_items:
+        if pt == "ENUM" and not self.display_property and not self.has_enum_items:
             self.report({'ERROR'}, "Dynamic enum properties cannot be added")
             return False
         self.cache_clear()
         with pref.add_element_property.active_radio():
+            if self.display_property:
+                bpy.ops.wm.gesture_element_add(element_type="PROPERTY")
+                ae = self._created_element()
+                if ae:
+                    ae.property_data_path = self.__data_path__
+                    bp = self.button_prop
+                    if bp:
+                        ae.name = pgettext_n(bp.name, bp.translation_context)
+                return True
             bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
             if pt == "BOOLEAN":
                 self.create_boolean()

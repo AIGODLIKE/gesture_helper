@@ -359,23 +359,39 @@ def update_extension_hover(session: GestureSession, ops):
 
     extension_rollback(session)
 
-    if ext is None:
+    if ext is not None and ext not in session.extension_hover:
+        session.extension_hover.insert(0, ext)
+
+    # A layout container selected on a direction slot opens its panel: keep it
+    # on the hover stack while it stays selected or the mouse is in its panel.
+    de = session.snapshot.direction_element
+    if (
+            de is not None
+            and de.is_layout_container
+            and session.snapshot.threshold_zone.is_beyond
+            and de not in session.extension_hover
+    ):
+        de.ops = ops
+        session.extension_hover.append(de)
+
+    if not session.extension_hover:
         from .draw_frame_context import refresh_draw_ctx_extension_flag
         refresh_draw_ctx_extension_flag(session, ops)
         return
-
-    if ext not in session.extension_hover:
-        session.extension_hover.insert(0, ext)
 
     guard = 0
     while session.extension_hover and guard < 16:
         guard += 1
         last = session.extension_hover[-1]
         last.ops = ops
+        if last.is_layout_container:
+            items = last.panel_leaf_items
+        else:
+            items = getattr(last, 'extension_items', [])
         found = None
-        for item in getattr(last, 'extension_items', []):
+        for item in items:
             item.ops = ops
-            if item.is_child_gesture and item.extension_by_child_is_hover:
+            if (item.is_child_gesture or item.is_layout_container) and item.extension_by_child_is_hover:
                 found = item
                 break
         if found is not None and found not in session.extension_hover:
@@ -502,9 +518,67 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
 class GestureInputProcessor:
     """Process modal events into GestureSession updates. Returns visual_dirty."""
 
+    @staticmethod
+    def _hovered_property_row(session: GestureSession, ops):
+        """Property leaf currently hovered in the deepest open panel, or None."""
+        if not session.phase.shows_radial_ui or not session.extension_hover:
+            return None
+        last = session.extension_hover[-1]
+        if last.is_layout_container:
+            items = last.panel_leaf_items
+        else:
+            items = getattr(last, 'extension_items', []) or []
+        for item in items:
+            item.ops = ops
+            if item.is_property_display and item.extension_by_child_is_hover:
+                return item
+        return None
+
+    def _handle_property_drag(self, session: GestureSession, ops, event) -> bool | None:
+        """LMB press/drag/release on panel property rows. None = not handled."""
+        drag = session.property_drag
+        if drag is not None:
+            element, start_mouse, start_value = drag
+            if event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+                delta = event.mouse_x - start_mouse.x
+                element.apply_property_drag(start_value, delta, precise=event.shift)
+                return True
+            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+                session.property_drag = None
+                return True
+            if event.value == 'PRESS' and event.type in {'RIGHTMOUSE', 'ESC'}:
+                element.set_display_property_value(start_value)
+                session.property_drag = None
+                return True
+            # Swallow everything else while dragging (keys must not leak).
+            return True
+
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            item = self._hovered_property_row(session, ops)
+            if item is None:
+                return None
+            prop_type = item.display_property_type
+            if prop_type in {'INT', 'FLOAT'}:
+                start_value = item.display_property_value
+                if start_value is None:
+                    return None
+                session.property_drag = (
+                    item,
+                    Vector((event.mouse_x, event.mouse_y)),
+                    start_value,
+                )
+                return True
+            if prop_type in {'BOOLEAN', 'ENUM'}:
+                item.toggle_display_property()
+                return True
+        return None
+
     def on_event(self, session: GestureSession, ops, event) -> bool:
         """Update session from *event*. Returns whether a redraw is needed."""
         session.event = event
+        drag_result = self._handle_property_drag(session, ops, event)
+        if drag_result is not None:
+            return drag_result
         visual_dirty = False
         moved = False
         if event.type == "MOUSEMOVE":

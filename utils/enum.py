@@ -61,7 +61,15 @@ ENUM_ELEMENT_TYPE = [
     ('CHILD_GESTURE', 'Child', 'Child gesture'),
     ('OPERATOR', 'Op', 'Operator'),
     ('DIVIDING_LINE', 'Div', 'Dividing line'),
+    # New identifiers must stay appended — enum values are stored by index.
+    ('PROPERTY', 'Property', 'Show a property in the gesture; click or drag to change it'),
+    ('ROW', 'Row', 'Horizontal layout container'),
+    ('COLUMN', 'Column', 'Vertical layout container'),
+    ('BOX', 'Box', 'Boxed vertical layout container'),
 ]
+
+# Layout container element types (Blender UILayout-like).
+LAYOUT_CONTAINER_TYPES = {'ROW', 'COLUMN', 'BOX'}
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [

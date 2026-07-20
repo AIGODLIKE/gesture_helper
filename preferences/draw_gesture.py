@@ -143,3 +143,27 @@ class GestureDraw:
             GestureDraw.draw_gesture_item(layout)
         else:
             layout.box().label(text='Add or select a gesture')
+
+    @staticmethod
+    def draw_gesture_preview_button(layout: bpy.types.UILayout) -> None:
+        """Preview launcher for the 3D View panel (edit while previewing)."""
+        from ..ops.quick_add.gesture_preview import GesturePreview
+        from ..utils.session_state import SessionState
+        from ..utils.icons import ui_icon
+
+        pref = get_pref()
+        ag = pref.active_gesture
+        if ag is None:
+            return
+        row = layout.row(align=True)
+        row.enabled = pref.enabled
+        if SessionState.gesture_preview_active:
+            row.label(text="Previewing: edits show live; right-click the viewport to exit")
+            return
+        row.operator_context = "INVOKE_DEFAULT"
+        ops = row.operator(
+            GesturePreview.bl_idname,
+            icon=ui_icon('HIDE_OFF'),
+            text="Preview Gesture",
+        )
+        ops.gesture = ag.name

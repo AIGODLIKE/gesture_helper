@@ -57,7 +57,11 @@ class GesturePreferences(PublicProperty,
 
 
     def get_gesture_data(self, get_all: bool = False) -> {}:
-        from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
+        from ..ops.export_import import (
+            EXPORT_PROPERTY_ITEM,
+            EXPORT_PROPERTY_EXCLUDE,
+            EXPORT_PUBLIC_ITEM,
+        )
         from ..utils.property import get_property
 
         def filter_data(filter_dict, exclude_keywords=None):
@@ -71,7 +75,7 @@ class GesturePreferences(PublicProperty,
                 if element_type == "OPERATOR" and f"OPERATOR_{operator_type.upper()}" in EXPORT_PROPERTY_ITEM:
                     element_type = f"OPERATOR_{operator_type.upper()}"
 
-                for i in EXPORT_PROPERTY_ITEM[element_type]:
+                for i in EXPORT_PROPERTY_ITEM.get(element_type, EXPORT_PUBLIC_ITEM):
                     if i in filter_dict:
                         res[i] = filter_dict[i]
             else:
@@ -97,6 +101,8 @@ class GesturePreferences(PublicProperty,
                 res.pop("operator_type")
             if "operator_properties" in res and res["operator_properties"] == "{}":  # Default empty props
                 res.pop("operator_properties")
+            if "main_item" in res and not res["main_item"]:  # Default: not a main action
+                res.pop("main_item")
 
             for k in exclude_keywords:
                 if k in res:

@@ -14,10 +14,18 @@ _MSG_ANIMATION = "Animation is playing (UI updates paused)"
 
 
 def is_gesture_modal_active() -> bool:
-    """True while a gesture GPU overlay modal is running."""
+    """True while a real gesture modal is running.
+
+    The gesture preview also registers a draw instance, but it must NOT pause
+    panel drawing — editing elements while previewing is the whole point.
+    """
     try:
         from ..gesture.gesture_draw_gpu import GestureGpuDraw
-        return bool(GestureGpuDraw.__active_draw_instances__)
+        from .session_state import SessionState
+        count = len(GestureGpuDraw.__active_draw_instances__)
+        if SessionState.gesture_preview_active:
+            count -= 1
+        return count > 0
     except Exception:
         return False
 

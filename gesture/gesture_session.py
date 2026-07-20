@@ -128,6 +128,8 @@ class GestureSession:
         self.event_count = 0
         self.move_count = 0
         self.last_mouse_mouse_time = 0.0
+        # Active LMB value drag on a property row: (element, start_mouse, start_value).
+        self.property_drag: tuple | None = None
         self._gesture_circle_center: Vector | None = None
         self._last_trajectory_mouse: Vector | None = None
         self._derived_cache_key = None
@@ -160,6 +162,7 @@ class GestureSession:
         self.event_count = 1
         self.move_count = 1
         self.last_mouse_mouse_time = time.time()
+        self.property_drag = None
         self._gesture_circle_center = None
         self._last_trajectory_mouse = None
         self._derived_cache_key = None

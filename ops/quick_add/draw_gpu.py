@@ -53,8 +53,8 @@ class DrawGpu:
                     from bpy.app.translations import pgettext_iface
                     for text in [
                         "Right-click an operator or property and choose Add to Gesture.",
-                        "Select elements from the 3D View toolbar",
-                        "Gesture preview: Space-drag to move, right-click to exit",
+                        "Edits in the Gesture panel update the preview live",
+                        "Space-drag to move, right-click in the viewport to exit",
                     ]:
                         tips.label(pgettext_iface(text))
             if self.tips.check_event(event):

@@ -54,7 +54,9 @@ class GestureItemPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         return GesturePanel.poll(context)
 
     def draw(self, context):
-        layout = self.layout.row(align=True)
+        column = self.layout.column()
+        GestureDraw.draw_gesture_preview_button(column)
+        layout = column.row(align=True)
         layout.enabled = self.pref.enabled
         if not self.pref.active_gesture:
             GestureDraw.draw_gesture_cure(layout)
