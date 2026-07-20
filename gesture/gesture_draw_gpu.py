@@ -1,6 +1,5 @@
 import time
 
-import blf
 import bpy
 import gpu
 from mathutils import Vector
@@ -282,6 +281,7 @@ class GestureGpuDraw(DrawDebug):
         threshold = draw_ctx.threshold if draw_ctx is not None else (
             self.pref.gesture_property.threshold * scale
         )
+        from ..utils.blf_text import measure_text
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
@@ -291,14 +291,14 @@ class GestureGpuDraw(DrawDebug):
                 tn = __name_translate__(text)
 
                 is_last = pos == tree.points_list[-1]
-                font_id = 0
-                blf.size(font_id, size)
-                (w, h) = blf.dimensions(font_id, tn)
+                # Metric line height keeps knot labels at a constant offset
+                # regardless of which glyphs the name happens to contain.
+                w, line_h = measure_text(tn, size)
                 gpu.matrix.translate(Vector((-(w / 2), 0)))
                 if is_last:
                     gpu.matrix.translate(Vector((0, -threshold)))
                 else:
-                    gpu.matrix.translate(Vector((0, -h)))
+                    gpu.matrix.translate(Vector((0, -line_h)))
 
                 self.draw_text(tn, size=size)
 

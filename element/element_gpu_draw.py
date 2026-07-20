@@ -1,15 +1,12 @@
 import math
-import re
 from functools import cache
 
-import blf
 import bpy
 import gpu
 from bl_operators.wm import context_path_validate
 from gpu_extras.presets import draw_circle_2d
 from mathutils import Vector
 
-from ..utils import including_chinese, has_special_characters, contains_uppercase
 from ..utils.gpu import get_now_2d_offset_position
 from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
@@ -21,10 +18,9 @@ from ..utils.texture import Texture
 
 @cache
 def from_text_get_dimensions(text, size):
-    font_id = 0
-    blf.size(font_id, size)
-    dimensions = blf.dimensions(font_id, text)
-    return dimensions
+    """(text width, stable line height) — height never depends on the glyphs."""
+    from ..utils.blf_text import measure_text
+    return measure_text(text, size)
 
 
 @cache
@@ -65,9 +61,8 @@ class ElementGpuProperty:
 
     @property
     def text_dimensions(self) -> tuple:
-        mh = self.text_size
-        x, y = from_text_get_dimensions(self.text, self.text_size)
-        return x, max(mh, y)
+        """(label width, line height) — the height is glyph-independent."""
+        return from_text_get_dimensions(self.text, self.text_size)
 
     @property
     def text(self) -> str:
@@ -269,7 +264,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.gpu_draw_margin()
                 x, y = get_now_2d_offset_position()
                 self.gpu_draw_icon()
-                self.gpu_draw_text_fix_offset()
+                self.gpu_draw_label()
                 self.gpu_draw_child_icon()
 
                 self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
@@ -286,35 +281,18 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                         gpu.matrix.translate((w + gap, 0))
                     self.draw_gpu_layout_panel(ops)
 
-    def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
-        """Apply text offset per script type for alignment."""
-        with gpu.matrix.push_pop():
-            w, h = self.text_dimensions
-            text = self.text
-            special_characters = has_special_characters(text)
-            if including_chinese(text):  # CJK text
-                offset = [0, h * 0.158]
-            elif "_" in text and not special_characters:  # Underscore in text
-                offset = [0, h * 0.325]
-            elif has_special_characters(text):  # Special characters
-                offset = [0, h * 0.1]
-            else:  # Latin text
-                if contains_uppercase(text):  # Has uppercase
-                    offset = [0, h * .09]
-                elif bool(re.search(r'j', text)):  # Lowercase j spans ascender/descender
-                    offset = [0, h * .2]
-                elif bool(re.search(r'[tidfhklb]*', text)):  # Mostly ascender height
-                    offset = [0, h * .2]
-                elif bool(re.search(r'[qypg]*', text)):  # Mostly descender height
-                    offset = [0, h * .2]
-                else:  # Mid-height letters
-                    offset = [0, h * 0.355]
-            if fix_offset:
-                gpu.matrix.translate(offset)
-            self.draw_text(
-                text, position=[0, 0], color=color_to_srgb(self.text_color),
-                size=self.text_size, auto_offset=False,
-            )
+    def gpu_draw_label(self, use_offset=True):
+        """Draw the label with its line-box top at the current origin.
+
+        ``draw_text`` places the baseline from measured font metrics, so every
+        label (CJK, capitals, descenders) fills the same stable line box — no
+        per-script nudge tables.
+        """
+        w, _h = self.text_dimensions
+        self.draw_text(
+            self.text, position=[0, 0], color=color_to_srgb(self.text_color),
+            size=self.text_size,
+        )
         if use_offset:
             gpu.matrix.translate((w, 0))
 
@@ -507,10 +485,10 @@ class ElementGpuExtensionItem:
         from types import SimpleNamespace
 
         items = self.extension_items
-        label_h = self.max_height_dimensions
         label_w = self.max_width_dimensions
-        if label_h <= 0:
-            label_h = float(self.text_size)
+        # Stable metric line height — identical for every label at this size.
+        from ..utils.blf_text import text_line_height
+        label_h = text_line_height(self.text_size)
 
         icon_size = label_h
         gap = icon_size * self._GAP_FRAC
@@ -659,14 +637,12 @@ class ElementGpuExtensionItem:
 
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate((cursor_x, 0))
-                        # Center label in the icon band. Skip per-glyph fix_offset
-                        # (CJK vs Latin used different nudges and looked uneven).
+                        # Line box == icon band when heights match; the guard
+                        # centers the box if the band is ever taller.
                         _tw, th = item.text_dimensions
                         if th < lay.icon_size:
                             gpu.matrix.translate((0, -(lay.icon_size - th) * 0.5))
-                        # BLF baseline sits low in the em-box; slight lift matches icon.
-                        gpu.matrix.translate((0, lay.icon_size * 0.12))
-                        item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
+                        item.gpu_draw_label(use_offset=False)
 
                     if lay.has_chevron_col and (item.is_child_gesture or item.is_layout_container):
                         tex = Texture.get_texture("1")
