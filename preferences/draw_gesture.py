@@ -10,7 +10,6 @@ class GestureDraw:
     @staticmethod
     def draw_gesture_cure(layout: 'bpy.types.UILayout') -> None:
         from ..ops.gesture_cure import GestureCURE
-        pref = get_pref()
 
         column = layout.column(align=True)
         # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.

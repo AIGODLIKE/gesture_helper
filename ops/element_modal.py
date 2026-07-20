@@ -70,7 +70,6 @@ class KeymapTips(PublicGpu):
         x1 = toolbar_width + offset_x
         y1 = offset_y + asset_shelf + asset_shelf_header
 
-        x2 = x1
         y2 = y1
 
         max_width = 0

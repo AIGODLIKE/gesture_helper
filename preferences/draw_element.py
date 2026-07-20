@@ -58,7 +58,6 @@ class DrawElement:
             DrawElement.draw_cut_element(layout)
 
         elif active_element:
-            from ..element.element_cure import ElementCURE
             if pref.__is_move_element__:
                 DrawElement.draw_move_element(layout)
             elif not prop.element_show_left_side:

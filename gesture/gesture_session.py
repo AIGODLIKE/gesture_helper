@@ -130,6 +130,8 @@ class GestureSession:
         self.last_mouse_mouse_time = 0.0
         # Active LMB value drag on a property row: (element, start_mouse, start_value).
         self.property_drag: tuple | None = None
+        # Set when a drag ended on the same event that exits the gesture.
+        self._suppress_property_execute = False
         self._gesture_circle_center: Vector | None = None
         self._last_trajectory_mouse: Vector | None = None
         self._derived_cache_key = None
@@ -163,6 +165,7 @@ class GestureSession:
         self.move_count = 1
         self.last_mouse_mouse_time = time.time()
         self.property_drag = None
+        self._suppress_property_execute = False
         self._gesture_circle_center = None
         self._last_trajectory_mouse = None
         self._derived_cache_key = None

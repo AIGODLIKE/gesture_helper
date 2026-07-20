@@ -550,6 +550,14 @@ class GestureInputProcessor:
                 element.set_display_property_value(start_value)
                 session.property_drag = None
                 return True
+            if event.value == 'RELEASE' and event.type == session.invoke_event_type:
+                # Gesture key released mid-drag: keep the dragged value and let
+                # the normal exit flow run (swallowing it would leave a zombie
+                # modal with no exit trigger left). The executor must not fire
+                # the row again on this release.
+                session.property_drag = None
+                session._suppress_property_execute = True
+                return None
             # Swallow everything else while dragging (keys must not leak).
             return True
 
