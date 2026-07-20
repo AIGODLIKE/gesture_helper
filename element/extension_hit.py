@@ -44,9 +44,22 @@ def _mouse_for(el, ops=None) -> tuple[float, float] | None:
     return ops_window_mouse(ops)
 
 
+def layout_is_current(el, ops) -> bool:
+    """True when *el*'s hit boxes were stamped by the current session layout.
+
+    GPU draw stamps ``_gesture_layout_token`` next to every hit box it writes;
+    a session reset swaps the token, so boxes left by a previous gesture or a
+    pre-draw state can never satisfy a hit test.
+    """
+    session = getattr(ops, "session", None) if ops is not None else None
+    return session is not None and getattr(el, "_gesture_layout_token", None) is session.layout_token
+
+
 def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None) -> int:
     """Return hit flags for one extension panel element."""
     ops = ops or getattr(el, "ops", None)
+    if not layout_is_current(el, ops):
+        return 0
     if mouse is None:
         mouse = _mouse_for(el, ops)
     if mouse is None:
@@ -113,6 +126,8 @@ def _hit_right_band(el, ops, mouse: tuple[float, float]) -> bool:
 def hit_test_child_row(item, ops=None, *, mouse: tuple[float, float] | None = None) -> bool:
     """True when mouse is over an extension child row hit box."""
     ops = ops or getattr(item, "ops", None)
+    if not layout_is_current(item, ops):
+        return False
     if mouse is None:
         mouse = _mouse_for(item, ops)
     return point_in_rect(mouse, getattr(item, "extension_by_child_draw_area", None))

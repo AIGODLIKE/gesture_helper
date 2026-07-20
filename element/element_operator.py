@@ -61,7 +61,7 @@ class ModalProperty:
     @property
     def active_event(self) -> ElementModalOperatorEventItem | None:
         """Active modal event item."""
-        if len(self.modal_events) > self.modal_events_index and self.modal_events:
+        if 0 <= self.modal_events_index < len(self.modal_events):
             return self.modal_events[self.modal_events_index]
         return None
 

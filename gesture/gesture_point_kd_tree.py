@@ -40,6 +40,19 @@ class GesturePointKDTree:
         self.kd_tree.insert((*point, 0), idx)
         self._needs_balance = True
 
+    def set_points(self, points) -> None:
+        """Replace trajectory positions and rebuild the spatial index."""
+        points = [Vector(point) for point in points]
+        if len(points) != len(self.child_element):
+            raise ValueError("point count must match trajectory element count")
+        self.points_list = points
+        self._capacity = max(self._capacity, len(points), 1)
+        self._rebuild()
+
+    def translate(self, offset: Vector) -> None:
+        """Translate the trajectory without leaving a stale KD-tree."""
+        self.set_points(point + offset for point in self.points_list)
+
     def remove(self, index):
         if index < 0 or not self.points_list:
             return self.last_element

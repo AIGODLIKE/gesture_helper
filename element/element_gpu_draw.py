@@ -182,17 +182,30 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     @property
     def extension_items(self) -> list:
-        """Extension items (bottom menu), memoized per modal draw generation."""
-        from ..utils.gesture_items import poll_context_fingerprint
+        """Extension items (bottom menu), memoized per element per input event.
+
+        One dict entry per element (bounded); the key part invalidates on every
+        modal event and on structure-cache rebuilds, so poll results never
+        outlive one event.
+        """
         ops = getattr(self, 'ops', None)
-        cache_key = (self, PublicCache.__derived_generation__, poll_context_fingerprint())
+        session = getattr(ops, 'session', None)
+        cache_key = (
+            PublicCache.__derived_generation__,
+            getattr(session, 'event_count', 0),
+        )
+        cache = None
         if ops is not None:
             cache = getattr(ops, '_gpu_extension_items_cache', None)
-            if cache is not None and cache[0] == cache_key:
-                return cache[1]
+            if cache is None:
+                cache = {}
+                ops._gpu_extension_items_cache = cache
+            entry = cache.get(self)
+            if entry is not None and entry[0] == cache_key:
+                return entry[1]
         items = get_gesture_extension_items(self.element)
-        if ops is not None:
-            ops._gpu_extension_items_cache = (cache_key, items)
+        if cache is not None:
+            cache[self] = (cache_key, items)
         return items
 
     def draw_gpu_item(self, ops):
@@ -249,6 +262,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.gpu_draw_child_icon()
 
                 self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
+                self._gesture_layout_token = ops.session.layout_token
 
     def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
         """Apply text offset per script type for alignment."""
@@ -539,8 +553,6 @@ class ElementGpuExtensionItem:
         w, h = lay.content_w, lay.content_h
         with gpu.matrix.push_pop():
             self.ops = ops
-            if self not in ops.extension_hover:
-                ops.extension_hover.append(self)
             draw_debug_point()
             self.draw_gpu_extension_margin()
 
@@ -637,6 +649,7 @@ class ElementGpuExtensionItem:
                     sx + w + mx - side_inset,
                     sy,
                 ]
+                item._gesture_layout_token = ops.session.layout_token
 
                 if item.is_child_gesture and (
                         item.extension_by_child_is_hover or item in ops.extension_hover
@@ -662,6 +675,9 @@ class ElementGpuExtensionItem:
         x, y = get_now_2d_offset_position()
         # Hit box matches painted chrome; top edge keeps legacy margin_x quirk.
         self.extension_draw_area = [x - mx, y - h - my, x + w + mx, y + mx]
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        if session is not None:
+            self._gesture_layout_token = session.layout_token
 
         if len(self.extension_items) == 0:
             return

@@ -55,6 +55,11 @@ def clear_gpu_caches() -> None:
         clear_stroke_shader_cache()
     except Exception:
         pass
+    try:
+        from ..src.lib.overlay_layout import clear_overlay_shader
+        clear_overlay_shader()
+    except Exception:
+        pass
 
 
 def gpu_draw_begin():

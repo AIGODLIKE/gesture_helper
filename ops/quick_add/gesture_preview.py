@@ -50,14 +50,31 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         return self.is_right_mouse
 
     def __sync_gesture__(self):
-        """Sync gesture name from preview."""
+        """Rebuild the whole preview session when the active gesture changes.
+
+        Only updating the name would keep the old gesture's child levels,
+        hover stack, and item memos alive in the trajectory tree.
+        """
         ag = self.pref.active_gesture
         if ag and self.gesture != ag.name:
-            self.gesture = ag.name
-            self.session.gesture_name = ag.name
+            from ...gesture.gesture_input import clear_gesture_item_memos
             tree = self.trajectory_tree
-            if len(tree) >= 2:
-                debug_print(tree, key='modal')
+            center = tree.points_list[0].copy() if tree.points_list else self.offset_position.copy()
+            event = self.session.event
+            area = self.session.area
+            screen = self.session.screen
+            self._cancel_gesture_timeout_timer()
+            clear_gesture_item_memos(self.session, self)
+            self.gesture = ag.name
+            self.session.reset(event, area, screen, ag.name)
+            self.session._gesture_circle_center = center.copy()
+            self.session._last_trajectory_mouse = center.copy()
+            self.trajectory_tree.append(None, center)
+            self.trajectory_mouse_move.append(center.copy())
+            self.trajectory_mouse_move_time.append(0.0)
+            self._schedule_gesture_timeout_timer()
+            refresh_snapshot(self.session, self)
+            self.tag_redraw()
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         self.init_invoke(event)
@@ -113,7 +130,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
                 nd = self.start_mouse_position - self.mouse_position
                 diff = self.__difference_mouse__ - nd
 
-                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
+                self.trajectory_tree.set_points(pos + diff for pos in self.points_list)
                 self.points_list = None
                 self.__difference_mouse__ = None
             elif self.__difference_mouse__:
@@ -121,7 +138,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
                 diff = self.__difference_mouse__ - nd
                 self.offset_position = self.mouse_position - diff
 
-                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
+                self.trajectory_tree.set_points(pos + diff for pos in self.points_list)
 
             return {'PASS_THROUGH', 'RUNNING_MODAL'}
         if self.is_exit:
