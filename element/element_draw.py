@@ -1,5 +1,6 @@
 # Gesture drawing
 # Preview drawing
+import bpy
 from bpy.app.translations import pgettext_iface
 
 from ..ops.set_direction import SetDirection
