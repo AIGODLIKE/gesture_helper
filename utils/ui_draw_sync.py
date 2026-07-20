@@ -17,7 +17,7 @@ def is_gesture_modal_active() -> bool:
     """True while a gesture GPU overlay modal is running."""
     try:
         from ..gesture.gesture_draw_gpu import GestureGpuDraw
-        return GestureGpuDraw.__modal_draw_count__ > 0
+        return bool(GestureGpuDraw.__active_draw_instances__)
     except Exception:
         return False
 

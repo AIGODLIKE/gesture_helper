@@ -1,8 +1,6 @@
 import json
-import time
 
 import blf
-import bmesh
 import bpy
 import gpu
 
@@ -10,7 +8,6 @@ from ..utils.public import debug_print
 from ..utils import get_region_height, get_region_width
 from ..utils.public import PublicOperator, get_pref, PublicMouseModal
 from ..utils.public_gpu import PublicGpu
-from ..utils.adapter import operator_setattr, operator_getattr
 from ..utils.expression import literal_to_dict
 
 
@@ -138,11 +135,11 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
     bl_idname = 'wm.gesture_element_modal_event'
     bl_label = 'Element Modal'
     bl_description = 'Run a modal operator element and map events to its properties'
-    # No UNDO on the wrapper — preview uses snapshot restore, not ed.undo / undo_redo.
-    bl_options = {'REGISTER', 'GRAB_CURSOR', 'BLOCKING'}
+    # UNDO on the wrapper: the target operator runs exactly once on confirm and
+    # folds into this operator's single undo step.
+    bl_options = {'REGISTER', 'UNDO', 'GRAB_CURSOR', 'BLOCKING'}
 
     operator_properties: dict
-    last_running_time = 0
 
     @classmethod
     def poll(cls, context):
@@ -167,16 +164,9 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         self.operator_properties = dict(props)
         debug_print(self.bl_idname, self.gesture, self.element, self.operator_properties, key='modal')
 
-        # One undo checkpoint for Ctrl+Z after confirm; preview itself never uses ed.undo.
-        if bpy.ops.ed.undo_push.poll():
-            bpy.ops.ed.undo_push(message="Gesture Element Modal")
-
-        operator_setattr(self, '_applied', False)
-        self._capture_baseline(context)
-        err = self._run_target_operator()
-        if err is None:
-            operator_setattr(self, '_applied', True)
-
+        # Only collect property values during the drag. Re-running arbitrary
+        # operators cannot be rolled back safely across all Blender data types.
+        # The target operator is executed exactly once, on confirmation.
         self.start_hud(context)
         self.start_mouse(event)
         self.register_draw()
@@ -192,64 +182,8 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
             return literal_to_dict(props) or {}
         return props
 
-    def _capture_baseline(self, context) -> None:
-        """Snapshot edit meshes + object names before the first apply."""
-        operator_setattr(self, '_baseline_objects', set(bpy.data.objects.keys()))
-        snaps = {}
-        if getattr(context, "mode", None) == 'EDIT_MESH':
-            for obj in getattr(context, "objects_in_mode", []) or []:
-                if getattr(obj, "type", None) != 'MESH' or obj.data is None:
-                    continue
-                try:
-                    bm = bmesh.from_edit_mesh(obj.data)
-                    me = bpy.data.meshes.new(name=f".gh_snap_{obj.name}")
-                    bm.to_mesh(me)
-                    snaps[obj.name] = me.name
-                except Exception as e:
-                    debug_print('_capture_baseline ERROR', e, key='modal')
-        operator_setattr(self, '_mesh_snaps', snaps)
-
-    def _restore_baseline(self, context) -> None:
-        """Restore meshes / remove objects created since baseline. No ed.undo."""
-        baseline = operator_getattr(self, '_baseline_objects', set()) or set()
-        for name in list(bpy.data.objects.keys()):
-            if name in baseline:
-                continue
-            obj = bpy.data.objects.get(name)
-            if obj is not None:
-                try:
-                    bpy.data.objects.remove(obj, do_unlink=True)
-                except (ReferenceError, RuntimeError):
-                    ...
-
-        snaps = operator_getattr(self, '_mesh_snaps', {}) or {}
-        if snaps and getattr(context, "mode", None) == 'EDIT_MESH':
-            for obj_name, mesh_name in snaps.items():
-                obj = bpy.data.objects.get(obj_name)
-                snap = bpy.data.meshes.get(mesh_name)
-                if obj is None or snap is None or getattr(obj, "type", None) != 'MESH':
-                    continue
-                try:
-                    bm = bmesh.from_edit_mesh(obj.data)
-                    bm.clear()
-                    bm.from_mesh(snap)
-                    bmesh.update_edit_mesh(obj.data)
-                except Exception as e:
-                    debug_print('_restore_baseline ERROR', e, key='modal')
-
-    def _free_snapshots(self) -> None:
-        snaps = operator_getattr(self, '_mesh_snaps', {}) or {}
-        for mesh_name in list(snaps.values()):
-            me = bpy.data.meshes.get(mesh_name)
-            if me is not None:
-                try:
-                    bpy.data.meshes.remove(me)
-                except (ReferenceError, RuntimeError):
-                    ...
-        operator_setattr(self, '_mesh_snaps', {})
-
     def _run_target_operator(self):
-        """EXEC target once. undo=False — we manage preview via snapshots."""
+        """EXEC the target once with collected props; undo folds into the wrapper."""
         func = self.element.operator_func
         if func is None:
             return RuntimeError("operator not found")
@@ -261,54 +195,25 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
             debug_print('_run_target_operator ERROR', e, key='modal')
             return e
 
-    def _update_preview(self) -> None:
-        """Restore baseline, then re-exec with current props (no ed.undo)."""
-        self._restore_baseline(bpy.context)
-        err = self._run_target_operator()
-        operator_setattr(self, '_applied', err is None)
-
-    def _replace_operator_result(self, _operator_properties) -> None:
-        self._update_preview()
-
-    def _undo_on_cancel(self) -> None:
-        """Cancel: restore snapshot / drop new objects. No ed.undo."""
-        if operator_getattr(self, '_applied', False):
-            self._restore_baseline(bpy.context)
-        operator_setattr(self, '_applied', False)
-        self._free_snapshots()
-
     def modal(self, context, event):
         self.init_modal(event)
         pref = get_pref()
-        fps = max(1, pref.gesture_property.modal_operator_target_fps)
-        frame_time = 1.0 / fps
-        if self.last_running_time > frame_time:
-            from bpy.app.translations import pgettext
-            self.report(
-                {'ERROR'},
-                pgettext("Operator execution took too long (%.3f s)") % self.last_running_time,
-            )
-            self._undo_on_cancel()
-            return self.exit(context, event)
         if event.type == "LEFTMOUSE" and event.value == "PRESS":  # Confirm
+            error = self._run_target_operator()
+            if error is not None:
+                self.report({'ERROR'}, str(error))
+                return self.exit(context, cancelled=True)
             self.finished(context)
-            return self.exit(context, event)
+            return self.exit(context)
 
         if pref.gesture_property.modal_pass_view_rotation:
             if event.type == 'MIDDLEMOUSE' and event.value == 'PRESS':
                 return {'PASS_THROUGH'}
         if event.value == "PRESS" and (self.is_right_mouse or event.type == "ESC"):
-            debug_print("esc undo", key='modal')
-            self._undo_on_cancel()
-            return self.exit(context, event)
+            return self.exit(context, cancelled=True)
         if event.type not in ("TIMER_REPORT",):
             element = self.element
             if element.run_element_modal_event(self, context, event):
-                debug_print("snapshot update", key='modal')
-                start_time = time.time()
-                self._replace_operator_result(self.operator_properties)
-                self.last_running_time = time.time() - start_time
-                debug_print("last_running_time", self.last_running_time, key='modal')
                 self.update_header_text(context)
                 return {'RUNNING_MODAL'}
         return {'RUNNING_MODAL'}
@@ -316,15 +221,17 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
     def update_header_text(self, context):
         context.area.header_text_set(self.element.get_header_text(self._props_dict()))
 
-    def exit(self, context, event):
-        context.area.header_text_set(None)
+    def exit(self, context, *, cancelled=False):
+        if context.area is not None:
+            context.area.header_text_set(None)
         self.restore_hud(context)
         self.unregister_draw()
         super().exit()
-        return {"FINISHED"}
+        return {"CANCELLED" if cancelled else "FINISHED"}
+
+    def cancel(self, context):
+        self.exit(context, cancelled=True)
 
     def finished(self, context):
         """On finish, save changed properties for next operator invoke."""
         self.element.last_modal_operator_property = json.dumps(self._props_dict())
-        operator_setattr(self, '_applied', False)
-        self._free_snapshots()

@@ -116,8 +116,9 @@ class GestureOperator(
         Modal state machine (keep this small — focus heuristics belong elsewhere):
 
         1. ``modal_report_done`` → always FINISHED (zombie-handler guard)
-        2. ``WINDOW_DEACTIVATE`` → RUNNING_MODAL (never CANCELLED; is_exit
-           already ignores non-invoke RELEASE)
+        2. ``WINDOW_DEACTIVATE`` → cancel: the key RELEASE may be swallowed
+           while the window is unfocused, which would leave a zombie modal
+           intercepting input after focus returns
         3. immediate / is_exit → cleanup + exit path
         4. else RUNNING_MODAL
         """
@@ -126,7 +127,9 @@ class GestureOperator(
             return self._finish_leftover_modal(event)
 
         if event.type == 'WINDOW_DEACTIVATE':
-            return {'RUNNING_MODAL'}
+            self._mark_modal_done()
+            self.__exit_modal__()
+            return {'CANCELLED'}
 
         self.init_modal(event)
         dirty = self._input.on_event(self.session, self, event)

@@ -75,10 +75,6 @@ class UiHandoff(Enum):
     def needs_interface(self) -> bool:
         return self is UiHandoff.DEFERRED
 
-    @property
-    def ignore_window_deactivate(self) -> bool:
-        return self is UiHandoff.DEFERRED
-
 
 def threshold_zone_from_distance(distance: float, threshold: float, threshold_confirm: float) -> ThresholdZone:
     """Map distance to zone. *threshold_confirm* is the extra delta past *threshold*."""
@@ -142,6 +138,7 @@ class GestureSession:
         self._bottom_child_dwell_timer = None
         self._bottom_child_dwell_deadline = None
         self.draw_ctx = None  # DrawFrameContext | None
+        self.layout_token = object()
 
     def reset(self, event, area, screen, gesture_name: str = ""):
         """Initialize / reset for a new invoke."""
@@ -173,6 +170,7 @@ class GestureSession:
         self._bottom_child_dwell_timer = None
         self._bottom_child_dwell_deadline = None
         self.draw_ctx = None
+        self.layout_token = object()
 
     # ---- phase transitions (single write path) ----
 

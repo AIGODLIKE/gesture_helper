@@ -79,14 +79,20 @@ def raw_direction_items_dict(session: GestureSession, operator_gesture) -> dict:
 
 
 def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gpu: bool) -> dict:
+    """Direction items memoized per input event.
+
+    Poll expressions read live context, so results must not outlive one modal
+    event; ``event_count`` bumps on every event, and the context id changes when
+    the trajectory enters/leaves a child level. Within one event the condition
+    tree is walked at most once.
+    """
     if not is_draw_gpu:
         return raw_direction_items_dict(session, operator_gesture)
-    from ..utils.gesture_items import poll_context_fingerprint
     from ..utils.public_cache import PublicCache
     key = (
         direction_items_context_id(session, operator_gesture),
         PublicCache.__derived_generation__,
-        poll_context_fingerprint(),
+        session.event_count,
     )
     memo = session._direction_items_memo
     if memo is not None and memo[0] == key:
@@ -432,13 +438,19 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
     )
 
     operator_gesture = ops.operator_gesture
-    raw_items = raw_direction_items_dict(session, operator_gesture)
     direction_items = get_direction_items(session, operator_gesture, is_draw_gpu=is_draw_gpu)
+    raw_items = direction_items
     extension_element = direction_items.get("9")
 
     extension_offset_distance = 0.0
     if extension_element and is_draw_gpu:
-        offset_position = getattr(extension_element, "extension_offset_start_position", None)
+        # Only trust the offset anchor when this session's GPU draw stamped it;
+        # a value left by a previous gesture would skew direction correction.
+        from ..element.extension_hit import layout_is_current
+        offset_position = (
+            getattr(extension_element, "extension_offset_start_position", None)
+            if layout_is_current(extension_element, ops) else None
+        )
         from ..utils.region_mouse import find_window_region
         region = find_window_region(session.area) or getattr(bpy.context, 'region', None)
         if offset_position is not None and last_point is not None and region is not None:

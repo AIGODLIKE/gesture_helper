@@ -101,12 +101,21 @@ class DrawDebug(PublicGpu):
 class GestureGpuDraw(DrawDebug):
     __temp_draw_class__ = {}
     __temp_debug_draw_class__ = {}
-    __modal_draw_count__ = 0
-    __active_draw_instance__ = None
+    __active_draw_instances__ = {}
+
+    @staticmethod
+    def _context_instance():
+        area = bpy.context.area
+        if area is None:
+            return None
+        try:
+            return GestureGpuDraw.__active_draw_instances__.get(area.as_pointer())
+        except ReferenceError:
+            return None
 
     @staticmethod
     def _gpu_draw_handler():
-        inst = GestureGpuDraw.__active_draw_instance__
+        inst = GestureGpuDraw._context_instance()
         if inst is None:
             return
         try:
@@ -116,7 +125,7 @@ class GestureGpuDraw(DrawDebug):
 
     @staticmethod
     def _gpu_debug_draw_handler():
-        inst = GestureGpuDraw.__active_draw_instance__
+        inst = GestureGpuDraw._context_instance()
         if inst is None:
             return
         try:
@@ -152,7 +161,7 @@ class GestureGpuDraw(DrawDebug):
         if not space:
             return
         cls = space.rna_type
-        GestureGpuDraw.__active_draw_instance__ = self
+        GestureGpuDraw.__active_draw_instances__[self.area.as_pointer()] = self
         debug_gpu = False
         try:
             debug_gpu = bool(self.pref.debug_property.debug_draw_gpu_mode)
@@ -187,8 +196,6 @@ class GestureGpuDraw(DrawDebug):
             if debug_class:
                 GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 
-        GestureGpuDraw.__modal_draw_count__ += 1
-        GestureGpuDraw.__active_draw_instance__ = self
         # Drop any pending N-panel keymap/operator sync so it cannot key_restart mid-draw.
         from ..utils.ui_draw_sync import cancel_all
         cancel_all()
@@ -199,8 +206,7 @@ class GestureGpuDraw(DrawDebug):
         """Remove every registered GPU draw handler and reset counters."""
         from ..utils.public import tag_redraw as tag_redraw_all
 
-        GestureGpuDraw.__modal_draw_count__ = 0
-        GestureGpuDraw.__active_draw_instance__ = None
+        GestureGpuDraw.__active_draw_instances__.clear()
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 try:
@@ -217,18 +223,22 @@ class GestureGpuDraw(DrawDebug):
         GestureGpuDraw.__temp_debug_draw_class__.clear()
         tag_redraw_all()
 
-    @classmethod
-    def unregister_draw(cls):
+    def unregister_draw(self):
         """Cancel GPU draw handler when the last modal session ends."""
         from ..utils.public import tag_redraw as tag_redraw_all
 
-        GestureGpuDraw.__modal_draw_count__ = max(0, GestureGpuDraw.__modal_draw_count__ - 1)
-        if GestureGpuDraw.__modal_draw_count__ > 0:
+        try:
+            key = self.area.as_pointer()
+        except (AttributeError, ReferenceError):
+            key = None
+        if key is not None and GestureGpuDraw.__active_draw_instances__.get(key) is self:
+            GestureGpuDraw.__active_draw_instances__.pop(key, None)
+        if GestureGpuDraw.__active_draw_instances__:
             # Must not call cls.tag_redraw() — subclasses override it as an
             # instance method (Blender 4.2 / 5.x both).
             tag_redraw_all()
             return
-        cls._remove_all_draw_handlers()
+        self._remove_all_draw_handlers()
 
     @classmethod
     def force_unregister_draw(cls):
@@ -307,8 +317,6 @@ class GestureGpuDraw(DrawDebug):
         if region is None:
             return
 
-        from .gesture_input import extension_rollback
-
         scale = self._draw_ui_scale()
         session = self.session
         draw_ctx = getattr(session, "draw_ctx", None)
@@ -317,10 +325,6 @@ class GestureGpuDraw(DrawDebug):
         )
         from ..src.translate import __name_translate__
 
-        # Prune stack from previous-frame hit boxes before redraw (legacy contract).
-        for el in self.session.extension_hover:
-            el.ops = self
-        extension_rollback(self.session)
         from .draw_frame_context import refresh_draw_ctx_extension_flag
         refresh_draw_ctx_extension_flag(self.session, self)
 
