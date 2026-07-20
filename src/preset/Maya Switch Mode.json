@@ -560,18 +560,150 @@
               }
             },
             "9": {
+              "name": "Camera",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"CAMERA\")",
+              "element": {
+                "0": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "icon": "SEQ_PREVIEW",
+                  "enabled_icon": true,
+                  "direction": "5",
+                  "operator_bl_idname": "view3d.view_camera"
+                },
+                "1": {
+                  "name": "Set Active Camera",
+                  "element_type": "OPERATOR",
+                  "icon": "CAMERA_DATA",
+                  "enabled_icon": true,
+                  "direction": "1",
+                  "operator_bl_idname": "view3d.object_as_camera"
+                },
+                "2": {
+                  "name": "Align Camera to View",
+                  "element_type": "OPERATOR",
+                  "direction": "3",
+                  "operator_bl_idname": "view3d.camera_to_view"
+                },
+                "3": {
+                  "name": "Frame Selected in Camera",
+                  "element_type": "OPERATOR",
+                  "direction": "7",
+                  "operator_bl_idname": "view3d.camera_to_view_selected"
+                },
+                "4": {
+                  "name": "Lock Camera to View",
+                  "element_type": "OPERATOR",
+                  "direction": "2",
+                  "operator_bl_idname": "wm.context_toggle",
+                  "operator_properties": "{'data_path': 'space_data.lock_camera'}"
+                },
+                "5": {
+                  "name": "Camera Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "9",
+                  "element": {
+                    "0": {
+                      "name": "Focal Length",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.lens"
+                    },
+                    "1": {
+                      "name": "Depth of Field",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.dof.use_dof"
+                    },
+                    "2": {
+                      "name": "Show Limits",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.show_limits"
+                    },
+                    "3": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "4": {
+                      "name": "Zoom Camera 1:1",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.zoom_camera_1_to_1"
+                    }
+                  }
+                }
+              }
+            },
+            "10": {
+              "name": "Light",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "(C.object and C.object.type == \"LIGHT\")",
+              "element": {
+                "0": {
+                  "name": "Point Light",
+                  "element_type": "OPERATOR",
+                  "direction": "5",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_properties": "{'data_path': 'object.data.type', 'value': 'POINT'}"
+                },
+                "1": {
+                  "name": "Sun Light",
+                  "element_type": "OPERATOR",
+                  "direction": "3",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_properties": "{'data_path': 'object.data.type', 'value': 'SUN'}"
+                },
+                "2": {
+                  "name": "Spot Light",
+                  "element_type": "OPERATOR",
+                  "direction": "1",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_properties": "{'data_path': 'object.data.type', 'value': 'SPOT'}"
+                },
+                "3": {
+                  "name": "Area Light",
+                  "element_type": "OPERATOR",
+                  "direction": "7",
+                  "operator_bl_idname": "wm.context_set_enum",
+                  "operator_properties": "{'data_path': 'object.data.type', 'value': 'AREA'}"
+                },
+                "4": {
+                  "name": "Light Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "direction": "9",
+                  "element": {
+                    "0": {
+                      "name": "Power",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.energy"
+                    },
+                    "1": {
+                      "name": "Radius",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.shadow_soft_size"
+                    },
+                    "2": {
+                      "name": "Shadow",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.use_shadow"
+                    }
+                  }
+                }
+              }
+            },
+            "11": {
               "name": "Empty",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "ELIF",
               "poll_string": "(C.object and C.object.type == \"EMPTY\")"
             },
-            "10": {
+            "12": {
               "name": "Other",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "ELSE",
               "poll_string": "True"
             },
-            "11": {
+            "13": {
               "name": "When edit mode is available",
               "element_type": "SELECTED_STRUCTURE",
               "selected_type": "IF",

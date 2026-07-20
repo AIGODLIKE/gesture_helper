@@ -11,7 +11,7 @@
     2
   ],
   "author": "ACGGIT Community",
-  "description": "Example gesture with modal operator control for mesh.subdivide",
+  "description": "Examples: modal operator control and the layout elements",
   "gesture": {
     "0": {
       "name": "Example Preset",
@@ -171,6 +171,138 @@
         }
       },
       "description": "Demonstrates modal control of mesh.subdivide with keyboard and mouse gestures"
+    },
+    "1": {
+      "name": "Layout Example",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 1, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\"]",
+      "element": {
+        "0": {
+          "name": "Viewport Focal Length",
+          "element_type": "PROPERTY",
+          "direction": "1",
+          "property_data_path": "space_data.lens"
+        },
+        "1": {
+          "name": "Show Overlays",
+          "element_type": "PROPERTY",
+          "direction": "3",
+          "property_data_path": "space_data.overlay.show_overlays"
+        },
+        "2": {
+          "name": "Object Display",
+          "element_type": "BOX",
+          "direction": "2",
+          "element": {
+            "0": {
+              "name": "Has Active Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.object",
+              "element": {
+                "0": {
+                  "name": "Wireframe",
+                  "element_type": "PROPERTY",
+                  "main_item": true,
+                  "property_data_path": "object.show_wire"
+                },
+                "1": {
+                  "name": "Show Name",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "object.show_name"
+                },
+                "2": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "3": {
+                  "name": "Shade",
+                  "element_type": "ROW",
+                  "element": {
+                    "0": {
+                      "name": "Shade Smooth",
+                      "element_type": "OPERATOR",
+                      "icon": "MOD_SMOOTH",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "object.shade_smooth"
+                    },
+                    "1": {
+                      "name": "Shade Flat",
+                      "element_type": "OPERATOR",
+                      "icon": "GP_CAPS_FLAT",
+                      "enabled_icon": true,
+                      "operator_bl_idname": "object.shade_flat"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "3": {
+          "name": "Add Object",
+          "element_type": "COLUMN",
+          "direction": "8",
+          "element": {
+            "0": {
+              "name": "Cube",
+              "element_type": "OPERATOR",
+              "icon": "CUBE",
+              "enabled_icon": true,
+              "main_item": true,
+              "operator_bl_idname": "mesh.primitive_cube_add"
+            },
+            "1": {
+              "name": "UV Sphere",
+              "element_type": "OPERATOR",
+              "icon": "MESH_UVSPHERE",
+              "enabled_icon": true,
+              "operator_bl_idname": "mesh.primitive_uv_sphere_add"
+            },
+            "2": {
+              "name": "Plane",
+              "element_type": "OPERATOR",
+              "icon": "SNAP_FACE",
+              "enabled_icon": true,
+              "operator_bl_idname": "mesh.primitive_plane_add"
+            }
+          }
+        },
+        "4": {
+          "name": "Extension Menu",
+          "element_type": "CHILD_GESTURE",
+          "direction": "9",
+          "element": {
+            "0": {
+              "name": "Show Gizmo",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.show_gizmo"
+            },
+            "1": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "2": {
+              "name": "View",
+              "element_type": "BOX",
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "main_item": true,
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "Lock Camera to View",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "space_data.lock_camera"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Shows the layout elements: property rows, row/column/box and main action"
     }
   }
 }
