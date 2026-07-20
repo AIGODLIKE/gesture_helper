@@ -118,6 +118,11 @@ class GestureExecutor:
                 item.ops = ops
                 if not item.extension_by_child_is_hover:
                     continue
+                if item.is_property_display and session._suppress_property_execute:
+                    # Value drag already applied on this event; exit quietly
+                    # (stack still blocks the radial confirm below).
+                    session._suppress_property_execute = False
+                    break
                 if item.is_operator or item.is_property_display or item.is_layout_container:
                     run(item)
                     return True

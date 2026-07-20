@@ -5,8 +5,6 @@ Call sites pick flag subsets so executor, draw highlight, and rollback stay alig
 
 from __future__ import annotations
 
-from typing import Any
-
 # Bit flags — combine with ``|`` / test with ``&``.
 PANEL = 1
 CHILD_ROW = 2
@@ -80,9 +78,9 @@ def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None
         if x1 < x < x2:
             flags |= VERTICAL_BAND
             try:
-                w, h = el.extension_dimensions
+                _w, h = el.extension_dimensions
             except (AttributeError, TypeError, ValueError):
-                w = h = 0.0
+                h = 0.0
             if h:
                 if (y1 - h < y < y1) or (y2 < y < y2 + h):
                     flags |= VERTICAL_TRAVEL

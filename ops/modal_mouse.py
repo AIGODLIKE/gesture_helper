@@ -184,7 +184,6 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             return {'CANCELLED'}
 
         self.start_mouse(event)
-        region = context.region
         self._overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
         initial_value = resolve_context_path(context, self.data_path)
         self._set_display_text(

@@ -102,7 +102,8 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
-        if self.parent_is_layout and not self.is_dividing_line and not self.is_selected_structure:
+        # Only runnable leaves can be the main action of a layout container.
+        if self.parent_is_layout and (self.is_operator or self.is_property_display):
             layout.prop(self, 'main_item')
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression

@@ -572,7 +572,7 @@ class ElementGpuExtensionItem:
 
     def draw_gpu_extension_item(self, ops):
         lay = self._compute_extension_layout()
-        w, h = lay.content_w, lay.content_h
+        w = lay.content_w
         with gpu.matrix.push_pop():
             self.ops = ops
             draw_debug_point()

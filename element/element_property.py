@@ -371,16 +371,19 @@ class ElementLayoutProperty:
 
     @property
     def main_element(self):
-        """First enabled main-flagged leaf inside this container (fallback: first leaf)."""
+        """Runnable main leaf: first main-flagged operator/property, else first one.
+
+        Child gestures cannot be a main action — they only open deeper levels.
+        """
         if not self.is_layout_container:
             return None
         fallback = None
         for item in self.panel_leaf_items:
-            if item.is_dividing_line:
+            if not (item.is_operator or item.is_property_display):
                 continue
             if item.main_item:
                 return item
-            if fallback is None and (item.is_operator or item.is_property_display):
+            if fallback is None:
                 fallback = item
         return fallback
 

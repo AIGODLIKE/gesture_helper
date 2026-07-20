@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
-from .public_cache import PublicCacheFunc, cache_update_lock
+from .public_cache import cache_update_lock
 from . import pref
 from . import gesture_items as _gesture_items
 from .pref_access import PrefAccess

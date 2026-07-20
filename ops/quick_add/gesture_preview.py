@@ -9,7 +9,7 @@ from ...gesture.gesture_input import refresh_snapshot
 from ...gesture.gesture_runtime import GestureRuntimeMixin
 from ...gesture.gesture_session import GestureSession
 from ...utils.adapter import operator_setattr
-from ...utils.public import PublicOperator, debug_print
+from ...utils.public import PublicOperator
 from ...utils.session_state import SessionState
 
 
