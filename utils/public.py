@@ -1,4 +1,5 @@
 import bpy
+from typing import TYPE_CHECKING
 from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
@@ -9,6 +10,9 @@ from .pref_access import PrefAccess
 from .active_selection import ActiveSelection
 from .structure_cache_ops import StructureCacheOps
 from .adapter import operator_setattr
+
+if TYPE_CHECKING:
+    from ..element import Element
 
 # Re-export mixins for ``from ..utils.public import PrefAccess`` etc.
 

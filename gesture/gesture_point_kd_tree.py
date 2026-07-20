@@ -1,7 +1,11 @@
 import time
+from typing import TYPE_CHECKING
 
 from mathutils import Vector
 from mathutils.kdtree import KDTree
+
+if TYPE_CHECKING:
+    from . import Gesture
 
 
 class GesturePointKDTree:
