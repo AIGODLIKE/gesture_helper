@@ -85,6 +85,10 @@ def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gp
     event; ``event_count`` bumps on every event, and the context id changes when
     the trajectory enters/leaves a child level. Within one event the condition
     tree is walked at most once.
+
+    Values are mapped through the session proxy pool: the walk yields fresh
+    PropertyGroup proxies every time, but GPU draw stamps hit boxes as Python
+    attributes — identity must stay stable across events for input to see them.
     """
     if not is_draw_gpu:
         return raw_direction_items_dict(session, operator_gesture)
@@ -98,6 +102,7 @@ def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gp
     if memo is not None and memo[0] == key:
         return memo[1]
     raw = raw_direction_items_dict(session, operator_gesture)
+    raw = {k: session.canonical_element(v) for k, v in raw.items()}
     session._direction_items_memo = (key, raw)
     return raw
 
@@ -196,6 +201,71 @@ def cancel_bottom_child_dwell_timer(session: GestureSession):
     session._bottom_child_dwell_deadline = None
 
 
+def _preview_child_button_hovered(element, ops) -> bool:
+    """True when the pointer is over *element*'s radial button (fresh layout)."""
+    from ..element.extension_hit import layout_is_current
+    element.ops = ops
+    if not layout_is_current(element, ops):
+        return False
+    return bool(element.mouse_is_in_area)
+
+
+def _enter_child_level(session: GestureSession, ops, element, anchor) -> None:
+    """Append *element* as a new gesture level anchored at *anchor*."""
+    session.trajectory_tree.append(element, anchor)
+    session._gesture_circle_center = anchor.copy()
+    invalidate_derived_caches(
+        session, getattr(ops, "operator_gesture", None), ops=ops,
+    )
+    session.extension_hover.clear()
+    refresh_snapshot(session, ops)
+
+
+def _arm_preview_child_dwell(session: GestureSession, timeout_ms: float, ops) -> None:
+    """Preview mode: enter the hovered child level only after the idle timeout.
+
+    The deadline counts from hover START (small jitters inside the button do
+    not reset it); leaving the button cancels the timer, and the callback
+    re-checks the hover before entering — a swipe through a button never dives
+    into its level while the user is inspecting the layout.
+    """
+    if session._bottom_child_dwell_timer is not None:
+        return
+    timeout = max(timeout_ms, 1) / 1000.0
+    session._bottom_child_dwell_deadline = time.time() + timeout
+
+    def _on_dwell(*_args):
+        try:
+            deadline = getattr(session, "_bottom_child_dwell_deadline", None)
+            if deadline is None:
+                session._bottom_child_dwell_timer = None
+                return None
+            remaining = deadline - time.time()
+            if remaining > 0.01:
+                return remaining
+            session._bottom_child_dwell_timer = None
+            session._bottom_child_dwell_deadline = None
+            if getattr(session, "modal_report_done", False):
+                return None
+            snap = session.snapshot
+            de = snap.direction_element
+            if (
+                    session.phase.shows_radial_ui
+                    and de is not None
+                    and de.is_child_gesture
+                    and _preview_child_button_hovered(de, ops)
+            ):
+                _enter_child_level(session, ops, de, snap.mouse_window)
+                tag_redraw_gesture_screen(session)
+        except (AttributeError, ReferenceError):
+            session._bottom_child_dwell_timer = None
+            session._bottom_child_dwell_deadline = None
+        return None
+
+    session._bottom_child_dwell_timer = _on_dwell
+    bpy.app.timers.register(_on_dwell, first_interval=timeout)
+
+
 def _arm_bottom_child_dwell(session: GestureSession, timeout_ms: float, ops) -> None:
     """Wait *timeout_ms* of no re-arm, then enter Down child if still hovering it.
 
@@ -232,13 +302,7 @@ def _arm_bottom_child_dwell(session: GestureSession, timeout_ms: float, ops) -> 
                     and de.direction == "7"
                     and not in_ext
             ):
-                session.trajectory_tree.append(de, snap.mouse_window)
-                session._gesture_circle_center = snap.mouse_window.copy()
-                invalidate_derived_caches(
-                    session, getattr(ops, "operator_gesture", None), ops=ops,
-                )
-                session.extension_hover.clear()
-                refresh_snapshot(session, ops)
+                _enter_child_level(session, ops, de, snap.mouse_window)
                 tag_redraw_gesture_screen(session)
         except (AttributeError, ReferenceError):
             session._bottom_child_dwell_timer = None
@@ -656,12 +720,27 @@ class GestureInputProcessor:
                 in_extension_ui = draw_ctx.in_extension_ui
             else:
                 in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
-            if (
+            de = snap.direction_element
+            if getattr(ops, 'gesture_is_preview', False):
+                # Preview: never dive on a swipe. A child level opens only
+                # after hovering its button until the gesture timeout fires.
+                if (
+                        session.phase.shows_radial_ui
+                        and de is not None
+                        and de.is_child_gesture
+                        and not in_extension_ui
+                        and _preview_child_button_hovered(de, ops)
+                ):
+                    _arm_preview_child_dwell(
+                        session, ops.pref.gesture_property.timeout, ops,
+                    )
+                else:
+                    cancel_bottom_child_dwell_timer(session)
+            elif (
                     snap.is_access_child_gesture
-                    and snap.direction_element is not None
+                    and de is not None
                     and not in_extension_ui
             ):
-                de = snap.direction_element
                 # UI up + bottom extension + Down child: drag goes to the
                 # extension list; only enter the child after idle timeout.
                 need_dwell = (
@@ -675,11 +754,7 @@ class GestureInputProcessor:
                     )
                 else:
                     cancel_bottom_child_dwell_timer(session)
-                    session.trajectory_tree.append(de, emp)
-                    session._gesture_circle_center = emp.copy()
-                    invalidate_derived_caches(session, operator_gesture, ops=ops)
-                    session.extension_hover.clear()
-                    refresh_snapshot(session, ops)
+                    _enter_child_level(session, ops, de, emp)
                     snap = session.snapshot
             else:
                 cancel_bottom_child_dwell_timer(session)

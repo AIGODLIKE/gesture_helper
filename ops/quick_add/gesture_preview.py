@@ -18,6 +18,9 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
     bl_label = "Gesture preview"
     bl_description = "Preview gesture layout and directions without running operators"
 
+    # Input processor: children enter on hover + timeout instead of on swipe.
+    gesture_is_preview = True
+
     # Must use annotation form — Blender reads bpy.props from __annotations__.
     gesture: StringProperty()
 
@@ -99,25 +102,15 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
             self.tag_redraw()
 
     def _preview_anchor(self, context, event) -> Vector:
-        """Start point: mouse when inside the 3D View, else the view center.
+        """Always anchor the preview at the 3D View center.
 
-        The preview is usually launched from the N panel button; anchoring at
-        the click position would pin the radial UI to the panel edge.
+        A centered radial leaves room for panels on every side and matches
+        what the gesture looks like in normal use; Space-drag still moves it.
         """
-        mouse = Vector((event.mouse_x, event.mouse_y))
-        area = context.area
-        if area is None:
-            return mouse
         from ...utils.region_mouse import find_window_region
-        region = find_window_region(area)
+        region = find_window_region(context.area)
         if region is None:
-            return mouse
-        inside = (
-            region.x <= mouse.x <= region.x + region.width
-            and region.y <= mouse.y <= region.y + region.height
-        )
-        if inside:
-            return mouse
+            return Vector((event.mouse_x, event.mouse_y))
         return Vector((region.x + region.width * 0.5, region.y + region.height * 0.5))
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
