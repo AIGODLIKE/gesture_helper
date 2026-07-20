@@ -391,7 +391,12 @@ class ElementLayoutProperty:
     def panel_leaf_items(self) -> list:
         """Interactive leaves of this element's panel, flattened through containers."""
         from ..utils.gesture_items import iter_panel_leaves
-        return list(iter_panel_leaves(self.extension_items))
+        leaves = iter_panel_leaves(self.extension_items)
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        if session is None:
+            return list(leaves)
+        # Stable proxies — hit boxes stamped by the panel draw must be visible.
+        return [session.canonical_element(item) for item in leaves]
 
 
 class ElementProperty(

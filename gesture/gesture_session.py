@@ -137,6 +137,9 @@ class GestureSession:
         self._derived_cache_key = None
         self._direction_items_memo = None
         self._gpu_extension_items_cache = None
+        # Canonical Element proxy pool — see ``canonical_element``.
+        self._element_proxy_pool: dict = {}
+        self._element_proxy_pool_generation = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
         self._bottom_child_dwell_timer = None
@@ -171,12 +174,31 @@ class GestureSession:
         self._derived_cache_key = None
         self._direction_items_memo = None
         self._gpu_extension_items_cache = None
+        self._element_proxy_pool = {}
+        self._element_proxy_pool_generation = None
         self._gesture_timeout_timer = None
         self._gesture_timeout_deadline = None
         self._bottom_child_dwell_timer = None
         self._bottom_child_dwell_deadline = None
         self.draw_ctx = None
         self.layout_token = object()
+
+    def canonical_element(self, element):
+        """Session-stable Python proxy for an Element RNA struct.
+
+        Blender creates a fresh PropertyGroup proxy on every RNA access and
+        instance attributes (GPU hit boxes, layout tokens, ``ops``) do not
+        transfer between proxies — ``hash``/``eq`` are pointer-based though.
+        Item walks re-run every event for poll freshness; mapping the results
+        through this pool keeps proxy IDENTITY stable so what the draw pass
+        stamped is what input reads. Cleared when the structure cache rebuilds
+        (RNA pointers may be gone) and on session reset.
+        """
+        from ..utils.public_cache import PublicCache
+        if self._element_proxy_pool_generation != PublicCache.__derived_generation__:
+            self._element_proxy_pool.clear()
+            self._element_proxy_pool_generation = PublicCache.__derived_generation__
+        return self._element_proxy_pool.setdefault(element, element)
 
     # ---- phase transitions (single write path) ----
 

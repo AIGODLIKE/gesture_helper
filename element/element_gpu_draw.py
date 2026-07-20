@@ -207,6 +207,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             if entry is not None and entry[0] == cache_key:
                 return entry[1]
         items = get_gesture_extension_items(self.element)
+        if session is not None:
+            # Stable proxies: GPU-stamped hit boxes must survive re-walks.
+            items = [session.canonical_element(item) for item in items]
         if cache is not None:
             cache[self] = (cache_key, items)
         return items
