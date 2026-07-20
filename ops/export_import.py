@@ -45,7 +45,7 @@ EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
-    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
+    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction', 'main_item'],
     'OPERATOR_MODAL': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
@@ -70,12 +70,16 @@ EXPORT_PROPERTY_ITEM = {
         'operator_context',
         'operator_properties',
         'event_shift',
-        'direction', 'operator_type'],
+        'direction', 'operator_type', 'main_item'],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
-        'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', ],
-    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
+        'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', 'main_item'],
+    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM],
+    'PROPERTY': [*EXPORT_PUBLIC_ITEM, 'direction', 'property_data_path', 'main_item'],
+    'ROW': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
+    'COLUMN': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
+    'BOX': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
 }
 
 

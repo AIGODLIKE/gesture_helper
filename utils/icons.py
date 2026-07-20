@@ -99,6 +99,16 @@ def is_builtin_icon(icon_name: str) -> bool:
     return bool(name) and name in get_builtin_icon_names()
 
 
+def ui_icon(name: str, fallback: str = "ERROR") -> str:
+    """Version-safe built-in icon name for ``UILayout`` ``icon=`` arguments."""
+    names = get_builtin_icon_names()
+    if name in names:
+        return name
+    if fallback in names:
+        return fallback
+    return "NONE"
+
+
 def has_preview_icon(icon_name: str) -> bool:
     """Return whether a PNG preview path is indexed for GPU / icon_value drawing."""
     name = normalize_icon_name(icon_name).lower()

@@ -6,6 +6,7 @@ from bpy.props import CollectionProperty, IntProperty
 from .element_cure import ElementCURE
 from .element_draw import ElementDraw
 from .element_gpu_draw import ElementGpuDraw, ElementGpuExtensionItem
+from .element_layout_gpu import ElementLayoutGpu
 from .element_operator import ElementOperator
 from .element_poll import ElementPoll
 from .element_property import ElementProperty
@@ -22,6 +23,9 @@ from ..utils.iteration import find_owning_gesture
 class Element(ElementCURE,
               ElementDraw,
               ElementGpuDraw,
+              # LayoutGpu shadows extension_dimensions for containers — keep
+              # it before ElementGpuExtensionItem in the MRO.
+              ElementLayoutGpu,
               ElementGpuExtensionItem,
               ElementOperator,
               ElementPoll,
@@ -45,6 +49,18 @@ class Element(ElementCURE,
 
     def __init_dividing_line__(self):
         self.name = "------------"
+
+    def __init_property__(self):
+        self.__init_direction_by_sort__()
+
+    def __init_row__(self):
+        self.__init_direction_by_sort__()
+
+    def __init_column__(self):
+        self.__init_direction_by_sort__()
+
+    def __init_box__(self):
+        self.__init_direction_by_sort__()
 
     def ___set_properties___(self, data):
         """Set operator_bl_idname before other operator properties when present."""

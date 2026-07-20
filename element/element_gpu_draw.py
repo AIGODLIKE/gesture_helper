@@ -71,6 +71,8 @@ class ElementGpuProperty:
 
     @property
     def text(self) -> str:
+        if self.is_property_display:
+            return self.display_property_text
         return self.name_translate
 
     @property
@@ -153,9 +155,9 @@ class ElementGpuProperty:
         draw = self.draw_property
         # Full active fill only in CONFIRM — BEYOND keeps outline via is_active_direction.
         if self.is_confirm_direction and not self._in_extension_ui():
-            if self.is_operator:
+            if self.is_operator or self.is_property_display:
                 return draw.background_operator_active_color
-            elif self.is_child_gesture:
+            elif self.is_child_gesture or self.is_layout_container:
                 return draw.background_child_active_color
         if self.is_operator:
             if self.operator_type == "OPERATOR":
@@ -165,7 +167,13 @@ class ElementGpuProperty:
                     else:
                         return draw.background_bool_false
             return draw.background_operator_color
-        if self.is_child_gesture:
+        if self.is_property_display:
+            if self.display_property_type == 'BOOLEAN':
+                if self.display_property_value:
+                    return draw.background_bool_true
+                return draw.background_bool_false
+            return draw.background_operator_color
+        if self.is_child_gesture or self.is_layout_container:
             return draw.background_child_color
         # Unknown element type: fully transparent (never paint a debug/error solid).
         return (0.0, 0.0, 0.0, 0.0)
@@ -239,7 +247,10 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 draw_debug_point((1, 0, 0, 1))
                 self.extension_offset_start_position = get_now_2d_offset_position()
                 gpu.matrix.translate((-w / 2, 0))
-                self.draw_gpu_extension_item(ops)
+                if self.is_layout_container:
+                    self.draw_gpu_layout_panel(ops)
+                else:
+                    self.draw_gpu_extension_item(ops)
             return
         ctx = self._draw_frame_ctx()
         radius = ctx.gesture_radius if ctx is not None else (
@@ -263,6 +274,17 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
                 self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
                 self._gesture_layout_token = ops.session.layout_token
+
+            if self.is_layout_container and self._layout_panel_is_open(ops):
+                with gpu.matrix.push_pop():
+                    gpu.matrix.translate(self.draw_direction_offset)
+                    panel_w = self.layout_panel_content_size.x
+                    gap = max(margin_x, margin_y) * 2 + margin_x
+                    if self.direction in {'4', '5', '6'}:
+                        gpu.matrix.translate((-gap - panel_w, 0))
+                    else:
+                        gpu.matrix.translate((w + gap, 0))
+                    self.draw_gpu_layout_panel(ops)
 
     def gpu_draw_text_fix_offset(self, use_offset=True, fix_offset=True):
         """Apply text offset per script type for alignment."""
@@ -502,7 +524,7 @@ class ElementGpuExtensionItem:
                 continue
             if item.is_draw_icon and Texture.get_texture(item._gpu_draw_icon_name()) is not None:
                 has_icon_col = True
-            if item.is_child_gesture and Texture.get_texture("1") is not None:
+            if (item.is_child_gesture or item.is_layout_container) and Texture.get_texture("1") is not None:
                 has_chevron_col = True
 
         # Content width = columns only (old code always added icon*2 even when unused).
@@ -584,6 +606,18 @@ class ElementGpuExtensionItem:
                 # matches on X and Y.
                 hover_w = max(1.0, w + mx * 2.0 - my * 2.0)
                 side_inset = my
+                # Numeric property rows paint a slider fill over the soft range.
+                fraction = item.display_property_fraction if item.is_property_display else None
+                if fraction is not None and fraction > 0.0:
+                    fill_w = max(2.0, hover_w * fraction)
+                    left = w * 0.5 - hover_w * 0.5
+                    self.draw_rounded_rectangle_area(
+                        (left + fill_w * 0.5, -row_h * 0.5),
+                        color=self.draw_property.background_operator_active_color,
+                        radius=min(self.text_radius, row_h * 0.5, fill_w * 0.5),
+                        width=fill_w,
+                        height=row_h,
+                    )
                 if item.extension_by_child_is_hover:
                     stroke, line_width = self._outline_colors(active=True)
                     self.draw_rounded_rectangle_outlined(
@@ -634,7 +668,7 @@ class ElementGpuExtensionItem:
                         gpu.matrix.translate((0, lay.icon_size * 0.12))
                         item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
 
-                    if lay.has_chevron_col and item.is_child_gesture:
+                    if lay.has_chevron_col and (item.is_child_gesture or item.is_layout_container):
                         tex = Texture.get_texture("1")
                         if tex is not None:
                             s = lay.chevron_size
@@ -657,6 +691,12 @@ class ElementGpuExtensionItem:
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate((w + max(lay.gap, lay.margin_x), 0))
                         item.draw_gpu_extension_item(ops)
+                elif item.is_layout_container and (
+                        item.extension_by_child_is_hover or item in ops.extension_hover
+                ):
+                    with gpu.matrix.push_pop():
+                        gpu.matrix.translate((w + max(lay.gap, lay.margin_x), 0))
+                        item.draw_gpu_layout_panel(ops)
 
                 gpu.matrix.translate((0, -row_h))
                 draw_debug_point()

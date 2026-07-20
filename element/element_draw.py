@@ -41,6 +41,7 @@ class ElementDraw:
         self.draw_item_child(column, active)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
+        from ..utils.icons import ui_icon
         if pref is None:
             pref = get_pref()
         row = layout.row()
@@ -54,14 +55,26 @@ class ElementDraw:
             row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
         elif self.is_dividing_line:
             row.label(text='', icon_value=pref.__get_icon__("REMOVE"))
+        elif self.is_property_display:
+            row.label(text='', icon=ui_icon('PROPERTIES'))
+        elif self.is_row:
+            row.label(text='', icon=ui_icon('ARROW_LEFTRIGHT'))
+        elif self.is_column:
+            row.label(text='', icon=ui_icon('ALIGN_JUSTIFY'))
+        elif self.is_box:
+            row.label(text='', icon=ui_icon('MENU_PANEL'))
 
-        if self.parent_is_extension:  # Extension children: hide direction icon
-            if self.is_child_gesture:
+        in_panel = self.parent_is_extension or self.parent_is_layout
+        if in_panel:  # Panel children: hide direction icon
+            if self.is_child_gesture or self.is_layout_container:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
             else:
                 row.separator()
                 row.separator()
-        elif self.is_child_gesture or self.is_operator:
+        elif (
+                self.is_child_gesture or self.is_operator
+                or self.is_property_display or self.is_layout_container
+        ):
             row.label(text='', icon_value=pref.__get_icon__(self.direction))
         else:
             row.separator()
@@ -89,6 +102,8 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
+        if self.parent_is_layout and not self.is_dividing_line and not self.is_selected_structure:
+            layout.prop(self, 'main_item')
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression
             icon = self.pref.__get_icon__(self.selected_type)
@@ -115,6 +130,45 @@ class ElementDraw:
 
             if not self.parent_is_extension:  # Extension menu: hide direction settings
                 SetDirection.draw_direction(row.column())
+        elif self.is_property_display:
+            self.draw_property_display(layout)
+        elif self.is_layout_container:
+            self.draw_layout_container(layout)
+
+    def draw_property_display(self, layout: 'bpy.types.UILayout') -> None:
+        row = layout.row(align=True)
+        column = row.column()
+        column.prop(self, 'name')
+        path_col = column.column(align=True)
+        path_col.alert = not self.__property_path_is_validity__
+        path_col.prop(self, 'property_data_path')
+        if self.__property_path_is_validity__:
+            column.label(text=self.display_property_text, translate=False)
+        else:
+            alert = column.column(align=True)
+            alert.alert = True
+            alert.label(text='Property path not found', icon='ERROR')
+        if not (self.parent_is_extension or self.parent_is_layout):
+            SetDirection.draw_direction(row.column())
+
+    def draw_layout_container(self, layout: 'bpy.types.UILayout') -> None:
+        from bpy.app.translations import pgettext_iface
+        row = layout.row(align=True)
+        column = row.column()
+        column.prop(self, 'name')
+        main = self.main_element
+        if main is not None:
+            column.label(
+                text=pgettext_iface("Main action: %s") % main.name_translate,
+                translate=False,
+            )
+        else:
+            alert = column.column(align=True)
+            alert.alert = True
+            alert.label(text='Layout has no main action', icon='ERROR')
+        column.label(text='Confirming without opening the panel runs the main action')
+        if not (self.parent_is_extension or self.parent_is_layout):
+            SetDirection.draw_direction(row.column())
 
     def draw_debug(self, layout):
         """Draw debug info for this element."""
@@ -155,10 +209,16 @@ class ElementDraw:
         elif self.is_operator:
             if self.operator_type == "OPERATOR":
                 if not self.__operator_id_name_is_validity__:
-                    alert_list.append(f'Operator Error')
+                    alert_list.append('Operator Error')
                     alert_list.append(f'{pgettext_iface("Operator not found")}: {self.operator_bl_idname}')
                 if not self.__operator_properties_is_validity__:
                     alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
+        elif self.is_property_display:
+            if not self.__property_path_is_validity__:
+                alert_list.append(f'{pgettext_iface("Property path not found")}: {self.property_data_path}')
+        elif self.is_layout_container:
+            if self.main_element is None:
+                alert_list.append('Layout has no main action')
         if alert_list:
             col = layout.box().column(align=True)
             col.alert = True

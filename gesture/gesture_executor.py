@@ -11,15 +11,63 @@ from .gesture_session import GestureSession, UiHandoff
 class GestureExecutor:
     """Run selected gesture element operators from session selection state."""
 
+    @staticmethod
+    def _run_property_element(ops, element) -> None:
+        """Property row action: toggle in place, or start the value-drag modal."""
+        prop_type = element.display_property_type
+        if prop_type is None:
+            ops.report(
+                {'ERROR'},
+                pgettext("Property path not found: %s") % element.property_data_path,
+            )
+            return
+        if prop_type in {'BOOLEAN', 'ENUM'}:
+            if element.toggle_display_property():
+                ops.report({'INFO'}, element.display_property_text)
+            else:
+                ops.report(
+                    {'ERROR'},
+                    pgettext("Cannot change this property: %s") % element.property_data_path,
+                )
+            return
+        if prop_type in {'INT', 'FLOAT'}:
+            func = bpy.ops.wm.gesture_modal_mouse_operator
+            if func.poll():
+                func(
+                    'INVOKE_DEFAULT', True,
+                    data_path=element.property_context_path,
+                    value_mode='MOUSE_CHANGES_HORIZONTAL',
+                )
+                ops.report({'INFO'}, element.name_translate)
+            return
+        ops.report(
+            {'ERROR'},
+            pgettext("This property type cannot be changed from a gesture: %s") % prop_type,
+        )
+
     def try_running_operator(self, session: GestureSession, ops) -> bool:
         """Try to run gesture operator(s). Returns True if an operator was attempted."""
 
-        def run(i):
+        def run(i, depth=0):
             from .pass_through import (
                 defer_gesture_element_operator,
                 should_defer_gesture_operator,
             )
             from ..element.element_operator import resolve_operator_bl_idname
+
+            if i.is_property_display:
+                self._run_property_element(ops, i)
+                return
+            if i.is_layout_container:
+                main = i.main_element
+                if main is None or depth > 4:
+                    ops.report(
+                        {'INFO'},
+                        pgettext("Layout has no main action: %s") % i.name_translate,
+                    )
+                    return
+                run(main, depth + 1)
+                return
 
             if i.operator_is_operator or i.operator_is_modal:
                 if i.operator_func is None:
@@ -59,12 +107,18 @@ class GestureExecutor:
                 )
 
         snap = session.snapshot
-        # Prefer extension-menu hover operators when the radial UI is up.
-        if session.phase.shows_radial_ui and snap.extension_element and session.extension_hover:
+        # Prefer panel-row hover actions when the radial UI is up.
+        if session.phase.shows_radial_ui and session.extension_hover:
             last = session.extension_hover[-1]
-            for item in getattr(last, 'extension_items', []) or []:
+            if last.is_layout_container:
+                items = last.panel_leaf_items
+            else:
+                items = getattr(last, 'extension_items', []) or []
+            for item in items:
                 item.ops = ops
-                if item.extension_by_child_is_hover and item.is_operator:
+                if not item.extension_by_child_is_hover:
+                    continue
+                if item.is_operator or item.is_property_display or item.is_layout_container:
                     run(item)
                     return True
             # Panel / right band / child row block radial confirm — not vertical
@@ -74,7 +128,10 @@ class GestureExecutor:
                 return False
 
         element = snap.direction_element
-        if element and element.is_operator and (
+        runnable = element is not None and (
+            element.is_operator or element.is_property_display or element.is_layout_container
+        )
+        if runnable and (
                 snap.threshold_zone.is_confirm or getattr(element, 'mouse_is_in_area', False)):
             run(element)
             return True

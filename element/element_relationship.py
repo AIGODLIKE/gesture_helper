@@ -224,6 +224,8 @@ class ElementRelationship(RadioSelect,
             return not get_available_selected_structure(self)
         if self.is_operator and self.operator_type == "OPERATOR":
             return not self.__operator_id_name_is_validity__
+        if self.is_property_display:
+            return not self.__property_path_is_validity__
         return False
 
     @property
