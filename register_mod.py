@@ -1,4 +1,5 @@
 import bpy
+from bpy.app.handlers import persistent
 
 from . import ops, ui, props, preferences
 from .gesture import gesture_keymap
@@ -53,6 +54,7 @@ def _sync_addon_state():
     pref.update_state()
 
 
+@persistent
 def _on_load_post(_dummy):
     try:
         # WM GestureStore is SKIP_SAVE: File > Open often resets it to empty.

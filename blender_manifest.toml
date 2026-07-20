@@ -8,7 +8,7 @@ copyright = [
     "2014 roaoao (Icon Viewer / development_icon_get)",
     "2002 Blender Foundation (icons in src/icons/blender)",
 ]
-maintainer = "ACGGIT Community(小萌新)"
+maintainer = "ACGGIT Community"
 name = "Gesture Helper"
 tagline = "Use gestures to run Blender operators or change properties"
 type = "add-on"
