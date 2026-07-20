@@ -1,6 +1,3 @@
-import re
-from functools import cache
-
 public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 import bpy
 
@@ -18,37 +15,6 @@ def is_blender_close() -> bool:
     for stack in traceback.extract_stack(sys._getframe().f_back, limit=None):
         if stack.name == "disable_all":
             return True
-    return False
-
-
-@cache
-def including_chinese(text) -> bool:
-    """Return True if text contains any Chinese characters."""
-    if not isinstance(text, str):
-        return False
-    return bool(re.compile(r'[\u4e00-\u9fff]+').search(text))
-
-
-@cache
-def contains_uppercase(s) -> bool:
-    """Return True if text contains any uppercase letter."""
-    return any(char.isupper() for char in s)
-
-
-@cache
-def has_special_characters(input_string):
-    """
-    Check whether the string contains characters other than letters, digits, and underscores.
-
-    Args:
-    input_string (str): String to check.
-
-    Returns:
-    bool: True if non-alphanumeric/underscore characters are present, else False.
-    """
-    pattern = r'[^A-Za-z0-9_.]'
-    if re.search(pattern, input_string):
-        return True
     return False
 
 

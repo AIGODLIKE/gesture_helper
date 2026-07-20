@@ -1,4 +1,3 @@
-import blf
 import bpy
 import gpu
 from bl_operators.wm import operator_value_undo_return
@@ -133,15 +132,16 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
 
         scale = bpy.context.preferences.view.ui_scale
         size = int(12 * scale)
-        font_id = 0
 
         gpu.state.blend_set('ALPHA')
-        blf.size(font_id, size)
-        width, height = blf.dimensions(font_id, text)
+        from ..utils.blf_text import measure_text
+        # Metric line height: the pill no longer jumps while the value text
+        # changes between digits, descenders, or CJK property names.
+        width, line_h = measure_text(text, size)
         padding = 8 * scale
         # draw_rounded_rectangle_area is centered on `position`; keep text in the same space.
         box_w = width + padding * 2
-        box_h = height + padding
+        box_h = line_h + padding
         self.draw_rounded_rectangle_area(
             position,
             color=(0.0, 0.0, 0.0, 0.65),
@@ -149,9 +149,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             height=box_h,
             radius=int(4 * scale),
         )
-        # draw_text places baseline at y - size; center the label inside the pill.
+        # draw_text places the line-box top at the given position.
         text_x = position.x - width / 2
-        text_y = position.y + size - height / 2
+        text_y = position.y + line_h / 2
         self.draw_text(text, position=(text_x, text_y), size=size)
 
     def register_draw(self, context):

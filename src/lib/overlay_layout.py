@@ -223,10 +223,10 @@ class OverlayLayout:
         return node.text
 
     def _measure(self, node):
-        blf.size(0, self.font_size)
         if node.kind in {"LABEL", "OPERATOR", "PROPERTY"}:
-            w, h = blf.dimensions(0, self._node_text(node))
-            node.size = Vector((w + self.padding * 2, max(h + self.padding * 2, 24)))
+            from ...utils.blf_text import measure_text
+            w, line_h = measure_text(self._node_text(node), self.font_size)
+            node.size = Vector((w + self.padding * 2, max(line_h + self.padding * 2, 24)))
         elif node.kind == "SEPARATOR":
             node.size = Vector((16, 7))
         else:
@@ -351,6 +351,8 @@ class OverlayLayout:
         gpu_draw_begin()
         try:
             rects.draw()
+            from ...utils.blf_text import line_metrics
+            ascent, _descent, line_h = line_metrics(self.font_size)
             blf.size(0, self.font_size)
             for node in self._walk():
                 if node.kind not in {"LABEL", "OPERATOR", "PROPERTY"} or node.rect is None:
@@ -359,8 +361,10 @@ class OverlayLayout:
                     blf.color(0, 1.0, 0.45, 0.45, 1.0)
                 else:
                     blf.color(0, *self.text_color)
-                blf.position(0, node.rect[0] + self.padding - ox,
-                             node.rect[1] + self.padding - oy, 0)
+                # Center the metric line box in the row, baseline = top - ascent.
+                x1, y1, _x2, y2 = node.rect
+                baseline = y2 - (node.size.y - line_h) * 0.5 - ascent
+                blf.position(0, x1 + self.padding - ox, baseline - oy, 0)
                 blf.draw(0, self._node_text(node))
         finally:
             gpu_draw_end()

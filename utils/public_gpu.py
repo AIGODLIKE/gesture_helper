@@ -47,6 +47,13 @@ def clear_gpu_caches() -> None:
     get_arc_vertex.cache_clear()
     get_rounded_fill_mesh.cache_clear()
     clear_color_cache()
+    from .blf_text import clear_text_metrics
+    clear_text_metrics()
+    try:
+        from ..element.element_gpu_draw import from_text_get_dimensions
+        from_text_get_dimensions.cache_clear()
+    except Exception:
+        pass
     _GPU_DRAW_DEPTH = 0
     _SAVED_BLEND = None
     _SAVED_DEPTH_TEST = None
@@ -298,21 +305,22 @@ class PublicGpu:
             font_id=0,
             column=0,
             z=1,
-            auto_offset=False,
     ):
-        from . import including_chinese
-        with gpu.matrix.push_pop():
-            if including_chinese(text) and auto_offset:
-                (_w, height) = blf.dimensions(font_id, text)
-                gpu.matrix.translate([0, -height * .075])
+        """Draw *text* with its line box top at ``position``.
 
-            x, y = position
-            blf.disable(font_id, blf.CLIPPING)
-            blf.disable(font_id, blf.MONOCHROME)
-            blf.size(font_id, size)
-            blf.color(font_id, *color)
-            blf.position(font_id, x, y - (size * (column + 1)), z)
-            blf.draw(font_id, str(text))
+        The baseline sits ``ascent`` below the top (measured metrics, not the
+        font size), so any label — CJK, capitals, descenders — occupies the
+        same stable line box instead of jumping with its ink extents.
+        """
+        from .blf_text import line_metrics
+        x, y = position
+        ascent, _descent, line_h = line_metrics(size, font_id)
+        blf.disable(font_id, blf.CLIPPING)
+        blf.disable(font_id, blf.MONOCHROME)
+        blf.size(font_id, size)
+        blf.color(font_id, *color)
+        blf.position(font_id, x, y - ascent - line_h * column, z)
+        blf.draw(font_id, str(text))
 
     @staticmethod
     def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):

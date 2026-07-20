@@ -30,7 +30,8 @@ class ElementLayoutGpu:
     _LAYOUT_SEP_FRAC = 0.4
 
     def _layout_metrics(self):
-        label_h = float(self.text_size)
+        from ..utils.blf_text import text_line_height
+        label_h = text_line_height(self.text_size)
         mx, my = self.text_margin
         return SimpleNamespace(
             label_h=label_h,
@@ -250,8 +251,7 @@ class ElementLayoutGpu:
                 _tw, th = item.text_dimensions
                 if th < metrics.label_h:
                     gpu.matrix.translate((0, -(metrics.label_h - th) * 0.5))
-                gpu.matrix.translate((0, metrics.label_h * 0.12))
-                item.gpu_draw_text_fix_offset(use_offset=False, fix_offset=False)
+                item.gpu_draw_label(use_offset=False)
 
         if item.is_child_gesture:
             texture = Texture.get_texture("1")

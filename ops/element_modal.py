@@ -50,6 +50,7 @@ class KeymapTips(PublicGpu):
         gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_mask_set(True)
         from bpy.app.translations import pgettext_iface as translate
+        from ..utils.blf_text import text_line_height
         context = bpy.context
 
         font_id = 0
@@ -57,8 +58,11 @@ class KeymapTips(PublicGpu):
         column_space_size = 10 * font_size
         key_row_space = 100 * font_size
 
-        blf.size(font_id, 12 * font_size)
+        size = 12 * font_size
+        blf.size(font_id, size)
         blf.color(font_id, 1, 1, 1, 1)
+        # Constant metric step — mixed CJK/Latin rows no longer change pitch.
+        row_step = text_line_height(size, font_id) + column_space_size
 
         offset_x, offset_y = 10, 30
 
@@ -70,43 +74,20 @@ class KeymapTips(PublicGpu):
         x1 = toolbar_width + offset_x
         y1 = offset_y + asset_shelf + asset_shelf_header
 
-        y2 = y1
-
-        max_width = 0
         with gpu.matrix.push_pop():
             gpu.matrix.translate((x1, y1))
-            for index, item in enumerate(texts):
+            for item in texts:
                 if "doc" in item:
                     blf.position(font_id, 0, 0, 0)
-                    text = translate(item["doc"])
-                    blf.draw(font_id, text)
-                    width, height = blf.dimensions(font_id, text)
-
-                    y = height + column_space_size
-                    y2 += y
-                    gpu.matrix.translate((0, y))
-                    if max_width < width:
-                        max_width = width
+                    blf.draw(font_id, translate(item["doc"]))
                 else:
                     tool = translate(item["tool"])
                     key = translate(item["key"])
-                    # draw tool
                     blf.position(font_id, 0, 0, 0)
                     blf.draw(font_id, tool)
-                    tw, th = blf.dimensions(font_id, tool)
-
-                    # draw key
-                    off = key_row_space * font_size
-                    blf.position(font_id, off, 0, 0)
+                    blf.position(font_id, key_row_space * font_size, 0, 0)
                     blf.draw(font_id, key)
-                    kw, kh = blf.dimensions(font_id, tool)
-
-                    height = max(th, kh) + column_space_size
-                    gpu.matrix.translate((0, height))
-                    y2 += height
-                    width = tw + kw + off
-                    if max_width < width:
-                        max_width = width
+                gpu.matrix.translate((0, row_step))
 
     def register_draw(self):
         try:
