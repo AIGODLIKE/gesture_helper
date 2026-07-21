@@ -140,6 +140,8 @@
   "Debug modal operator": "Debug 模态操作符",
   "Debug cache": "Debug 缓存",
   "Debug extension": "Debug 扩展",
+  "Debug panel draw": "Debug 面板绘制",
+  "Log N-panel / Preferences draw timing and skip decisions (find modal interference)": "记录 N 面板 / 偏好设置绘制耗时与跳过判定（排查干扰模态）",
   "Exit": "退出",
   "Please select or add a gesture element": "请选择或添加一个手势元素",
   "While moving an element": "移动元素中",

@@ -75,15 +75,18 @@ class GestureDraw:
 
     @staticmethod
     def draw_element(layout: bpy.types.UILayout, *, include_modal: bool = True) -> None:
+        import time
         from ..ui.ui_list import ElementUIList
-        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        from ..utils.ui_draw_sync import heavy_panel_skip_message, panel_draw_trace
 
         # Same guard as GestureElementPanel: ElementUIList walks Element RNA that
         # the GPU overlay stamps with transient hit boxes; drawing mid-modal
         # churns Python proxies and wipes extension hover.
+        t0 = time.perf_counter()
         msg = heavy_panel_skip_message(bpy.context)
         if msg:
             layout.label(text=msg)
+            panel_draw_trace("Prefs:Element", bpy.context, skipped=msg, ms=(time.perf_counter() - t0) * 1000.0)
             return
 
         pref = get_pref()
@@ -108,6 +111,7 @@ class GestureDraw:
             DrawElement.draw_element_cure(row)
         else:
             layout.label(text='Add or select a gesture')
+        panel_draw_trace("Prefs:Element", bpy.context, ms=(time.perf_counter() - t0) * 1000.0)
 
     @staticmethod
     def draw_ui_gesture(layout):
@@ -116,9 +120,20 @@ class GestureDraw:
         :param layout:
         :return:
         """
+        import time
+        from ..utils.ui_draw_sync import heavy_panel_skip_message, panel_draw_trace
+
+        t0 = time.perf_counter()
         pref = get_pref()
         draw_property = pref.draw_property
         active = pref.active_element
+
+        # Left-side property editor also walks Element RNA — same modal wipe risk.
+        msg = heavy_panel_skip_message(bpy.context)
+        if msg:
+            layout.label(text=msg)
+            panel_draw_trace("Prefs:GestureTab", bpy.context, skipped=msg, ms=(time.perf_counter() - t0) * 1000.0)
+            return
 
         column = layout.column()
         split = column.split()
@@ -133,6 +148,7 @@ class GestureDraw:
         else:
             GestureDraw.draw_gesture_item(split)
         GestureDraw.draw_element(split)
+        panel_draw_trace("Prefs:GestureTab", bpy.context, ms=(time.perf_counter() - t0) * 1000.0)
 
     @staticmethod
     def draw_gesture(layout: bpy.types.UILayout):

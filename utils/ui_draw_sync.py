@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Optional
 
 import bpy
@@ -11,6 +12,10 @@ _pending: dict[str, Callable[[], None]] = {}
 
 _MSG_GESTURE = "Gesture is running (UI updates paused)"
 _MSG_ANIMATION = "Animation is playing (UI updates paused)"
+
+# Throttle panel-draw debug spam (one summary line per where per interval).
+_panel_debug_last: dict[str, float] = {}
+_PANEL_DEBUG_INTERVAL = 0.25
 
 
 def is_gesture_modal_active() -> bool:
@@ -39,6 +44,24 @@ def _is_animation_busy(context) -> bool:
     return bool(getattr(screen, "is_scrubbing", False))
 
 
+def _modal_operator_ids(context) -> list[str]:
+    """bl_idname-like identifiers currently on the window modal stack."""
+    window = getattr(context, "window", None)
+    if window is None:
+        return []
+    out = []
+    try:
+        for op in window.modal_operators:
+            bl = getattr(op, "bl_idname", None)
+            if bl:
+                out.append(bl)
+            else:
+                out.append(type(op).__name__)
+    except Exception:
+        return out
+    return out
+
+
 def heavy_panel_skip_message(context) -> Optional[str]:
     """Message when Element/Modal panels should skip heavy draw; else None.
 
@@ -54,6 +77,43 @@ def heavy_panel_skip_message(context) -> Optional[str]:
     except Exception:
         return None
     return None
+
+
+def panel_draw_trace(where: str, context, *, skipped: Optional[str] = None, ms: float = 0.0) -> None:
+    """Log panel draw interference facts when Debug panel draw is on."""
+    from .debug_util import get_debug
+    if not get_debug('panel'):
+        return
+    now = time.perf_counter()
+    last = _panel_debug_last.get(where, 0.0)
+    # Always log skips; throttle full draws.
+    if now - last < _PANEL_DEBUG_INTERVAL and skipped is None:
+        return
+    _panel_debug_last[where] = now
+
+    from .session_state import SessionState
+    try:
+        from ..gesture.gesture_draw_gpu import GestureGpuDraw
+        draw_n = len(GestureGpuDraw.__active_draw_instances__)
+    except Exception:
+        draw_n = -1
+    gesture_active = is_gesture_modal_active()
+    preview = SessionState.gesture_preview_active
+    modals = _modal_operator_ids(context)
+    region = getattr(context, "region", None)
+    area = getattr(context, "area", None)
+    print(
+        f"[gh:panel] {where}"
+        f" skipped={skipped!r}"
+        f" ms={ms:.2f}"
+        f" gesture_modal={gesture_active}"
+        f" preview={preview}"
+        f" draw_instances={draw_n}"
+        f" area={getattr(area, 'type', None)}"
+        f" region={getattr(region, 'type', None)}"
+        f" modals={modals}",
+        flush=True,
+    )
 
 
 def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEBOUNCE_SEC) -> None:

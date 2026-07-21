@@ -55,6 +55,11 @@ class DebugProperty(bpy.types.PropertyGroup):
         description='Log extension menu hover and layout',
         default=False,
     )
+    debug_panel: BoolProperty(
+        name='Debug panel draw',
+        description='Log N-panel / Preferences draw timing and skip decisions (find modal interference)',
+        default=False,
+    )
 
     @staticmethod
     def draw_debug(layout: bpy.types.UILayout):
@@ -83,3 +88,4 @@ class DebugProperty(bpy.types.PropertyGroup):
         col.prop(debug, 'debug_poll')
         col.prop(debug, 'debug_cache')
         col.prop(debug, 'debug_extension')
+        col.prop(debug, 'debug_panel')
