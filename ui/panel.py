@@ -54,6 +54,9 @@ class GestureItemPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         return GesturePanel.poll(context)
 
     def draw(self, context):
+        import time
+        from ..utils.ui_draw_sync import panel_draw_trace
+        t0 = time.perf_counter()
         column = self.layout.column()
         GestureDraw.draw_gesture_preview_button(column)
         layout = column.row(align=True)
@@ -61,6 +64,7 @@ class GestureItemPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         if not self.pref.active_gesture:
             GestureDraw.draw_gesture_cure(layout)
         GestureDraw.draw_gesture(layout)
+        panel_draw_trace("N:Item", context, ms=(time.perf_counter() - t0) * 1000.0)
 
 
 class GestureElementPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
@@ -80,14 +84,18 @@ class GestureElementPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         # ElementUIList walks the same Element RNA the GPU overlay stores hit
         # boxes against; drawing it mid-modal can wipe those transient attrs.
         # Also skip during animation play (UI redraws every frame while playing).
-        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        import time
+        from ..utils.ui_draw_sync import heavy_panel_skip_message, panel_draw_trace
+        t0 = time.perf_counter()
         msg = heavy_panel_skip_message(context)
         if msg:
             self.layout.label(text=msg)
+            panel_draw_trace("N:Element", context, skipped=msg, ms=(time.perf_counter() - t0) * 1000.0)
             return
         layout = self.layout
         layout.enabled = self.pref.enabled
         GestureDraw.draw_element(layout, include_modal=False)
+        panel_draw_trace("N:Element", context, ms=(time.perf_counter() - t0) * 1000.0)
 
 
 class GestureModalEventPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
@@ -111,12 +119,16 @@ class GestureModalEventPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         return True
 
     def draw(self, context):
-        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        import time
+        from ..utils.ui_draw_sync import heavy_panel_skip_message, panel_draw_trace
+        t0 = time.perf_counter()
         msg = heavy_panel_skip_message(context)
         if msg:
             self.layout.label(text=msg)
+            panel_draw_trace("N:ModalEvent", context, skipped=msg, ms=(time.perf_counter() - t0) * 1000.0)
             return
         get_pref().active_element.draw_operator_modal(self.layout)
+        panel_draw_trace("N:ModalEvent", context, ms=(time.perf_counter() - t0) * 1000.0)
 
 
 class GesturePropertyPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
@@ -133,9 +145,13 @@ class GesturePropertyPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         return GesturePanel.poll(context)
 
     def draw(self, context):
+        import time
+        from ..utils.ui_draw_sync import panel_draw_trace
+        t0 = time.perf_counter()
         layout = self.layout
         layout.scale_y = 1.2
         PreferencesDraw.draw_ui_property(layout)
+        panel_draw_trace("N:Property", context, ms=(time.perf_counter() - t0) * 1000.0)
 
 
 panel_list = (

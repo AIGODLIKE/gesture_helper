@@ -33,9 +33,13 @@ TRANSLATE_KEY = TRANSLATE_ID + "_keymap"
 
 def tag_redraw():
     """redraw interface"""
+    from .debug_util import get_debug
     window = getattr(bpy.context, 'window', None)
     if window is None or window.screen is None:
         return
+    if get_debug('panel'):
+        types = [getattr(a, 'type', '?') for a in window.screen.areas]
+        print(f"[gh:panel] tag_redraw ALL areas={types}", flush=True)
     for area in window.screen.areas:
         area.tag_redraw()
 

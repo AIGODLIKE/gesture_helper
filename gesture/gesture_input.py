@@ -131,14 +131,25 @@ def tag_redraw_gesture_screen(session: GestureSession):
     mouse move — that is a major lag source when the sidebar is open, and can
     disturb modal mouse_region association used by extension hover.
     """
+    from ..utils.debug_util import get_debug
     area = session.area
     if area is not None:
         try:
             from ..utils.region_mouse import find_window_region
             region = find_window_region(area)
             if region is not None:
+                if get_debug('panel'):
+                    # Throttle: this fires every mouse move during a gesture.
+                    import time
+                    now = time.perf_counter()
+                    last = getattr(tag_redraw_gesture_screen, "_last_dbg", 0.0)
+                    if now - last >= 0.5:
+                        tag_redraw_gesture_screen._last_dbg = now
+                        print("[gh:panel] tag_redraw WINDOW-only", flush=True)
                 region.tag_redraw()
                 return
+            if get_debug('panel'):
+                print("[gh:panel] tag_redraw AREA (no WINDOW region)", flush=True)
             area.tag_redraw()
             return
         except ReferenceError:
@@ -146,12 +157,16 @@ def tag_redraw_gesture_screen(session: GestureSession):
     screen = session.screen
     if screen is not None:
         try:
+            if get_debug('panel'):
+                print("[gh:panel] tag_redraw ALL screen areas (fallback)", flush=True)
             for a in screen.areas:
                 a.tag_redraw()
             return
         except ReferenceError:
             ...
     from ..utils.public import tag_redraw
+    if get_debug('panel'):
+        print("[gh:panel] tag_redraw global fallback", flush=True)
     tag_redraw()
 
 

@@ -25,6 +25,7 @@ def get_debug(key=None) -> bool:
         'poll': prop.debug_poll,
         'cache': prop.debug_cache,
         'extension': prop.debug_extension,
+        'panel': prop.debug_panel,
     }
     return flags.get(kl, True)
 
