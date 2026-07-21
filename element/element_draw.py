@@ -130,7 +130,8 @@ class ElementDraw:
             self.draw_edit_icon(column)
             column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
 
-            if not self.parent_is_extension:  # Extension menu: hide direction settings
+            # Extension / layout panel children share the parent's slot — no direction.
+            if not (self.parent_is_extension or self.parent_is_layout):
                 SetDirection.draw_direction(row.column())
         elif self.is_property_display:
             self.draw_property_display(layout)
@@ -270,7 +271,8 @@ class ElementDraw:
             b.alert = not self.__operator_properties_is_validity__
             b.prop(self, 'operator_properties')
 
-        if not self.parent_is_extension:  # Extension menu: hide direction settings
+        # Extension / layout panel children share the parent's slot — no direction.
+        if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
 
         if is_operator or is_modal:

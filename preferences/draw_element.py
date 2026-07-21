@@ -154,17 +154,23 @@ class DrawElement:
         active = pref.active_element
         is_alert = False
 
+        # Dividers only make sense inside extension menus or layout panels
+        # (row/column/box), not as radial direction slots.
         if relationship == "ROOT":
             is_alert = True
         elif relationship == "SAME":
-            if active and active.parent_element and active.parent_is_extension:
+            if active and active.parent_element and (
+                    active.parent_is_extension or active.parent_is_layout
+            ):
                 ...
             else:
                 is_alert = True
         elif relationship == "CHILD":
             if active:
-                is_e = active.is_child_gesture and (active.direction == "9" or active.parent_is_extension)
-                if is_e or active.is_selected_structure:
+                under_extension = active.is_child_gesture and (
+                        active.direction == "9" or active.parent_is_extension
+                )
+                if under_extension or active.is_selected_structure or active.is_layout_container:
                     ...
                 else:
                     is_alert = True

@@ -103,12 +103,16 @@ class OverlayNode:
 class _RectBatch:
     """Collect rounded rects, then draw them all in one call."""
 
+    __slots__ = ("pos", "color", "rect", "radius", "indices", "_gpu_batch", "_use_sdf")
+
     def __init__(self):
         self.pos = []
         self.color = []
         self.rect = []
         self.radius = []
         self.indices = []
+        self._gpu_batch = None
+        self._use_sdf = True
 
     def add(self, x1, y1, x2, y2, color, radius):
         base = len(self.pos)
@@ -120,27 +124,70 @@ class _RectBatch:
         self.radius.extend((radius,) * 4)
         self.indices.extend(((base, base + 1, base + 2), (base, base + 2, base + 3)))
 
-    def draw(self):
+    def build(self):
+        """Compile GPU batch once; safe to call again after content changes."""
+        self._gpu_batch = None
         if not self.pos:
             return
         shader = _rounded_rect_shader()
         if shader is not None:
-            batch = batch_for_shader(
+            self._use_sdf = True
+            self._gpu_batch = batch_for_shader(
                 shader, 'TRIS',
                 {"pos": self.pos, "color": self.color, "rect": self.rect, "radius": self.radius},
                 indices=self.indices,
             )
-            shader.bind()
-            matrix = gpu.matrix.get_projection_matrix() @ gpu.matrix.get_model_view_matrix()
-            shader.uniform_float("ModelViewProjectionMatrix", matrix)
-            batch.draw(shader)
             return
-        # Fallback: flat-color triangles (no rounding) on exotic backends.
+        self._use_sdf = False
         fallback = gpu.shader.from_builtin('SMOOTH_COLOR')
-        batch = batch_for_shader(
+        self._gpu_batch = batch_for_shader(
             fallback, 'TRIS', {"pos": self.pos, "color": self.color}, indices=self.indices,
         )
-        batch.draw(fallback)
+
+    def draw(self):
+        if not self.pos:
+            return
+        if self._gpu_batch is None:
+            self.build()
+        if self._gpu_batch is None:
+            return
+        try:
+            if self._use_sdf:
+                shader = _rounded_rect_shader()
+                if shader is None:
+                    # Shader dropped after reload — rebuild via fallback next call.
+                    self._gpu_batch = None
+                    self.build()
+                    if self._gpu_batch is None:
+                        return
+                    if self._use_sdf:
+                        shader = _rounded_rect_shader()
+                if shader is not None and self._use_sdf:
+                    shader.bind()
+                    matrix = gpu.matrix.get_projection_matrix() @ gpu.matrix.get_model_view_matrix()
+                    shader.uniform_float("ModelViewProjectionMatrix", matrix)
+                    self._gpu_batch.draw(shader)
+                    return
+            fallback = gpu.shader.from_builtin('SMOOTH_COLOR')
+            fallback.bind()
+            self._gpu_batch.draw(fallback)
+        except Exception:
+            # Stale batch after addon reload / GPU context loss.
+            self._gpu_batch = None
+            self.build()
+            if self._gpu_batch is None:
+                return
+            if self._use_sdf:
+                shader = _rounded_rect_shader()
+                if shader is not None:
+                    shader.bind()
+                    matrix = gpu.matrix.get_projection_matrix() @ gpu.matrix.get_model_view_matrix()
+                    shader.uniform_float("ModelViewProjectionMatrix", matrix)
+                    self._gpu_batch.draw(shader)
+                    return
+            fallback = gpu.shader.from_builtin('SMOOTH_COLOR')
+            fallback.bind()
+            self._gpu_batch.draw(fallback)
 
 
 class OverlayLayout:
@@ -170,6 +217,9 @@ class OverlayLayout:
         self.separator_color = (1.0, 1.0, 1.0, 0.15)
         self._hover = None
         self._laid_out = False
+        self._content_gen = 0
+        self._cached_rects: _RectBatch | None = None
+        self._cached_batch_sig = None
 
     # ---- build API (with-statement rebuilds content) ----
 
@@ -177,10 +227,13 @@ class OverlayLayout:
         self.root.children.clear()
         self._stack[:] = [self.root]
         self._laid_out = False
+        self._content_gen += 1
+        self._cached_batch_sig = None
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._laid_out = False
+        self._cached_batch_sig = None
 
     def _add(self, node):
         self._stack[-1].children.append(node)
@@ -280,13 +333,36 @@ class OverlayLayout:
         return Vector((x, y))
 
     def sync_input(self, offset, mouse):
-        """Update anchor/mouse (window px); invalidates hover, not content."""
+        """Update anchor/mouse (window px).
+
+        Offset changes invalidate measure/arrange. Mouse-only moves only
+        recompute hover (point-in-rect), keeping layout geometry cached.
+        """
         offset = Vector(offset)
         mouse = Vector(mouse) if mouse is not None else Vector((-1e6, -1e6))
-        if offset != self.offset_position or mouse != self.mouse_position:
-            self.offset_position = offset
-            self.mouse_position = mouse
+        offset_changed = offset != self.offset_position
+        mouse_changed = mouse != self.mouse_position
+        if not offset_changed and not mouse_changed:
+            return
+        self.offset_position = offset
+        self.mouse_position = mouse
+        if offset_changed:
             self._laid_out = False
+            self._cached_batch_sig = None
+            return
+        if self._laid_out:
+            prev = self._hover
+            self._update_hover()
+            if self._hover is not prev:
+                self._cached_batch_sig = None
+
+    def _update_hover(self):
+        mouse = self.mouse_position
+        self._hover = next(
+            (n for n in self._walk()
+             if n.kind in {"OPERATOR", "PROPERTY"} and self._contains(n.rect, mouse)),
+            None,
+        )
 
     def _ensure_layout(self):
         if self._laid_out:
@@ -294,12 +370,9 @@ class OverlayLayout:
         self._measure(self.root)
         origin = self._anchor_origin()
         self._arrange(self.root, origin.x, origin.y)
-        self._hover = next(
-            (n for n in self._walk()
-             if n.kind in {"OPERATOR", "PROPERTY"} and self._contains(n.rect, self.mouse_position)),
-            None,
-        )
+        self._update_hover()
         self._laid_out = True
+        self._cached_batch_sig = None
 
     @staticmethod
     def _contains(rect, point):
@@ -318,14 +391,7 @@ class OverlayLayout:
             return self.row_color
         return self.background
 
-    def __gpu_draw__(self):
-        if not self.root.children:
-            return
-        self._ensure_layout()
-        region = bpy.context.region
-        ox = region.x if region is not None else 0
-        oy = region.y if region is not None else 0
-
+    def _build_rect_batch(self, ox, oy) -> _RectBatch:
         rects = _RectBatch()
         root = self.root
         if root.rect is not None:
@@ -347,10 +413,44 @@ class OverlayLayout:
                 continue
             rects.add(x1 - ox, y1 - oy, x2 - ox, y2 - oy,
                       self._node_fill(node), self.corner_radius)
+        rects.build()
+        return rects
+
+    def _batch_signature(self, ox, oy):
+        hover_key = id(self._hover) if self._hover is not None else 0
+        root_rect = self.root.rect
+        return (
+            self._content_gen,
+            root_rect,
+            hover_key,
+            ox,
+            oy,
+            self.background,
+            self.row_color,
+            self.hover_color,
+            self.active_color,
+            self.alert_color,
+            self.separator_color,
+            self.corner_radius,
+            self.padding,
+        )
+
+    def __gpu_draw__(self):
+        if not self.root.children:
+            return
+        self._ensure_layout()
+        region = bpy.context.region
+        ox = region.x if region is not None else 0
+        oy = region.y if region is not None else 0
+
+        sig = self._batch_signature(ox, oy)
+        if self._cached_batch_sig != sig or self._cached_rects is None:
+            self._cached_rects = self._build_rect_batch(ox, oy)
+            self._cached_batch_sig = sig
 
         gpu_draw_begin()
         try:
-            rects.draw()
+            self._cached_rects.draw()
             from ...utils.blf_text import line_metrics
             ascent, _descent, line_h = line_metrics(self.font_size)
             blf.size(0, self.font_size)
