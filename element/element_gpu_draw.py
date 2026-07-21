@@ -197,21 +197,38 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             PublicCache.__derived_generation__,
             getattr(session, 'event_count', 0),
         )
-        cache = None
-        if ops is not None:
-            cache = getattr(ops, '_gpu_extension_items_cache', None)
-            if cache is None:
-                cache = {}
-                ops._gpu_extension_items_cache = cache
-            entry = cache.get(self)
-            if entry is not None and entry[0] == cache_key:
-                return entry[1]
+        # One map per (generation, event). Replacing the whole map when the key
+        # changes keeps the cache bounded (no per-event residue).
+        items_map = None
+        if session is not None:
+            packed = session._gpu_extension_items_cache
+            if packed is None or packed[0] != cache_key:
+                items_map = {}
+                session._gpu_extension_items_cache = (cache_key, items_map)
+            else:
+                items_map = packed[1]
+            hit = items_map.get(self)
+            if hit is not None:
+                return hit
+        elif ops is not None:
+            # Preview / non-session callers: keep a tiny ops-local map.
+            packed = getattr(ops, '_gpu_extension_items_cache', None)
+            if packed is None or (isinstance(packed, tuple) and packed[0] != cache_key):
+                items_map = {}
+                ops._gpu_extension_items_cache = (cache_key, items_map)
+            elif isinstance(packed, dict):
+                items_map = packed
+            else:
+                items_map = packed[1]
+            hit = items_map.get(self)
+            if hit is not None:
+                return hit
         items = get_gesture_extension_items(self.element)
         if session is not None:
             # Stable proxies: GPU-stamped hit boxes must survive re-walks.
             items = [session.canonical_element(item) for item in items]
-        if cache is not None:
-            cache[self] = (cache_key, items)
+        if items_map is not None:
+            items_map[self] = items
         return items
 
     def draw_gpu_item(self, ops):

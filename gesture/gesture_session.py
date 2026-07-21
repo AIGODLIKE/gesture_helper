@@ -110,24 +110,27 @@ class GestureSession:
     """Canonical runtime state for one gesture modal session."""
 
     def __init__(self):
-        self.trajectory_tree = GesturePointKDTree()
-        self.trajectory_mouse_move: list = []
-        self.trajectory_mouse_move_time: list = []
-        self.extension_hover: list = []
-        self.snapshot = InputSnapshot()
-        self.phase = GesturePhase.IDLE
-        self.handoff = UiHandoff.NONE
-        self.modal_report_done = False
-
+        self._clear_runtime(event_count=0, move_count=0, stamp_time=False)
         self.area = None
         self.screen = None
         self.event = None
         self.invoke_event_type: str | None = None
         self.gesture_name: str = ""
 
-        self.event_count = 0
-        self.move_count = 0
-        self.last_mouse_mouse_time = 0.0
+    def _clear_runtime(self, *, event_count: int, move_count: int, stamp_time: bool):
+        """Shared wipe for ``__init__`` and ``reset`` (keeps fields in sync)."""
+        self.trajectory_tree = GesturePointKDTree()
+        self.trajectory_mouse_move = []
+        self.trajectory_mouse_move_time = []
+        self.extension_hover = []
+        self.snapshot = InputSnapshot()
+        self.phase = GesturePhase.IDLE
+        self.handoff = UiHandoff.NONE
+        self.modal_report_done = False
+
+        self.event_count = event_count
+        self.move_count = move_count
+        self.last_mouse_mouse_time = time.time() if stamp_time else 0.0
         # Active LMB value drag on a property row: (element, start_mouse, start_value).
         self.property_drag: tuple | None = None
         # Set when a drag ended on the same event that exits the gesture.
@@ -136,6 +139,7 @@ class GestureSession:
         self._last_trajectory_mouse: Vector | None = None
         self._derived_cache_key = None
         self._direction_items_memo = None
+        # (cache_key, {element: items}) — replaced wholesale when the key changes.
         self._gpu_extension_items_cache = None
         # Canonical Element proxy pool — see ``canonical_element``.
         self._element_proxy_pool: dict = {}
@@ -149,39 +153,12 @@ class GestureSession:
 
     def reset(self, event, area, screen, gesture_name: str = ""):
         """Initialize / reset for a new invoke."""
-        self.trajectory_tree = GesturePointKDTree()
-        self.trajectory_mouse_move = []
-        self.trajectory_mouse_move_time = []
-        self.extension_hover = []
-        self.snapshot = InputSnapshot()
-        self.phase = GesturePhase.IDLE
-        self.handoff = UiHandoff.NONE
-        self.modal_report_done = False
-
+        self._clear_runtime(event_count=1, move_count=1, stamp_time=True)
         self.area = area
         self.screen = screen
         self.event = event
         self.invoke_event_type = event.type if event is not None else None
         self.gesture_name = gesture_name
-
-        self.event_count = 1
-        self.move_count = 1
-        self.last_mouse_mouse_time = time.time()
-        self.property_drag = None
-        self._suppress_property_execute = False
-        self._gesture_circle_center = None
-        self._last_trajectory_mouse = None
-        self._derived_cache_key = None
-        self._direction_items_memo = None
-        self._gpu_extension_items_cache = None
-        self._element_proxy_pool = {}
-        self._element_proxy_pool_generation = None
-        self._gesture_timeout_timer = None
-        self._gesture_timeout_deadline = None
-        self._bottom_child_dwell_timer = None
-        self._bottom_child_dwell_deadline = None
-        self.draw_ctx = None
-        self.layout_token = object()
 
     def canonical_element(self, element):
         """Session-stable Python proxy for an Element RNA struct.
