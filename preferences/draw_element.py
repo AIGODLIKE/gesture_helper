@@ -131,13 +131,25 @@ class DrawElement:
             column.separator()
             row = draw_label(column, 'Add item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
-                if i != 'SELECTED_STRUCTURE':
-                    if i == "DIVIDING_LINE":
-                        cls.draw_element_add_div_property(row)
-                    else:
-                        ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
-                        ops.element_type = i
+                if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
+                    continue
+                if i == "DIVIDING_LINE":
+                    cls.draw_element_add_div_property(row)
+                else:
+                    ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
+                    ops.element_type = i
             row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
+
+            # Give the three layout buttons a full-width row.  The N-panel's
+            # content width is much smaller than ``context.region.width``;
+            # putting them beside the label silently clips the Box button.
+            from ..utils.enum import ENUM_LAYOUT_TYPE
+            layout_column = column.column(align=True)
+            layout_column.label(text='Layout:')
+            row = layout_column.row(align=True)
+            for i, n, d in ENUM_LAYOUT_TYPE:
+                ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
+                ops.element_type = i
         else:
             column.separator()
             row = column.row(align=True)

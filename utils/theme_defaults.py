@@ -1,9 +1,24 @@
-"""Shared dark-flat theme defaults (scene-linear RGBA for ColorProperty / BPU)."""
+"""Shared dark-flat theme defaults (scene-linear RGBA for ColorProperty / BPU).
+
+Property accents follow Blender's dark-theme feel:
+checkbox/option blue for bools, cool number-field tints for int/float —
+kept distinct from the teal operator-active and purple child-active hues.
+"""
 
 # Panels / buttons
 BACKGROUND = (0.035, 0.035, 0.038, 1.0)
 OPERATOR_ACTIVE = (0.02, 0.45, 0.40, 1.0)
 CHILD_ACTIVE = (0.28, 0.18, 0.75, 1.0)
+
+# Bool — Blender option/checkbox blue when on; muted warm dark when off
+BOOL_TRUE = (0.16, 0.36, 0.70, 1.0)
+BOOL_FALSE = (0.055, 0.040, 0.040, 1.0)
+
+# Number fields — cool blue-gray (int) vs teal-cyan (float)
+INT = (0.10, 0.16, 0.28, 1.0)
+INT_ACTIVE = (0.22, 0.40, 0.70, 1.0)
+FLOAT = (0.08, 0.20, 0.22, 1.0)
+FLOAT_ACTIVE = (0.12, 0.42, 0.48, 1.0)
 
 TEXT_DEFAULT = (0.92, 0.92, 0.94, 1.0)
 TEXT_ACTIVE = (1.0, 1.0, 1.0, 1.0)
@@ -17,7 +32,7 @@ OUTLINE_ACTIVE = (0.75, 0.75, 0.78, 0.42)
 
 # BPU-only accents (still scene-linear)
 BACKGROUND_HOVER = (0.28, 0.18, 0.75, 0.85)
-BACKGROUND_PROPERTY_HOVER = (0.02, 0.45, 0.40, 0.7)
+BACKGROUND_PROPERTY_HOVER = (0.16, 0.36, 0.70, 0.7)
 BACKGROUND_PROPERTY = (0.05, 0.05, 0.055, 1.0)
 BACKGROUND_ALERT = (0.85, 0.15, 0.15, 1.0)
 SEPARATOR = (0.35, 0.35, 0.38, 1.0)

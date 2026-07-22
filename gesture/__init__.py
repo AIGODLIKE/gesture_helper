@@ -82,6 +82,7 @@ classes_list = (
 
     Element,
     ElementCURE.ADD,
+    ElementCURE.SwitchLayoutType,
     ElementCURE.SORT,
     ElementCURE.COPY,
     ElementCURE.CUT,

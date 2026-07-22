@@ -2,19 +2,40 @@ import json
 import os
 
 import bpy
-from bpy.props import BoolProperty, StringProperty, EnumProperty
+from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
 
 from ..utils.backups import (
     format_backup_size,
     get_default_backups_folder,
     get_preferences_backup_path,
     get_rotating_backup_stats,
+    iter_preferences_backup_paths,
     load_preferences_backup_file,
     log_backup,
+    prune_rotating_gesture_backups,
     resolve_backups_folder,
-    resolve_preferences_backup_path,
 )
 from ..utils.property import set_property, get_property
+
+
+def _on_max_auto_backups_update(self, _context):
+    """Apply the cap immediately when the user lowers the limit."""
+    try:
+        deleted, deleted_bytes = prune_rotating_gesture_backups(
+            getattr(self, 'max_auto_backups', 100)
+        )
+    except Exception as exc:
+        # Property updates can run while Blender is unregistering the add-on.
+        try:
+            log_backup(f"max_auto_backups update failed: {exc}")
+        except Exception:
+            pass
+        return
+    if deleted:
+        log_backup(
+            f"max_auto_backups update pruned {deleted} "
+            f"({deleted_bytes} bytes), max={self.max_auto_backups}"
+        )
 
 
 class BackupsProperty(bpy.types.PropertyGroup):
@@ -47,6 +68,17 @@ class BackupsProperty(bpy.types.PropertyGroup):
         description='Folder for gesture JSON backups when custom path is enabled',
         subtype='DIR_PATH',
         default="",
+    )
+    max_auto_backups: IntProperty(
+        name='Maximum auto backups',
+        description=(
+            'Keep at most this many rotating auto-backup files; '
+            'oldest are deleted first'
+        ),
+        default=100,
+        min=1,
+        soft_max=500,
+        update=_on_max_auto_backups_update,
     )
     backups_file_mode: EnumProperty(
         name="Blender close backup mode",
@@ -110,7 +142,18 @@ class BackupsProperty(bpy.types.PropertyGroup):
         folder_box.label(text=translate("Default backup folder:"))
         folder_box_row = folder_box.row(align=True)
         folder_box_row.label(text=default_folder, translate=False)
-        folder_box_row.operator("wm.path_open", text="", icon='FILE_FOLDER').filepath = active_folder
+        folder_box_row.operator(
+            "wm.path_open", text="", icon='FILE_FOLDER'
+        ).filepath = default_folder
+
+        if active_folder != default_folder:
+            folder_box.separator()
+            folder_box.label(text=translate("Active backup folder:"))
+            active_row = folder_box.row(align=True)
+            active_row.label(text=active_folder, translate=False)
+            active_row.operator(
+                "wm.path_open", text="", icon='FILE_FOLDER'
+            ).filepath = active_folder
 
         backup_count, backup_bytes = get_rotating_backup_stats(active_folder)
         stats_row = folder_box.row(align=True)
@@ -125,14 +168,11 @@ class BackupsProperty(bpy.types.PropertyGroup):
         clear_row.enabled = backup_count > 0
         clear_row.operator("wm.gesture_clear_backups", text="", icon='TRASH')
 
+        folder_box.prop(backups, 'max_auto_backups')
+
         folder_box.prop(backups, 'enabled_backups_to_specified_path')
         if backups.enabled_backups_to_specified_path:
             folder_box.prop(backups, 'backups_path')
-
-        if active_folder != default_folder:
-            folder_box.separator()
-            folder_box.label(text=translate("Active backup folder:"))
-            folder_box.label(text=active_folder, translate=False)
 
 
 class BackupsPreferences:
@@ -154,25 +194,36 @@ class BackupsPreferences:
             return
 
         if auto_restore:
-            file_path = resolve_preferences_backup_path()
+            candidates = iter_preferences_backup_paths()
         else:
             file_path = file_path.strip()
             if not file_path:
                 raise ValueError("Please select a preferences backup file")
+            candidates = [file_path]
 
-        if not file_path or not os.path.isfile(file_path):
+        if not candidates:
             if auto_restore:
                 log_backup("preferences restore skipped: file not found")
                 return
             raise ValueError("Preferences backup file not found")
 
-        try:
-            data = load_preferences_backup_file(file_path)
-        except ValueError as e:
-            log_backup(f"preferences restore failed: {e}")
+        data = None
+        for candidate in candidates:
+            try:
+                data = load_preferences_backup_file(candidate)
+            except ValueError as e:
+                log_backup(f"preferences restore failed ({candidate}): {e}")
+                if not auto_restore:
+                    raise
+                # A corrupt primary JSON should not hide a valid legacy file.
+                continue
+            file_path = candidate
+            break
+        if data is None:
             if auto_restore:
+                log_backup("preferences restore skipped: no valid backup file")
                 return
-            raise
+            raise ValueError("Invalid preferences backup file")
 
         # Drop removed / non-preference fields from older backups.
         backups = data.get("backups_property")

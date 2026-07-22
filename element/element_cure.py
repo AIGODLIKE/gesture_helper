@@ -1,8 +1,8 @@
 import bpy
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 
 from .element_property import ElementAddProperty
-from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
+from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_LAYOUT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import (
     PublicOperator,
     get_pref,
@@ -60,13 +60,17 @@ class ElementCURE:
 
         is_ok = move_from and (self not in list(move_from.element))
         move_element = is_ok and move_from != self and self != self.parent_element
-        movable = (self.is_child_gesture or self.is_selected_structure) and move_element
+        movable = (
+            self.is_child_gesture
+            or self.is_selected_structure
+            or self.is_layout_container
+        ) and move_element
         return bool(movable)
 
     @property
     def is_can_be_cut(self) -> bool:
         """Return whether this item can be cut."""
-        return self.is_child_gesture or self.is_selected_structure
+        return self.is_child_gesture or self.is_selected_structure or self.is_layout_container
 
     class ElementPoll(PrefAccess, ActiveSelection, StructureCacheOps, PublicOperator, PublicCacheFunc):
 
@@ -79,6 +83,21 @@ class ElementCURE:
         bl_idname = 'wm.gesture_element_add'
         bl_options = {'REGISTER'}
         last_element = None
+
+        # Blender only collects RNA annotations declared on the registered
+        # Operator itself.  ElementAddProperty supplies these to the
+        # preferences PropertyGroup, but inheriting them here leaves a stale
+        # operator enum after reload (notably hiding the BOX entry).
+        element_type: EnumProperty(
+            name='Type',
+            default='CHILD_GESTURE',
+            items=ENUM_ELEMENT_TYPE,
+        )
+        selected_type: EnumProperty(
+            name='Structure type',
+            items=ENUM_SELECTED_TYPE,
+            update=lambda self, context: ElementAddProperty.update_selected_type(),
+        )
 
         @classmethod
         def poll(cls, context):
@@ -146,6 +165,42 @@ class ElementCURE:
                 self.cache_clear(gesture=gesture)
 
             self.__class__.last_element = add
+            return {'FINISHED'}
+
+    class SwitchLayoutType(ElementPoll):
+        """Change a layout node's presentation type without losing children."""
+
+        bl_label = 'Switch Layout Type'
+        bl_idname = 'wm.gesture_layout_type_set'
+        bl_description = 'Switch the active layout between Row, Column and Box'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        layout_type: EnumProperty(
+            name='Layout type',
+            items=ENUM_LAYOUT_TYPE,
+            default='ROW',
+        )
+
+        @classmethod
+        def poll(cls, context):
+            if not poll_message_active_element(cls):
+                return False
+            try:
+                return get_pref().active_element.is_layout_container
+            except (AttributeError, ReferenceError):
+                return False
+
+        def execute(self, _):
+            element = self.active_element
+            if element is None or not element.is_layout_container:
+                return {'CANCELLED'}
+            if element.element_type == self.layout_type:
+                return {'FINISHED'}
+            gesture = element.parent_gesture
+            with CacheState.batch():
+                element.element_type = self.layout_type
+                element.clear_derived_cache()
+                self.cache_clear(gesture=gesture)
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):

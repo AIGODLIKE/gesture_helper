@@ -266,7 +266,8 @@ class Icons:
     @staticmethod
     def unregister() -> None:
         global icons, icons_map, icons_path_map, _builtin_icon_names
-        if icons:
+        # Empty ImagePreviewCollections are falsey; still remove them.
+        if icons is not None:
             bpy.utils.previews.remove(icons)
 
         icons = None

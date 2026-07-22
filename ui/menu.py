@@ -5,9 +5,11 @@ class GESTURE_MT_add_element_menu(bpy.types.Menu):
     bl_label = "Other Elements"
 
     def draw(self, context):
+        from ..element.element_cure import ElementCURE
         from ..ops.quick_add.create_switch_panel import CreateSwitchPanel
         from ..ops.quick_add.create_panel_menu import CreatePanelMenu
         from ..utils.session_state import SessionState
+        from ..utils.enum import ENUM_LAYOUT_TYPE
         layout = self.layout
         layout.label(text="Other")
         layout.operator(CreateSwitchPanel.bl_idname, text="Switch N-Panel Tab")
@@ -17,3 +19,8 @@ class GESTURE_MT_add_element_menu(bpy.types.Menu):
             else "Adding Panel or Menu"
         )
         layout.operator(CreatePanelMenu.bl_idname, text=text)
+        layout.separator()
+        layout.label(text="Layout")
+        for identifier, label, _description in ENUM_LAYOUT_TYPE:
+            operator = layout.operator(ElementCURE.ADD.bl_idname, text=label)
+            operator.element_type = identifier

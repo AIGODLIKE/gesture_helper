@@ -70,6 +70,9 @@ ENUM_ELEMENT_TYPE = [
 
 # Layout container element types (Blender UILayout-like).
 LAYOUT_CONTAINER_TYPES = {'ROW', 'COLUMN', 'BOX'}
+# Stable, ordered subset used by the layout-type switcher.  Keep this derived
+# from ENUM_ELEMENT_TYPE so the stored element enum remains append-only.
+ENUM_LAYOUT_TYPE = [item for item in ENUM_ELEMENT_TYPE if item[0] in LAYOUT_CONTAINER_TYPES]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [
