@@ -9,10 +9,10 @@ from contextlib import contextmanager
 import bpy
 
 from .backups import (
+    iter_gestures_save_paths,
     iter_gestures_load_candidates,
     iter_gestures_load_fallback_after_failure,
     log_backup,
-    resolve_gestures_save_path,
 )
 from .gesture_store import get_gesture_store
 from .public import get_pref
@@ -48,6 +48,13 @@ def cancel_scheduled_gesture_save() -> None:
     _save_timer_pending = False
 
 
+def capture_gesture_snapshot() -> dict | None:
+    """Serialize the live WM store for restoration across the next file load."""
+    if get_gesture_store() is None:
+        return None
+    return get_pref().get_gesture_data(True)
+
+
 def _read_gesture_file(path: str) -> dict:
     with open(path, 'r', encoding='utf-8') as file:
         data = json.load(file)
@@ -78,24 +85,54 @@ def _apply_gesture_data(store, gesture_data: dict) -> None:
     gesture_keymap.GestureKeymap.key_restart()
 
 
+def restore_gesture_snapshot(gesture_data: dict) -> bool:
+    """Restore a file-load snapshot without requiring a writable user folder."""
+    if not isinstance(gesture_data, dict):
+        return False
+    store = get_gesture_store()
+    if store is None:
+        return False
+    try:
+        _apply_gesture_data(store, gesture_data)
+    except Exception as exc:
+        log_backup(f"gestures memory restore failed: {exc}")
+        from .debug_util import debug_traceback
+        debug_traceback(key='export_import')
+        return False
+    log_backup(f"gestures memory restore: ok ({len(store.gesture)} gesture(s))")
+    return True
+
+
 def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
     """Write all gestures to CONFIG (or backups fallback). Return path or None."""
     from ..ops.export_import import Export
 
-    pref = get_pref()
-    path = resolve_gestures_save_path()
     try:
+        if get_gesture_store() is None:
+            log_backup("gestures save skipped: gesture store unavailable")
+            return None
+        pref = get_pref()
         export_data = Export._build_export_data(
             pref,
             all_gestures=True,
             description=description,
         )
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(export_data, file, ensure_ascii=True, indent=2)
-        count = len(export_data.get('gesture') or {})
-        log_backup(f"gestures save: {count} gesture(s) -> {path}")
-        return path
+        last_error = None
+        for path in iter_gestures_save_paths():
+            try:
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, 'w', encoding='utf-8') as file:
+                    json.dump(export_data, file, ensure_ascii=True, indent=2)
+            except OSError as exc:
+                last_error = exc
+                log_backup(f"gestures save path failed ({path}): {exc}")
+                continue
+            count = len(export_data.get('gesture') or {})
+            log_backup(f"gestures save: {count} gesture(s) -> {path}")
+            return path
+        if last_error is not None:
+            raise last_error
+        raise OSError("No Gesture Helper save path is available")
     except Exception as e:
         log_backup(f"gestures save failed: {e}")
         from .debug_util import debug_traceback

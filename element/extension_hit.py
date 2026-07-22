@@ -146,7 +146,11 @@ def stack_hits_flags(
     for el in extension_hover:
         el.ops = ops
         combined |= hit_test_extension(el, ops, mouse=mouse)
-        for item in getattr(el, "extension_items", []) or []:
+        if getattr(el, "is_layout_container", False):
+            items = el.panel_leaf_items
+        else:
+            items = getattr(el, "extension_items", []) or []
+        for item in items:
             item.ops = ops
             if hit_test_child_row(item, ops, mouse=mouse):
                 combined |= CHILD_ROW

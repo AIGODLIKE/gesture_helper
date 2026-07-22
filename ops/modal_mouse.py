@@ -216,7 +216,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
                 mouse=overlay_mouse,
             )
 
-        elif 'LEFTMOUSE' == et or event.value == "RELEASE":
+        elif et == 'LEFTMOUSE':
+            # Confirm only on LMB — never on arbitrary key RELEASE. Gesture key
+            # RELEASE used to finish this modal immediately after invoke.
             self.exit()
             return operator_value_undo_return(self.___value___)
 

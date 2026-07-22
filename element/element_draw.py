@@ -67,7 +67,7 @@ class ElementDraw:
 
         in_panel = self.parent_is_extension or self.parent_is_layout
         if in_panel:  # Panel children: hide direction icon
-            if self.is_child_gesture or self.is_layout_container:
+            if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
             else:
                 row.separator()
@@ -103,9 +103,6 @@ class ElementDraw:
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
-        # Only runnable leaves can be the main action of a layout container.
-        if self.parent_is_layout and (self.is_operator or self.is_property_display):
-            layout.prop(self, 'main_item')
         if self.is_selected_structure:
             from ..ops.set_poll import SetPollExpression
             icon = self.pref.__get_icon__(self.selected_type)
@@ -155,21 +152,23 @@ class ElementDraw:
             SetDirection.draw_direction(row.column())
 
     def draw_layout_container(self, layout: 'bpy.types.UILayout') -> None:
-        from bpy.app.translations import pgettext_iface
+        from ..element.element_cure import ElementCURE
+        from ..utils.enum import ENUM_LAYOUT_TYPE
         row = layout.row(align=True)
-        column = row.column()
+        column = row.column(align=True)
         column.prop(self, 'name')
-        main = self.main_element
-        if main is not None:
-            column.label(
-                text=pgettext_iface("Main action: %s") % main.name_translate,
-                translate=False,
+
+        type_row = column.row(align=True)
+        for identifier, label, _description in ENUM_LAYOUT_TYPE:
+            operator = type_row.operator(
+                ElementCURE.SwitchLayoutType.bl_idname,
+                text=label,
+                depress=self.element_type == identifier,
             )
-        else:
-            alert = column.column(align=True)
-            alert.alert = True
-            alert.label(text='Layout has no main action', icon='ERROR')
-        column.label(text='Confirming without opening the panel runs the main action')
+            operator.layout_type = identifier
+
+        if not self.element:
+            column.label(text='No child items. Please add some.', icon='INFO')
         if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
 
@@ -219,9 +218,6 @@ class ElementDraw:
         elif self.is_property_display:
             if not self.__property_path_is_validity__:
                 alert_list.append(f'{pgettext_iface("Property path not found")}: {self.property_data_path}')
-        elif self.is_layout_container:
-            if self.main_element is None:
-                alert_list.append('Layout has no main action')
         if alert_list:
             col = layout.box().column(align=True)
             col.alert = True

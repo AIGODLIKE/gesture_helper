@@ -14,9 +14,12 @@ from ..utils.property import __set_prop__
 from ..utils.backups import (
     blender_close_backup_filename,
     close_backup_filename,
+    gesture_auto_backup_unchanged,
     log_backup,
     PREFERENCES_EXPORT_EXTENSION,
     PREFERENCES_LEGACY_EXTENSION,
+    PREFERENCES_OLD_FILENAME,
+    prune_rotating_gesture_backups,
     resolve_backups_folder,
 )
 from ..utils.public import (
@@ -385,13 +388,29 @@ class Export(PublicFileOperator):
         }
 
     @staticmethod
-    def _automatic_backup_path(is_blender_close: bool) -> str:
-        folder_path = resolve_backups_folder()
+    def _automatic_backup_path(
+        is_blender_close: bool,
+        *,
+        folder: str | None = None,
+    ) -> str:
+        folder_path = folder or resolve_backups_folder()
         if is_blender_close:
             pref = get_pref()
             mode = pref.backups_property.backups_file_mode
-            return os.path.abspath(os.path.join(
-                folder_path, blender_close_backup_filename(mode)))
+            filename = blender_close_backup_filename(mode)
+            path = os.path.abspath(os.path.join(folder_path, filename))
+            # The human-readable EVERY filename has second precision.  A
+            # rapid reload/close in the same second must not overwrite the
+            # earlier snapshot, so add a deterministic suffix only on collision.
+            if mode == "BLENDER_CLOSE_EVERY":
+                stem, extension = os.path.splitext(path)
+                candidate = path
+                serial = 1
+                while os.path.exists(candidate):
+                    candidate = f"{stem}-{serial:03d}{extension}"
+                    serial += 1
+                path = candidate
+            return path
         return os.path.abspath(os.path.join(folder_path, close_backup_filename()))
 
     @classmethod
@@ -427,11 +446,35 @@ class Export(PublicFileOperator):
             log_backup("skipped: export data empty")
             return None
 
-        path = cls._automatic_backup_path(is_blender_close)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(export_data, file, ensure_ascii=True, indent=2)
-        log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
+        # Skip write when the target already contains the same gesture payload
+        # (export ``time`` always changes — compare gesture only).
+        # Compare only the target file for stable naming modes.  ``EVERY``
+        # intentionally writes on each close, even when the payload is equal.
+        path = cls._automatic_backup_path(is_blender_close, folder=folder)
+        mode = prop.backups_file_mode if is_blender_close else None
+        can_skip_unchanged = not is_blender_close or mode in {
+            "BLENDER_CLOSE_DAY", "BLENDER_CLOSE_ONE",
+        }
+        if can_skip_unchanged and gesture_auto_backup_unchanged(
+            export_data, folder, path=path
+        ):
+            log_backup(f"skipped: unchanged target {path}")
+            path = None
+        else:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                json.dump(export_data, file, ensure_ascii=True, indent=2)
+            log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
+
+        # Cap rotating copies (oldest by mtime first); prefs single-file excluded.
+        max_auto_backups = getattr(prop, 'max_auto_backups', 100)
+        deleted, deleted_bytes = prune_rotating_gesture_backups(
+            max_auto_backups, folder)
+        if deleted:
+            log_backup(
+                f"pruned {deleted} auto backup(s) "
+                f"({deleted_bytes} bytes), max={max_auto_backups}"
+            )
         return path
 
     @staticmethod
@@ -600,7 +643,11 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
     filter_glob: bpy.props.StringProperty(
-        default=f"*{PREFERENCES_EXPORT_EXTENSION};*{PREFERENCES_LEGACY_EXTENSION}",
+        default=(
+            f"*{PREFERENCES_EXPORT_EXTENSION};"
+            f"*{PREFERENCES_LEGACY_EXTENSION};"
+            f"{PREFERENCES_OLD_FILENAME}"
+        ),
         options={'HIDDEN'},
         maxlen=255,
     )

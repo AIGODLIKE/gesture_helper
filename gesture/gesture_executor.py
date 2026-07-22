@@ -21,6 +21,12 @@ class GestureExecutor:
                 pgettext("Property path not found: %s") % element.property_data_path,
             )
             return
+        if not element.display_property_is_editable:
+            ops.report(
+                {'ERROR'},
+                pgettext("Cannot change this property: %s") % element.property_data_path,
+            )
+            return
         if prop_type in {'BOOLEAN', 'ENUM'}:
             if element.toggle_display_property():
                 ops.report({'INFO'}, element.display_property_text)
@@ -59,14 +65,9 @@ class GestureExecutor:
                 self._run_property_element(ops, i)
                 return
             if i.is_layout_container:
-                main = i.main_element
-                if main is None or depth > 4:
-                    ops.report(
-                        {'INFO'},
-                        pgettext("Layout has no main action: %s") % i.name_translate,
-                    )
-                    return
-                run(main, depth + 1)
+                # Layout nodes are presentation-only.  Their operator/property
+                # leaves are dispatched from the hovered panel row instead of
+                # treating the container as a hidden "main action".
                 return
 
             if i.operator_is_operator or i.operator_is_modal:
@@ -123,7 +124,7 @@ class GestureExecutor:
                     # (stack still blocks the radial confirm below).
                     session._suppress_property_execute = False
                     break
-                if item.is_operator or item.is_property_display or item.is_layout_container:
+                if item.is_operator or item.is_property_display:
                     run(item)
                     return True
             # Panel / right band / child row block radial confirm — not vertical
@@ -133,11 +134,14 @@ class GestureExecutor:
                 return False
 
         element = snap.direction_element
-        runnable = element is not None and (
-            element.is_operator or element.is_property_display or element.is_layout_container
-        )
+        runnable = element is not None and (element.is_operator or element.is_property_display)
         if runnable and (
                 snap.threshold_zone.is_confirm or getattr(element, 'mouse_is_in_area', False)):
+            # In-gesture INT/FLOAT scrub already applied the value — do not
+            # launch the post-exit modal mouse operator again.
+            if element.is_property_display and session._suppress_property_execute:
+                session._suppress_property_execute = False
+                return True
             run(element)
             return True
         return False

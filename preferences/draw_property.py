@@ -58,6 +58,16 @@ class DrawProperty(bpy.types.PropertyGroup):
         description='Show icons for elements in the list',
         default=True,
     )
+    force_show_panels_during_modal: BoolProperty(
+        name='Force show',
+        # Override heavy-panel pause while another modal (e.g. view/nav) is live.
+        description=(
+            'Show Gesture panels even while a modal operator is running. '
+            'Use this if another add-on stays in a modal and panels stay paused'
+        ),
+        default=False,
+        update=lambda self, context: DrawProperty._on_force_show_update(context),
+    )
     element_remove_tips: BoolProperty(
         name='Confirm element delete',
         default=True,
@@ -124,9 +134,17 @@ class DrawProperty(bpy.types.PropertyGroup):
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
                                                        default=theme_defaults.CHILD_ACTIVE)
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
-                                              default=theme_defaults.OPERATOR_ACTIVE)
+                                              default=theme_defaults.BOOL_TRUE)
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
-                                               default=theme_defaults.BACKGROUND)
+                                               default=theme_defaults.BOOL_FALSE)
+    background_int_color: FloatVectorProperty(name='Int Color', **public_color,
+                                              default=theme_defaults.INT)
+    background_int_active_color: FloatVectorProperty(name='Int Active Color', **public_color,
+                                                     default=theme_defaults.INT_ACTIVE)
+    background_float_color: FloatVectorProperty(name='Float Color', **public_color,
+                                                default=theme_defaults.FLOAT)
+    background_float_active_color: FloatVectorProperty(name='Float Active Color', **public_color,
+                                                       default=theme_defaults.FLOAT_ACTIVE)
 
     text_default_color: FloatVectorProperty(name='Text Default Color', **public_color,
                                             default=theme_defaults.TEXT_DEFAULT)
@@ -171,6 +189,11 @@ class DrawProperty(bpy.types.PropertyGroup):
         description='Translate gesture and element display names when the Blender UI language is not English',
         default=True,
     )
+
+    @staticmethod
+    def _on_force_show_update(context):
+        from ..utils.ui_draw_sync import tag_gesture_ui_regions
+        tag_gesture_ui_regions()
 
     @staticmethod
     def draw_text_property(layout: bpy.types.UILayout):
@@ -220,6 +243,14 @@ class DrawProperty(bpy.types.PropertyGroup):
         bb = box.column(align=True)
         bb.prop(draw, 'background_bool_false')
         bb.prop(draw, 'background_bool_true')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'background_int_color')
+        bb.prop(draw, 'background_int_active_color')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'background_float_color')
+        bb.prop(draw, 'background_float_active_color')
 
         bb = box.column(align=True)
         bb.prop(draw, 'text_default_color')

@@ -1,12 +1,9 @@
 """GPU renderer for row/column/box layout panels (Blender UILayout-like).
 
-A layout container on a direction slot (or hovered inside a menu) opens a
-panel next to its button. The panel arranges children with the same semantics
-as ``UILayout``: ROW places children side by side, COLUMN stacks them, BOX
-stacks them inside chrome. Leaves are operator / property / child-gesture /
-divider rows; interactive leaves stamp the same hit-box attributes the
-extension machinery already understands (``extension_by_child_draw_area``,
-``extension_draw_area`` and the session layout token).
+Layout containers are presentation nodes: their children are painted directly
+in the direction slot, just as ``pie.column()`` / ``pie.row()`` / ``pie.box()``
+are drawn inline by Blender. Only child-gesture leaves open a flyout. Every
+interactive leaf stamps the same hit boxes used by the extension machinery.
 """
 
 from __future__ import annotations
@@ -48,12 +45,22 @@ class ElementLayoutGpu:
         # extension_items is memoized per element per input event on ops.
         return self.extension_items
 
+    def _empty_layout_size(self, metrics, *, boxed: bool) -> Vector:
+        from ..utils.blf_text import measure_text
+
+        text = bpy.app.translations.pgettext_iface("No child items. Please add some.")
+        text_w, _text_h = measure_text(text, self.text_size)
+        size = Vector((max(metrics.row_h * 3.0, text_w + metrics.pad * 2.0), metrics.row_h))
+        if boxed:
+            size += Vector((metrics.pad * 2.0, metrics.pad * 2.0))
+        return size
+
     def _layout_node_size(self, node, metrics) -> Vector:
         if node.is_layout_container:
             children = node._layout_children()
             sizes = [node._layout_node_size(child, metrics) for child in children]
             if not sizes:
-                size = Vector((metrics.row_h * 2.0, metrics.row_h))
+                return self._empty_layout_size(metrics, boxed=node.is_box)
             elif node.is_row:
                 size = Vector((
                     sum(s.x for s in sizes) + metrics.gap * (len(sizes) - 1),
@@ -71,7 +78,9 @@ class ElementLayoutGpu:
             return Vector((metrics.row_h, metrics.sep_h))
         tw, th = node.text_dimensions
         w = float(tw) + metrics.pad * 2.0
-        if node.is_child_gesture or node.is_layout_container:
+        # Layout containers are inline presentation nodes.  Only a genuine
+        # child gesture reserves the flyout chevron column.
+        if node.is_child_gesture:
             w += metrics.gap + metrics.chevron
         if node.is_draw_icon and Texture.get_texture(node._gpu_draw_icon_name()) is not None:
             w += metrics.label_h + metrics.gap
@@ -84,16 +93,20 @@ class ElementLayoutGpu:
         children = self._layout_children()
         sizes = [self._layout_node_size(child, metrics) for child in children]
         if not sizes:
-            return Vector((metrics.row_h * 3.0, metrics.row_h))
+            return self._empty_layout_size(metrics, boxed=self.is_box)
         if self.is_row:
-            return Vector((
+            size = Vector((
                 sum(s.x for s in sizes) + metrics.gap * (len(sizes) - 1),
                 max(s.y for s in sizes),
             ))
-        return Vector((
-            max(s.x for s in sizes),
-            sum(s.y for s in sizes) + metrics.gap * (len(sizes) - 1),
-        ))
+        else:
+            size = Vector((
+                max(s.x for s in sizes),
+                sum(s.y for s in sizes) + metrics.gap * (len(sizes) - 1),
+            ))
+        if self.is_box:
+            size += Vector((metrics.pad * 2.0, metrics.pad * 2.0))
+        return size
 
     @property
     def extension_dimensions(self) -> Vector:
@@ -103,17 +116,31 @@ class ElementLayoutGpu:
         from .element_gpu_draw import ElementGpuExtensionItem
         return ElementGpuExtensionItem.extension_dimensions.fget(self)
 
-    def _layout_panel_is_open(self, ops) -> bool:
-        session = getattr(ops, 'session', None)
-        if session is None:
-            return False
-        if self in session.extension_hover:
-            return True
-        snap = session.snapshot
-        return snap.direction_element == self and snap.threshold_zone.is_beyond
+    @property
+    def layout_direction_offset(self) -> Vector:
+        """Top-left anchor for an inline layout in a radial direction slot."""
+        w, h = self.layout_panel_content_size
+        mx, my = self.text_margin
+        gap = max(float(mx), float(my)) * 1.5
+        direction = self.direction
+        if direction == '1':
+            return Vector((gap, h * 0.5))
+        if direction == '2':
+            return Vector((gap, h + gap))
+        if direction == '3':
+            return Vector((-w * 0.5, h + gap))
+        if direction == '4':
+            return Vector((-w - gap, h + gap))
+        if direction == '5':
+            return Vector((-w - gap, h * 0.5))
+        if direction == '6':
+            return Vector((-w - gap, -gap))
+        if direction == '7':
+            return Vector((-w * 0.5, -gap))
+        return Vector((gap, -gap))
 
     def draw_gpu_layout_panel(self, ops):
-        """Draw panel chrome + children. Matrix origin = content top-left."""
+        """Draw inline children; only BOX adds container chrome."""
         self.ops = ops
         metrics = self._layout_metrics()
         content = self.layout_panel_content_size
@@ -121,32 +148,52 @@ class ElementLayoutGpu:
         mx, my = metrics.margin_x, metrics.margin_y
 
         x, y = get_now_2d_offset_position()
-        self.extension_draw_area = [x - mx, y - h - my, x + w + mx, y + mx]
+        self.extension_draw_area = [x - mx, y - h - my, x + w + mx, y + my]
         session = getattr(ops, 'session', None)
         if session is not None:
             self._gesture_layout_token = session.layout_token
 
-        draw = self.draw_property
-        stroke, line_width = self._outline_colors(active=False)
-        self.draw_rounded_rectangle_outlined(
-            (w / 2, -h / 2),
-            fill=draw.background_child_color,
-            stroke=stroke,
-            radius=self.text_radius,
-            width=w + mx * 2,
-            height=h + my * 2,
-            line_width=line_width,
-        )
+        # Blender UILayout row()/column() are pure flow containers.  Only
+        # box() contributes visible chrome; the children supply their own
+        # operator/property button surfaces.
+        if self.is_box:
+            draw = self.draw_property
+            stroke, line_width = self._outline_colors(active=False)
+            self.draw_rounded_rectangle_outlined(
+                (w / 2, -h / 2),
+                fill=draw.background_child_color,
+                stroke=stroke,
+                radius=self.text_radius,
+                width=w + mx * 2,
+                height=h + my * 2,
+                line_width=line_width,
+            )
 
         children = self._layout_children()
         if not children:
-            self.draw_text(
-                bpy.app.translations.pgettext_iface("No child items. Please add some."),
-                size=self.text_size,
-                position=[0, 0],
-            )
+            self._draw_empty_layout(metrics, w, h, boxed=self.is_box)
             return
-        self._draw_layout_children(children, ops, metrics, w, horizontal=self.is_row)
+        child_w = w
+        child_offset = Vector((0.0, 0.0))
+        if self.is_box:
+            child_w = max(1.0, w - metrics.pad * 2.0)
+            child_offset = Vector((metrics.pad, -metrics.pad))
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate(child_offset)
+            self._draw_layout_children(children, ops, metrics, child_w, horizontal=self.is_row)
+
+    def draw_gpu_layout_inline(self, ops, width: float) -> None:
+        """Draw a layout inside an existing flyout without outer panel margins."""
+        self.ops = ops
+        metrics = self._layout_metrics()
+        size = self._layout_node_size(self, metrics)
+        width = max(float(width), float(size.x))
+        x, y = get_now_2d_offset_position()
+        self.extension_draw_area = [x, y - size.y, x + width, y]
+        session = getattr(ops, 'session', None)
+        if session is not None:
+            self._gesture_layout_token = session.layout_token
+        self._draw_layout_node(self, ops, metrics, width)
 
     def _draw_layout_children(self, children, ops, metrics, avail_w, *, horizontal):
         cursor = 0.0
@@ -178,13 +225,19 @@ class ElementLayoutGpu:
                     height=size.y,
                     line_width=line_width,
                 )
+                if not children:
+                    self._draw_empty_layout(metrics, avail_w, size.y, boxed=True)
+                    return
                 with gpu.matrix.push_pop():
                     gpu.matrix.translate((metrics.pad, -metrics.pad))
                     self._draw_layout_children(
-                        children, ops, metrics, avail_w - metrics.pad * 2.0,
+                        children, ops, metrics, max(1.0, avail_w - metrics.pad * 2.0),
                         horizontal=node.is_row,
                     )
             else:
+                if not children:
+                    self._draw_empty_layout(metrics, avail_w, size.y, boxed=False)
+                    return
                 self._draw_layout_children(
                     children, ops, metrics, avail_w, horizontal=node.is_row,
                 )
@@ -200,6 +253,22 @@ class ElementLayoutGpu:
             return
         self._draw_layout_leaf(node, ops, metrics, avail_w)
 
+    def _draw_empty_layout(self, metrics, width, height, *, boxed: bool) -> None:
+        if not boxed:
+            self.draw_rounded_rectangle_area(
+                (width / 2, -height / 2),
+                color=self.draw_property.background_child_color,
+                radius=min(self.text_radius, height * 0.5),
+                width=width,
+                height=height,
+            )
+        offset = metrics.pad
+        self.draw_text(
+            bpy.app.translations.pgettext_iface("No child items. Please add some."),
+            size=self.text_size,
+            position=[offset, -offset if boxed else 0.0],
+        )
+
     def _draw_layout_leaf(self, item, ops, metrics, avail_w):
         row_h = metrics.row_h
         draw = self.draw_property
@@ -213,13 +282,31 @@ class ElementLayoutGpu:
         hovered = item.extension_by_child_is_hover
         radius = min(self.text_radius, row_h * 0.5)
 
-        # Slider fill for numeric properties (soft range → row width).
+        # Stable native-style button surface, with a value slider overlaid for
+        # numeric properties.
+        if item.is_operator:
+            base_color = draw.background_operator_color
+        elif item.is_property_display:
+            base_color = item._property_background_color(active=False)
+        elif item.is_child_gesture:
+            base_color = draw.background_child_color
+        else:
+            base_color = draw.background_child_color
+        self.draw_rounded_rectangle_area(
+            (avail_w * 0.5, -row_h * 0.5),
+            color=base_color,
+            radius=radius,
+            width=avail_w,
+            height=row_h,
+        )
+
+        # Slider fill for numeric properties (soft range -> row width).
         fraction = item.display_property_fraction if item.is_property_display else None
         if fraction is not None and fraction > 0.0:
             fill_w = max(2.0, avail_w * fraction)
             self.draw_rounded_rectangle_area(
                 (fill_w * 0.5, -row_h * 0.5),
-                color=draw.background_operator_active_color,
+                color=item._property_slider_color(),
                 radius=min(radius, fill_w * 0.5),
                 width=fill_w,
                 height=row_h,

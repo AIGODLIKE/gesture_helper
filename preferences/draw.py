@@ -58,6 +58,7 @@ class PreferencesDraw(GestureDraw):
         col = column.box().column(align=True)
         col.prop(pref.draw_property, "panel_enable")
         col.prop(pref.draw_property, "panel_name")
+        col.prop(pref.draw_property, "force_show_panels_during_modal")
         col.prop(pref.draw_property, "author")
         col.prop(pref.draw_property, "enable_name_translation")
         col.operator_context = "INVOKE_DEFAULT"

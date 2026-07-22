@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from typing import Callable, Optional
 
 import bpy
@@ -12,10 +11,16 @@ _pending: dict[str, Callable[[], None]] = {}
 
 _MSG_GESTURE = "Gesture is running (UI updates paused)"
 _MSG_ANIMATION = "Animation is playing (UI updates paused)"
+_MSG_OPERATOR = "Operator is running (UI updates paused)"
 
-# Throttle panel-draw debug spam (one summary line per where per interval).
-_panel_debug_last: dict[str, float] = {}
-_PANEL_DEBUG_INTERVAL = 0.25
+# Any live modal pauses heavy panels, except our gesture / preview.
+_MODAL_SKIP_EXCLUDE_PREFIXES = (
+    "WM_OT_gesture_operator",
+    "WM_OT_gesture_preview",
+)
+
+# One-shot poller: after modal skip, refresh UI once the modal ends.
+_modal_ui_refresh_fn: Optional[Callable[[], Optional[float]]] = None
 
 
 def is_gesture_modal_active() -> bool:
@@ -45,75 +50,140 @@ def _is_animation_busy(context) -> bool:
 
 
 def _modal_operator_ids(context) -> list[str]:
-    """bl_idname-like identifiers currently on the window modal stack."""
-    window = getattr(context, "window", None)
-    if window is None:
-        return []
-    out = []
-    try:
-        for op in window.modal_operators:
-            bl = getattr(op, "bl_idname", None)
-            if bl:
-                out.append(bl)
-            else:
-                out.append(type(op).__name__)
-    except Exception:
-        return out
+    """bl_idname-like identifiers on any window's modal stack.
+
+    Preferences often runs in a separate window; only checking
+    ``context.window`` would miss view/transform modals on the 3D window.
+    """
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _collect(window) -> None:
+        if window is None:
+            return
+        try:
+            for op in window.modal_operators:
+                bl = getattr(op, "bl_idname", None) or type(op).__name__
+                if bl not in seen:
+                    seen.add(bl)
+                    out.append(bl)
+        except Exception:
+            ...
+
+    wm = getattr(context, "window_manager", None)
+    if wm is None:
+        wm = getattr(bpy.context, "window_manager", None)
+    windows = getattr(wm, "windows", None) if wm is not None else None
+    if windows:
+        for window in windows:
+            _collect(window)
+    else:
+        _collect(getattr(context, "window", None) or getattr(bpy.context, "window", None))
     return out
+
+
+def _is_force_show_panels() -> bool:
+    try:
+        from .pref import get_pref
+        return bool(get_pref().draw_property.force_show_panels_during_modal)
+    except Exception:
+        return False
+
+
+def _blocking_modal_match(modals: list[str]) -> Optional[str]:
+    """First modal that should pause heavy panels (excludes our gesture/preview)."""
+    for mid in modals:
+        if mid.startswith(_MODAL_SKIP_EXCLUDE_PREFIXES):
+            continue
+        return mid
+    return None
+
+
+def _is_blocking_modal(context) -> bool:
+    return _blocking_modal_match(_modal_operator_ids(context)) is not None
+
+
+def tag_gesture_ui_regions() -> None:
+    """Redraw VIEW_3D UI (and Preferences) once — not WINDOW, to avoid FPS hit."""
+    window = getattr(bpy.context, "window", None)
+    if window is None or window.screen is None:
+        return
+    for area in window.screen.areas:
+        if area.type not in {'VIEW_3D', 'PREFERENCES'}:
+            continue
+        for region in area.regions:
+            if region.type == 'UI' or (area.type == 'PREFERENCES' and region.type == 'WINDOW'):
+                region.tag_redraw()
+
+
+def _schedule_modal_ui_refresh() -> None:
+    """After skipping for a modal, poll until it ends then redraw UI once."""
+    global _modal_ui_refresh_fn
+    if _modal_ui_refresh_fn is not None:
+        return
+
+    def _poll():
+        global _modal_ui_refresh_fn
+        try:
+            if _is_force_show_panels():
+                _modal_ui_refresh_fn = None
+                tag_gesture_ui_regions()
+                return None
+            if (
+                    _is_blocking_modal(bpy.context)
+                    or is_gesture_modal_active()
+                    or _is_animation_busy(bpy.context)
+            ):
+                return 0.12
+        except Exception:
+            ...
+        _modal_ui_refresh_fn = None
+        try:
+            tag_gesture_ui_regions()
+        except Exception:
+            ...
+        return None
+
+    _modal_ui_refresh_fn = _poll
+    try:
+        bpy.app.timers.register(_poll, first_interval=0.12)
+    except Exception:
+        _modal_ui_refresh_fn = None
+
+
+def draw_heavy_panel_paused(layout, message: str) -> None:
+    """Paused placeholder: reason label and Force show on one row."""
+    row = layout.row(align=True)
+    row.label(text=message, icon='INFO')
+    try:
+        from .pref import get_pref
+        row.prop(get_pref().draw_property, 'force_show_panels_during_modal', text='Force show')
+    except Exception:
+        ...
 
 
 def heavy_panel_skip_message(context) -> Optional[str]:
     """Message when Element/Modal panels should skip heavy draw; else None.
 
-    Covers gesture modal and animation play/scrub only. View navigation is not
-    skipped: the UI region is not part of the view-modal redraw cycle, so a skip
-    label would stick (and forcing UI redraws would hurt viewport FPS).
+    Skips during gesture modal, animation play/scrub, and any other live modal.
+    ``force_show_panels_during_modal`` overrides the pause. A one-shot timer
+    refreshes UI after the modal ends so the pause label does not stick.
     """
     try:
+        if _is_force_show_panels():
+            return None
         if is_gesture_modal_active():
+            _schedule_modal_ui_refresh()
             return _MSG_GESTURE
         if _is_animation_busy(context):
+            _schedule_modal_ui_refresh()
             return _MSG_ANIMATION
+        if _blocking_modal_match(_modal_operator_ids(context)):
+            _schedule_modal_ui_refresh()
+            return _MSG_OPERATOR
     except Exception:
         return None
     return None
-
-
-def panel_draw_trace(where: str, context, *, skipped: Optional[str] = None, ms: float = 0.0) -> None:
-    """Log panel draw interference facts when Debug panel draw is on."""
-    from .debug_util import get_debug
-    if not get_debug('panel'):
-        return
-    now = time.perf_counter()
-    last = _panel_debug_last.get(where, 0.0)
-    # Always log skips; throttle full draws.
-    if now - last < _PANEL_DEBUG_INTERVAL and skipped is None:
-        return
-    _panel_debug_last[where] = now
-
-    from .session_state import SessionState
-    try:
-        from ..gesture.gesture_draw_gpu import GestureGpuDraw
-        draw_n = len(GestureGpuDraw.__active_draw_instances__)
-    except Exception:
-        draw_n = -1
-    gesture_active = is_gesture_modal_active()
-    preview = SessionState.gesture_preview_active
-    modals = _modal_operator_ids(context)
-    region = getattr(context, "region", None)
-    area = getattr(context, "area", None)
-    print(
-        f"[gh:panel] {where}"
-        f" skipped={skipped!r}"
-        f" ms={ms:.2f}"
-        f" gesture_modal={gesture_active}"
-        f" preview={preview}"
-        f" draw_instances={draw_n}"
-        f" area={getattr(area, 'type', None)}"
-        f" region={getattr(region, 'type', None)}"
-        f" modals={modals}",
-        flush=True,
-    )
 
 
 def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEBOUNCE_SEC) -> None:
@@ -152,6 +222,7 @@ def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEB
 
 def cancel_all() -> None:
     """Cancel pending draw-sync timers (call on unregister / gesture start)."""
+    global _modal_ui_refresh_fn
     for fn in list(_pending.values()):
         try:
             if bpy.app.timers.is_registered(fn):
@@ -159,3 +230,10 @@ def cancel_all() -> None:
         except (ValueError, RuntimeError, AttributeError):
             ...
     _pending.clear()
+    if _modal_ui_refresh_fn is not None:
+        try:
+            if bpy.app.timers.is_registered(_modal_ui_refresh_fn):
+                bpy.app.timers.unregister(_modal_ui_refresh_fn)
+        except (ValueError, RuntimeError, AttributeError):
+            ...
+        _modal_ui_refresh_fn = None

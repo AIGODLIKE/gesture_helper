@@ -135,6 +135,8 @@ class GestureSession:
         self.property_drag: tuple | None = None
         # Set when a drag ended on the same event that exits the gesture.
         self._suppress_property_execute = False
+        # True once the active drag moved far enough to count as a scrub.
+        self._property_drag_moved = False
         self._gesture_circle_center: Vector | None = None
         self._last_trajectory_mouse: Vector | None = None
         self._derived_cache_key = None

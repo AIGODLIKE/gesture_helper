@@ -131,25 +131,14 @@ def tag_redraw_gesture_screen(session: GestureSession):
     mouse move — that is a major lag source when the sidebar is open, and can
     disturb modal mouse_region association used by extension hover.
     """
-    from ..utils.debug_util import get_debug
     area = session.area
     if area is not None:
         try:
             from ..utils.region_mouse import find_window_region
             region = find_window_region(area)
             if region is not None:
-                if get_debug('panel'):
-                    # Throttle: this fires every mouse move during a gesture.
-                    import time
-                    now = time.perf_counter()
-                    last = getattr(tag_redraw_gesture_screen, "_last_dbg", 0.0)
-                    if now - last >= 0.5:
-                        tag_redraw_gesture_screen._last_dbg = now
-                        print("[gh:panel] tag_redraw WINDOW-only", flush=True)
                 region.tag_redraw()
                 return
-            if get_debug('panel'):
-                print("[gh:panel] tag_redraw AREA (no WINDOW region)", flush=True)
             area.tag_redraw()
             return
         except ReferenceError:
@@ -157,16 +146,12 @@ def tag_redraw_gesture_screen(session: GestureSession):
     screen = session.screen
     if screen is not None:
         try:
-            if get_debug('panel'):
-                print("[gh:panel] tag_redraw ALL screen areas (fallback)", flush=True)
             for a in screen.areas:
                 a.tag_redraw()
             return
         except ReferenceError:
             ...
     from ..utils.public import tag_redraw
-    if get_debug('panel'):
-        print("[gh:panel] tag_redraw global fallback", flush=True)
     tag_redraw()
 
 
@@ -441,17 +426,19 @@ def update_extension_hover(session: GestureSession, ops):
     if ext is not None and ext not in session.extension_hover:
         session.extension_hover.insert(0, ext)
 
-    # A layout container selected on a direction slot opens its panel: keep it
-    # on the hover stack while it stays selected or the mouse is in its panel.
-    de = session.snapshot.direction_element
-    if (
-            de is not None
-            and de.is_layout_container
-            and session.snapshot.threshold_zone.is_beyond
-            and de not in session.extension_hover
-    ):
-        de.ops = ops
-        session.extension_hover.append(de)
+    # Inline layout panels are always painted in their direction slot.  Add a
+    # layout to the hover stack only when the pointer is actually over its
+    # panel/leaf, so the panel blocks radial confirmation without behaving like
+    # a child-gesture entry.
+    from ..element.extension_hit import CHILD_ROW, PANEL, hit_test_extension
+    if not any(getattr(item, 'is_layout_container', False) for item in session.extension_hover):
+        for candidate in session.snapshot.direction_items.values():
+            if not candidate.is_layout_container:
+                continue
+            candidate.ops = ops
+            if hit_test_extension(candidate, ops) & (PANEL | CHILD_ROW):
+                session.extension_hover.append(candidate)
+                break
 
     if not session.extension_hover:
         from .draw_frame_context import refresh_draw_ctx_extension_flag
@@ -470,9 +457,14 @@ def update_extension_hover(session: GestureSession, ops):
         found = None
         for item in items:
             item.ops = ops
-            if (item.is_child_gesture or item.is_layout_container) and item.extension_by_child_is_hover:
+            if item.is_child_gesture and item.extension_by_child_is_hover:
                 found = item
                 break
+            if item.is_layout_container:
+                flags = hit_test_extension(item, ops)
+                if flags & (PANEL | CHILD_ROW):
+                    found = item
+                    break
         if found is not None and found not in session.extension_hover:
             session.extension_hover.append(found)
             continue
@@ -599,35 +591,71 @@ class GestureInputProcessor:
 
     @staticmethod
     def _hovered_property_row(session: GestureSession, ops):
-        """Property leaf currently hovered in the deepest open panel, or None."""
-        if not session.phase.shows_radial_ui or not session.extension_hover:
+        """Property leaf currently hovered (panel row or radial direction), or None."""
+        if not session.phase.shows_radial_ui:
             return None
-        last = session.extension_hover[-1]
-        if last.is_layout_container:
-            items = last.panel_leaf_items
-        else:
-            items = getattr(last, 'extension_items', []) or []
-        for item in items:
-            item.ops = ops
-            if item.is_property_display and item.extension_by_child_is_hover:
-                return item
+        if session.extension_hover:
+            last = session.extension_hover[-1]
+            if last.is_layout_container:
+                items = last.panel_leaf_items
+            else:
+                items = getattr(last, 'extension_items', []) or []
+            for item in items:
+                item.ops = ops
+                if item.is_property_display and item.extension_by_child_is_hover:
+                    return item
+            # Browsing a panel: do not fall through to the radial direction.
+            from ..element.extension_hit import stack_blocks_radial
+            if stack_blocks_radial(session.extension_hover, ops):
+                return None
+
+        snap = session.snapshot
+        de = snap.direction_element
+        if de is not None and de.is_property_display:
+            de.ops = ops
+            if getattr(de, 'mouse_is_in_area', False) or snap.threshold_zone.is_confirm:
+                return de
         return None
 
+    @staticmethod
+    def _is_radial_numeric_confirm(session: GestureSession, item) -> bool:
+        """True when *item* is the radial INT/FLOAT direction in the confirm zone."""
+        if session.extension_hover:
+            return False
+        snap = session.snapshot
+        return (
+            snap.direction_element == item
+            and snap.threshold_zone.is_confirm
+            and item.display_property_type in {'INT', 'FLOAT'}
+            and item.display_property_is_editable
+        )
+
     def _handle_property_drag(self, session: GestureSession, ops, event) -> bool | None:
-        """LMB press/drag/release on panel property rows. None = not handled."""
+        """LMB / radial confirm drag on INT/FLOAT; click toggle for bool/enum.
+
+        Returns None when the event is not handled here.
+        """
         drag = session.property_drag
         if drag is not None:
             element, start_mouse, start_value = drag
             if event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
                 delta = event.mouse_x - start_mouse.x
                 element.apply_property_drag(start_value, delta, precise=event.shift)
+                # Remember that the value was actually scrubbed so release can
+                # skip launching the post-gesture modal mouse operator.
+                if abs(delta) >= 2.0:
+                    session._property_drag_moved = True
                 return True
             if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
                 session.property_drag = None
+                if getattr(session, '_property_drag_moved', False):
+                    session._suppress_property_execute = True
+                session._property_drag_moved = False
                 return True
             if event.value == 'PRESS' and event.type in {'RIGHTMOUSE', 'ESC'}:
                 element.set_display_property_value(start_value)
                 session.property_drag = None
+                session._property_drag_moved = False
                 return True
             if event.value == 'RELEASE' and event.type == session.invoke_event_type:
                 # Gesture key released mid-drag: keep the dragged value and let
@@ -635,7 +663,9 @@ class GestureInputProcessor:
                 # modal with no exit trigger left). The executor must not fire
                 # the row again on this release.
                 session.property_drag = None
-                session._suppress_property_execute = True
+                if getattr(session, '_property_drag_moved', False):
+                    session._suppress_property_execute = True
+                session._property_drag_moved = False
                 return None
             # Swallow everything else while dragging (keys must not leak).
             return True
@@ -644,6 +674,8 @@ class GestureInputProcessor:
             item = self._hovered_property_row(session, ops)
             if item is None:
                 return None
+            if not item.display_property_is_editable:
+                return True
             prop_type = item.display_property_type
             if prop_type in {'INT', 'FLOAT'}:
                 start_value = item.display_property_value
@@ -654,10 +686,12 @@ class GestureInputProcessor:
                     Vector((event.mouse_x, event.mouse_y)),
                     start_value,
                 )
+                session._property_drag_moved = False
                 return True
             if prop_type in {'BOOLEAN', 'ENUM'}:
                 item.toggle_display_property()
                 return True
+
         return None
 
     def on_event(self, session: GestureSession, ops, event) -> bool:
@@ -690,6 +724,25 @@ class GestureInputProcessor:
         prev_phase = session.phase
         refresh_snapshot(session, ops)
         snap = session.snapshot
+
+        # Arm radial numeric scrubbing only after this event's snapshot is
+        # current.  The old implementation inspected the previous snapshot
+        # before refresh, so changing direction could lock the next move to a
+        # property that was no longer under the cursor.
+        if (
+                session.property_drag is None
+                and event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}
+        ):
+            item = self._hovered_property_row(session, ops)
+            if item is not None and self._is_radial_numeric_confirm(session, item):
+                start_value = item.display_property_value
+                if start_value is not None:
+                    session.property_drag = (
+                        item,
+                        Vector((event.mouse_x, event.mouse_y)),
+                        start_value,
+                    )
+                    session._property_drag_moved = False
 
         snap_changed = (
             snap.direction != prev_direction

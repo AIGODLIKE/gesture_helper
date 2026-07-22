@@ -116,9 +116,7 @@ class ElementIcon:
     @property
     def is_draw_child_icon(self):
         """Return whether to draw the child/panel chevron badge icon."""
-        return get_pref().draw_property.element_draw_child_icon and (
-            self.is_child_gesture or self.is_layout_container
-        )
+        return get_pref().draw_property.element_draw_child_icon and self.is_child_gesture
 
 
 # Display properties using custom parameters, not Blender defaults
@@ -233,7 +231,7 @@ class ElementLayoutProperty:
         owner_path, prop_id = path.rsplit('.', 1)
         try:
             owner = bpy.context.path_resolve(owner_path)
-        except (ValueError, AttributeError, ReferenceError):
+        except (ValueError, AttributeError, ReferenceError, RuntimeError, TypeError):
             return None
         if owner is None:
             return None
@@ -263,10 +261,32 @@ class ElementLayoutProperty:
         owner, rna_prop = resolved
         try:
             return getattr(owner, rna_prop.identifier)
-        except AttributeError:
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
             return None
 
+    @property
+    def display_property_is_editable(self) -> bool:
+        """Whether this RNA value can be changed by the gesture controls."""
+        resolved = self.resolve_property()
+        if resolved is None:
+            return False
+        owner, rna_prop = resolved
+        if rna_prop.type not in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}:
+            return False
+        if getattr(rna_prop, 'is_array', False):
+            return False
+        if rna_prop.type == 'ENUM' and getattr(rna_prop, 'is_enum_flag', False):
+            return False
+        if getattr(rna_prop, 'is_readonly', False):
+            return False
+        try:
+            return not owner.is_property_readonly(rna_prop.identifier)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return True
+
     def set_display_property_value(self, value) -> bool:
+        if not self.display_property_is_editable:
+            return False
         resolved = self.resolve_property()
         if resolved is None:
             return False
@@ -274,7 +294,7 @@ class ElementLayoutProperty:
         try:
             setattr(owner, rna_prop.identifier, value)
             return True
-        except (AttributeError, TypeError, ValueError):
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
 
     @property
@@ -285,16 +305,36 @@ class ElementLayoutProperty:
         if value is None:
             return f"{name}: ?"
         prop_type = self.display_property_type
+        resolved = self.resolve_property()
+        if resolved is not None and getattr(resolved[1], 'is_array', False):
+            try:
+                if prop_type == 'FLOAT':
+                    text = ', '.join(f'{float(item):.2f}' for item in value)
+                else:
+                    text = ', '.join(str(item) for item in value)
+                return f"{name}: [{text}]"
+            except (TypeError, ValueError):
+                return f"{name}: {value}"
         if prop_type == 'FLOAT':
             return f"{name}: {value:.2f}"
         if prop_type == 'BOOLEAN':
             from bpy.app.translations import pgettext_iface
             return f"{name}: {pgettext_iface('On') if value else pgettext_iface('Off')}"
         if prop_type == 'ENUM':
-            resolved = self.resolve_property()
             if resolved is not None:
                 from bpy.app.translations import pgettext_iface
-                item = resolved[1].enum_items.get(value)
+                rna_prop = resolved[1]
+                if getattr(rna_prop, 'is_enum_flag', False):
+                    try:
+                        labels = [
+                            pgettext_iface(rna_prop.enum_items[key].name)
+                            for key in sorted(value)
+                            if rna_prop.enum_items.get(key) is not None
+                        ]
+                        return f"{name}: {', '.join(labels)}"
+                    except (KeyError, TypeError):
+                        return f"{name}: {value}"
+                item = rna_prop.enum_items.get(value)
                 if item is not None:
                     return f"{name}: {pgettext_iface(item.name)}"
         return f"{name}: {value}"
@@ -312,7 +352,7 @@ class ElementLayoutProperty:
             value = getattr(owner, rna_prop.identifier)
             soft_min = rna_prop.soft_min
             soft_max = rna_prop.soft_max
-        except (AttributeError, TypeError):
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
             return None
         span = soft_max - soft_min
         if not span or span <= 0 or span > 1e9:
@@ -321,6 +361,8 @@ class ElementLayoutProperty:
 
     def apply_property_drag(self, start_value, delta_px: float, *, precise: bool = False) -> None:
         """Set value from a horizontal drag distance in pixels."""
+        if not self.display_property_is_editable:
+            return
         resolved = self.resolve_property()
         if resolved is None:
             return
@@ -346,11 +388,13 @@ class ElementLayoutProperty:
             value = int(round(value))
         try:
             setattr(owner, rna_prop.identifier, value)
-        except (AttributeError, TypeError, ValueError):
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             ...
 
     def toggle_display_property(self) -> bool:
         """Cycle the value in place (bool toggle / enum cycle). Returns success."""
+        if not self.display_property_is_editable:
+            return False
         resolved = self.resolve_property()
         if resolved is None:
             return False
