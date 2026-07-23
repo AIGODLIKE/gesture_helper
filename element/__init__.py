@@ -52,6 +52,7 @@ class Element(ElementCURE,
 
     def __init_property__(self):
         self.__init_direction_by_sort__()
+        self.initialize_property_display()
 
     def __init_row__(self):
         self.__init_direction_by_sort__()

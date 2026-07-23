@@ -2,7 +2,7 @@ import bpy
 import gpu
 from bl_operators.wm import operator_value_undo_return
 from bpy.app.translations import pgettext
-from bpy.props import StringProperty, EnumProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty
 from mathutils import Vector
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
@@ -51,6 +51,12 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         items=ENUM_NUMBER_VALUE_CHANGE_MODE[1:],
         name="Value Mode",
         description="How to interpret the value",
+        options={'SKIP_SAVE'},
+    )
+    invert: BoolProperty(
+        name='Invert',
+        description='Reverse the mouse direction used to adjust the value',
+        default=False,
         options={'SKIP_SAVE'},
     )
     mouse = None
@@ -204,7 +210,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
 
         if et == 'MOUSEMOVE':
             delta = self.value_delta(event, vm)
-            if type(self.___value___) == int:
+            if self.invert:
+                delta = -delta
+            if isinstance(self.___value___, int):
                 value = int(round(self.___value___ + delta))
             else:
                 value = self.___value___ + delta

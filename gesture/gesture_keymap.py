@@ -72,8 +72,8 @@ class GestureKeymap(KeymapProperty):
 
     @property
     def add_kmi_data(self) -> dict:
-        from ..ops import gesture
-        return {'idname': gesture.GestureOperator.bl_idname, **self.key}
+        idname = 'wm.gesture_menu' if self.gesture_type == 'MENU' else 'wm.gesture_operator'
+        return {'idname': idname, **self.key}
 
     @cache_update_lock
     def from_temp_key_update_data(self) -> None:
@@ -161,8 +161,9 @@ class GestureKeymap(KeymapProperty):
 
     @classmethod
     def key_restart(cls) -> None:
-        """Reset key bindings (unload via registration list, then reload)."""
+        """Reset bindings and remove stale items left by interrupted reloads."""
         cls.key_all_unload()
+        clear_orphan_gesture_kmis()
         cls.key_all_load()
         if get_debug('key'):
             debug_print("Gesture Key Restart", AddonKeymapRegistry.entry_count(), key='key')

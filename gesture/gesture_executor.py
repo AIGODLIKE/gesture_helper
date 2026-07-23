@@ -42,7 +42,8 @@ class GestureExecutor:
                 func(
                     'INVOKE_DEFAULT', True,
                     data_path=element.property_context_path,
-                    value_mode='MOUSE_CHANGES_HORIZONTAL',
+                    value_mode=element.property_drag_mode,
+                    invert=element.property_drag_invert,
                 )
                 ops.report({'INFO'}, element.name_translate)
             return
@@ -65,9 +66,9 @@ class GestureExecutor:
                 self._run_property_element(ops, i)
                 return
             if i.is_layout_container:
-                # Layout nodes are presentation-only.  Their operator/property
-                # leaves are dispatched from the hovered panel row instead of
-                # treating the container as a hidden "main action".
+                main = i.main_element
+                if main is not None:
+                    run(main, depth + 1)
                 return
 
             if i.operator_is_operator or i.operator_is_modal:
@@ -134,7 +135,9 @@ class GestureExecutor:
                 return False
 
         element = snap.direction_element
-        runnable = element is not None and (element.is_operator or element.is_property_display)
+        runnable = element is not None and (
+            element.is_operator or element.is_property_display or element.is_layout_container
+        )
         if runnable and (
                 snap.threshold_zone.is_confirm or getattr(element, 'mouse_is_in_area', False)):
             # In-gesture INT/FLOAT scrub already applied the value — do not
@@ -153,7 +156,7 @@ class GestureExecutor:
         snap = session.snapshot
         de = snap.direction_element
         if de and snap.threshold_zone.is_confirm and session.phase.shows_radial_ui:
-            if de.is_operator:
+            if de.is_operator or de.is_property_display or de.is_layout_container:
                 self.try_running_operator(session, ops)
                 return True
         return False

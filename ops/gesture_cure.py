@@ -1,8 +1,9 @@
 import bpy
 from bpy.app.translations import pgettext
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 
 from ..gesture import GestureKeymap
+from ..gesture.gesture_property import GESTURE_TYPE_ITEMS
 from ..utils.public import (
     PublicOperator,
     poll_addon_preferences,
@@ -43,6 +44,14 @@ class GestureCURE:
         )
         bl_options = {'REGISTER'}
 
+        gesture_type: EnumProperty(
+            name='Type',
+            description='Choose the runtime type for this new item',
+            items=GESTURE_TYPE_ITEMS,
+            default='RADIAL',
+            options={'SKIP_SAVE'},
+        )
+
         @classmethod
         def poll(cls, context):
             return poll_addon_preferences(cls)
@@ -52,7 +61,12 @@ class GestureCURE:
                 count = add_all_preset()
                 self.report({'INFO'}, pgettext("Imported %d presets") % count)
                 return {'FINISHED'}
-            return self.execute(context)
+            return context.window_manager.invoke_props_dialog(self, width=260)
+
+        def draw(self, _context):
+            column = self.layout.column(align=True)
+            column.label(text='Choose a type for the new item')
+            column.prop(self, 'gesture_type', expand=True)
 
         def execute(self, _):
             from ..utils.gesture_store import get_gesture_store, get_gestures
@@ -61,7 +75,8 @@ class GestureCURE:
             if gestures is None or store is None:
                 return {'CANCELLED'}
             add = gestures.add()
-            add.name = 'Gesture'
+            add.name = 'Menu' if self.gesture_type == 'MENU' else 'Gesture'
+            add.gesture_type = self.gesture_type
             store.index_gesture = len(gestures) - 1
             GestureKeymap.key_restart()
             self.structure_changed(add)

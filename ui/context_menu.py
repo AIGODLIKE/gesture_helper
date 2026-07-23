@@ -36,9 +36,28 @@ class ContextMenu(bpy.types.Menu):
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
             layout.enabled = get_pref().active_gesture is not None
             if show_property:
-                layout.operator(
+                prop_type = button_prop.type
+                direct = layout.column(align=True)
+                can_control = (
+                    prop_type in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}
+                    and not getattr(button_prop, 'is_array', False)
+                    and not getattr(button_prop, 'is_enum_flag', False)
+                )
+                if can_control:
+                    direct.operator_context = 'EXEC_DEFAULT'
+                    operator = direct.operator(
+                        CreateElementProperty.bl_idname,
+                        text=pgettext("Add Gesture-Controlled Property %s") % __name_translate__(button_prop.name),
+                        icon='MOUSE_MOVE',
+                    )
+                    operator.display_property = True
+                    operator.property_type = prop_type
+
+                actions = direct
+                actions.operator_context = 'INVOKE_DEFAULT'
+                actions.operator(
                     CreateElementProperty.bl_idname,
-                    text=pgettext("Add Property %s") % __name_translate__(button_prop.name)
+                    text=pgettext("Property Actions for %s") % __name_translate__(button_prop.name),
                 )
 
             if show_operator:

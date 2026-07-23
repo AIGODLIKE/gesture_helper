@@ -162,6 +162,12 @@ class DrawProperty(bpy.types.PropertyGroup):
                                        default=theme_defaults.OUTLINE)
     outline_active_color: FloatVectorProperty(name='Outline Active Color', **public_color,
                                               default=theme_defaults.OUTLINE_ACTIVE)
+    status_disabled_color: FloatVectorProperty(name='Disabled Status', **public_color,
+                                               default=theme_defaults.STATUS_DISABLED)
+    status_warning_color: FloatVectorProperty(name='Unavailable Status', **public_color,
+                                              default=theme_defaults.STATUS_WARNING)
+    status_error_color: FloatVectorProperty(name='Invalid Status', **public_color,
+                                            default=theme_defaults.STATUS_ERROR)
 
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
@@ -264,3 +270,8 @@ class DrawProperty(bpy.types.PropertyGroup):
         bb.prop(draw, 'dividing_line_color')
         bb.prop(draw, 'outline_color')
         bb.prop(draw, 'outline_active_color')
+
+        bb = box.column(align=True)
+        bb.prop(draw, 'status_disabled_color')
+        bb.prop(draw, 'status_warning_color')
+        bb.prop(draw, 'status_error_color')

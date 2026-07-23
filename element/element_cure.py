@@ -167,6 +167,87 @@ class ElementCURE:
             self.__class__.last_element = add
             return {'FINISHED'}
 
+    class AddLayoutPreset(ADD):
+        """Create a useful nested layout without placeholder operators."""
+
+        bl_label = 'Add Layout Preset'
+        bl_idname = 'wm.gesture_layout_preset_add'
+        bl_description = 'Add a prebuilt gesture layout structure'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        preset: EnumProperty(
+            name='Layout preset',
+            items=(
+                ('PANEL', 'Panel Column', 'A boxed vertical content group'),
+                ('TOOLBAR', 'Toolbar Row', 'A boxed horizontal action group'),
+                ('SPLIT', 'Two Columns', 'Two vertical groups arranged side by side'),
+                ('SAMPLING', 'Sampling Panel', 'Cycles adaptive sampling controls'),
+            ),
+            default='PANEL',
+        )
+
+        _PRESETS = {
+            'PANEL': (
+                'BOX', 'Panel', (
+                    ('COLUMN', 'Content', ()),
+                ),
+            ),
+            'TOOLBAR': (
+                'BOX', 'Toolbar', (
+                    ('ROW', 'Actions', ()),
+                ),
+            ),
+            'SPLIT': (
+                'ROW', 'Two Columns', (
+                    ('COLUMN', 'Left', ()),
+                    ('COLUMN', 'Right', ()),
+                ),
+            ),
+            'SAMPLING': (
+                'BOX', 'Sampling', (
+                    ('COLUMN', 'Sampling', (
+                        ('PROPERTY', 'Max Samples', (), 'scene.cycles.samples'),
+                        ('PROPERTY', 'Adaptive Threshold', (), 'scene.cycles.adaptive_threshold'),
+                    )),
+                ),
+            ),
+        }
+
+        @staticmethod
+        def _add_preset_node(collection, spec, gesture):
+            element_type, name, children, *extra = spec
+            item = collection.add()
+            collection.update()
+            PublicCacheFunc.ensure_gesture_structure(gesture)
+            item.element_type = element_type
+            item.__init_element__()
+            item.name = name
+            if element_type == 'PROPERTY' and extra:
+                item.property_data_path = extra[0]
+            for child_spec in children:
+                ElementCURE.AddLayoutPreset._add_preset_node(
+                    item.element, child_spec, gesture,
+                )
+            return item
+
+        def execute(self, _):
+            gesture = self.active_gesture
+            target = self.collection
+            spec = self._PRESETS.get(self.preset)
+            if gesture is None or target is None or spec is None:
+                return {'CANCELLED'}
+
+            with CacheState.batch():
+                root = self._add_preset_node(target, spec, gesture)
+                PublicCacheFunc.ensure_gesture_structure(gesture)
+                if self.active_element:
+                    self.active_element.show_child = True
+                root.update_radio()
+                self.cache_clear(gesture=gesture)
+
+            ElementCURE.ADD.last_element = root
+            return {'FINISHED'}
+
     class SwitchLayoutType(ElementPoll):
         """Change a layout node's presentation type without losing children."""
 

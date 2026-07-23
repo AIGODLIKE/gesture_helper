@@ -7,7 +7,7 @@ import os
 import zipfile
 
 import bpy
-from bpy.props import StringProperty, BoolProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..utils.public import get_pref, poll_message_active_element, poll_addon_preferences
@@ -60,6 +60,16 @@ class SelectIcon(bpy.types.Operator):
             SelectIcon.filtered_icons.append(icon)
 
     icon: StringProperty(options={"SKIP_SAVE"})
+    target: EnumProperty(
+        name='Target',
+        items=(
+            ('ELEMENT', 'Element', 'Set the element icon'),
+            ('PROPERTY_TRUE', 'On State', 'Set the boolean on-state icon'),
+            ('PROPERTY_FALSE', 'Off State', 'Set the boolean off-state icon'),
+        ),
+        default='ELEMENT',
+        options={'SKIP_SAVE'},
+    )
 
     filter: StringProperty(
         description="Filter icons by name",
@@ -110,9 +120,16 @@ class SelectIcon(bpy.types.Operator):
 
             bpy.context.window_manager.clipboard = self.icon
 
-            act = get_pref().active_element
-            act.icon = self.icon
-            act.enabled_icon = True
+            act = getattr(context, 'gesture_icon_element', None) or get_pref().active_element
+            if self.target == 'PROPERTY_TRUE':
+                act.property_true_icon = self.icon
+                act.property_bool_icons_enabled = True
+            elif self.target == 'PROPERTY_FALSE':
+                act.property_false_icon = self.icon
+                act.property_bool_icons_enabled = True
+            else:
+                act.icon = self.icon
+                act.enabled_icon = True
         return {'FINISHED'}
 
     def update_history(self):
@@ -202,6 +219,7 @@ class SelectIcon(bpy.types.Operator):
                 **args,
             )
             p.icon = icon
+            p.target = self.target
 
             col_idx += 1
             if col_idx > num_cols - 1:
@@ -219,6 +237,31 @@ class SelectIcon(bpy.types.Operator):
 
         if not filtered_icons:
             row.label(text="No icons were found")
+
+
+class SyncElementName(bpy.types.Operator):
+    bl_idname = 'wm.gesture_sync_element_name'
+    bl_label = 'Sync Element Name'
+    bl_description = 'Use the configured operator or RNA property name'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    @staticmethod
+    def _element(context):
+        return getattr(context, 'gesture_name_element', None) or get_pref().active_element
+
+    @classmethod
+    def poll(cls, context):
+        element = cls._element(context)
+        if element is None or not element.can_sync_name:
+            cls.poll_message_set('The configured source does not provide a name')
+            return False
+        return True
+
+    def execute(self, context):
+        element = self._element(context)
+        if element is None or not element.sync_name_from_source():
+            return {'CANCELLED'}
+        return {'FINISHED'}
 
 
 class RefreshIcons(bpy.types.Operator):
