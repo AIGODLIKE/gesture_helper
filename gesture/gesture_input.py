@@ -473,6 +473,10 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
 
     operator_gesture = ops.operator_gesture
     direction_items = get_direction_items(session, operator_gesture, is_draw_gpu=is_draw_gpu)
+    # Auto-avoid radial button overlaps (writes overlay_offset on elements).
+    if is_draw_gpu and ui_visible and direction_items:
+        from ..utils.radial_collision import compute_overlay_collision_offsets
+        compute_overlay_collision_offsets(direction_items, draw_ctx.gesture_radius, ops=ops)
     raw_items = direction_items
     extension_element = direction_items.get("9")
 

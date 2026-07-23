@@ -325,12 +325,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                     else:
                         y = -gap
                     gpu.matrix.translate((-w * 0.5, y))
+                    gpu.matrix.translate(Vector(self.overlay_offset))
                     self.extension_offset_start_position = get_now_2d_offset_position()
                     self.draw_gpu_layout_panel(ops)
             else:
                 position = get_position(direction, radius)
                 with gpu.matrix.push_pop():
-                    gpu.matrix.translate(position + self.layout_direction_offset)
+                    gpu.matrix.translate(position + self.layout_direction_offset + Vector(self.overlay_offset))
                     self.draw_gpu_layout_panel(ops)
             return
 
@@ -351,6 +352,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 w, h = self.extension_dimensions
 
                 draw_debug_point((1, 0, 0, 1))
+                gpu.matrix.translate(Vector(self.overlay_offset))
                 self.extension_offset_start_position = get_now_2d_offset_position()
                 gpu.matrix.translate((-w / 2, 0))
                 self.draw_gpu_extension_item(ops)
@@ -369,6 +371,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             w, h = self.draw_dimensions
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.draw_direction_offset)
+                gpu.matrix.translate(Vector(self.overlay_offset))
                 self.gpu_draw_margin()
                 x, y = get_now_2d_offset_position()
                 self.gpu_draw_status_badge()
