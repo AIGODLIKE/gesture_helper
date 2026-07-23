@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from contextlib import contextmanager
 
 import bpy
@@ -66,6 +67,37 @@ def _read_gesture_file(path: str) -> dict:
     return data
 
 
+def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
+    """Write and validate a gesture file before atomically replacing ``path``."""
+    directory = os.path.dirname(path) or os.curdir
+    os.makedirs(directory, exist_ok=True)
+    fd, temp_path = tempfile.mkstemp(
+        dir=directory,
+        prefix=f'.{os.path.basename(path)}.',
+        suffix='.tmp',
+    )
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as file:
+            json.dump(export_data, file, ensure_ascii=True, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+
+        # Compare the exact JSON-compatible structure while the old file is
+        # still untouched. This catches partial writes and serialization drift.
+        written_data = _read_gesture_file(temp_path)
+        expected_data = json.loads(json.dumps(export_data, ensure_ascii=True))
+        if written_data != expected_data:
+            raise ValueError('Gesture file verification failed before replace')
+
+        os.replace(temp_path, path)
+    finally:
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except OSError:
+            ...
+
+
 def _apply_gesture_data(store, gesture_data: dict) -> None:
     from ..ops.export_import import sanitize_gesture_import_data
     from ..gesture import gesture_keymap
@@ -120,10 +152,8 @@ def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
         last_error = None
         for path in iter_gestures_save_paths():
             try:
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                with open(path, 'w', encoding='utf-8') as file:
-                    json.dump(export_data, file, ensure_ascii=True, indent=2)
-            except OSError as exc:
+                _write_gesture_file_atomic(path, export_data)
+            except (OSError, TypeError, ValueError) as exc:
                 last_error = exc
                 log_backup(f"gestures save path failed ({path}): {exc}")
                 continue

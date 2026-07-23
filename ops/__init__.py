@@ -2,6 +2,7 @@ from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 from . import element_modal
 from . import export_import, switch_mode
 from . import gesture
+from . import menu
 from . import restore_key
 from . import select_icon
 from . import set_direction
@@ -19,6 +20,7 @@ from .quick_add.gesture_preview import GesturePreview
 
 operator_list = (
     select_icon.SelectIcon,
+    select_icon.SyncElementName,
     select_icon.RefreshIcons,
     select_icon.OpenCustomIconFolder,
     select_icon.ExportCustomIcons,
@@ -33,6 +35,7 @@ operator_list = (
     set_key.OperatorTempModifierKey,
 
     gesture.GestureOperator,
+    menu.GestureMenuOperator,
     GesturePreview,
 
     CreateElementProperty,

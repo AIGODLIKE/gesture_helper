@@ -71,6 +71,14 @@ class GestureDraw:
         if ag is not None:
             column.prop(ag, 'name')
             column.prop(ag, 'description')
+            type_row = column.row(align=True)
+            type_row.label(text='Type')
+            type_row.label(
+                text='Menu' if ag.gesture_type == 'MENU' else 'Gesture',
+                icon='MENU_PANEL' if ag.gesture_type == 'MENU' else 'MOUSE_MOVE',
+            )
+            if ag.gesture_type == 'MENU':
+                column.prop(ag, 'menu_style')
         GestureDraw.draw_gesture_key(column)
 
     @staticmethod
@@ -160,7 +168,7 @@ class GestureDraw:
 
         pref = get_pref()
         ag = pref.active_gesture
-        if ag is None:
+        if ag is None or ag.gesture_type != 'RADIAL':
             return
         row = layout.row(align=True)
         row.enabled = pref.enabled

@@ -46,12 +46,20 @@ EXPORT_PROPERTY_EXCLUDE = (
 
 EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
+EXPORT_OVERLAY_ITEM = ['overlay_offset']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
-    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction', 'main_item'],
+    'CHILD_GESTURE': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction',
+        'main_item',
+    ],
     'OPERATOR_MODAL': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
+        *EXPORT_OVERLAY_ITEM,
         'modal_events',
         'modal_events_index',
         'control_property',
@@ -77,12 +85,41 @@ EXPORT_PROPERTY_ITEM = {
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
+        *EXPORT_OVERLAY_ITEM,
         'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', 'main_item'],
     "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM],
-    'PROPERTY': [*EXPORT_PUBLIC_ITEM, 'direction', 'property_data_path', 'main_item'],
-    'ROW': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
-    'COLUMN': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
-    'BOX': [*EXPORT_PUBLIC_ITEM, 'direction', 'main_item'],
+    'PROPERTY': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction',
+        'property_data_path',
+        'property_drag_mode',
+        'property_drag_invert',
+        'property_show_value',
+        'property_value_format',
+        'property_value_precision',
+        'property_true_text',
+        'property_false_text',
+        'property_bool_icons_enabled',
+        'property_true_icon',
+        'property_false_icon',
+        'main_item',
+    ],
+    'ROW': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+    ],
+    'COLUMN': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+    ],
+    'BOX': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+    ],
 }
 
 
@@ -93,8 +130,14 @@ def _is_legacy_script_element(element: dict) -> bool:
 def _remove_legacy_script_from_tree(elements: dict) -> None:
     remove_keys = []
     for key, element in elements.items():
+        if not isinstance(element, dict):
+            raise ValueError(f"Invalid element data at key {key!r}: expected an object")
         nested = element.get('element')
         if nested:
+            if not isinstance(nested, dict):
+                raise ValueError(
+                    f"Invalid child element data at key {key!r}: expected an object"
+                )
             _remove_legacy_script_from_tree(nested)
         if _is_legacy_script_element(element):
             debug_print(
@@ -128,11 +171,32 @@ def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
 
 
 def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Remove legacy SCRIPT elements, migrate operator ids, strip radio flags."""
+    """Validate and migrate gesture JSON before applying it to RNA."""
     from ..utils.selection import strip_radio_from_copy_data
 
-    for gesture in gesture_data.values():
+    if not isinstance(gesture_data, dict):
+        raise ValueError("Invalid gesture file: 'gesture' must be an object")
+
+    for key, gesture in gesture_data.items():
+        if not isinstance(gesture, dict):
+            raise ValueError(f"Invalid gesture data at key {key!r}: expected an object")
+
+        gesture_type = gesture.get('gesture_type', 'RADIAL')
+        gesture['gesture_type'] = (
+            gesture_type if gesture_type in {'RADIAL', 'MENU'} else 'RADIAL'
+        )
+        menu_style = gesture.get('menu_style', 'PANEL')
+        gesture['menu_style'] = (
+            menu_style
+            if menu_style in {'PANEL', 'COMPACT', 'BORDERLESS'}
+            else 'PANEL'
+        )
+
         elements = gesture.get('element')
+        if elements is not None and not isinstance(elements, dict):
+            raise ValueError(
+                f"Invalid element collection for gesture {key!r}: expected an object"
+            )
         if elements:
             _remove_legacy_script_from_tree(elements)
             _migrate_legacy_operator_ids_in_tree(elements)
@@ -359,21 +423,27 @@ class Export(PublicFileOperator):
         if gestures is None or len(gestures) == 0:
             return {'CANCELLED'}
 
-        gesture_data = self.export_data['gesture']
+        export_data = self.export_data
+        gesture_data = export_data['gesture']
         if not len(gesture_data):
             self.report({'INFO'}, pgettext("No export items selected"))
             return {'CANCELLED'}
 
         path = self.file_path
-        self.write_json_file()
+        try:
+            self.write_json_file(export_data)
+        except (OSError, TypeError, ValueError) as exc:
+            log_backup(f"manual gesture export failed ({path}): {exc}")
+            self.report({'ERROR'}, pgettext("Export failed. Check the path: %s") % path)
+            return {'CANCELLED'}
         self.report({'INFO'}, pgettext("Exported to %s") % path)
         return {'FINISHED'}
 
-    def write_json_file(self):
+    def write_json_file(self, export_data=None):
+        from ..utils.gesture_persistence import _write_gesture_file_atomic
+
         path = self.file_path
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(self.export_data, file, ensure_ascii=True, indent=2)
+        _write_gesture_file_atomic(path, export_data or self.export_data)
 
     @staticmethod
     def _build_export_data(pref, *, all_gestures: bool, description: str = 'auto_backups') -> dict:
@@ -461,9 +531,9 @@ class Export(PublicFileOperator):
             log_backup(f"skipped: unchanged target {path}")
             path = None
         else:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                json.dump(export_data, file, ensure_ascii=True, indent=2)
+            from ..utils.gesture_persistence import _write_gesture_file_atomic
+
+            _write_gesture_file_atomic(path, export_data)
             log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
 
         # Cap rotating copies (oldest by mtime first); prefs single-file excluded.

@@ -12,6 +12,7 @@ from .ui_filter import PASS_THROUGH_UI_IDNAMES, filter_view3d_menu_kmis
 # RMB context menus (``active if active else inactive_ui``).
 PASS_THROUGH_BLOCKLIST = frozenset({
     'wm.gesture_operator',
+    'wm.gesture_menu',
     'gesture.operator',
     'wm.gesture_modal_mouse_operator',
     'wm.gesture_element_modal_event',

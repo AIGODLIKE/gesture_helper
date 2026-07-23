@@ -103,6 +103,10 @@ class GesturePreferences(PublicProperty,
                 res.pop("operator_properties")
             if "main_item" in res and not res["main_item"]:  # Default: not a main action
                 res.pop("main_item")
+            if "layout_alignment" in res and res["layout_alignment"] == "EXPAND":
+                res.pop("layout_alignment")
+            if "layout_scale" in res and res["layout_scale"] == 1.0:
+                res.pop("layout_scale")
 
             for k in exclude_keywords:
                 if k in res:

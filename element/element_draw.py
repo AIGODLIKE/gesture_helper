@@ -9,6 +9,19 @@ from ..utils.public_ui import icon_two
 
 
 class ElementDraw:
+    def draw_name(self, layout: 'bpy.types.UILayout') -> None:
+        """Draw the element name and a source-sync button when available."""
+        from ..ops.select_icon import SyncElementName
+
+        row = layout.row(align=True)
+        row.prop(self, 'name')
+        if self.can_sync_name:
+            row.context_pointer_set('gesture_name_element', self)
+            row.operator(SyncElementName.bl_idname, text='', icon='FILE_REFRESH')
+
+    def draw_overlay_offset(self, layout: 'bpy.types.UILayout') -> None:
+        layout.prop(self, 'overlay_offset', text='Draw Offset')
+
     def draw_item(self, layout: 'bpy.types.UILayout', *, _active_element=None):
         pref = get_pref()
         draw = pref.draw_property
@@ -123,13 +136,14 @@ class ElementDraw:
         elif self.is_child_gesture:
             row = layout.row(align=True)
             column = row.column()
-            column.prop(self, 'name')
+            self.draw_name(column)
             self.draw_edit_icon(column)
             column.label(text='Child gesture', icon_value=self.pref.__get_icon__(self.direction))
 
             # Extension / layout panel children share the parent's slot — no direction.
             if not (self.parent_is_extension or self.parent_is_layout):
                 SetDirection.draw_direction(row.column())
+            self.draw_overlay_offset(layout)
         elif self.is_property_display:
             self.draw_property_display(layout)
         elif self.is_layout_container:
@@ -138,7 +152,7 @@ class ElementDraw:
     def draw_property_display(self, layout: 'bpy.types.UILayout') -> None:
         row = layout.row(align=True)
         column = row.column()
-        column.prop(self, 'name')
+        self.draw_name(column)
         path_col = column.column(align=True)
         path_col.alert = not self.__property_path_is_validity__
         path_col.prop(self, 'property_data_path')
@@ -151,12 +165,59 @@ class ElementDraw:
         if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
 
+        advanced_header = layout.row(align=True)
+        advanced_header.prop(
+            self,
+            'show_property_advanced',
+            text='Property Settings',
+            icon='TRIA_DOWN' if self.show_property_advanced else 'TRIA_RIGHT',
+            emboss=False,
+        )
+        if self.show_property_advanced:
+            advanced = layout.column(align=True)
+            advanced.prop(self, 'property_show_value')
+            if self.property_show_value:
+                advanced.prop(self, 'property_value_format')
+
+            prop_type = self.display_property_type
+            if prop_type in {'INT', 'FLOAT'}:
+                drag = advanced.row(align=True)
+                drag.prop(self, 'property_drag_mode', text='')
+                drag.prop(self, 'property_drag_invert', text='', icon='ARROW_LEFTRIGHT')
+                if prop_type == 'FLOAT' and self.property_show_value:
+                    advanced.prop(self, 'property_value_precision')
+            elif prop_type == 'BOOLEAN':
+                labels = advanced.row(align=True)
+                labels.prop(self, 'property_true_text')
+                labels.prop(self, 'property_false_text')
+                advanced.prop(self, 'property_bool_icons_enabled')
+                if self.property_bool_icons_enabled:
+                    self.draw_property_state_icons(advanced)
+
+        self.draw_overlay_offset(layout)
+        self.draw_main_action(layout)
+
+    def draw_property_state_icons(self, layout: 'bpy.types.UILayout') -> None:
+        from ..ops.select_icon import SelectIcon
+        from ..utils.icons import icon_layout_kwargs
+
+        layout.context_pointer_set('gesture_icon_element', self)
+        row = layout.row(align=True)
+        for prop_name, target, label in (
+                ('property_true_icon', 'PROPERTY_TRUE', 'On'),
+                ('property_false_icon', 'PROPERTY_FALSE', 'Off')):
+            icon = getattr(self, prop_name)
+            cell = row.row(align=True)
+            cell.prop(self, prop_name, text=label, **icon_layout_kwargs(icon))
+            operator = cell.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
+            operator.target = target
+
     def draw_layout_container(self, layout: 'bpy.types.UILayout') -> None:
         from ..element.element_cure import ElementCURE
         from ..utils.enum import ENUM_LAYOUT_TYPE
         row = layout.row(align=True)
         column = row.column(align=True)
-        column.prop(self, 'name')
+        self.draw_name(column)
 
         type_row = column.row(align=True)
         for identifier, label, _description in ENUM_LAYOUT_TYPE:
@@ -167,10 +228,62 @@ class ElementDraw:
             )
             operator.layout_type = identifier
 
+        alignment = column.row(align=True)
+        alignment.label(text='Alignment')
+        alignment.prop(self, 'layout_alignment', text='')
+
+        actions = [
+            item for item in self.panel_leaf_items
+            if item.is_operator or item.is_property_display
+        ]
+        if actions:
+            column.separator()
+            column.label(text='Gesture Action')
+            action_column = column.column(align=True)
+            effective = self.main_element
+            for item in actions:
+                action_column.prop(
+                    item,
+                    'main_item',
+                    text=item.name_translate,
+                    icon='RADIOBUT_ON' if item == effective else 'RADIOBUT_OFF',
+                    toggle=True,
+                )
+
+        advanced_header = column.row(align=True)
+        advanced_header.prop(
+            self,
+            'show_layout_advanced',
+            text='Advanced',
+            icon='TRIA_DOWN' if self.show_layout_advanced else 'TRIA_RIGHT',
+            emboss=False,
+        )
+        if self.show_layout_advanced:
+            advanced = column.column(align=True)
+            advanced.prop(self, 'layout_scale')
+
+        self.draw_overlay_offset(column)
+
         if not self.element:
             column.label(text='No child items. Please add some.', icon='INFO')
         if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
+
+    def draw_main_action(self, layout: 'bpy.types.UILayout') -> None:
+        """Draw the primary-action toggle for executable layout leaves."""
+        if not (self.is_operator or self.is_property_display):
+            return
+        owner = self.main_action_layout
+        if owner is None:
+            return
+        row = layout.row(align=True)
+        row.prop(
+            self,
+            'main_item',
+            text='Gesture Action',
+            icon='RADIOBUT_ON' if owner.main_element == self else 'RADIOBUT_OFF',
+            toggle=True,
+        )
 
     def draw_debug(self, layout):
         """Draw debug info for this element."""
@@ -255,7 +368,7 @@ class ElementDraw:
 
         row = layout.row(align=True)
         col = row.column(align=True)
-        col.prop(self, 'name')
+        self.draw_name(col)
         self.draw_edit_icon(col)
         col.prop(self, 'operator_type')
 
@@ -311,6 +424,9 @@ class ElementDraw:
                     column.alert = True
                     column.label(text='Not recommended as a modal operator', icon='ERROR')
                     column.label(text='This operator has array properties and cannot be mapped to modal events')
+
+        self.draw_main_action(layout)
+        self.draw_overlay_offset(layout)
 
     def draw_operator_modal(self, layout):
         from .element_modal_operator_cure import ElementModalOperatorEventCRUE

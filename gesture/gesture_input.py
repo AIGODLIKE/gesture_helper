@@ -25,6 +25,7 @@ def _mouse_moved_enough(current: Vector, previous: Vector | None, *, min_dist: f
 def compute_angle(last_window: Vector | None, mouse: Vector) -> float | None:
     if last_window is None:
         return None
+
     vector = last_window - mouse
     if vector.length_squared == 0.0:
         return None
@@ -201,15 +202,6 @@ def cancel_bottom_child_dwell_timer(session: GestureSession):
     session._bottom_child_dwell_deadline = None
 
 
-def _preview_child_button_hovered(element, ops) -> bool:
-    """True when the pointer is over *element*'s radial button (fresh layout)."""
-    from ..element.extension_hit import layout_is_current
-    element.ops = ops
-    if not layout_is_current(element, ops):
-        return False
-    return bool(element.mouse_is_in_area)
-
-
 def _enter_child_level(session: GestureSession, ops, element, anchor) -> None:
     """Append *element* as a new gesture level anchored at *anchor*."""
     session.trajectory_tree.append(element, anchor)
@@ -219,51 +211,6 @@ def _enter_child_level(session: GestureSession, ops, element, anchor) -> None:
     )
     session.extension_hover.clear()
     refresh_snapshot(session, ops)
-
-
-def _arm_preview_child_dwell(session: GestureSession, timeout_ms: float, ops) -> None:
-    """Preview mode: enter the hovered child level only after the idle timeout.
-
-    The deadline counts from hover START (small jitters inside the button do
-    not reset it); leaving the button cancels the timer, and the callback
-    re-checks the hover before entering — a swipe through a button never dives
-    into its level while the user is inspecting the layout.
-    """
-    if session._bottom_child_dwell_timer is not None:
-        return
-    timeout = max(timeout_ms, 1) / 1000.0
-    session._bottom_child_dwell_deadline = time.time() + timeout
-
-    def _on_dwell(*_args):
-        try:
-            deadline = getattr(session, "_bottom_child_dwell_deadline", None)
-            if deadline is None:
-                session._bottom_child_dwell_timer = None
-                return None
-            remaining = deadline - time.time()
-            if remaining > 0.01:
-                return remaining
-            session._bottom_child_dwell_timer = None
-            session._bottom_child_dwell_deadline = None
-            if getattr(session, "modal_report_done", False):
-                return None
-            snap = session.snapshot
-            de = snap.direction_element
-            if (
-                    session.phase.shows_radial_ui
-                    and de is not None
-                    and de.is_child_gesture
-                    and _preview_child_button_hovered(de, ops)
-            ):
-                _enter_child_level(session, ops, de, snap.mouse_window)
-                tag_redraw_gesture_screen(session)
-        except (AttributeError, ReferenceError):
-            session._bottom_child_dwell_timer = None
-            session._bottom_child_dwell_deadline = None
-        return None
-
-    session._bottom_child_dwell_timer = _on_dwell
-    bpy.app.timers.register(_on_dwell, first_interval=timeout)
 
 
 def _arm_bottom_child_dwell(session: GestureSession, timeout_ms: float, ops) -> None:
@@ -639,7 +586,8 @@ class GestureInputProcessor:
         if drag is not None:
             element, start_mouse, start_value = drag
             if event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
-                delta = event.mouse_x - start_mouse.x
+                mouse = Vector((event.mouse_x, event.mouse_y))
+                delta = element.property_drag_delta(start_mouse, mouse)
                 element.apply_property_drag(start_value, delta, precise=event.shift)
                 # Remember that the value was actually scrubbed so release can
                 # skip launching the post-gesture modal mouse operator.
@@ -694,6 +642,50 @@ class GestureInputProcessor:
 
         return None
 
+    def _arm_radial_property_drag(self, session: GestureSession, ops, event) -> None:
+        """Start numeric scrubbing after the current event snapshot is ready."""
+        if session.property_drag is not None:
+            return
+        if event.type not in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+            return
+        item = self._hovered_property_row(session, ops)
+        if item is None or not self._is_radial_numeric_confirm(session, item):
+            return
+        start_value = item.display_property_value
+        if start_value is None:
+            return
+        session.property_drag = (
+            item,
+            Vector((event.mouse_x, event.mouse_y)),
+            start_value,
+        )
+        session._property_drag_moved = False
+
+    def _handle_child_navigation(
+            self, session: GestureSession, ops, snap, mouse, in_extension_ui: bool,
+    ) -> None:
+        """Normal gesture child navigation; preview overrides this policy."""
+        element = snap.direction_element
+        if (
+                snap.is_access_child_gesture
+                and element is not None
+                and not in_extension_ui
+        ):
+            need_dwell = (
+                session.phase.shows_radial_ui
+                and snap.is_have_extension_item
+                and element.direction == "7"
+            )
+            if need_dwell:
+                _arm_bottom_child_dwell(
+                    session, ops.pref.gesture_property.timeout, ops,
+                )
+            else:
+                cancel_bottom_child_dwell_timer(session)
+                _enter_child_level(session, ops, element, mouse)
+        else:
+            cancel_bottom_child_dwell_timer(session)
+
     def on_event(self, session: GestureSession, ops, event) -> bool:
         """Update session from *event*. Returns whether a redraw is needed."""
         session.event = event
@@ -729,20 +721,7 @@ class GestureInputProcessor:
         # current.  The old implementation inspected the previous snapshot
         # before refresh, so changing direction could lock the next move to a
         # property that was no longer under the cursor.
-        if (
-                session.property_drag is None
-                and event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}
-        ):
-            item = self._hovered_property_row(session, ops)
-            if item is not None and self._is_radial_numeric_confirm(session, item):
-                start_value = item.display_property_value
-                if start_value is not None:
-                    session.property_drag = (
-                        item,
-                        Vector((event.mouse_x, event.mouse_y)),
-                        start_value,
-                    )
-                    session._property_drag_moved = False
+        self._arm_radial_property_drag(session, ops, event)
 
         snap_changed = (
             snap.direction != prev_direction
@@ -788,44 +767,9 @@ class GestureInputProcessor:
                 in_extension_ui = draw_ctx.in_extension_ui
             else:
                 in_extension_ui = bool(getattr(ops, "mouse_is_in_extension_any_area", False))
-            de = snap.direction_element
-            if getattr(ops, 'gesture_is_preview', False):
-                # Preview: never dive on a swipe. A child level opens only
-                # after hovering its button until the gesture timeout fires.
-                if (
-                        session.phase.shows_radial_ui
-                        and de is not None
-                        and de.is_child_gesture
-                        and not in_extension_ui
-                        and _preview_child_button_hovered(de, ops)
-                ):
-                    _arm_preview_child_dwell(
-                        session, ops.pref.gesture_property.timeout, ops,
-                    )
-                else:
-                    cancel_bottom_child_dwell_timer(session)
-            elif (
-                    snap.is_access_child_gesture
-                    and de is not None
-                    and not in_extension_ui
-            ):
-                # UI up + bottom extension + Down child: drag goes to the
-                # extension list; only enter the child after idle timeout.
-                need_dwell = (
-                    session.phase.shows_radial_ui
-                    and snap.is_have_extension_item
-                    and de.direction == "7"
-                )
-                if need_dwell:
-                    _arm_bottom_child_dwell(
-                        session, ops.pref.gesture_property.timeout, ops,
-                    )
-                else:
-                    cancel_bottom_child_dwell_timer(session)
-                    _enter_child_level(session, ops, de, emp)
-                    snap = session.snapshot
-            else:
-                cancel_bottom_child_dwell_timer(session)
+            self._handle_child_navigation(
+                session, ops, snap, emp, in_extension_ui,
+            )
 
             if session.phase.shows_radial_ui:
                 scale = bpy.context.preferences.view.ui_scale

@@ -1,6 +1,6 @@
 """Gesture PropertyGroup data mixin (configuration only — no modal runtime)."""
 
-from bpy.props import IntProperty, BoolProperty
+from bpy.props import BoolProperty, EnumProperty, IntProperty
 
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
@@ -8,10 +8,53 @@ from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.public_cache import cache_update_lock
 
 
+GESTURE_TYPE_ITEMS = (
+    ('RADIAL', 'Gesture', 'Draw directions to choose an action', 'MOUSE_MOVE', 0),
+    ('MENU', 'Menu', 'Open a persistent menu at the mouse position', 'MENU_PANEL', 1),
+)
+
+MENU_STYLE_ITEMS = (
+    ('PANEL', 'Panel', 'Framed Blender-style menu with a title bar', 'WINDOW', 0),
+    ('COMPACT', 'Compact', 'Tighter menu rows and spacing', 'ALIGN_JUSTIFY', 1),
+    ('BORDERLESS', 'Borderless', 'Minimal menu surface without an outer outline', 'SELECT_SET', 2),
+)
+
+
+def _update_gesture_type(self, _context) -> None:
+    """Persist the new type and rebuild its shortcut with the matching operator."""
+    self.key_update()
+    self.structure_changed(self)
+
+
+def _update_menu_style(self, _context) -> None:
+    self.structure_changed(self)
+    try:
+        from .menu import GestureMenuRuntime
+
+        GestureMenuRuntime.redraw_gesture(self)
+    except (ImportError, ReferenceError, RuntimeError):
+        ...
+
+
 class GestureProperty(PrefAccess, ActiveSelection, StructureCacheOps):
     """Persisted gesture fields used by the Gesture PropertyGroup."""
 
     timer = None
+
+    gesture_type: EnumProperty(
+        name='Type',
+        description='Runtime presentation chosen when this item is created',
+        items=GESTURE_TYPE_ITEMS,
+        default='RADIAL',
+        update=_update_gesture_type,
+    )
+    menu_style: EnumProperty(
+        name='Menu Style',
+        description='Visual density used by persistent menu gestures',
+        items=MENU_STYLE_ITEMS,
+        default='PANEL',
+        update=_update_menu_style,
+    )
 
     @cache_update_lock
     def copy(self) -> None:

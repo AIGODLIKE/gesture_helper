@@ -23,6 +23,7 @@ class Gesture(
 ):
     def update_name(self):
         self.key_restart()
+        self.structure_changed(self)
 
     # Draw gesture overlay with GPU
     element: CollectionProperty(type=Element)
@@ -48,6 +49,10 @@ class Gesture(
             sp.label(text=self.__key_str__)
             layout = sp.row(align=True)
         layout.separator()
+        layout.label(
+            text='',
+            icon='MENU_PANEL' if self.gesture_type == 'MENU' else 'MOUSE_MOVE',
+        )
         layout.label(text=self.name_translate, translate=False)
         if prop.gesture_show_description:
             layout.label(text=self.description_translate)
@@ -82,6 +87,7 @@ classes_list = (
 
     Element,
     ElementCURE.ADD,
+    ElementCURE.AddLayoutPreset,
     ElementCURE.SwitchLayoutType,
     ElementCURE.SORT,
     ElementCURE.COPY,

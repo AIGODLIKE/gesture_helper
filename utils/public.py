@@ -335,10 +335,7 @@ class PublicMouseModal:
         elif value_mode == "MOUSE_CHANGES_ARBITRARY":
             x = event.mouse_x - self.mouse.x
             y = event.mouse_y - self.mouse.y
-            if x > y:
-                return max(x, y)
-            else:
-                return min(x, y)
+            return x if abs(x) >= abs(y) else y
         else:
             raise ValueError("Invalid value mode: %r" % value_mode)
 

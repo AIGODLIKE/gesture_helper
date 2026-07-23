@@ -95,6 +95,12 @@ class OpsProperty(Enum):
     ])
 
     value_mode: EnumProperty(items=ENUM_NUMBER_VALUE_CHANGE_MODE, name="Value Mode")
+    invert: BoolProperty(
+        options={'HIDDEN', 'SKIP_SAVE'},
+        name='Invert',
+        description='Reverse the mouse direction used by modal adjustment',
+        default=False,
+    )
     int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
     float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
     string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")
@@ -207,7 +213,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
                 layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, layout: bpy.types.UILayout):
-        layout.label(text="Set Boolean Value")
+        layout.label(text="Blender Property Operator")
         for item in self.rna_type.properties["boolean_mode"].enum_items:  # Draw boolean add modes
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
             ops.boolean_mode = item.identifier
@@ -215,29 +221,41 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
             ops.property_type = "BOOLEAN"
 
     def draw_int(self, layout: bpy.types.UILayout):
-        layout.label(text="Modify Int Value")
-        layout.prop(self, "value_mode", expand=True)
-        layout.separator()
+        layout.label(text="Property Action")
+        modes = layout.row(align=True)
+        modes.prop_enum(self, 'value_mode', 'SET_VALUE', text='Fixed Value')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_HORIZONTAL', text='Horizontal')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_VERTICAL', text='Vertical')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_ARBITRARY', text='Either Axis')
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "int_value")
-        layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
+        else:
+            layout.prop(self, 'invert')
+        text = 'Add Fixed-Value Operator' if self.value_mode == 'SET_VALUE' else 'Add Modal Mouse Operator'
+        ops = layout.operator(CreateElementProperty.bl_idname, text=text)
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.int_value = self.int_value
+        ops.invert = self.invert
         ops.property_type = "INT"
 
     def draw_float(self, layout: bpy.types.UILayout):
-        layout.label(text="Modify Float Value")
-        layout.prop(self, "value_mode", expand=True)
-        layout.separator()
+        layout.label(text="Property Action")
+        modes = layout.row(align=True)
+        modes.prop_enum(self, 'value_mode', 'SET_VALUE', text='Fixed Value')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_HORIZONTAL', text='Horizontal')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_VERTICAL', text='Vertical')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_ARBITRARY', text='Either Axis')
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "float_value")
-        layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
+        else:
+            layout.prop(self, 'invert')
+        text = 'Add Fixed-Value Operator' if self.value_mode == 'SET_VALUE' else 'Add Modal Mouse Operator'
+        ops = layout.operator(CreateElementProperty.bl_idname, text=text)
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.float_value = self.float_value
+        ops.invert = self.invert
         ops.property_type = "FLOAT"
 
     def draw_string(self, layout: bpy.types.UILayout):
@@ -258,9 +276,9 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
             return
         layout.separator()
         box = layout.box().column(align=True)
-        box.label(text="Show in Gesture Layout")
-        box.label(text="Shows the live value; click or drag it in the gesture panel")
-        ops = box.operator(CreateElementProperty.bl_idname, text="Add Display Property")
+        box.label(text="Gesture-Controlled Property")
+        box.label(text="Shows the live value and changes it directly from the gesture")
+        ops = box.operator(CreateElementProperty.bl_idname, text="Add Gesture-Controlled Property")
         ops.display_property = True
         ops.data_path = self.data_path
         ops.property_type = prop_type
@@ -350,8 +368,12 @@ class Create(Draw):
         if vm == "SET_VALUE":
             self._set_context_operator(ae, 'wm.context_set_int', data_path=path, value=self.int_value)
         else:
-            ae.operator_bl_idname = (
-                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            self._set_context_operator(
+                ae,
+                ModalMouseOperator.bl_idname,
+                data_path=path,
+                value_mode=vm,
+                invert=self.invert,
             )
 
     def create_float(self):
@@ -364,8 +386,12 @@ class Create(Draw):
         if vm == "SET_VALUE":
             self._set_context_operator(ae, 'wm.context_set_float', data_path=path, value=self.float_value)
         else:
-            ae.operator_bl_idname = (
-                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            self._set_context_operator(
+                ae,
+                ModalMouseOperator.bl_idname,
+                data_path=path,
+                value_mode=vm,
+                invert=self.invert,
             )
 
     def create_string(self):
@@ -497,6 +523,7 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
+        self.init_number()
         self.init_enum()
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
@@ -507,6 +534,12 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         if not self.button_pointer or not self.button_prop:
             self.report({'ERROR'}, "Property context lost, right-click the property again")
+            return {'CANCELLED'}
+        if not self.data_path:
+            self.copy_data_path()
+        if not self.data_path:
+            self.report({'ERROR'}, "Unable to resolve a bpy.context data path")
+            self.clear_info()
             return {'CANCELLED'}
 
         debug_print(
@@ -578,6 +611,17 @@ class CreateElementProperty(Create):
         prop = self.button_prop
         if prop and prop.type == "STRING":
             self.string_value = getattr(self.button_pointer, prop.identifier, "")
+
+    def init_number(self):
+        prop = self.button_prop
+        pointer = self.button_pointer
+        if not prop or not pointer or getattr(prop, 'is_array', False):
+            return
+        value = getattr(pointer, prop.identifier, None)
+        if prop.type == 'INT' and isinstance(value, int):
+            self.int_value = value
+        elif prop.type == 'FLOAT' and isinstance(value, (int, float)):
+            self.float_value = value
 
     def init_enum(self):
         prop = self.button_prop

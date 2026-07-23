@@ -5,6 +5,7 @@ import gpu
 from mathutils import Vector
 
 from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
+from ..utils.color import color_to_srgb
 
 
 class DrawDebug(PublicGpu):
@@ -309,6 +310,55 @@ class GestureGpuDraw(DrawDebug):
             return draw_ctx.ui_scale
         return bpy.context.preferences.view.ui_scale
 
+    def _draw_empty_state(self, text: str, *, warning: bool = False) -> None:
+        """Draw a compact Blender-style status row at the gesture center."""
+        from ..utils.blf_text import measure_text
+
+        scale = self._draw_ui_scale()
+        size = max(10, round(self.draw_property.text_gpu_draw_size * scale * 0.82))
+        text_w, text_h = measure_text(text, size)
+        pad_x = max(8.0, 8.0 * scale)
+        pad_y = max(5.0, 5.0 * scale)
+        badge = max(16.0, text_h + 2.0 * scale)
+        gap = max(6.0, 6.0 * scale)
+        width = text_w + pad_x * 2.0 + badge + gap
+        height = max(text_h + pad_y * 2.0, badge + pad_y * 2.0)
+        draw = self.draw_property
+        stroke = draw.status_warning_color if warning else draw.outline_active_color
+
+        self.draw_rounded_rectangle_outlined(
+            (0.0, 0.0),
+            fill=draw.background_child_color,
+            stroke=stroke,
+            radius=min(5.0 * scale, height * 0.2),
+            width=width,
+            height=height,
+            line_width=max(0.75, float(draw.outline_width) * scale),
+        )
+        left = -width * 0.5 + pad_x
+        badge_color = draw.status_warning_color if warning else draw.background_child_active_color
+        self.draw_rounded_rectangle_area(
+            (left + badge * 0.5, 0.0),
+            color=badge_color,
+            radius=min(3.0 * scale, badge * 0.22),
+            width=badge,
+            height=badge,
+        )
+        mark = "!" if warning else "i"
+        mark_w, mark_h = measure_text(mark, size)
+        self.draw_text(
+            mark,
+            position=(left + (badge - mark_w) * 0.5, mark_h * 0.5),
+            size=size,
+            color=(1.0, 1.0, 1.0, 0.96),
+        )
+        self.draw_text(
+            text,
+            position=(left + badge + gap, text_h * 0.5),
+            size=size,
+            color=color_to_srgb(draw.text_default_color),
+        )
+
     def gpu_draw_gesture(self):
         """Draw gesture overlay; extension_hover is pruned then re-seeded while painting."""
         if getattr(self, 'session', None) is None:
@@ -402,9 +452,12 @@ class GestureGpuDraw(DrawDebug):
                 og = self.operator_gesture
                 if og is None or not len(og.element):
                     text = __name_translate__('This gesture has no elements. Please add some.')
-                    self.draw_text(text)
+                    self._draw_empty_state(text)
                 elif not len(draw_items):
-                    self.draw_text(__name_translate__('No gestures match the current conditions. Please add one.'))
+                    self._draw_empty_state(
+                        __name_translate__('No gestures match the current conditions. Please add one.'),
+                        warning=True,
+                    )
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""

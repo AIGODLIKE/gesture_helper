@@ -6,6 +6,7 @@ from .draw_gpu import DrawGpu
 from ...gesture.gesture_draw_gpu import GestureGpuDraw
 from ...gesture.gesture_handle import GestureHandle
 from ...gesture.gesture_input import refresh_snapshot
+from ...gesture.preview_input import PreviewGestureInputProcessor
 from ...gesture.gesture_runtime import GestureRuntimeMixin
 from ...gesture.gesture_session import GestureSession
 from ...utils.adapter import operator_setattr
@@ -17,9 +18,6 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
     bl_idname = "wm.gesture_preview"
     bl_label = "Gesture preview"
     bl_description = "Preview gesture layout and directions without running operators"
-
-    # Input processor: children enter on hover + timeout instead of on swipe.
-    gesture_is_preview = True
 
     # Must use annotation form — Blender reads bpy.props from __annotations__.
     gesture: StringProperty()
@@ -35,6 +33,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         operator_setattr(self, "start_mouse_position", None)
         operator_setattr(self, "offset_position", Vector((0, 0)))
         operator_setattr(self, "gpu", DrawGpu())
+        operator_setattr(self, "_input_processor", PreviewGestureInputProcessor())
 
     def __gpu_draw__(self):
         self.gpu.tips.__gpu_draw__()

@@ -14,6 +14,7 @@ from ..utils.public_cache import PublicCache
 from ..utils.color import color_to_srgb
 from ..utils.public_gpu import PublicGpu
 from ..utils.texture import Texture
+from .element_status import ElementStatus, get_element_status_info
 
 
 @cache
@@ -30,6 +31,36 @@ def get_position(direction, radius):
 
 
 class ElementGpuProperty:
+
+    def _element_ui_scale(self) -> float:
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return ctx.ui_scale
+        return bpy.context.preferences.view.ui_scale
+
+    @property
+    def element_status_info(self):
+        return get_element_status_info(self, ops=getattr(self, "ops", None))
+
+    @property
+    def element_status_color(self):
+        draw = self.draw_property
+        role = self.element_status_info.color_role
+        if role == "error":
+            return draw.status_error_color
+        if role == "warning":
+            return draw.status_warning_color
+        return draw.status_disabled_color
+
+    @property
+    def status_badge_size(self) -> tuple[float, float]:
+        info = self.element_status_info
+        if info.is_valid:
+            return 0.0, 0.0
+        size = max(8, round(self.text_size * 0.58))
+        width, height = from_text_get_dimensions(info.badge, size)
+        pad = max(2.0, height * 0.28)
+        return width + pad * 2.0, height + 2.0
 
     def _draw_frame_ctx(self):
         from ..gesture.draw_frame_context import draw_ctx_from_ops
@@ -130,7 +161,15 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
-        return draw.text_active_color if self.is_active_direction else draw.text_default_color
+        color = tuple(draw.text_active_color if self.is_active_direction else draw.text_default_color)
+        status = self.element_status_info.status
+        if status is ElementStatus.DISABLED:
+            return (*color[:3], color[3] * 0.38)
+        if status in {ElementStatus.POLL_BLOCKED, ElementStatus.READ_ONLY_PROPERTY}:
+            return (*color[:3], color[3] * 0.72)
+        if status.is_error:
+            return (*color[:3], color[3] * 0.82)
+        return color
 
     def _in_extension_ui(self) -> bool:
         ctx = self._draw_frame_ctx()
@@ -332,6 +371,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 gpu.matrix.translate(self.draw_direction_offset)
                 self.gpu_draw_margin()
                 x, y = get_now_2d_offset_position()
+                self.gpu_draw_status_badge()
                 self.gpu_draw_icon()
                 self.gpu_draw_label()
                 self.gpu_draw_child_icon()
@@ -357,6 +397,12 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     def _gpu_draw_icon_name(self) -> str | None:
         """Icon name used for GPU draw, or None when icon drawing is disabled."""
+        if self.is_property_display:
+            state_icon = getattr(self, "property_state_icon", "")
+            if callable(state_icon):
+                state_icon = state_icon()
+            if state_icon:
+                return state_icon
         if self.is_draw_context_toggle_operator_bool:
             if not self.draw_property.element_draw_property_toggle_icon:
                 return None
@@ -399,6 +445,48 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((size, 0))
 
+    def gpu_draw_status_badge(self, use_offset=True, slot_width=None):
+        """Draw a compact status code; color carries severity, text carries cause."""
+        info = self.element_status_info
+        width, height = self.status_badge_size
+        if info.is_valid or width <= 0.0:
+            return
+        slot_width = max(width, float(slot_width or width))
+        y = -(self.content_icon_size + height) * 0.5
+        self.draw_rounded_rectangle_area(
+            (width * 0.5, y + height * 0.5),
+            color=self.element_status_color,
+            radius=min(3.0 * self._element_ui_scale(), height * 0.25),
+            width=width,
+            height=height,
+        )
+        badge_size = max(8, round(self.text_size * 0.58))
+        text_w, text_h = from_text_get_dimensions(info.badge, badge_size)
+        self.draw_text(
+            info.badge,
+            position=((width - text_w) * 0.5, y + (height + text_h) * 0.5),
+            size=badge_size,
+            color=(1.0, 1.0, 1.0, 0.96),
+        )
+        if use_offset:
+            gpu.matrix.translate((slot_width + self.content_gap, 0))
+
+    def gpu_draw_status_accent(self, center, width, height):
+        info = self.element_status_info
+        if info.is_valid:
+            return
+        scale = self._element_ui_scale()
+        bar_w = max(2.0, 2.0 * scale)
+        inset = max(2.0, 2.0 * scale)
+        x = center[0] - width * 0.5 + inset + bar_w * 0.5
+        self.draw_rounded_rectangle_area(
+            (x, center[1]),
+            color=self.element_status_color,
+            radius=bar_w * 0.5,
+            width=bar_w,
+            height=max(2.0, height - inset * 2.0),
+        )
+
     def _outline_colors(self, *, active: bool = False):
         draw = self.draw_property
         ctx = self._draw_frame_ctx()
@@ -431,6 +519,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 height=h + hm * 2,
                 line_width=line_width,
             )
+            self.gpu_draw_status_accent(
+                (0.0, 0.0), w + wm * 2.0, h + hm * 2.0,
+            )
 
     # Gap between icon / label / chevron as a fraction of icon size (menu-style).
     _CONTENT_GAP_FRAC = 0.35
@@ -460,6 +551,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         tw, th = self.text_dimensions
         w = float(tw)
         gap = self.content_gap
+        status_w, _status_h = self.status_badge_size
+        if status_w:
+            w += status_w + gap
         if self.is_draw_icon and Texture.get_texture(self._gpu_draw_icon_name()) is not None:
             w += self.content_icon_size + gap
         if self.is_draw_child_icon and Texture.get_texture("1") is not None:
@@ -557,9 +651,12 @@ class ElementGpuExtensionItem:
 
         has_icon_col = False
         has_chevron_col = False
+        status_col_w = 0.0
         for item in items:
             if item.is_dividing_line:
                 continue
+            item.ops = self.ops
+            status_col_w = max(status_col_w, item.status_badge_size[0])
             if item.is_draw_icon and Texture.get_texture(item._gpu_draw_icon_name()) is not None:
                 has_icon_col = True
             if item.is_child_gesture and Texture.get_texture("1") is not None:
@@ -567,6 +664,8 @@ class ElementGpuExtensionItem:
 
         # Content width = columns only (old code always added icon*2 even when unused).
         content_w = label_w
+        if status_col_w:
+            content_w += status_col_w + gap
         if has_icon_col:
             content_w += icon_size + gap
         if has_chevron_col:
@@ -600,6 +699,7 @@ class ElementGpuExtensionItem:
             label_h=label_h,
             has_icon_col=has_icon_col,
             has_chevron_col=has_chevron_col,
+            status_col_w=status_col_w,
             content_w=content_w,
             content_h=content_h,
             layout_sizes=layout_sizes,
@@ -685,6 +785,9 @@ class ElementGpuExtensionItem:
                         height=row_h,
                         line_width=line_width,
                     )
+                item.gpu_draw_status_accent(
+                    (w * 0.5, -row_h * 0.5), hover_w, row_h,
+                )
 
                 sx, sy = get_now_2d_offset_position()
                 with gpu.matrix.push_pop():
@@ -692,6 +795,11 @@ class ElementGpuExtensionItem:
                     gpu.matrix.translate((0, -((row_h - lay.icon_size) * 0.5)))
 
                     cursor_x = 0.0
+                    if lay.status_col_w:
+                        with gpu.matrix.push_pop():
+                            gpu.matrix.translate((cursor_x, 0))
+                            item.gpu_draw_status_badge(False, slot_width=lay.status_col_w)
+                        cursor_x += lay.status_col_w + lay.gap
                     if lay.has_icon_col:
                         if item.is_draw_icon:
                             if item.is_draw_context_toggle_operator_bool:

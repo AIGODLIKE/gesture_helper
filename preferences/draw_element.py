@@ -44,10 +44,11 @@ class DrawElement:
         sc.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='')
         sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_ASC').is_next = True
 
-        column.separator()
-        icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
-        column.alert = draw_property.element_show_left_side
-        column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
+        if getattr(bpy.context.area, 'type', None) == 'PREFERENCES':
+            column.separator()
+            icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
+            column.alert = draw_property.element_show_left_side
+            column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
     @staticmethod
     def draw_property(layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
@@ -108,28 +109,35 @@ class DrawElement:
     def draw_element_add_property(cls, layout: 'bpy.types.UILayout') -> None:
         from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
         from ..element import ElementCURE
-        from ..ui.menu import GESTURE_MT_add_element_menu
+        from ..ui.menu import (
+            GESTURE_MT_add_element_menu,
+            GESTURE_MT_layout_preset_menu,
+        )
 
         pref = get_pref()
         add = pref.add_element_property
 
         add_child = add.is_have_add_child
 
-        column = layout.box().column(align=True)
+        column = layout.box().column(align=False)
         column.label(text='Add element')
 
-        row = draw_label(column, 'Element relationship:')
+        relation = column.column(align=True)
+        row = draw_label(relation, 'Element relationship:')
         row.prop(add, 'relationship', expand=True)
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
         if add_child:
-            row = draw_label(column, 'Selected Structure:')
+            column.separator(type='LINE')
+            structure = column.column(align=True)
+            row = draw_label(structure, 'Selected Structure:')
             for i, n, d in ENUM_SELECTED_TYPE:
                 ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
                 ops.element_type = 'SELECTED_STRUCTURE'
                 ops.selected_type = i
-            column.separator()
-            row = draw_label(column, 'Add item:')
+            column.separator(type='LINE')
+            items = column.column(align=True)
+            row = draw_label(items, 'Add item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
                     continue
@@ -138,18 +146,20 @@ class DrawElement:
                 else:
                     ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
                     ops.element_type = i
-            row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
 
-            # Give the three layout buttons a full-width row.  The N-panel's
-            # content width is much smaller than ``context.region.width``;
-            # putting them beside the label silently clips the Box button.
+            column.separator(type='LINE')
             from ..utils.enum import ENUM_LAYOUT_TYPE
             layout_column = column.column(align=True)
-            layout_column.label(text='Layout:')
-            row = layout_column.row(align=True)
+            row = draw_label(layout_column, 'Layout:')
             for i, n, d in ENUM_LAYOUT_TYPE:
                 ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
                 ops.element_type = i
+            row.menu(
+                GESTURE_MT_layout_preset_menu.__name__,
+                icon='PRESET',
+                text='',
+            )
+            row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
         else:
             column.separator()
             row = column.row(align=True)
