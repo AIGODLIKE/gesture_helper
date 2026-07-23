@@ -44,11 +44,11 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
 
         row = column.row(align=True)
         prop = self.draw_property
-        row.prop(prop, 'element_split_factor')
         icon = icon_two(prop.element_show_enabled_button, 'HIDE')
         row.prop(prop, 'element_show_enabled_button', icon=icon)
-        icon = icon_two(prop.element_show_left_side, 'ALIGN')
-        row.prop(prop, 'element_show_left_side', icon=icon)
+        if getattr(context.area, 'type', None) == 'PREFERENCES':
+            icon = icon_two(prop.element_show_left_side, 'ALIGN')
+            row.prop(prop, 'element_show_left_side', icon=icon)
 
         row = column.row(align=True)
         icon = icon_two(prop.element_show_icon, 'HIDE')

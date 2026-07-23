@@ -59,11 +59,12 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
     force_show_panels_during_modal: BoolProperty(
-        name='Force show',
+        name='Always update gesture panels',
         # Override heavy-panel pause while another modal (e.g. view/nav) is live.
         description=(
-            'Show Gesture panels even while a modal operator is running. '
-            'Use this if another add-on stays in a modal and panels stay paused'
+            'Keep the Gesture item and element panels updating during gestures, '
+            'animation playback, and other modal operators. Enable only when '
+            'the panels remain paused; continuous updates may reduce performance'
         ),
         default=False,
         update=lambda self, context: DrawProperty._on_force_show_update(context),

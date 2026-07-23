@@ -8,6 +8,8 @@ Temporary keymaps are used to edit each shortcut's binding.
 
 import json
 import traceback
+from contextlib import contextmanager
+from dataclasses import dataclass, replace
 
 import bpy
 from bpy.app.translations import pgettext
@@ -21,6 +23,75 @@ from .addon_keymap import AddonKeymapRegistry, add_addon_kmi, clear_orphan_gestu
 from .temp_keymap import draw_temp_keymap_item, get_temp_kmi
 
 default_key = {'type': 'RIGHTMOUSE', 'value': 'PRESS'}
+
+_key_restart_suppression = 0
+
+_KEY_TEXT_FIELDS = frozenset({
+    'type',
+    'value',
+    'key_modifier',
+    'direction',
+    'map_type',
+})
+_KEY_BOOL_FIELDS = frozenset({
+    'any',
+    'shift',
+    'ctrl',
+    'alt',
+    'oskey',
+    'repeat',
+    'head',
+})
+
+
+def validate_keymap_data(data: dict) -> None:
+    """Validate the JSON shortcut schema before writing it to IDProperties."""
+    if not isinstance(data, dict):
+        raise ValueError("shortcut data must be an object")
+    unknown = set(data) - _KEY_TEXT_FIELDS - _KEY_BOOL_FIELDS
+    if unknown:
+        raise ValueError(
+            "unknown shortcut field(s): " + ", ".join(sorted(map(str, unknown)))
+        )
+    for key in _KEY_TEXT_FIELDS & data.keys():
+        if not isinstance(data[key], str):
+            raise ValueError(f"shortcut field {key!r} must be text")
+    for key in _KEY_BOOL_FIELDS & data.keys():
+        value = data[key]
+        if not isinstance(value, bool) and not (
+            isinstance(value, int) and value in (0, 1)
+        ):
+            raise ValueError(f"shortcut field {key!r} must be a boolean")
+
+
+@contextmanager
+def suppress_keymap_restarts():
+    """Defer transient shortcut rebuilds while a gesture collection is mutated."""
+    global _key_restart_suppression
+    _key_restart_suppression += 1
+    try:
+        yield
+    finally:
+        _key_restart_suppression -= 1
+
+
+@dataclass(frozen=True, slots=True)
+class KeymapLoadFailure:
+    """Serializable failure detail that never retains an RNA gesture proxy."""
+
+    gesture_name: str
+    keymap_name: str | None
+    reason: str
+    gesture_index: int | None = None
+
+    def with_index(self, index: int):
+        return replace(self, gesture_index=index)
+
+    def __str__(self):
+        location = self.gesture_name
+        if self.keymap_name:
+            location += f" / {self.keymap_name}"
+        return f"{location}: {self.reason}"
 
 
 class KeymapProperty:
@@ -117,16 +188,47 @@ class GestureKeymap(KeymapProperty):
 
         schedule('gesture_temp_key_sync', _flush)
 
-    def key_load(self) -> None:
-        if not self.is_enable:
-            return
-        kmi_data = dict(self.add_kmi_data)
-        properties = {"gesture": self.name}
+    def key_load(self, *, force: bool = False) -> list[KeymapLoadFailure]:
+        """Load this gesture's shortcuts, returning failures without aborting siblings."""
+        try:
+            if not force and not self.is_enable:
+                return []
+            kmi_data = dict(self.add_kmi_data)
+            properties = {"gesture": self.name}
+            stored_keymaps = self.keymaps
+            if isinstance(stored_keymaps, str):
+                raise TypeError("keymaps must be a list of keymap names")
+            keymap_names = list(stored_keymaps)
+            if not all(isinstance(name, str) for name in keymap_names):
+                raise TypeError("keymap names must be text")
+        except Exception as exc:
+            try:
+                name = self.name
+            except Exception:
+                name = '<unknown gesture>'
+            failure = KeymapLoadFailure(
+                name,
+                None,
+                f"cannot read shortcut data ({exc})",
+            )
+            debug_print(str(failure), key='key')
+            return [failure]
+
         if get_debug("key"):
             content = {k: v for k, v in kmi_data.items() if k in ("type", "value")}
-            debug_print(f"Add Kmi\t{content} to {self.keymaps}", flush=True, key='key')
-        for keymap_name in self.keymaps:
-            add_addon_kmi(keymap_name, kmi_data, properties)
+            debug_print(f"Add Kmi\t{content} to {keymap_names}", flush=True, key='key')
+
+        failures = []
+        for keymap_name in keymap_names:
+            try:
+                result = add_addon_kmi(keymap_name, kmi_data, properties)
+                if force and result is None:
+                    raise RuntimeError("add-on key configuration is unavailable")
+            except Exception as exc:
+                failure = KeymapLoadFailure(self.name, keymap_name, str(exc))
+                failures.append(failure)
+                debug_print(f"Gesture keymap skipped: {failure}", key='key')
+        return failures
 
     @cache_update_lock
     def key_update(self) -> None:
@@ -136,14 +238,37 @@ class GestureKeymap(KeymapProperty):
             debug_print("Key Update called by {}".format(caller_name), self, key='key')
 
     @classmethod
-    def key_all_load(cls) -> None:
-        """Load all keymaps."""
+    def key_all_load(
+            cls,
+            *,
+            force: bool = False,
+            start_index: int = 0,
+    ) -> list[KeymapLoadFailure]:
+        """Load all keymaps and keep valid items when one binding is invalid."""
         from ..utils.gesture_store import get_gestures
         gestures = get_gestures()
         if gestures is None:
-            return
-        for g in gestures:
-            g.key_load()
+            return []
+        failures = []
+        for index, g in enumerate(gestures):
+            if index < start_index:
+                continue
+            try:
+                failures.extend(
+                    failure.with_index(index)
+                    for failure in g.key_load(force=force)
+                )
+            except Exception as exc:
+                name = getattr(g, 'name', '<unknown gesture>')
+                failure = KeymapLoadFailure(
+                    name,
+                    None,
+                    f"unexpected shortcut load failure ({exc})",
+                    gesture_index=index,
+                )
+                failures.append(failure)
+                debug_print(str(failure), key='key')
+        return failures
 
     @classmethod
     def key_all_unload(cls) -> None:
@@ -160,15 +285,46 @@ class GestureKeymap(KeymapProperty):
         return clear_count
 
     @classmethod
-    def key_restart(cls) -> None:
-        """Reset bindings and remove stale items left by interrupted reloads."""
+    def key_restart(
+            cls,
+            *,
+            validate_from_index: int | None = None,
+    ) -> tuple[KeymapLoadFailure, ...]:
+        """Reset bindings and optionally force-validate newly appended gestures."""
+        if _key_restart_suppression:
+            return ()
         cls.key_all_unload()
         clear_orphan_gesture_kmis()
-        cls.key_all_load()
+
+        if validate_from_index is None:
+            failures = tuple(cls.key_all_load())
+        else:
+            # Validate even when the gesture or global preference is disabled.
+            # These temporary KMIs are removed before restoring normal state.
+            validation_failures = cls.key_all_load(
+                force=True,
+                start_index=max(0, validate_from_index),
+            )
+            cls.key_all_unload()
+            clear_orphan_gesture_kmis()
+            normal_failures = cls.key_all_load()
+            imported_normal_failures = [
+                failure
+                for failure in normal_failures
+                if (
+                    failure.gesture_index is None
+                    or failure.gesture_index >= validate_from_index
+                )
+            ]
+            failures = tuple(dict.fromkeys([
+                *validation_failures,
+                *imported_normal_failures,
+            ]))
         if get_debug('key'):
             debug_print("Gesture Key Restart", AddonKeymapRegistry.entry_count(), key='key')
             for i in traceback.extract_stack():
                 debug_print(i, key='key')
+        return failures
 
     def restore_key(self):
         """Reset shortcut to default."""

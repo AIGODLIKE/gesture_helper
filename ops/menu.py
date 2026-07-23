@@ -37,6 +37,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
         operator_setattr(self, '_menu_external_modal_active', False)
+        operator_setattr(self, '_menu_initial_modal_keys', frozenset())
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, '_menu_draw_count', 0)
         operator_setattr(self, '_menu_last_draw_error', '')
@@ -79,6 +80,13 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_close_requested', False)
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, 'event', event)
+        operator_setattr(
+            self,
+            '_menu_initial_modal_keys',
+            frozenset(
+                key for _operator, key in self._window_modal_operators(context.window)
+            ),
+        )
 
         if not self._register_menu_runtime(context):
             return {'CANCELLED'}
@@ -96,20 +104,45 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         except (AttributeError, ReferenceError, RuntimeError):
             return False
 
-    def _has_external_modal(self, context) -> bool:
-        window = self._menu_window or context.window
+    @staticmethod
+    def _modal_operator_key(operator):
+        """Return a stable identity for an entry in Window.modal_operators."""
+        try:
+            pointer = operator.as_pointer()
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            pointer = 0
+        if pointer:
+            return ('RNA', pointer)
+        return ('PYTHON', id(operator))
+
+    @classmethod
+    def _window_modal_operators(cls, window):
         if window is None:
-            return False
+            return ()
         try:
             operators = tuple(window.modal_operators)
-        except (AttributeError, ReferenceError, RuntimeError):
-            return False
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return ()
+        result = []
         for operator in operators:
             try:
-                if operator == self:
+                result.append((operator, cls._modal_operator_key(operator)))
+            except ReferenceError:
+                continue
+        return tuple(result)
+
+    def _has_external_modal(self, context) -> bool:
+        window = self._menu_window or context.window
+        initial_keys = self._menu_initial_modal_keys
+        self_key = self._modal_operator_key(self)
+        for operator, key in self._window_modal_operators(window):
+            try:
+                if key == self_key or operator == self:
                     continue
                 identifier = getattr(operator, 'bl_idname', '') or type(operator).__name__
                 if identifier in {'wm.gesture_menu', 'WM_OT_gesture_menu'}:
+                    continue
+                if key in initial_keys:
                     continue
                 return True
             except ReferenceError:
@@ -198,4 +231,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         return {'PASS_THROUGH'}
 
     def cancel(self, _context):
-        return self._finish_menu(cancelled=True)
+        # Blender invokes cancel() as a cleanup callback and requires None.
+        # Returning an operator status set here raises during add-on disable or
+        # application shutdown while a menu is still modal.
+        self._finish_menu(cancelled=True)

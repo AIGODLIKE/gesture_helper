@@ -152,12 +152,16 @@ def _schedule_modal_ui_refresh() -> None:
 
 
 def draw_heavy_panel_paused(layout, message: str) -> None:
-    """Paused placeholder: reason label and Force show on one row."""
+    """Paused placeholder: reason label and update override on one row."""
     row = layout.row(align=True)
     row.label(text=message, icon='INFO')
     try:
         from .pref import get_pref
-        row.prop(get_pref().draw_property, 'force_show_panels_during_modal', text='Force show')
+        row.prop(
+            get_pref().draw_property,
+            'force_show_panels_during_modal',
+            text='Keep updating',
+        )
     except Exception:
         ...
 

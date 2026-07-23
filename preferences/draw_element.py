@@ -55,13 +55,17 @@ class DrawElement:
         pref = get_pref()
         active_element = pref.active_element
         prop = pref.draw_property
+        show_on_preferences_left = (
+            getattr(bpy.context.area, 'type', None) == 'PREFERENCES'
+            and prop.element_show_left_side
+        )
         if pref.__is_cut_element__:
             DrawElement.draw_cut_element(layout)
 
         elif active_element:
             if pref.__is_move_element__:
                 DrawElement.draw_move_element(layout)
-            elif not prop.element_show_left_side:
+            elif not show_on_preferences_left:
                 active_element.draw_alert(layout)
                 active_element.draw_item_property(layout, include_modal=include_modal)
             if get_debug():

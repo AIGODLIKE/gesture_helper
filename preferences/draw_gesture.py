@@ -137,12 +137,14 @@ class GestureDraw:
             return
 
         column = layout.column()
+        GestureDraw.draw_gesture_preview_button(column)
         split = column.split()
 
         if draw_property.element_show_left_side:  # Property panel on left
             box = split.box()
             box.operator_context = "INVOKE_DEFAULT"
             if active:
+                active.draw_alert(box)
                 active.draw_item_property(box)
             else:
                 box.label(text='Add or select an element')

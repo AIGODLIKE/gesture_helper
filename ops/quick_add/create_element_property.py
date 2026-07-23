@@ -18,6 +18,36 @@ from ...utils.pref_access import PrefAccess
 from ...utils.structure_cache_ops import StructureCacheOps
 
 
+def gesture_control_property_error(pointer, rna_prop) -> str | None:
+    """Return why an RNA property cannot be edited directly by a gesture."""
+    if pointer is None or rna_prop is None:
+        return "Property context is unavailable"
+    try:
+        prop_type = getattr(rna_prop, 'type', None)
+        is_array = getattr(rna_prop, 'is_array', False)
+        is_enum_flag = getattr(rna_prop, 'is_enum_flag', False)
+        is_readonly = getattr(rna_prop, 'is_readonly', False)
+        identifier = rna_prop.identifier
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        return "Property context is unavailable"
+    if prop_type not in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}:
+        return "This property type cannot be gesture-controlled"
+    if is_array:
+        return "Array properties cannot be gesture-controlled"
+    if prop_type == 'ENUM' and is_enum_flag:
+        return "Multi-select enum properties cannot be gesture-controlled"
+    if is_readonly:
+        return "This property is read-only"
+    try:
+        if pointer.is_property_readonly(identifier):
+            return "This property is not editable in the current context"
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        # Older Blender builds and a few transient button pointers do not
+        # expose the dynamic check. The static RNA flag remains authoritative.
+        pass
+    return None
+
+
 class Enum:
     _enum_items_cache: list = []
     _enum_items_prop_id: int | None = None
@@ -277,7 +307,12 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         layout.separator()
         box = layout.box().column(align=True)
         box.label(text="Gesture-Controlled Property")
-        box.label(text="Shows the live value and changes it directly from the gesture")
+        control_error = gesture_control_property_error(self.button_pointer, prop)
+        if control_error:
+            box.label(text=control_error, icon='LOCKED')
+            box.enabled = False
+        else:
+            box.label(text="Shows the live value and changes it directly from the gesture")
         ops = box.operator(CreateElementProperty.bl_idname, text="Add Gesture-Controlled Property")
         ops.display_property = True
         ops.data_path = self.data_path
@@ -460,6 +495,13 @@ class Create(Draw):
         if pt == "ENUM" and not self.display_property and not self.has_enum_items:
             self.report({'ERROR'}, "Dynamic enum properties cannot be added")
             return False
+        if self.display_property:
+            control_error = gesture_control_property_error(
+                self.button_pointer, self.button_prop,
+            )
+            if control_error:
+                self.report({'ERROR'}, control_error)
+                return False
         self.cache_clear()
         with pref.add_element_property.active_radio():
             if self.display_property:

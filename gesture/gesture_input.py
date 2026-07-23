@@ -507,6 +507,24 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
     direction_element = (
         direction_items.get(str(direction)) if direction is not None else None
     )
+    if ui_visible and is_draw_gpu:
+        # Once the overlay has been drawn, its current hit rectangles are the
+        # source of truth. Manual/automatic offsets can move a visible button
+        # into a different angular sector; falling back to the angle keeps the
+        # original drag gesture behavior between buttons and before first draw.
+        from ..element.extension_hit import (
+            find_radial_root_hit,
+            resolve_radial_root_selection,
+        )
+        root_hit = find_radial_root_hit(
+            direction_items,
+            ops,
+            mouse=draw_ctx.mouse_region,
+            preferred_direction=direction,
+        )
+        direction, direction_element = resolve_radial_root_selection(
+            direction, direction_element, root_hit,
+        )
     is_access_child = (
         zone.is_confirm
         and direction_element is not None

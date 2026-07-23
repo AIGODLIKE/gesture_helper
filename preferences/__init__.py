@@ -20,6 +20,10 @@ from .. import gesture
 from ..utils.public import PublicProperty
 
 
+def _update_enabled(_self, _context) -> None:
+    gesture.GestureKeymap.key_restart()
+
+
 class GesturePreferences(PublicProperty,
                          bpy.types.AddonPreferences,
                          BackupsPreferences,
@@ -45,7 +49,9 @@ class GesturePreferences(PublicProperty,
     enabled: BoolProperty(
         name='Enable gesture',
         description="Enable the gesture system",
-        default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
+        default=True,
+        update=_update_enabled,
+    )
     show_page: EnumProperty(
         name='Preferences page',
         description='Which preferences page to display',

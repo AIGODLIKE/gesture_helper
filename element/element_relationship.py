@@ -219,25 +219,27 @@ class ElementRelationship(RadioSelect,
 
     @property
     def is_list_alert(self) -> bool:
-        """Lightweight alert flag for UIList rows (skips poll evaluation)."""
-        if self.is_selected_structure and self.enabled:
-            return not get_available_selected_structure(self)
-        if self.is_operator and self.operator_type == "OPERATOR":
-            return not self.__operator_id_name_is_validity__
-        if self.is_property_display:
-            return not self.__property_path_is_validity__
-        return False
+        """Return whether the UIList row should use Blender's error tint."""
+        from .element_status import get_element_status
+
+        return get_element_status(self).is_error
+
+    @property
+    def list_status_info(self):
+        """Status shown in both the N-panel and Preferences element lists."""
+        from .element_status import get_element_status_info
+
+        return get_element_status_info(self)
 
     @property
     def is_alert(self) -> bool:
         """Return whether warning UI should be shown."""
-        if self.is_selected_structure:
-            if self.enabled:
-                return not self.__selected_structure_is_validity__
-        elif self.is_operator:
-            if self.operator_type == "OPERATOR":
-                return not (self.__operator_id_name_is_validity__ and self.__operator_properties_is_validity__)
-        return False
+        from .element_status import ElementStatus, get_element_status
+
+        return get_element_status(self) not in {
+            ElementStatus.VALID,
+            ElementStatus.DISABLED,
+        }
 
     @property
     def __selected_structure_is_validity__(self) -> bool:

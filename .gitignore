@@ -7,3 +7,5 @@ __pycache__
 *.log
 /dist/
 *.zip
+/.smoke_blender_userdata/
+/.smoke_import_userdata/

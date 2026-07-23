@@ -8,7 +8,6 @@ import bpy
 from bpy.props import BoolProperty, StringProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
 from ..utils.property import __set_prop__
 from ..utils.backups import (
@@ -181,6 +180,38 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
         if not isinstance(gesture, dict):
             raise ValueError(f"Invalid gesture data at key {key!r}: expected an object")
 
+        key_string = gesture.get('key_string')
+        if key_string is not None:
+            if not isinstance(key_string, str):
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: expected JSON text")
+            try:
+                key_data = json.loads(key_string)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
+            if not isinstance(key_data, dict):
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: expected an object")
+            from ..gesture.gesture_keymap import validate_keymap_data
+            try:
+                validate_keymap_data(key_data)
+            except ValueError as exc:
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
+
+        keymaps_string = gesture.get('keymaps_string')
+        if keymaps_string is not None:
+            if not isinstance(keymaps_string, str):
+                raise ValueError(f"Invalid keymap list for gesture {key!r}: expected JSON text")
+            try:
+                keymap_names = json.loads(keymaps_string)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid keymap list for gesture {key!r}: {exc}") from exc
+            if (
+                not isinstance(keymap_names, list)
+                or not all(isinstance(name, str) for name in keymap_names)
+            ):
+                raise ValueError(
+                    f"Invalid keymap list for gesture {key!r}: expected a list of names"
+                )
+
         gesture_type = gesture.get('gesture_type', 'RADIAL')
         gesture['gesture_type'] = (
             gesture_type if gesture_type in {'RADIAL', 'MENU'} else 'RADIAL'
@@ -203,6 +234,20 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data
+
+
+def _normalize_imported_gesture_names(gestures, start_index: int) -> None:
+    """Give appended gestures stable unique names before KMI registration."""
+    used = {gestures[index].name for index in range(min(start_index, len(gestures)))}
+    for index in range(start_index, len(gestures)):
+        gesture = gestures[index]
+        base = gesture.name or (
+            'Menu' if gesture.gesture_type == 'MENU' else 'Gesture'
+        )
+        name = gesture.__generate_new_name__(used, base)
+        if gesture.name != name:
+            gesture.name = name
+        used.add(name)
 
 
 class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
@@ -260,12 +305,15 @@ class Import(PublicFileOperator):
     def execute(self, _):
         if self.preset_show:
             return {'FINISHED'}
-        if not self.gesture_import():
-            return {'CANCELLED'}
+        from ..utils.gesture_persistence import suppress_gesture_disk_save
+        # Keep cache-lock finalizers inside the transaction's disk-save guard.
+        # A failed import is rolled back before the event loop can run timers.
+        with suppress_gesture_disk_save():
+            if not self.gesture_import():
+                return {'CANCELLED'}
         self.cache_clear()
         from ..utils.public import PublicProperty
         PublicProperty.update_state()
-        GestureKeymap.key_restart()
         from ..utils.gesture_persistence import (
             cancel_scheduled_gesture_save,
             save_gestures_to_disk,
@@ -296,10 +344,16 @@ class Import(PublicFileOperator):
 
     @cache_update_lock
     def gesture_import(self) -> bool:
+        store = None
+        old_length = 0
+        old_index = 0
+        did_mutate_store = False
         try:
             from ..gesture import gesture_keymap
 
             from ..utils.selection import suppress_radio_updates
+            from ..utils.gesture_persistence import suppress_gesture_disk_save
+            from ..utils.property import strict_property_assignment
 
             data = self.read_json()
             if not isinstance(data, dict) or 'gesture' not in data:
@@ -312,10 +366,32 @@ class Import(PublicFileOperator):
                 store = get_gesture_store()
                 if store is None:
                     raise RuntimeError("Gesture store unavailable")
-                __set_prop__(store, 'gesture', restore)
+                old_length = len(store.gesture)
+                old_index = store.index_gesture
+                # Element/gesture update callbacks normally rebuild keymaps as
+                # each RNA field arrives. Keep the existing bindings alive
+                # until the whole imported batch can be validated once.
+                with (
+                    suppress_gesture_disk_save(),
+                    gesture_keymap.suppress_keymap_restarts(),
+                    strict_property_assignment(),
+                ):
+                    did_mutate_store = True
+                    __set_prop__(store, 'gesture', restore)
+                    _normalize_imported_gesture_names(
+                        store.gesture,
+                        old_length,
+                    )
             from ..gesture.gesture_relationship import get_gesture_index
             get_gesture_index.cache_clear()
-            gesture_keymap.GestureKeymap.key_restart()
+            failures = gesture_keymap.GestureKeymap.key_restart(
+                validate_from_index=old_length,
+            )
+            if failures:
+                raise ValueError(
+                    "Invalid imported shortcut: "
+                    + "; ".join(str(failure) for failure in failures[:3])
+                )
 
             auth = data.get('author', '')
             des = data.get('description', '')
@@ -333,9 +409,61 @@ class Import(PublicFileOperator):
             self.report({'INFO'}, text)
             return True
         except Exception as e:
+            rollback_errors = []
+            if did_mutate_store and store is not None:
+                try:
+                    from ..gesture import gesture_keymap
+                    from ..utils.gesture_persistence import suppress_gesture_disk_save
+                    from ..utils.selection import suppress_radio_updates
+
+                    with (
+                        suppress_radio_updates(),
+                        suppress_gesture_disk_save(),
+                        gesture_keymap.suppress_keymap_restarts(),
+                    ):
+                        while len(store.gesture) > old_length:
+                            store.gesture.remove(len(store.gesture) - 1)
+                        store.index_gesture = min(
+                            max(old_index, 0), max(len(store.gesture) - 1, 0),
+                        )
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import rollback failed: {rollback_error}",
+                        key='export_import',
+                    )
+                try:
+                    # Property callbacks may have queued the appended Gesture
+                    # proxies for a deferred rebuild. They are invalid after
+                    # removal, so replace them with one full live-store rebuild.
+                    from ..utils.public_cache import PublicCacheFunc
+
+                    PublicCacheFunc.cache_clear()
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import cache recovery failed: {rollback_error}",
+                        key='export_import',
+                    )
+                try:
+                    from ..gesture.gesture_relationship import get_gesture_index
+
+                    get_gesture_index.cache_clear()
+                    gesture_keymap.GestureKeymap.key_restart()
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import keymap recovery failed: {rollback_error}",
+                        key='export_import',
+                    )
             from bpy.app.translations import pgettext
             # Translate msgid + detail separately; never report e.args (tuple noise).
-            self.report({'ERROR'}, pgettext("Import error: %s") % pgettext(str(e)))
+            detail = str(e)
+            if rollback_errors:
+                detail += "; rollback failed: " + "; ".join(
+                    str(error) for error in rollback_errors
+                )
+            self.report({'ERROR'}, pgettext("Import error: %s") % pgettext(detail))
             from ..utils.debug_util import debug_trace_stack, debug_traceback
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
@@ -360,7 +488,14 @@ class Export(PublicFileOperator):
     def file_path(self):
         folder_path = self.filepath
 
-        if self.is_invoke and folder_path.endswith('.json'):
+        # ``EXEC_DEFAULT`` callers (scripts, presets and tests) bypass
+        # ``invoke`` but still pass a concrete JSON filename. Treat it exactly
+        # like a path chosen in the file browser instead of creating a
+        # directory whose name ends in ``.json``.
+        if (
+            folder_path.lower().endswith(self.filename_ext)
+            and not os.path.isdir(folder_path)
+        ):
             return os.path.abspath(folder_path)
 
         if not folder_path:
