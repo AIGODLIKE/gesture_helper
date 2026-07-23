@@ -78,43 +78,11 @@ class ElementCURE:
         def poll(cls, _):
             return poll_message_active_element(cls)
 
-    class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps, ElementAddProperty):
-        bl_label = 'Add element item'
-        bl_idname = 'wm.gesture_element_add'
-        bl_options = {'REGISTER'}
-        last_element = None
-
-        # Blender only collects RNA annotations declared on the registered
-        # Operator itself.  ElementAddProperty supplies these to the
-        # preferences PropertyGroup, but inheriting them here leaves a stale
-        # operator enum after reload (notably hiding the BOX entry).
-        element_type: EnumProperty(
-            name='Type',
-            default='CHILD_GESTURE',
-            items=ENUM_ELEMENT_TYPE,
-        )
-        selected_type: EnumProperty(
-            name='Structure type',
-            items=ENUM_SELECTED_TYPE,
-            update=lambda self, context: ElementAddProperty.update_selected_type(),
-        )
+    class ElementAddPoll(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
 
         @classmethod
-        def poll(cls, context):
+        def poll(cls, _):
             return poll_message_active_gesture(cls)
-
-        @classmethod
-        def description(cls, context, properties):
-            texts = []
-
-            if properties.element_type == 'SELECTED_STRUCTURE':
-                for (i, t, d) in ENUM_SELECTED_TYPE:
-                    if i == properties.selected_type:
-                        texts.append(d)
-            for (i, t, d) in ENUM_ELEMENT_TYPE:
-                if i == properties.element_type:
-                    texts.append(d)
-            return translate_lines_text(*texts)
 
         @property
         def collection(self):
@@ -135,9 +103,47 @@ class ElementCURE:
                 return gesture.element
             return None
 
+    class ADD(ElementAddPoll):
+        bl_label = 'Add element item'
+        bl_idname = 'wm.gesture_element_add'
+        bl_options = {'REGISTER'}
+        last_element = None
+
+        # Keep operator RNA local. Inheriting ElementAddProperty and declaring
+        # the same fields again creates a stale duplicate operator struct in
+        # Blender 5.x, so bpy.ops cannot resolve this class reliably.
+        element_type: EnumProperty(
+            name='Type',
+            default='CHILD_GESTURE',
+            items=ENUM_ELEMENT_TYPE,
+        )
+        selected_type: EnumProperty(
+            name='Structure type',
+            items=ENUM_SELECTED_TYPE,
+            update=lambda self, context: ElementAddProperty.update_selected_type(),
+        )
+
+        @classmethod
+        def description(cls, context, properties):
+            texts = []
+
+            if properties.element_type == 'SELECTED_STRUCTURE':
+                for (i, t, d) in ENUM_SELECTED_TYPE:
+                    if i == properties.selected_type:
+                        texts.append(d)
+            for (i, t, d) in ENUM_ELEMENT_TYPE:
+                if i == properties.element_type:
+                    texts.append(d)
+            return translate_lines_text(*texts)
+
         @property
         def add_name(self):
-            return self.element_type.title() + (" " + self.selected_type if self.is_selected_structure else "")
+            suffix = (
+                " " + self.selected_type
+                if self.element_type == 'SELECTED_STRUCTURE'
+                else ""
+            )
+            return self.element_type.title() + suffix
 
         def execute(self, _):
             gesture = self.active_gesture
@@ -153,7 +159,16 @@ class ElementCURE:
                 add.element_type = self.element_type
                 add.selected_type = self.selected_type
                 add.__init_element__()
-                add.name = self.add_name
+                # Blender's RNA calls scene.cycles.samples just "Samples";
+                # use the panel-facing name for this useful default. Quick-add
+                # replaces it with the clicked property's source name later.
+                if (
+                    add.is_property_display
+                    and add.property_data_path == add.DEFAULT_PROPERTY_PATH
+                ):
+                    add.name = "Max Samples"
+                elif not add.is_property_display or not add.name:
+                    add.name = self.add_name
 
                 if self.pref.add_element_property.add_active_radio:
                     if self.active_element:
@@ -167,7 +182,7 @@ class ElementCURE:
             self.__class__.last_element = add
             return {'FINISHED'}
 
-    class AddLayoutPreset(ADD):
+    class AddLayoutPreset(ElementAddPoll):
         """Create a useful nested layout without placeholder operators."""
 
         bl_label = 'Add Layout Preset'

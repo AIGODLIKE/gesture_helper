@@ -2,111 +2,133 @@
 
 Updated: 2026-07-23
 
-## Current Branch
+## Current State
 
 - Branch: `feature/gesture-layout-renderer`
 - Remote: `origin`
-- No local development server or Blender modal process is intentionally left running.
+- The user's Blender 5.2 process PID `18860` was already running. Do not stop it.
+- No development server or Codex-owned interactive Blender process is left running.
 
-## Implemented In This Working Tree
+## Implemented In This Worktree
 
 ### Persistence, import/export, and keymaps
 
-- Gesture JSON persistence now writes a temporary file in the destination folder,
-  flushes and fsyncs it, validates the JSON payload, then atomically replaces the
-  old file. See `utils/gesture_persistence.py`.
-- Manual export and automatic gesture backups use the same atomic writer.
-- Import immediately saves the imported data and reports a warning if disk writing
-  fails, so memory-only imports are not mistaken for durable configuration.
-- Import sanitization now validates the basic JSON object structure, defaults old
-  gestures to `gesture_type: RADIAL`, and defaults invalid menu styles to `PANEL`.
-- New layout, property, and overlay fields have been added to the element export
-  whitelist in `ops/export_import.py`.
-- Keymap registration selects `wm.gesture_operator` for radial gestures and
-  `wm.gesture_menu` for menu gestures. The orphan cleanup list includes both IDs.
+- Gesture JSON persistence writes and validates a temporary file in the destination
+  folder, flushes it, then atomically replaces the old file.
+- Manual export and automatic backups use the same atomic writer. A successful
+  import is saved immediately and reports when only the in-memory update succeeded.
+- Manual import is transactional. It validates shortcut JSON before RNA assignment,
+  enables strict assignment while applying a batch, suppresses intermediate disk
+  saves/keymap rebuilds, and removes every appended gesture on failure.
+- New gestures are normalized to unique names before KMI registration, so importing
+  an existing preset creates `Name.001` instead of pointing the new shortcut at the
+  older gesture with the same name.
+- Imported shortcuts are force-validated even when either the gesture or global
+  gesture preference is disabled. Failures from older retained shortcuts do not
+  incorrectly reject a newly imported valid gesture.
+- Startup/disk restore remains lenient but is now transactional: valid gesture data
+  is retained, valid KMIs are registered, an individual invalid KMI is skipped and
+  logged, and an apply/cache/keymap exception restores the previous live store.
+- Legacy AddonPreferences migration uses the same replacement transaction. A
+  successful in-memory migration remains active when disk writing fails, while the
+  old DNA is retained for a later retry.
+- Keymap load failures are immutable records with gesture indices, so rollback and
+  validation never retain stale Blender RNA proxies.
+- RADIAL gestures register `wm.gesture_operator`; MENU gestures register
+  `wm.gesture_menu`. Restart/unregister also removes both IDs and the legacy
+  `gesture.operator` ID.
+- File > New restores the WindowManager gesture store from disk and rebuilds the
+  corresponding shortcuts. Handler registration and unregistration are idempotent.
+- New layout, property, menu, and overlay fields are included in export/import.
 
 ### Gesture and menu modes
 
-- Added immutable-at-UI-creation gesture types: `RADIAL` and `MENU`.
-- New gesture dialog asks for the type. Existing data defaults to `RADIAL`.
-- Added `wm.gesture_menu` with a separate persistent menu runtime. It does not use
-  the radial gesture input state machine.
-- Menu supports `PANEL`, `COMPACT`, and `BORDERLESS` styles, title/header, close
-  button, root order, hover child flyouts, property rows, condition filtering, and
-  separator rows.
-- Menu closes on Escape, right mouse, close button, or outside left click. A second
-  menu in the same window replaces the first one. External modal operators pause
-  the menu event handling until they finish.
-- `SessionState.clear()` asks the menu runtime to remove active draw handlers before
-  addon reload/unregister cleanup.
+- Gesture type is selected at creation (`RADIAL` or `MENU`) and cannot be switched
+  later in the normal UI.
+- `wm.gesture_menu` has a separate persistent modal runtime and does not share the
+  radial input state machine.
+- Menu styles include `PANEL`, `COMPACT`, and `BORDERLESS`, with title/header,
+  close button, root ordering, hover flyouts, property rows, condition filtering,
+  and separators.
+- Escape, right mouse, the close button, or an outside left click closes the menu.
+  A second menu replaces the first one in the same window. External modal operators
+  temporarily pause menu event handling until they finish.
+- Menu handler cleanup is part of session clear/reload/unregister.
 
-### Layout, property, and UI work
+### Layout, property, drawing, and preview
 
-- Layout containers have alignment (`EXPAND`, `LEFT`, `CENTER`, `RIGHT`), scale,
-  advanced settings, a unique main action, native-style separator rows, and layout
-  presets. `Switch Layout Type` was left unchanged.
-- Layout execution uses its selected main action, otherwise the first runnable leaf
-  for compatibility with old layouts.
-- Property elements default to `scene.cycles.samples` and fall back to
-  `scene.render.resolution_percentage` when Cycles is unavailable.
-- Properties support horizontal/vertical/arbitrary drag, reverse direction, value
-  visibility/format/precision, boolean on/off labels and icons, and a name-sync
-  operator. Quick add separates fixed native values, modal mouse adjustment, and
-  gesture-controlled properties.
-- `overlay_offset` is stored and exported for radial elements. Automatic radial
-  collision avoidance was started but is NOT complete; the stored offset has UI
-  support but still needs to be applied consistently to final draw/hit positions.
-- GPU status presentation distinguishes disabled, context/poll blocked, missing
-  operator, invalid operator arguments, invalid/read-only properties, and bad
-  conditional structure. It uses a compact badge plus a severity accent instead of
-  color alone.
-- Preview input now has `gesture/preview_input.py`, separate from the normal radial
-  input processor.
-- Theme defaults moved from purple/cyan emphasis to neutral Blender dark gray with
-  blue active states and explicit warning/error accents.
+- Layout containers support alignment (`EXPAND`, `LEFT`, `CENTER`, `RIGHT`), scale,
+  advanced settings, presets, native-style separators, and one main action.
+  `Switch Layout Type` was intentionally left unchanged.
+- Property elements default to `scene.cycles.samples`, with
+  `scene.render.resolution_percentage` as the non-Cycles fallback. They support
+  horizontal/vertical/free drag, inversion, formatted values, boolean labels/icons,
+  and name synchronization. Quick Add separates fixed-value, modal, and
+  gesture-controlled property actions.
+- Element list rows use fixed leading/status/expand/icon/select tracks with a
+  flexible name column. Missing controls keep placeholders, and only the status
+  badge receives error coloring, so rows no longer resize into uneven red blocks.
+- `AddLayoutPreset` and `wm.gesture_element_add` now share an unregistered operator
+  base instead of registering an Operator parent/child pair. This removes the
+  repeated `unable to get Python class for RNA struct` warning in Blender 4.2/5.2.
+- The old `Force show` option is now labeled `Always update gesture panels`, with a
+  `Keep updating` action in paused panels and a description of its performance cost.
+- Automatic radial collision avoidance, manual `overlay_offset`, viewport clamping,
+  and final draw/hit-coordinate synchronization are complete. Offset root elements
+  use their actual rendered rectangles for selection. Direction 9 blocks the
+  underlying angular selection and remains owned by its extension panel.
+- Invalid UI states distinguish disabled, context/poll blocked, missing operator,
+  invalid operator arguments, invalid/read-only properties, bad conditional data,
+  and locked/unavailable items with compact badges and severity accents.
+- Preview uses a separate operator/input policy. Cross-window preview context only
+  overrides `window`, `area`, and `region`; it does not pass a temporary `screen`.
+- Theme defaults use Blender-like neutral grays, blue active states, and explicit
+  warning/error accents.
 
 ## Important Files
 
-- `utils/gesture_persistence.py`: durable config write/load lifecycle.
-- `ops/export_import.py`: export whitelist and import migrations.
-- `gesture/gesture_keymap.py`, `gesture/addon_keymap.py`: keymap lifecycle.
-- `gesture/menu.py`, `ops/menu.py`: persistent menu implementation.
-- `gesture/gesture_input.py`, `gesture/preview_input.py`: independent normal and
-  preview input policies.
-- `element/element_property.py`, `element/element_draw.py`: new layout/property
-  RNA fields and editor UI.
-- `element/element_layout_gpu.py`, `element/element_gpu_draw.py`,
-  `element/element_status.py`: layout draw, status display, hit areas.
+- `utils/gesture_persistence.py`: atomic save and restore lifecycle.
+- `ops/export_import.py`: export whitelist, validation, migration, and rollback.
+- `gesture/gesture_keymap.py`, `gesture/addon_keymap.py`: shortcut lifecycle.
+- `gesture/menu.py`, `ops/menu.py`: persistent menu runtime.
+- `gesture/gesture_input.py`, `gesture/preview_input.py`: normal and preview input.
+- `utils/radial_collision.py`, `element/extension_hit.py`: placement and hit logic.
+- `element/element_gpu_draw.py`, `element/element_status.py`: drawing/status states.
+- `tests/`: pure Python tests plus Blender background smoke scripts.
 
-## Verification Already Run
+## Verification Run
 
-- `python -m compileall -q .` passed after the current worktree changes.
-- `git diff --check` passed; output only contains CRLF conversion warnings.
-- The property implementation was additionally checked against Blender 4.2.1 and
-  Blender 5.2.0 for RNA registration, default property setup, drag options,
-  boolean display settings, and name-sync registration.
+- `python -m unittest discover -s tests -p 'test_*.py' -v`: 29 tests passed.
+- Ruff passed for every changed/new Python file; unrelated legacy lint errors remain
+  outside the changed-file check.
+- `python -m compileall -q element gesture ops preferences ui utils tests` passed.
+- `git diff --check` passed (only Git's CRLF conversion warnings were printed).
+- Blender 4.2.1 and 5.2.0 both passed `blender_import_keymap_smoke.py`, including
+  strict rollback, invalid enum/modal-event rejection, duplicate-name normalization,
+  disabled-item validation, old bad KMI isolation, transactional replacement, and
+  lenient startup restore.
+- Blender 4.2.1 and 5.2.0 both passed `blender_element_status_smoke.py` against
+  real operator RNA.
+- Blender 4.2.1 and 5.2.0 both passed `blender_lifecycle_smoke.py`: rename,
+  enable/disable, legacy cleanup, File > New restore, delete, unregister, reload,
+  KMI cleanup, handler cleanup, plus real `bpy.ops` poll/execute for element add and
+  layout presets without RNA warnings.
+- Blender 5.2 extension CLI built and validated
+  `dist/gesture_helper-2.3.6.zip`. It contains 329 package files and excludes tests,
+  smoke data, caches, and this handoff document.
+- Earlier GUI checks in both Blender versions passed preview modal and draw-handler
+  registration/unregistration.
 
-## Recommended Next Steps
+## Remaining Manual Checks
 
-1. Run a full Blender 4.2.1 and 5.2.0 register/unregister/reload smoke test with
-   both radial and menu gestures. Confirm no residual `wm.gesture_operator` or
-   `wm.gesture_menu` keymap items after rename, delete, disable, import, and reload.
-2. Exercise the persistent menu in a real `VIEW_3D` area: opening, hover child
-   flyout, close/outside click, property interaction, and an invoked external modal
-   operator. Verify the draw handler uses `type(context.space_data)`.
-3. Finish automatic radial collision avoidance and apply `overlay_offset` to the
-   same final coordinates used for drawing and hit boxes. Check long labels and
-   direction-9 panels near viewport edges.
-4. Visually inspect all layout scale/alignment combinations, nested boxes, and
-   status badges in both Blender versions. `gpu.matrix.scale_uniform()` was only
-   statically checked in this final pass.
-5. Test portable Blender specifically: put the Blender user data beside
-   `blender.exe`, create/edit gestures, use File > New, restart Blender, then verify
-   the atomic JSON data and fallback path restore the configuration.
+1. Visually inspect the fixed-width element list, persistent menu hover/flyout/
+   property interaction, and every layout scale/alignment combination in real
+   3D View themes and DPI settings.
+2. Exercise a truly portable installation beside `blender.exe` with several other
+   add-ons installed. The isolated lifecycle test covers File > New and disk restore,
+   but not every third-party add-on interaction or Windows permission setup.
 
 ## Notes
 
-- The worktree was already dirty before this handoff. Do not use reset/checkout to
-  discard changes blindly.
-- The user requested a temporary handoff for another model, so this document is a
-  current status snapshot rather than release documentation.
+- Do not use reset/checkout to discard the working tree without reviewing it.
+- This is a development handoff, not release documentation.

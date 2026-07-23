@@ -247,6 +247,68 @@ class ElementGpuProperty:
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     @property
+    def radial_outward_vector(self) -> Vector:
+        """Unit vector used to push this root overlay away from the center."""
+        direction = str(self.direction)
+        if direction == '9':
+            direction = '7'
+        return get_position(direction, 1.0)
+
+    @property
+    def radial_draw_offset(self) -> Vector:
+        """Automatic frame offset plus the user's persisted manual offset."""
+        auto = (0.0, 0.0)
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        if session is not None:
+            auto = session.radial_auto_offsets.get(self, auto)
+        manual = getattr(self, 'overlay_offset', (0.0, 0.0))
+        return Vector((
+            float(auto[0]) + float(manual[0]),
+            float(auto[1]) + float(manual[1]),
+        ))
+
+    def radial_base_bounds(self, radius: float) -> tuple[float, float, float, float]:
+        """Measure the root overlay exactly as ``draw_gpu_item`` places it.
+
+        Coordinates are relative to the gesture center and intentionally omit
+        both automatic and manual offsets.
+        """
+        direction = str(self.direction)
+        margin_x, margin_y = self.text_margin
+
+        if self.is_layout_container:
+            width, height = self.layout_panel_content_size
+            if direction == '9':
+                gap = max(self.text_margin) * 1.5
+                y = -self.text_dimensions[1] - gap if (
+                    '7' in self.ops.direction_items
+                ) else -gap
+                origin = get_position('7', radius) + Vector((-width * 0.5, y))
+            else:
+                origin = get_position(direction, radius) + self.layout_direction_offset
+        elif direction == '9':
+            if '7' in self.ops.direction_items:
+                anchor_offset = self.draw_direction_offset
+            else:
+                anchor_offset = Vector((0.0, -self.max_height_dimensions))
+            width, height = self.extension_dimensions
+            origin = (
+                get_position('7', radius)
+                + anchor_offset
+                + Vector((-width * 0.5, 0.0))
+            )
+        else:
+            width, height = self.draw_dimensions
+            origin = get_position(direction, radius) + self.draw_direction_offset
+
+        return (
+            float(origin.x - margin_x),
+            float(origin.y - height - margin_y),
+            float(origin.x + width + margin_x),
+            float(origin.y + margin_y),
+        )
+
+    @property
     def extension_items(self) -> list:
         """Extension items (bottom menu), memoized per element per input event.
 
@@ -304,6 +366,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
           9
         """
         self.ops = ops
+        radial_offset = self.radial_draw_offset
 
         direction = self.direction
         # ROW/COLUMN/BOX are inline presentation nodes, not radial buttons.
@@ -319,7 +382,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 w, _h = self.layout_panel_content_size
                 gap = max(self.text_margin) * 1.5
                 with gpu.matrix.push_pop():
-                    gpu.matrix.translate(position)
+                    gpu.matrix.translate(position + radial_offset)
                     if '7' in self.ops.direction_items.keys():
                         y = -self.text_dimensions[1] - gap
                     else:
@@ -330,7 +393,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             else:
                 position = get_position(direction, radius)
                 with gpu.matrix.push_pop():
-                    gpu.matrix.translate(position + self.layout_direction_offset)
+                    gpu.matrix.translate(
+                        position + self.layout_direction_offset + radial_offset
+                    )
                     self.draw_gpu_layout_panel(ops)
             return
 
@@ -341,7 +406,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             )
             position = get_position("7", radius)
             with gpu.matrix.push_pop():
-                gpu.matrix.translate(position)
+                gpu.matrix.translate(position + radial_offset)
                 draw_debug_point((1, 1, 0, 1), 2)
 
                 if "7" in self.ops.direction_items.keys():
@@ -364,7 +429,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         margin_x, margin_y = self.text_margin
 
         with gpu.matrix.push_pop():
-            gpu.matrix.translate(position)
+            gpu.matrix.translate(position + radial_offset)
 
             w, h = self.draw_dimensions
             with gpu.matrix.push_pop():

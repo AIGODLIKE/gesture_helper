@@ -445,6 +445,7 @@ class GestureGpuDraw(DrawDebug):
                         )
 
                 draw_items = list(self.direction_items.values())
+                self._prepare_radial_overlay_offsets(draw_items, center, region)
                 for item in draw_items:
                     with gpu.matrix.push_pop():
                         item.draw_gpu_item(self)
@@ -458,6 +459,63 @@ class GestureGpuDraw(DrawDebug):
                         __name_translate__('No gestures match the current conditions. Please add one.'),
                         warning=True,
                     )
+
+    def _prepare_radial_overlay_offsets(self, draw_items, center, region) -> None:
+        """Measure and resolve root overlays once for the current draw pass."""
+        session = self.session
+        session.radial_auto_offsets = {}
+        if not draw_items:
+            return
+
+        draw_ctx = getattr(session, 'draw_ctx', None)
+        radius = draw_ctx.gesture_radius if draw_ctx is not None else (
+            self.gesture_property.radius * self._draw_ui_scale()
+        )
+        scale = draw_ctx.ui_scale if draw_ctx is not None else self._draw_ui_scale()
+
+        def direction_order(item):
+            try:
+                return int(item.direction)
+            except (AttributeError, TypeError, ValueError):
+                return 99
+
+        records = []
+        for item in sorted(draw_items, key=direction_order):
+            item.ops = self
+            try:
+                base_bounds = item.radial_base_bounds(radius)
+                manual = item.overlay_offset
+                manual_bounds = (
+                    base_bounds[0] + float(manual[0]),
+                    base_bounds[1] + float(manual[1]),
+                    base_bounds[2] + float(manual[0]),
+                    base_bounds[3] + float(manual[1]),
+                )
+                records.append((
+                    item,
+                    manual_bounds,
+                    tuple(item.radial_outward_vector),
+                ))
+            except (AttributeError, ReferenceError, TypeError, ValueError):
+                # One malformed item must not suppress the rest of the overlay.
+                continue
+
+        if not records:
+            return
+
+        inset = max(2.0, 4.0 * scale)
+        viewport = (
+            -float(center.x) + inset,
+            -float(center.y) + inset,
+            float(region.width) - float(center.x) - inset,
+            float(region.height) - float(center.y) - inset,
+        )
+        from ..utils.radial_collision import resolve_radial_collisions
+        session.radial_auto_offsets = resolve_radial_collisions(
+            records,
+            viewport=viewport,
+            padding=max(2.0, 4.0 * scale),
+        )
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""

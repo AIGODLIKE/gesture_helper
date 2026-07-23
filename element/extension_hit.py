@@ -53,6 +53,71 @@ def layout_is_current(el, ops) -> bool:
     return session is not None and getattr(el, "_gesture_layout_token", None) is session.layout_token
 
 
+def radial_root_hit_area(el):
+    """Return the visible hit rectangle for one root radial element."""
+    if getattr(el, "is_layout_container", False) or str(getattr(el, "direction", "")) == "9":
+        return getattr(el, "extension_draw_area", None)
+    return getattr(el, "item_draw_area", None)
+
+
+def find_radial_root_hit(
+        direction_items: dict,
+        ops,
+        *,
+        mouse: tuple[float, float] | None = None,
+        preferred_direction: int | str | None = None,
+):
+    """Return ``(direction, element)`` for the current root overlay under the mouse.
+
+    The angle-selected direction is checked first when hit rectangles overlap;
+    remaining directions are checked numerically for deterministic behavior.
+    Stale rectangles from an earlier gesture session are always ignored.
+    """
+    if not direction_items:
+        return None
+    if mouse is None:
+        first = next(iter(direction_items.values()), None)
+        mouse = _mouse_for(first, ops) if first is not None else None
+    if mouse is None:
+        return None
+
+    preferred_key = str(preferred_direction) if preferred_direction is not None else None
+
+    def direction_order(pair):
+        key, _element = pair
+        if key == preferred_key:
+            return -1, 0
+        try:
+            return 0, int(key)
+        except (TypeError, ValueError):
+            return 1, str(key)
+
+    for key, element in sorted(direction_items.items(), key=direction_order):
+        if not layout_is_current(element, ops):
+            continue
+        if point_in_rect(mouse, radial_root_hit_area(element)):
+            return key, element
+    return None
+
+
+def resolve_radial_root_selection(angle_direction, angle_element, root_hit):
+    """Apply a visible root hit to the angle-derived radial selection.
+
+    Direction 9 is an extension panel, not an executable radial direction. A
+    hit there blocks the angle underneath it while ``extension_hover`` resolves
+    the actual panel row on the same event.
+    """
+    if root_hit is None:
+        return angle_direction, angle_element
+    hit_direction, hit_element = root_hit
+    if str(hit_direction) == "9":
+        return None, None
+    try:
+        return int(hit_direction), hit_element
+    except (TypeError, ValueError):
+        return angle_direction, angle_element
+
+
 def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None) -> int:
     """Return hit flags for one extension panel element."""
     ops = ops or getattr(el, "ops", None)

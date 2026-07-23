@@ -143,6 +143,9 @@ class GestureSession:
         self._direction_items_memo = None
         # (cache_key, {element: items}) — replaced wholesale when the key changes.
         self._gpu_extension_items_cache = None
+        # Per-draw automatic radial offsets. User-authored ``overlay_offset``
+        # remains separate and is added only by the renderer.
+        self.radial_auto_offsets: dict = {}
         # Canonical Element proxy pool — see ``canonical_element``.
         self._element_proxy_pool: dict = {}
         self._element_proxy_pool_generation = None

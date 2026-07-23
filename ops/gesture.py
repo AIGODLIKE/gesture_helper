@@ -55,7 +55,7 @@ class GestureOperator(
     def draw_error(self, __):
         layout = self.layout
         for text in [
-            "No gesture found to draw",
+            "Radial gesture not found",
             "Possible keymap errors",
             "Open add-on preferences to restore the keymap",
         ]:
@@ -75,7 +75,8 @@ class GestureOperator(
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
         operator_setattr(self, "_modal_cleaned", False)
-        if self.operator_gesture is None:
+        gesture = self.operator_gesture
+        if gesture is None or gesture.gesture_type != 'RADIAL':
             context.window_manager.popup_menu(self.__class__.draw_error,
                                               title=pgettext_iface("Error"),
                                               icon="INFO")
@@ -83,7 +84,7 @@ class GestureOperator(
 
         # Ensure this gesture's structure cache exists; skip full rebuild when warm.
         from ..utils.public_cache import PublicCacheFunc
-        PublicCacheFunc.ensure_gesture_structure(self.operator_gesture)
+        PublicCacheFunc.ensure_gesture_structure(gesture)
         ensure_trajectory_seed(self.session)
         refresh_snapshot(self.session, self)
         schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
@@ -237,7 +238,6 @@ class GestureOperator(
         self.__exit_modal__()
         from ..gesture.gesture_input import clear_gesture_item_memos
         clear_gesture_item_memos(self.session, self)
-        return {'CANCELLED'}
 
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):

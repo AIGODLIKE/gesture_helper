@@ -2,7 +2,10 @@ import bpy
 from bpy.app.translations import pgettext
 
 from ..ops.quick_add.create_element_operator import CreateElementOperator
-from ..ops.quick_add.create_element_property import CreateElementProperty
+from ..ops.quick_add.create_element_property import (
+    CreateElementProperty,
+    gesture_control_property_error,
+)
 from ..utils.public import get_pref
 from ..utils.session_state import SessionState
 
@@ -38,17 +41,25 @@ class ContextMenu(bpy.types.Menu):
             if show_property:
                 prop_type = button_prop.type
                 direct = layout.column(align=True)
-                can_control = (
+                control_shape_supported = (
                     prop_type in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}
                     and not getattr(button_prop, 'is_array', False)
                     and not getattr(button_prop, 'is_enum_flag', False)
                 )
-                if can_control:
-                    direct.operator_context = 'EXEC_DEFAULT'
-                    operator = direct.operator(
+                if control_shape_supported:
+                    control_error = gesture_control_property_error(
+                        button_pointer, button_prop,
+                    )
+                    control = direct.column(align=True)
+                    control.enabled = control_error is None
+                    control.operator_context = 'EXEC_DEFAULT'
+                    operator = control.operator(
                         CreateElementProperty.bl_idname,
-                        text=pgettext("Add Gesture-Controlled Property %s") % __name_translate__(button_prop.name),
-                        icon='MOUSE_MOVE',
+                        text=(
+                            pgettext("Add Gesture-Controlled Property %s")
+                            % __name_translate__(button_prop.name)
+                        ),
+                        icon='LOCKED' if control_error else 'MOUSE_MOVE',
                     )
                     operator.display_property = True
                     operator.property_type = prop_type

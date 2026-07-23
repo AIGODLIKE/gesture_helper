@@ -2,13 +2,15 @@
 # 1.0.4: coerce/skip invalid ENUM values (e.g. GPENCIL → GREASE_PENCIL)
 # 1.0.3: custom export via ___set_properties___ / ___properties___
 # 1.0.2: get_kmi_property exclude 'hyper', 'hyper_ui',
-exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
+from contextlib import contextmanager
 
 import bpy
 from mathutils import Euler, Vector, Matrix
 
 from .public_cache import PublicCache
 from ..utils.debug_util import debug_print
+
+exclude_items = {'rna_type', 'bl_idname', 'srna'}  # Excluded identifiers
 
 # Legacy enum identifiers → current Blender names (4.3+ / 5.x Grease Pencil).
 _ENUM_RENAMES = {
@@ -17,6 +19,19 @@ _ENUM_RENAMES = {
     'WEIGHT_GPENCIL': 'WEIGHT_GREASE_PENCIL',
     'VERTEX_GPENCIL': 'VERTEX_GREASE_PENCIL',
 }
+
+_strict_assignment_depth = 0
+
+
+@contextmanager
+def strict_property_assignment():
+    """Raise assignment errors for transactional imports instead of skipping them."""
+    global _strict_assignment_depth
+    _strict_assignment_depth += 1
+    try:
+        yield
+    finally:
+        _strict_assignment_depth -= 1
 
 
 def __set_collection_data__(prop, data):
@@ -55,14 +70,20 @@ def __set_prop__(prop, path, value):
             elif typ == 'ENUM' and pro.is_enum_flag:
                 setattr(prop, path, set(value))
             elif typ == 'ENUM':
-                value = __coerce_enum_value__(pro, value)
-                if value is None:
+                enum_value = __coerce_enum_value__(pro, value)
+                if enum_value is None:
+                    if _strict_assignment_depth:
+                        raise ValueError(
+                            f"Invalid enum value {value!r} for property {path!r}"
+                        )
                     return
-                setattr(prop, path, value)
+                setattr(prop, path, enum_value)
             else:
                 setattr(prop, path, value)
         except Exception as e:
             debug_print('ERROR', typ, path, value, e, key='operator')
+            if _strict_assignment_depth:
+                raise
 
 
 def set_property(prop, data: dict):
@@ -160,7 +181,7 @@ def get_property(prop, exclude=(), reversal=False) -> dict:
     """
     if hasattr(prop, "___properties___"):  # Custom property getter/setter hook
         if res := getattr(prop, "___properties___", None):
-            if type(res) == dict:
+            if isinstance(res, dict):
                 return res
     return __get_property__(prop, exclude, reversal)
 
@@ -218,4 +239,3 @@ def get_kmi_property(kmi):
             )
         )
     )
-

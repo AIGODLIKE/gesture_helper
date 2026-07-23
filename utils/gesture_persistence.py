@@ -98,23 +98,66 @@ def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
             ...
 
 
-def _apply_gesture_data(store, gesture_data: dict) -> None:
-    from ..ops.export_import import sanitize_gesture_import_data
+def _replace_gesture_store(store, restore: dict, index: int):
+    """Replace the live collection and return lenient shortcut failures."""
     from ..gesture import gesture_keymap
+    from ..gesture.gesture_keymap import suppress_keymap_restarts
+    from .cache_state import CacheState
     from .property import __set_prop__
 
+    with suppress_gesture_disk_save():
+        with CacheState.batch(), suppress_radio_updates(), suppress_keymap_restarts():
+            # A full rebuild prevents failed/removed RNA proxies from surviving
+            # in the deferred per-gesture invalidation set.
+            CacheState.mark_structure_dirty(None)
+            store.gesture.clear()
+            if restore:
+                __set_prop__(store, 'gesture', restore)
+            if len(store.gesture):
+                store.index_gesture = min(max(index, 0), len(store.gesture) - 1)
+            else:
+                store.index_gesture = 0
+        from ..gesture.gesture_relationship import get_gesture_index
+        get_gesture_index.cache_clear()
+        failures = gesture_keymap.GestureKeymap.key_restart()
+    return failures
+
+
+def _apply_gesture_data(store, gesture_data: dict, *, target_index=None) -> None:
+    """Apply lenient startup data transactionally to the live WM store."""
+    from ..ops.export_import import sanitize_gesture_import_data
+
     restore = sanitize_gesture_import_data(gesture_data)
-    with suppress_radio_updates():
-        store.gesture.clear()
-        if restore:
-            __set_prop__(store, 'gesture', restore)
-        if len(store.gesture):
-            store.index_gesture = min(max(store.index_gesture, 0), len(store.gesture) - 1)
-        else:
-            store.index_gesture = 0
-    from ..gesture.gesture_relationship import get_gesture_index
-    get_gesture_index.cache_clear()
-    gesture_keymap.GestureKeymap.key_restart()
+    previous_data = get_pref().get_gesture_data(True)
+    previous_index = store.index_gesture
+    if target_index is None:
+        target_index = previous_index
+
+    try:
+        failures = _replace_gesture_store(store, restore, target_index)
+    except Exception as apply_error:
+        try:
+            rollback_failures = _replace_gesture_store(
+                store,
+                previous_data,
+                previous_index,
+            )
+        except Exception as rollback_error:
+            raise RuntimeError(
+                f"gesture restore failed ({apply_error}); "
+                f"rollback failed ({rollback_error})"
+            ) from apply_error
+        if rollback_failures:
+            log_backup(
+                "gestures restore rollback skipped invalid shortcut(s): "
+                + "; ".join(str(failure) for failure in rollback_failures[:3])
+            )
+        raise
+    if failures:
+        log_backup(
+            "gestures load skipped invalid shortcut(s): "
+            + "; ".join(str(failure) for failure in failures[:3])
+        )
 
 
 def restore_gesture_snapshot(gesture_data: dict) -> bool:
@@ -220,22 +263,23 @@ def _migrate_legacy_preferences_gestures(store) -> bool:
     log_backup(
         f"gestures migrate: {len(legacy)} gesture(s) from preferences -> WM/disk"
     )
-    from ..ops.export_import import sanitize_gesture_import_data
-    from .property import get_property, __set_prop__
+    from .property import get_property
 
     raw = {str(i): get_property(g) for i, g in enumerate(legacy)}
-    restore = sanitize_gesture_import_data(raw)
-    with suppress_radio_updates():
-        store.gesture.clear()
-        if restore:
-            __set_prop__(store, 'gesture', restore)
-        store.index_gesture = min(getattr(pref, "index_gesture", 0), max(len(store.gesture) - 1, 0))
-    from ..gesture.gesture_relationship import get_gesture_index
-    get_gesture_index.cache_clear()
+    _apply_gesture_data(
+        store,
+        raw,
+        target_index=getattr(pref, "index_gesture", 0),
+    )
     saved = save_gestures_to_disk(description='migrated_from_userpref')
     if saved is not None:
         clear_legacy_preferences_gestures()
-    return saved is not None
+    else:
+        log_backup(
+            "gestures migrate: restored to memory; disk write failed, "
+            "legacy preferences retained for retry"
+        )
+    return True
 
 
 def clear_legacy_preferences_gestures() -> None:
@@ -288,8 +332,13 @@ def load_gestures_from_disk() -> bool:
             from .debug_util import debug_traceback
             debug_traceback(key='export_import')
 
-    if _migrate_legacy_preferences_gestures(store):
-        return True
+    try:
+        if _migrate_legacy_preferences_gestures(store):
+            return True
+    except Exception as e:
+        log_backup(f"gestures legacy migration failed: {e}")
+        from .debug_util import debug_traceback
+        debug_traceback(key='export_import')
 
     log_backup("gestures load: no file and no in-memory gestures")
     return False

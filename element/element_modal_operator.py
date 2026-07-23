@@ -1,17 +1,24 @@
 from functools import cache
 
 import bpy
+from bpy.app.translations import pgettext_iface
 
-all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
-all_id = list((i[0] for i in all_event))
 from ..utils.public import get_debug, debug_print, PublicSortAndRemovePropertyGroup
 from ..utils.public_cache import cache_update_lock, PublicCache, PublicCacheFunc
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
-from ..utils.property import get_property, set_property, __get_property__, __set_property__
+from ..utils.property import (
+    get_property,
+    set_property,
+    __get_property__,
+    __set_prop__,
+    __set_property__,
+)
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
 from ..src.translate import __keymap_translate__
-from bpy.app.translations import pgettext_iface
+
+all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
+all_id = list((i[0] for i in all_event))
 
 
 class NumberControl:
@@ -74,7 +81,7 @@ class NumberControl:
         value = ops.operator_properties.get(cp, default_value)
         delta = ops.value_delta(event, vm)
 
-        if type(value) == int:
+        if type(value) is int:
             value = int(round(value + delta))
         else:
             value = round(value + delta, 2)
@@ -717,8 +724,5 @@ class ElementModalOperatorEventItem(
                   "event_alt",
                   "event_shift",):
             if k in data:
-                try:
-                    setattr(self, k, data.pop(k))
-                except Exception as e:
-                    debug_print("load_keymap error", e.args, key='modal')
+                __set_prop__(self, k, data.pop(k))
         return data

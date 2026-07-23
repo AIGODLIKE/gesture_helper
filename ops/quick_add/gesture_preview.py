@@ -34,6 +34,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         operator_setattr(self, "offset_position", Vector((0, 0)))
         operator_setattr(self, "gpu", DrawGpu())
         operator_setattr(self, "_input_processor", PreviewGestureInputProcessor())
+        operator_setattr(self, "_preview_cleaned", False)
 
     def __gpu_draw__(self):
         self.gpu.tips.__gpu_draw__()
@@ -45,7 +46,57 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
         if SessionState.gesture_preview_active:
             cls.poll_message_set("Gesture preview is already running")
             return False
+        try:
+            from ...utils.public import get_pref
+
+            active = get_pref().active_gesture
+        except (KeyError, AttributeError, ReferenceError, RuntimeError):
+            active = None
+        try:
+            is_radial = active is not None and active.gesture_type == 'RADIAL'
+        except (AttributeError, ReferenceError, RuntimeError):
+            is_radial = False
+        if not is_radial:
+            cls.poll_message_set("Select a radial gesture to preview")
+            return False
+        area = getattr(context, 'area', None)
+        if (area is None or area.type != 'VIEW_3D') and cls.find_view3d_context(context) is None:
+            cls.poll_message_set("Open a 3D View to preview this gesture")
+            return False
         return True
+
+    @staticmethod
+    def find_view3d_context(context) -> dict | None:
+        """Return a safe VIEW_3D WINDOW override for Preferences launches."""
+        wm = getattr(context, 'window_manager', None)
+        if wm is None:
+            return None
+        current_window = getattr(context, 'window', None)
+        try:
+            windows = list(wm.windows)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return None
+        if current_window in windows:
+            windows.remove(current_window)
+            windows.insert(0, current_window)
+        for window in windows:
+            try:
+                screen = window.screen
+                areas = screen.areas
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
+            for area in areas:
+                if area.type != 'VIEW_3D':
+                    continue
+                region = next((item for item in area.regions if item.type == 'WINDOW'), None)
+                if region is None:
+                    continue
+                return {
+                    'window': window,
+                    'area': area,
+                    'region': region,
+                }
+        return None
 
     @property
     def is_exit(self):
@@ -73,14 +124,19 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
             and region.y <= event.mouse_y <= region.y + region.height
         )
 
-    def __sync_gesture__(self):
-        """Rebuild the whole preview session when the active gesture changes.
+    def __sync_gesture__(self) -> bool:
+        """Rebuild when the active radial changes; reject non-radial data.
 
         Only updating the name would keep the old gesture's child levels,
         hover stack, and item memos alive in the trajectory tree.
         """
-        ag = self.pref.active_gesture
-        if ag and self.gesture != ag.name:
+        try:
+            ag = self.pref.active_gesture
+        except (AttributeError, ReferenceError, RuntimeError):
+            return False
+        if ag is None or ag.gesture_type != 'RADIAL':
+            return False
+        if self.gesture != ag.name:
             from ...gesture.gesture_input import clear_gesture_item_memos
             tree = self.trajectory_tree
             center = tree.points_list[0].copy() if tree.points_list else self.offset_position.copy()
@@ -99,6 +155,7 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
             self._schedule_gesture_timeout_timer()
             refresh_snapshot(self.session, self)
             self.tag_redraw()
+        return True
 
     def _preview_anchor(self, context, event) -> Vector:
         """Always anchor the preview at the 3D View center.
@@ -114,6 +171,39 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
         import time
+        try:
+            active = self.pref.active_gesture
+        except (AttributeError, ReferenceError, RuntimeError):
+            active = None
+        try:
+            is_radial = active is not None and active.gesture_type == 'RADIAL'
+        except (AttributeError, ReferenceError, RuntimeError):
+            is_radial = False
+        if not is_radial:
+            self.report({'WARNING'}, "Only radial gestures can be previewed")
+            return {'CANCELLED'}
+        self.gesture = active.name
+
+        area = getattr(context, 'area', None)
+        if area is None or area.type != 'VIEW_3D':
+            override = self.find_view3d_context(context)
+            if override is None:
+                self.report({'WARNING'}, "Open a 3D View to preview this gesture")
+                return {'CANCELLED'}
+            try:
+                with context.temp_override(**override):
+                    result = bpy.ops.wm.gesture_preview(
+                        'INVOKE_DEFAULT', gesture=self.gesture,
+                    )
+            except (AttributeError, RuntimeError, TypeError):
+                self.report({'WARNING'}, "Unable to start the preview in the 3D View")
+                return {'CANCELLED'}
+            # The redirected instance owns the modal handler; this Preferences
+            # instance must finish immediately.
+            operator_setattr(self, "_preview_cleaned", True)
+            return {'FINISHED'} if result and 'RUNNING_MODAL' in result else result
+
+        operator_setattr(self, "_preview_cleaned", False)
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
 
@@ -141,7 +231,9 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
     def modal(self, context, event):
         self.area = context.area
         self.screen = context.screen
-        self.__sync_gesture__()
+        if not self.__sync_gesture__():
+            self.__exit_modal__()
+            return {'FINISHED'}
 
         self.init_modal(event)
         self.trajectory_event_update(context, event)
@@ -196,6 +288,9 @@ class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRunti
             return {'FINISHED'}
 
     def __exit_modal__(self):
+        if getattr(self, '_preview_cleaned', False):
+            return
+        operator_setattr(self, "_preview_cleaned", True)
         SessionState.gesture_preview_active = False
         self.unregister_draw()
         self._cancel_gesture_timeout_timer()

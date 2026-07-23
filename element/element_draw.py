@@ -20,6 +20,12 @@ class ElementDraw:
             row.operator(SyncElementName.bl_idname, text='', icon='FILE_REFRESH')
 
     def draw_overlay_offset(self, layout: 'bpy.types.UILayout') -> None:
+        # Offsets are a radial root-placement setting.  Keep the persisted RNA
+        # field for backwards-compatible imports, but do not expose a control
+        # for menu rows or nested panel elements where it has no effect.
+        gesture = self.parent_gesture
+        if not self.is_root or gesture is None or getattr(gesture, 'gesture_type', 'RADIAL') != 'RADIAL':
+            return
         layout.prop(self, 'overlay_offset', text='Draw Offset')
 
     def draw_item(self, layout: 'bpy.types.UILayout', *, _active_element=None):
@@ -31,25 +37,43 @@ class ElementDraw:
         layout.context_pointer_set('cut_element', self)
 
         column = layout.column(align=True)
+        item_row = column.row(align=True)
 
-        split = column.split(factor=draw.element_split_factor)
-        split.alert = self.is_list_alert
-        self.draw_item_left(split.row(align=True), pref)
+        status_info = self.list_status_info
+        leading = item_row.row(align=True)
+        leading.ui_units_x = 2.0 + (
+            1.0 if draw.element_show_enabled_button else 0.0
+        )
+        self.draw_item_left(leading, pref)
 
-        right = split.row(align=True).split(factor=0.4)
-        self.draw_item_right(right)
-        right.prop(self, 'radio', text='',
-                   icon=icon_two(self.radio, 'RESTRICT_SELECT'),
-                   emboss=False)
+        name = item_row.row(align=True)
+        name.alignment = 'LEFT'
+
+        controls = item_row.row(align=True)
+        controls.alignment = 'RIGHT'
+        controls.ui_units_x = 4.75 + (
+            1.0 if draw.element_show_icon else 0.0
+        )
+        if pref.__is_move_element__ or pref.__is_cut_element__:
+            controls.ui_units_x += 1.0
+
+        self.draw_item_right(
+            name,
+            controls,
+            status_info=status_info,
+            show_icon=draw.element_show_icon,
+        )
 
         if pref.__is_move_element__:
             from .element_cure import ElementCURE
-            r = right.row()
+            r = controls.row(align=True)
+            r.ui_units_x = 1.0
             r.active = r.enabled = self.is_movable
             r.operator(ElementCURE.MOVE.bl_idname, text="", icon="UV_SYNC_SELECT", emboss=False)
         elif pref.__is_cut_element__:
             from .element_cure import ElementCURE
-            r = right.row()
+            r = controls.row(align=True)
+            r.ui_units_x = 1.0
             r.active = r.enabled = self.is_can_be_cut
             r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
         self.draw_item_child(column, active)
@@ -77,35 +101,75 @@ class ElementDraw:
             row.label(text='', icon=ui_icon('ALIGN_JUSTIFY'))
         elif self.is_box:
             row.label(text='', icon=ui_icon('MENU_PANEL'))
+        else:
+            row.label(text='', icon='BLANK1')
 
         in_panel = self.parent_is_extension or self.parent_is_layout
         if in_panel:  # Panel children: hide direction icon
             if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
             else:
-                row.separator()
-                row.separator()
+                row.label(text='', icon='BLANK1')
         elif (
                 self.is_child_gesture or self.is_operator
                 or self.is_property_display or self.is_layout_container
         ):
             row.label(text='', icon_value=pref.__get_icon__(self.direction))
         else:
-            row.separator()
-            row.separator()
+            row.label(text='', icon='BLANK1')
 
-    def draw_item_right(self, layout: 'bpy.types.UILayout'):
-        layout.label(text=self.name_translate, translate=False)
+    def draw_item_right(
+            self,
+            name_layout: 'bpy.types.UILayout',
+            controls: 'bpy.types.UILayout',
+            *,
+            status_info=None,
+            show_icon=True,
+    ):
+        name_layout.label(text=self.name_translate, translate=False)
 
-        if len(self.element):
-            layout.prop(self,
-                        'show_child',
-                        text='',
-                        icon=icon_two(self.show_child, 'TRI'),
-                        emboss=False)
+        if status_info is None:
+            status_info = self.list_status_info
+        status_row = controls.row(align=True)
+        status_row.ui_units_x = 2.75
+        if not status_info.is_valid:
+            status_row.alert = status_info.status.is_error
+            status_icon = {
+                'POLL_BLOCKED': 'LOCKED',
+                'READ_ONLY_PROPERTY': 'LOCKED',
+                'DISABLED': 'HIDE_OFF',
+            }.get(status_info.status.name, 'ERROR')
+            status_row.label(text=status_info.badge, icon=status_icon)
         else:
-            layout.prop(self, 'radio', text='', icon='NONE', emboss=False)
-        self.draw_icon(layout)
+            status_row.label(text='')
+
+        child_row = controls.row(align=True)
+        child_row.ui_units_x = 1.0
+        if len(self.element):
+            child_row.prop(
+                self,
+                'show_child',
+                text='',
+                icon=icon_two(self.show_child, 'TRI'),
+                emboss=False,
+            )
+        else:
+            child_row.label(text='', icon='BLANK1')
+
+        if show_icon:
+            icon_row = controls.row(align=True)
+            icon_row.ui_units_x = 1.0
+            self.draw_icon(icon_row, reserve_space=True)
+
+        select_row = controls.row(align=True)
+        select_row.ui_units_x = 1.0
+        select_row.prop(
+            self,
+            'radio',
+            text='',
+            icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+            emboss=False,
+        )
 
     def draw_item_child(self, layout, active_element=None):
         if self.show_child and len(self.element):
@@ -305,6 +369,8 @@ class ElementDraw:
     def draw_alert(self, layout):
         """Draw warning info when the element has errors."""
         from .element_relationship import get_available_selected_structure
+        from .element_status import ElementStatus, get_element_status_info
+
         alert_list = []
         if self.is_selected_structure:
             if not self.__poll_bool_is_validity__:
@@ -322,30 +388,50 @@ class ElementDraw:
                     alert_list.append("Could not determine why this structure item is invalid.")
                     alert_list.append("Check that the previous structure item is enabled.")
         elif self.is_operator:
-            if self.operator_type == "OPERATOR":
-                if not self.__operator_id_name_is_validity__:
-                    alert_list.append('Operator Error')
-                    alert_list.append(f'{pgettext_iface("Operator not found")}: {self.operator_bl_idname}')
-                if not self.__operator_properties_is_validity__:
-                    alert_list.append(f'{pgettext_iface("Operator property error")}: {self.operator_properties}')
+            status_info = get_element_status_info(self, include_poll=True)
+            if status_info.status is ElementStatus.INVALID_OPERATOR:
+                alert_list.extend((
+                    'Operator unavailable',
+                    status_info.message or f'Operator not found: {self.operator_bl_idname}',
+                ))
+            elif status_info.status is ElementStatus.INVALID_ARGUMENTS:
+                alert_list.extend((
+                    'Invalid operator arguments',
+                    status_info.message or 'The configured values do not match the operator RNA.',
+                ))
+            elif status_info.status is ElementStatus.POLL_BLOCKED:
+                alert_list.extend((
+                    'Unavailable in this context',
+                    f'{self.operator_bl_idname}: {status_info.message}',
+                ))
         elif self.is_property_display:
-            if not self.__property_path_is_validity__:
-                alert_list.append(f'{pgettext_iface("Property path not found")}: {self.property_data_path}')
+            status_info = get_element_status_info(self, include_poll=True)
+            if status_info.status is ElementStatus.INVALID_PROPERTY:
+                alert_list.extend((
+                    'Invalid property path',
+                    status_info.message or f'Property path not found: {self.property_data_path}',
+                ))
+            elif status_info.status is ElementStatus.READ_ONLY_PROPERTY:
+                alert_list.extend((
+                    'Property is read-only',
+                    status_info.message or self.property_data_path,
+                ))
         if alert_list:
             col = layout.box().column(align=True)
-            col.alert = True
-            col.label(text='Warning', icon='ERROR')
+            status = get_element_status_info(self, include_poll=True).status
+            col.alert = status.is_error
+            col.label(text='Warning', icon='ERROR' if status.is_error else 'INFO')
             for alert in alert_list:
                 col.label(text=alert)
 
-    def draw_icon(self, layout):
+    def draw_icon(self, layout, *, reserve_space=False):
         from ..utils.icons import icon_layout_kwargs
         if not self.draw_property.element_show_icon:
             return
-        if self.is_draw_context_toggle_operator_bool:
-            return
-        if self.is_draw_icon:
+        if not self.is_draw_context_toggle_operator_bool and self.is_draw_icon:
             layout.label(text='', **icon_layout_kwargs(self.icon))
+        elif reserve_space:
+            layout.label(text='', icon='BLANK1')
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
@@ -363,8 +449,11 @@ class ElementDraw:
             row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
 
     def draw_operator(self, layout):
+        from .element_status import ElementStatus, get_element_status_info
+
         is_operator = self.operator_type == 'OPERATOR'
         is_modal = self.operator_type == "MODAL"
+        status_info = get_element_status_info(self, include_poll=False)
 
         row = layout.row(align=True)
         col = row.column(align=True)
@@ -374,10 +463,10 @@ class ElementDraw:
 
         if is_operator or is_modal:
             c = col.column(align=True)
-            c.alert = not self.__operator_id_name_is_validity__
+            c.alert = status_info.status is ElementStatus.INVALID_OPERATOR
             c.prop(self, 'operator_bl_idname')
             b = col.column(align=True)
-            b.alert = not self.__operator_properties_is_validity__
+            b.alert = status_info.status is ElementStatus.INVALID_ARGUMENTS
             b.prop(self, 'operator_properties')
 
         # Extension / layout panel children share the parent's slot — no direction.
