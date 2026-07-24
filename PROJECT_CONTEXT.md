@@ -46,6 +46,9 @@ root; `__init__.py` retains `bl_info` for legacy loading.
 - Conditional `IF` / `ELIF` / `ELSE` elements must be consecutive.
 - Dynamic RNA property paths must prove the live owner and remain stable; fail
   closed when collection identity cannot be preserved.
+- `preferences/draw_property.py` uses the Chinese default `小萌新` as an
+  exported preset author signature, not as default UI copy. Preserve it during
+  language QA; manifest maintainers and ordinary source UI remain English.
 - Background Blender runs must isolate all `BLENDER_USER_*` directories and
   never terminate an unowned Blender process.
 
