@@ -14,12 +14,51 @@ from .gesture_session import (
     threshold_zone_from_distance,
 )
 
+_VISUAL_TRAIL_MIN_DISTANCE_PX = 2.0
+_VISUAL_TRAIL_MAX_POINTS = 256
+
 
 
 def _mouse_moved_enough(current: Vector, previous: Vector | None, *, min_dist: float = 1.0) -> bool:
     if previous is None:
         return True
     return (current - previous).length >= min_dist
+
+
+def append_visual_trail_point(session: GestureSession, point: Vector) -> bool:
+    """Append a sampled visual trail point without changing gesture semantics.
+
+    The mouse trail is only rendered before the radial UI appears; retaining
+    every high-frequency mouse sample makes stroke mesh construction grow
+    without bound during a long hold. Keep the semantic trajectory untouched,
+    sample the visual trail by distance, and periodically decimate its middle
+    while preserving the anchor and newest point.
+    """
+    points = session.trajectory_mouse_move
+    times = session.trajectory_mouse_move_time
+    if points:
+        try:
+            if (point - points[-1]).length < _VISUAL_TRAIL_MIN_DISTANCE_PX:
+                return False
+        except (AttributeError, TypeError):
+            if point == points[-1]:
+                return False
+
+    try:
+        stored_point = point.copy()
+    except AttributeError:
+        stored_point = point
+    points.append(stored_point)
+    times.append(time.time())
+
+    if len(points) > _VISUAL_TRAIL_MAX_POINTS:
+        first_point, last_point = points[0], points[-1]
+        first_time, last_time = times[0], times[-1]
+        middle_points = points[1:-1:2]
+        middle_times = times[1:-1:2]
+        points[:] = [first_point, *middle_points, last_point]
+        times[:] = [first_time, *middle_times, last_time]
+    return True
 
 
 def compute_angle(last_window: Vector | None, mouse: Vector) -> float | None:
@@ -61,12 +100,60 @@ def compute_direction_from_angle(
     return d
 
 
+def _stable_rna_identity(value) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return id(value)
+
+
 def direction_items_context_id(session: GestureSession, operator_gesture) -> int | None:
     tree = session.trajectory_tree
     last_element = tree.last_element if len(tree) else None
     if last_element is not None:
-        return id(last_element)
-    return id(operator_gesture) if operator_gesture is not None else None
+        return _stable_rna_identity(last_element)
+    return _stable_rna_identity(operator_gesture)
+
+
+def refresh_poll_context_fingerprint(session: GestureSession):
+    """Capture the context inputs used by poll expressions for this snapshot.
+
+    Direction/extension walks and element status checks used to key their
+    memo by ``event_count``. Cursor motion then invalidated the same poll
+    result dozens of times per second even though the Blender context had not
+    changed. The fingerprint is refreshed once per input event/snapshot and
+    shared by all render-time consumers.
+    """
+    current = getattr(session, '_poll_context_fingerprint', None)
+    serial = getattr(session, '_input_event_serial', 0)
+    event_type = getattr(getattr(session, 'event', None), 'type', None)
+    if current is not None:
+        # A blocking gesture cannot change Blender selection/mode/tool through
+        # ordinary cursor motion. Reuse the invoke/non-mouse snapshot so the
+        # active-tool lookup does not run on every MOUSEMOVE.
+        if event_type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+            return current
+        if getattr(session, '_poll_context_serial', -1) == serial:
+            return current
+
+    from ..utils.gesture_items import poll_context_fingerprint
+
+    try:
+        value = poll_context_fingerprint()
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        value = ()
+    session._poll_context_fingerprint = value
+    session._poll_context_serial = serial
+    return value
+
+
+def _poll_context_key(session: GestureSession):
+    value = getattr(session, "_poll_context_fingerprint", None)
+    if value is None:
+        value = refresh_poll_context_fingerprint(session)
+    return value, getattr(session, "_poll_context_revision", 0)
 
 
 def raw_direction_items_dict(session: GestureSession, operator_gesture) -> dict:
@@ -80,12 +167,12 @@ def raw_direction_items_dict(session: GestureSession, operator_gesture) -> dict:
 
 
 def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gpu: bool) -> dict:
-    """Direction items memoized per input event.
+    """Direction items memoized per content/context state.
 
     Poll expressions read live context, so results must not outlive one modal
-    event; ``event_count`` bumps on every event, and the context id changes when
-    the trajectory enters/leaves a child level. Within one event the condition
-    tree is walked at most once.
+    context; the trajectory context id changes when entering/leaving a child
+    level and the poll fingerprint changes when Blender context changes.
+    Within one content/context state the condition tree is walked at most once.
 
     Values are mapped through the session proxy pool: the walk yields fresh
     PropertyGroup proxies every time, but GPU draw stamps hit boxes as Python
@@ -97,7 +184,7 @@ def get_direction_items(session: GestureSession, operator_gesture, *, is_draw_gp
     key = (
         direction_items_context_id(session, operator_gesture),
         PublicCache.__derived_generation__,
-        session.event_count,
+        _poll_context_key(session),
     )
     memo = session._direction_items_memo
     if memo is not None and memo[0] == key:
@@ -132,15 +219,17 @@ def tag_redraw_gesture_screen(session: GestureSession):
     mouse move — that is a major lag source when the sidebar is open, and can
     disturb modal mouse_region association used by extension hover.
     """
+    from ..utils.region_mouse import find_window_region
+
     area = session.area
     if area is not None:
         try:
-            from ..utils.region_mouse import find_window_region
             region = find_window_region(area)
             if region is not None:
                 region.tag_redraw()
-                return
-            area.tag_redraw()
+            # Never fall back to ``area.tag_redraw()`` here.  That marks the
+            # sidebar UI region too, rebuilding the frozen Gesture panels on
+            # every mouse move when Blender cannot expose a WINDOW region.
             return
         except ReferenceError:
             ...
@@ -148,12 +237,15 @@ def tag_redraw_gesture_screen(session: GestureSession):
     if screen is not None:
         try:
             for a in screen.areas:
-                a.tag_redraw()
+                region = find_window_region(a)
+                if region is not None:
+                    region.tag_redraw()
             return
         except ReferenceError:
             ...
-    from ..utils.public import tag_redraw
-    tag_redraw()
+    # A missing WINDOW region is unusual during normal modal dispatch.  It is
+    # safer to skip this redraw than to invalidate every area and wake the
+    # disabled panel layout while the gesture is still consuming events.
 
 
 def ensure_trajectory_seed(session: GestureSession):
@@ -421,6 +513,42 @@ def update_extension_hover(session: GestureSession, ops):
     refresh_draw_ctx_extension_flag(session, ops)
 
 
+def get_runtime_hovered_element(session: GestureSession, ops):
+    """Return the visible runtime item targeted for annotation or clicking."""
+    for container in reversed(tuple(session.extension_hover)):
+        container.ops = ops
+        if container.is_layout_container:
+            items = container.panel_leaf_items
+        else:
+            items = getattr(container, 'extension_items', []) or []
+        for item in items:
+            item.ops = ops
+            if item.extension_by_child_is_hover:
+                return item
+
+    if session.extension_hover:
+        from ..element.extension_hit import stack_blocks_radial
+        if stack_blocks_radial(session.extension_hover, ops):
+            return None
+
+    snap = session.snapshot
+    element = snap.direction_element
+    if element is not None and snap.threshold_zone.is_beyond:
+        element.ops = ops
+        return element
+    return None
+
+
+def get_runtime_action_element(session: GestureSession, ops):
+    """Resolve a selected layout container to the leaf it actually executes."""
+    element = get_runtime_hovered_element(session, ops)
+    if element is not None and element.is_layout_container:
+        element = element.main_element
+    if element is not None:
+        element.ops = ops
+    return element
+
+
 def check_return_previous(session: GestureSession, return_distance: float, operator_gesture, ops=None):
     mouse = session.snapshot.mouse_window
     point, index, distance = session.trajectory_tree.find_nearest(mouse)
@@ -455,6 +583,7 @@ def refresh_snapshot(session: GestureSession, ops) -> InputSnapshot:
 
     pref = ops.pref
     gp = pref.gesture_property
+    refresh_poll_context_fingerprint(session)
     from .draw_frame_context import refresh_draw_frame_context
     draw_ctx = refresh_draw_frame_context(session, ops)
 
@@ -583,6 +712,36 @@ class GestureInputProcessor:
         return None
 
     @staticmethod
+    def _handle_repair_click(session: GestureSession, ops, event) -> bool:
+        """Turn an explicit click on a broken item into an editor handoff."""
+        if (
+                session.property_drag is not None
+                or event.type != 'LEFTMOUSE'
+                or event.value != 'PRESS'
+        ):
+            return False
+        element = get_runtime_action_element(session, ops)
+        if element is None:
+            return False
+        from ..element.extension_hit import _mouse_for, point_in_rect
+        mouse = _mouse_for(element, ops)
+        if not (
+                point_in_rect(mouse, getattr(element, 'item_draw_area', None))
+                or point_in_rect(
+                    mouse,
+                    getattr(element, 'extension_by_child_draw_area', None),
+                )
+        ):
+            return False
+        from ..element.element_status import get_element_status_info
+        info = get_element_status_info(element, ops=ops)
+        if not info.status.is_error:
+            return False
+        session.repair_element = element
+        session._event_consumed = True
+        return True
+
+    @staticmethod
     def _is_radial_numeric_confirm(session: GestureSession, item) -> bool:
         """True when *item* is the radial INT/FLOAT direction in the confirm zone."""
         if session.extension_hover:
@@ -595,6 +754,56 @@ class GestureInputProcessor:
             and item.display_property_is_editable
         )
 
+    def _handle_property_wheel(self, session: GestureSession, ops, event) -> bool | None:
+        """Adjust a hovered scalar property by one mouse-wheel notch."""
+        if event.value != 'PRESS' or event.type not in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return None
+        item = self._hovered_property_row(session, ops)
+        if item is None or item.display_property_type not in {'INT', 'FLOAT'}:
+            return None
+        if not item.display_property_is_editable:
+            return None
+
+        session._event_consumed = True
+        # The release of the gesture key must not launch a second numeric drag
+        # after this wheel interaction has already changed the value.
+        session._suppress_property_execute = True
+        direction = 1 if event.type == 'WHEELUPMOUSE' else -1
+        changed = item.apply_property_wheel(
+            direction,
+            precise=getattr(event, 'shift', False),
+        )
+        if changed:
+            session._poll_context_revision = (
+                getattr(session, '_poll_context_revision', 0) + 1
+            )
+            # Conditions may depend on the value being adjusted.
+            refresh_snapshot(session, ops)
+        return changed
+
+    def cancel_property_drag(
+            self,
+            session: GestureSession,
+            ops=None,
+            *,
+            refresh: bool = False,
+    ) -> bool:
+        """Restore and clear an active property scrub exactly once."""
+        drag = session.property_drag
+        if drag is None:
+            return False
+        element, _start_mouse, start_value = drag
+        session.property_drag = None
+        session._property_drag_moved = False
+        changed = element.set_display_property_value(start_value)
+        if changed:
+            session._poll_context_revision = (
+                getattr(session, '_poll_context_revision', 0) + 1
+            )
+            if refresh and ops is not None:
+                refresh_snapshot(session, ops)
+        return changed
+
     def _handle_property_drag(self, session: GestureSession, ops, event) -> bool | None:
         """LMB / radial confirm drag on INT/FLOAT; click toggle for bool/enum.
 
@@ -604,59 +813,88 @@ class GestureInputProcessor:
         if drag is not None:
             element, start_mouse, start_value = drag
             if event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+                session._event_consumed = True
                 mouse = Vector((event.mouse_x, event.mouse_y))
                 delta = element.property_drag_delta(start_mouse, mouse)
-                element.apply_property_drag(start_value, delta, precise=event.shift)
+                changed = element.apply_property_drag(
+                    start_value, delta, precise=event.shift,
+                )
+                if changed:
+                    session._poll_context_revision = (
+                        getattr(session, '_poll_context_revision', 0) + 1
+                    )
+                    # A poll expression may read the value being scrubbed.
+                    # Refresh the snapshot only after a real RNA change so
+                    # those conditions cannot remain stale during the drag.
+                    refresh_snapshot(session, ops)
                 # Remember that the value was actually scrubbed so release can
                 # skip launching the post-gesture modal mouse operator.
                 if abs(delta) >= 2.0:
                     session._property_drag_moved = True
-                return True
-            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
-                session.property_drag = None
-                if getattr(session, '_property_drag_moved', False):
-                    session._suppress_property_execute = True
-                session._property_drag_moved = False
-                return True
-            if event.value == 'PRESS' and event.type in {'RIGHTMOUSE', 'ESC'}:
-                element.set_display_property_value(start_value)
-                session.property_drag = None
-                session._property_drag_moved = False
-                return True
+                # The event remains consumed even when integer rounding leaves
+                # the value unchanged; only a real value change redraws.
+                return changed
             if event.value == 'RELEASE' and event.type == session.invoke_event_type:
-                # Gesture key released mid-drag: keep the dragged value and let
-                # the normal exit flow run (swallowing it would leave a zombie
-                # modal with no exit trigger left). The executor must not fire
-                # the row again on this release.
+                # The invoke key may itself be LMB.  Handle its release before
+                # the generic LMB drag release so the modal exit path still
+                # receives the event instead of leaving a zombie gesture.
+                # Keep the dragged value and suppress a second property execute.
                 session.property_drag = None
                 if getattr(session, '_property_drag_moved', False):
                     session._suppress_property_execute = True
                 session._property_drag_moved = False
                 return None
+            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+                session._event_consumed = True
+                session.property_drag = None
+                if getattr(session, '_property_drag_moved', False):
+                    session._suppress_property_execute = True
+                session._property_drag_moved = False
+                return False
+            if event.value == 'PRESS' and event.type in {'RIGHTMOUSE', 'ESC'}:
+                session._event_consumed = True
+                return self.cancel_property_drag(
+                    session,
+                    ops,
+                    refresh=True,
+                )
             # Swallow everything else while dragging (keys must not leak).
-            return True
+            session._event_consumed = True
+            return False
+
+        wheel_result = self._handle_property_wheel(session, ops, event)
+        if wheel_result is not None:
+            return wheel_result
 
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             item = self._hovered_property_row(session, ops)
             if item is None:
                 return None
             if not item.display_property_is_editable:
-                return True
+                session._event_consumed = True
+                return False
             prop_type = item.display_property_type
             if prop_type in {'INT', 'FLOAT'}:
                 start_value = item.display_property_value
                 if start_value is None:
                     return None
+                session._event_consumed = True
                 session.property_drag = (
                     item,
                     Vector((event.mouse_x, event.mouse_y)),
                     start_value,
                 )
                 session._property_drag_moved = False
-                return True
+                return False
             if prop_type in {'BOOLEAN', 'ENUM'}:
-                item.toggle_display_property()
-                return True
+                session._event_consumed = True
+                changed = item.toggle_display_property()
+                if changed:
+                    session._poll_context_revision = (
+                        getattr(session, '_poll_context_revision', 0) + 1
+                    )
+                    refresh_snapshot(session, ops)
+                return changed
 
         return None
 
@@ -678,6 +916,9 @@ class GestureInputProcessor:
             start_value,
         )
         session._property_drag_moved = False
+        # The event that arms a radial scrub is consumed as well; otherwise
+        # the modal wrapper could immediately execute the same property.
+        session._event_consumed = True
 
     def _handle_child_navigation(
             self, session: GestureSession, ops, snap, mouse, in_extension_ui: bool,
@@ -707,6 +948,15 @@ class GestureInputProcessor:
     def on_event(self, session: GestureSession, ops, event) -> bool:
         """Update session from *event*. Returns whether a redraw is needed."""
         session.event = event
+        session._input_event_serial = getattr(session, '_input_event_serial', 0) + 1
+        session._event_consumed = False
+        # Poll context can change without a meaningful mouse move (for
+        # example, an object/mode switch while a gesture is held). Capture it
+        # before the sub-pixel fast path so the next draw invalidates only the
+        # affected content caches.
+        refresh_poll_context_fingerprint(session)
+        if self._handle_repair_click(session, ops, event):
+            return True
         drag_result = self._handle_property_drag(session, ops, event)
         if drag_result is not None:
             return drag_result
@@ -767,9 +1017,7 @@ class GestureInputProcessor:
         if session.event_count > 2:
             snap = session.snapshot
             if session.phase.records_mouse_trail:
-                if not len(session.trajectory_mouse_move) or session.trajectory_mouse_move[-1] != emp:
-                    session.trajectory_mouse_move.append(emp)
-                    session.trajectory_mouse_move_time.append(time.time())
+                append_visual_trail_point(session, emp)
 
             if not len(session.trajectory_tree):
                 session.trajectory_tree.append(None, emp)

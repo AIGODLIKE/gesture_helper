@@ -5,10 +5,44 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import Enum
 import math
+import time
 
 from ..utils.expression import literal_to_dict
 from ..utils.gesture_items import poll_context_fingerprint
 from ..utils.public_cache import PublicCache
+
+
+_UI_STATUS_CONTEXT_TTL = 0.12
+_UI_STATUS_CONTEXT_CACHE = None
+_UI_STATUS_GENERATION = None
+_UI_STATUS_VALUES: dict[tuple[object, bool], tuple[tuple, ElementStatus]] = {}
+_UI_STATUS_INFO_VALUES: dict[
+    tuple[object, bool], tuple[tuple, ElementStatusInfo]
+] = {}
+
+
+def _ui_status_context_key(include_poll: bool) -> tuple:
+    """Return a short-lived UI context key shared by every list row."""
+    global _UI_STATUS_CONTEXT_CACHE, _UI_STATUS_GENERATION
+    generation = PublicCache.__derived_generation__
+    if _UI_STATUS_GENERATION != generation:
+        _UI_STATUS_GENERATION = generation
+        _UI_STATUS_CONTEXT_CACHE = None
+        _UI_STATUS_VALUES.clear()
+        _UI_STATUS_INFO_VALUES.clear()
+    if not include_poll:
+        return generation, None
+    now = time.monotonic()
+    cached = _UI_STATUS_CONTEXT_CACHE
+    if cached is None or now >= cached[0]:
+        try:
+            fingerprint = poll_context_fingerprint()
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            fingerprint = ()
+        _UI_STATUS_CONTEXT_CACHE = (now + _UI_STATUS_CONTEXT_TTL, fingerprint)
+    else:
+        fingerprint = cached[1]
+    return generation, fingerprint
 
 
 class ElementStatus(str, Enum):
@@ -78,8 +112,20 @@ _STATUS_INFO = {
 }
 
 
+def _translate_status_message(message: str) -> str:
+    if not message:
+        return message
+    try:
+        from bpy.app.translations import pgettext_iface
+        return pgettext_iface(message)
+    except (AttributeError, ImportError):
+        return message
+
+
 def status_info(status: ElementStatus) -> ElementStatusInfo:
-    return _STATUS_INFO[status]
+    info = _STATUS_INFO[status]
+    message = _translate_status_message(info.message)
+    return info if message == info.message else replace(info, message=message)
 
 
 def _value_type_name(value) -> str:
@@ -261,23 +307,41 @@ def _evaluate_status(element, *, include_poll: bool) -> ElementStatus:
 
 
 def get_element_status(element, *, ops=None, include_poll: bool = True) -> ElementStatus:
-    """Return a status cached once per modal event and context fingerprint."""
+    """Return a status cached until derived data or poll context changes."""
     if ops is None:
         ops = getattr(element, "ops", None)
     session = getattr(ops, "session", None)
     if session is None:
-        return _evaluate_status(element, include_poll=include_poll)
+        # Normal panel draws also repeat for viewport/animation notifiers. Keep
+        # one result per element and poll-context fingerprint, invalidating on
+        # derived content changes. The short fingerprint TTL coalesces rows and
+        # avoids a full active-tool/selection lookup for every row.
+        context_key = _ui_status_context_key(include_poll)
+        cache_key = (element, include_poll)
+        packed = _UI_STATUS_VALUES.get(cache_key)
+        if packed is not None and packed[0] == context_key:
+            return packed[1]
+        result = _evaluate_status(element, include_poll=include_poll)
+        _UI_STATUS_VALUES[cache_key] = (context_key, result)
+        return result
 
-    event_key = (
-        PublicCache.__derived_generation__,
-        getattr(session, "event_count", 0),
-    )
-    context_packed = getattr(session, "_element_status_context", None)
-    if include_poll and (context_packed is None or context_packed[0] != event_key):
-        context_packed = (event_key, poll_context_fingerprint())
-        session._element_status_context = context_packed
-    context_key = context_packed[1] if include_poll else None
-    key = (*event_key, context_key)
+    # Status checks are one of the hottest paths in GPU layout measurement:
+    # every row asks for its badge, icon and color.  The poll result is
+    # context-sensitive, but cursor motion alone does not change it. Reuse the
+    # session fingerprint captured by gesture_input and invalidate only when
+    # structure/derived data or poll context changes.
+    if include_poll:
+        context_key = getattr(session, "_poll_context_fingerprint", None)
+        if context_key is None:
+            context_key = poll_context_fingerprint()
+            session._poll_context_fingerprint = context_key
+        context_key = (
+            context_key,
+            getattr(session, '_poll_context_revision', 0),
+        )
+    else:
+        context_key = None
+    key = (PublicCache.__derived_generation__, context_key)
     packed = getattr(session, "_element_status_cache", None)
     if packed is None or packed[0] != key:
         values = {}
@@ -294,6 +358,14 @@ def get_element_status(element, *, ops=None, include_poll: bool = True) -> Eleme
 
 
 def get_element_status_info(element, *, ops=None, include_poll: bool = True) -> ElementStatusInfo:
+    ui_context_key = None
+    if ops is None and getattr(element, "ops", None) is None:
+        ui_context_key = _ui_status_context_key(include_poll)
+        cache_key = (element, include_poll)
+        packed = _UI_STATUS_INFO_VALUES.get(cache_key)
+        if packed is not None and packed[0] == ui_context_key:
+            return packed[1]
+
     info = status_info(get_element_status(element, ops=ops, include_poll=include_poll))
     if info.status is ElementStatus.INVALID_ARGUMENTS:
         message = get_operator_argument_error(element)
@@ -302,9 +374,32 @@ def get_element_status_info(element, *, ops=None, include_poll: bool = True) -> 
     if info.status is ElementStatus.INVALID_OPERATOR:
         bl_idname = getattr(element, "operator_bl_idname", "")
         if bl_idname:
-            return replace(info, message=f"Operator not found: {bl_idname}")
+            template = _translate_status_message("Operator not found: %s")
+            return replace(info, message=template % bl_idname)
     if info.status is ElementStatus.INVALID_PROPERTY:
         data_path = getattr(element, "property_data_path", "")
         if data_path:
-            return replace(info, message=f"Property path not found: {data_path}")
+            template = _translate_status_message("Property path not found: %s")
+            info = replace(info, message=template % data_path)
+    if ui_context_key is not None:
+        _UI_STATUS_INFO_VALUES[(element, include_poll)] = (ui_context_key, info)
+    return info
+
+
+def get_cached_ui_status_info(
+        element,
+        *,
+        include_poll: bool = True,
+) -> ElementStatusInfo | None:
+    """Return the last visible panel status without evaluating live context."""
+    packed = _UI_STATUS_INFO_VALUES.get((element, include_poll))
+    if packed is None:
+        return None
+    context_key, info = packed
+    try:
+        generation = context_key[0]
+    except (IndexError, TypeError):
+        return None
+    if generation != PublicCache.__derived_generation__:
+        return None
     return info

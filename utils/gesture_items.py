@@ -12,6 +12,16 @@ from __future__ import annotations
 import bpy
 
 
+def _rna_identity(value) -> int:
+    """Stable identity for a Blender RNA value across Python proxy wrappers."""
+    if value is None:
+        return 0
+    try:
+        return int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return id(value)
+
+
 def poll_context_fingerprint() -> tuple:
     """Lightweight fingerprint of context values poll expressions commonly read."""
     context = bpy.context
@@ -30,12 +40,16 @@ def poll_context_fingerprint() -> tuple:
     except (AttributeError, RuntimeError, TypeError, ImportError):
         active_tool = None
     selected = getattr(context, 'selected_objects', None) or ()
+    try:
+        selected_ids = tuple(sorted(_rna_identity(item) for item in selected))
+    except (ReferenceError, RuntimeError, TypeError):
+        selected_ids = ()
     return (
         mode,
-        id(obj) if obj is not None else 0,
+        _rna_identity(obj),
         mesh_select_mode,
         active_tool,
-        len(selected),
+        selected_ids,
     )
 
 

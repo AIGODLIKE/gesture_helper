@@ -5,13 +5,12 @@ from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, 
 
 from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
 from ...utils.property_data import (
-    CREATE_ELEMENT_DATA_PATHS,
     CREATE_ELEMENT_BRUSH_PATH,
+    can_use_clipboard_context_fallback,
     convert_data_path_to_context,
     normalize_context_data_path,
     resolve_context_data_path,
-    resolve_id_data_context_path,
-    resolve_view_layer_data_path,
+    validate_context_data_path,
 )
 from ...utils.public import get_pref, PublicOperator, debug_print
 from ...utils.pref_access import PrefAccess
@@ -144,7 +143,7 @@ class OpsProperty(Enum):
     @property
     def __data_path__(self) -> str:
         """bpy.context.space_data.show_gizmo -> space_data.show_gizmo"""
-        return self.data_path.replace("bpy.context.", "")
+        return self.data_path.removeprefix("bpy.context.")
 
     @classmethod
     def clear_info(cls):
@@ -598,56 +597,57 @@ class CreateElementProperty(Create):
 
     def copy_data_path(self) -> None:
         """Resolve bpy.context-style RNA path for wm.context_* operators."""
+        self.data_path = ""
         pointer = self.button_pointer
-        prop_identifier = self.button_prop.identifier
-        pointer_name = pointer.__class__.__name__
-        id_data_type = type(pointer.id_data)
+        prop = self.button_prop
+        if pointer is None or prop is None:
+            return
 
-        if id_data_type is bpy.types.Mesh:
-            self.data_path = f"bpy.context.object.data.{prop_identifier}"
-            return
-        if id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":
-            self.data_path = f"bpy.context.space_data.text.{prop_identifier}"
-            return
-        if pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":
-            self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
-            return
-        view_layer_path = resolve_view_layer_data_path(pointer, prop_identifier)
-        if view_layer_path:
-            self.data_path = view_layer_path
-            return
-        id_data_path = resolve_id_data_context_path(pointer, prop_identifier)
-        if id_data_path:
-            self.data_path = id_data_path
-            return
-        if pointer_name in CREATE_ELEMENT_DATA_PATHS:
-            self.data_path = f"{CREATE_ELEMENT_DATA_PATHS[pointer_name]}.{prop_identifier}"
-            return
-        if pointer_name == 'Brush' and bpy.context.object:
+        prop_identifier = prop.identifier
+        pointer_name = pointer.__class__.__name__
+
+        if pointer_name == 'Brush':
             mode = UnifiedPaintPanel.get_brush_mode(bpy.context)
             if mode in CREATE_ELEMENT_BRUSH_PATH:
-                self.data_path = f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.{prop_identifier}"
-                return
+                candidate = (
+                    f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.brush.{prop_identifier}"
+                )
+                if validate_context_data_path(
+                        pointer, prop_identifier, candidate):
+                    self.data_path = candidate
+                    return
 
         resolved = resolve_context_data_path(pointer, prop_identifier)
         if resolved:
             self.data_path = resolved
             return
 
+        if not can_use_clipboard_context_fallback(pointer):
+            return
+
         cp = bpy.ops.ui.copy_data_path_button
         if cp.poll():
-            cp(full_path=True)
-            clipboard = bpy.context.window_manager.clipboard
-            converted = convert_data_path_to_context(clipboard, pointer)
-            if converted:
-                debug_print("use clipboard", converted, key='operator')
-                self.data_path = converted
-                return
-            normalized = normalize_context_data_path(clipboard)
-            if normalized:
-                debug_print("use clipboard", normalized, key='operator')
-                self.data_path = normalized
-                return
+            window_manager = bpy.context.window_manager
+            previous_clipboard = window_manager.clipboard
+            try:
+                result = cp(full_path=True)
+                if 'FINISHED' not in result:
+                    return
+                clipboard = window_manager.clipboard
+                candidates = (
+                    convert_data_path_to_context(clipboard, pointer),
+                    normalize_context_data_path(clipboard),
+                )
+                for candidate in candidates:
+                    if candidate and validate_context_data_path(
+                            pointer, prop_identifier, candidate):
+                        debug_print(
+                            "use clipboard", candidate, key='operator',
+                        )
+                        self.data_path = candidate
+                        return
+            finally:
+                window_manager.clipboard = previous_clipboard
 
     def init_string(self):
         prop = self.button_prop

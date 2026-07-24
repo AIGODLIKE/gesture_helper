@@ -86,6 +86,7 @@ classes_list = (
     ElementModalOperatorEventCRUE.SelectControlProperty,
 
     Element,
+    ElementCURE.FrozenADD,
     ElementCURE.ADD,
     ElementCURE.AddLayoutPreset,
     ElementCURE.SwitchLayoutType,

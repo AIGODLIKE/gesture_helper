@@ -17,6 +17,8 @@ No font ships with the add-on; metrics always follow the user's UI font.
 
 from __future__ import annotations
 
+from functools import cache
+
 import blf
 
 # Latin references: tall glyphs sit exactly on the baseline, so the two
@@ -34,6 +36,7 @@ _metrics: dict[tuple[int, float], tuple[float, float, float]] = {}
 def clear_text_metrics() -> None:
     """Drop cached metrics (the UI font can change with user preferences)."""
     _metrics.clear()
+    _wrap_text_cached.cache_clear()
 
 
 def line_metrics(size: float, font_id: int = 0) -> tuple[float, float, float]:
@@ -70,6 +73,78 @@ def measure_text(text, size: float, font_id: int = 0) -> tuple[float, float]:
     blf.size(font_id, size)
     width = blf.dimensions(font_id, str(text))[0]
     return width, line_metrics(size, font_id)[2]
+
+
+def wrap_text(
+        text,
+        max_width: float,
+        size: float,
+        *,
+        max_lines: int = 2,
+        font_id: int = 0,
+) -> list[str]:
+    """Fit text into a stable number of measured lines, including CJK text."""
+    remaining = " ".join(str(text).split())
+    if not remaining or max_lines <= 0 or max_width <= 0.0:
+        return []
+    return list(_wrap_text_cached(
+        remaining,
+        round(float(max_width), 2),
+        round(float(size), 2),
+        int(max_lines),
+        int(font_id),
+    ))
+
+
+@cache
+def _wrap_text_cached(
+        remaining: str,
+        max_width: float,
+        size: float,
+        max_lines: int,
+        font_id: int,
+) -> tuple[str, ...]:
+
+    def fitting_prefix(value: str, width: float) -> int:
+        low, high = 0, len(value)
+        while low < high:
+            middle = (low + high + 1) // 2
+            if measure_text(value[:middle], size, font_id)[0] <= width:
+                low = middle
+            else:
+                high = middle - 1
+        return low
+
+    lines = []
+    for line_index in range(max_lines):
+        if measure_text(remaining, size, font_id)[0] <= max_width:
+            lines.append(remaining)
+            break
+
+        is_last = line_index == max_lines - 1
+        suffix = "..." if is_last else ""
+        suffix_width = measure_text(suffix, size, font_id)[0] if suffix else 0.0
+        available = max(0.0, max_width - suffix_width)
+        count = fitting_prefix(remaining, available)
+        if count <= 0:
+            lines.append(suffix)
+            break
+
+        if not is_last:
+            # Prefer a nearby word boundary for spaced languages. CJK and long
+            # identifiers naturally fall back to the measured character split.
+            boundary = remaining.rfind(" ", 0, count + 1)
+            if boundary >= max(1, count // 2):
+                count = boundary
+        line = remaining[:count].rstrip()
+        if is_last:
+            lines.append(line + suffix)
+            break
+        lines.append(line)
+        remaining = remaining[count:].lstrip()
+        if not remaining:
+            break
+    return tuple(lines)
 
 
 def baseline_offset(box_height: float, size: float, font_id: int = 0) -> float:

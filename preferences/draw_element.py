@@ -5,6 +5,9 @@ from ..utils.public import get_pref, get_debug
 from ..utils.public_ui import icon_two
 
 
+_ACTIVE_ELEMENT_UNSET = object()
+
+
 def draw_label(lay: bpy.types.UILayout, label: str) -> bpy.types.UILayout:
     width = bpy.context.region.width
     if width < 400:
@@ -17,6 +20,29 @@ def draw_label(lay: bpy.types.UILayout, label: str) -> bpy.types.UILayout:
 
 
 class DrawElement:
+
+    @staticmethod
+    def _draw_add_operator(
+            layout: 'bpy.types.UILayout',
+            text: str,
+            *,
+            frozen: bool,
+            element_type: str,
+            selected_type: str | None = None,
+    ):
+        from ..element import ElementCURE
+
+        operator_id = (
+            ElementCURE.FrozenADD.bl_idname
+            if frozen
+            else ElementCURE.ADD.bl_idname
+        )
+        operator = layout.operator(operator_id, text=text)
+        if not frozen:
+            operator.element_type = element_type
+            if selected_type is not None:
+                operator.selected_type = selected_type
+        return operator
 
     @staticmethod
     def draw_element_cure(layout: bpy.types.UILayout) -> None:
@@ -51,9 +77,15 @@ class DrawElement:
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
     @staticmethod
-    def draw_property(layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
+    def draw_property(
+            layout: 'bpy.types.UILayout',
+            *,
+            include_modal: bool = True,
+            active_element=_ACTIVE_ELEMENT_UNSET,
+    ) -> None:
         pref = get_pref()
-        active_element = pref.active_element
+        if active_element is _ACTIVE_ELEMENT_UNSET:
+            active_element = pref.active_element
         prop = pref.draw_property
         show_on_preferences_left = (
             getattr(bpy.context.area, 'type', None) == 'PREFERENCES'
@@ -110,9 +142,13 @@ class DrawElement:
         row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel cut').cancel_cut = True
 
     @classmethod
-    def draw_element_add_property(cls, layout: 'bpy.types.UILayout') -> None:
+    def draw_element_add_property(
+            cls,
+            layout: 'bpy.types.UILayout',
+            *,
+            frozen: bool = False,
+    ) -> None:
         from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
-        from ..element import ElementCURE
         from ..ui.menu import (
             GESTURE_MT_add_element_menu,
             GESTURE_MT_layout_preset_menu,
@@ -123,7 +159,7 @@ class DrawElement:
 
         add_child = add.is_have_add_child
 
-        column = layout.box().column(align=False)
+        column = layout.box().column(align=True)
         column.label(text='Add element')
 
         relation = column.column(align=True)
@@ -132,32 +168,41 @@ class DrawElement:
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
         if add_child:
-            column.separator(type='LINE')
             structure = column.column(align=True)
             row = draw_label(structure, 'Selected Structure:')
             for i, n, d in ENUM_SELECTED_TYPE:
-                ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
-                ops.element_type = 'SELECTED_STRUCTURE'
-                ops.selected_type = i
-            column.separator(type='LINE')
+                cls._draw_add_operator(
+                    row,
+                    n,
+                    frozen=frozen,
+                    element_type='SELECTED_STRUCTURE',
+                    selected_type=i,
+                )
             items = column.column(align=True)
             row = draw_label(items, 'Add item:')
             for i, n, d in ENUM_ELEMENT_TYPE:
                 if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
                     continue
                 if i == "DIVIDING_LINE":
-                    cls.draw_element_add_div_property(row)
+                    cls.draw_element_add_div_property(row, frozen=frozen)
                 else:
-                    ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
-                    ops.element_type = i
+                    cls._draw_add_operator(
+                        row,
+                        n,
+                        frozen=frozen,
+                        element_type=i,
+                    )
 
-            column.separator(type='LINE')
             from ..utils.enum import ENUM_LAYOUT_TYPE
             layout_column = column.column(align=True)
             row = draw_label(layout_column, 'Layout:')
             for i, n, d in ENUM_LAYOUT_TYPE:
-                ops = row.operator(ElementCURE.ADD.bl_idname, text=n)
-                ops.element_type = i
+                cls._draw_add_operator(
+                    row,
+                    n,
+                    frozen=frozen,
+                    element_type=i,
+                )
             row.menu(
                 GESTURE_MT_layout_preset_menu.__name__,
                 icon='PRESET',
@@ -172,8 +217,12 @@ class DrawElement:
             column.label(text="Operators cannot have child elements")
 
     @classmethod
-    def draw_element_add_div_property(cls, layout: 'bpy.types.UILayout') -> None:
-        from ..element import ElementCURE
+    def draw_element_add_div_property(
+            cls,
+            layout: 'bpy.types.UILayout',
+            *,
+            frozen: bool = False,
+    ) -> None:
         pref = get_pref()
         add = pref.add_element_property
         relationship = add.relationship
@@ -207,5 +256,9 @@ class DrawElement:
             layout = layout.row(align=True)
             layout.enabled = False
 
-        ops = layout.operator(ElementCURE.ADD.bl_idname, text="Div")
-        ops.element_type = "DIVIDING_LINE"
+        cls._draw_add_operator(
+            layout,
+            "Div",
+            frozen=frozen,
+            element_type="DIVIDING_LINE",
+        )

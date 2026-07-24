@@ -16,7 +16,11 @@ from .quick_add.create_element_property import CreateElementProperty
 from .quick_add.create_panel_menu import CreatePanelMenu
 from .quick_add.create_switch_panel import CreateSwitchPanel
 from .quick_add.switch_panel_category import GestureSwitchPanelCategory
-from .quick_add.gesture_preview import GesturePreview
+from .quick_add.gesture_preview import (
+    GesturePreview,
+    GesturePreviewClose,
+    GesturePreviewFrozen,
+)
 
 operator_list = (
     select_icon.SelectIcon,
@@ -37,6 +41,8 @@ operator_list = (
     gesture.GestureOperator,
     menu.GestureMenuOperator,
     GesturePreview,
+    GesturePreviewClose,
+    GesturePreviewFrozen,
 
     CreateElementProperty,
     CreateElementOperator,

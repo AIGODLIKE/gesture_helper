@@ -65,6 +65,11 @@ def _arm_child_dwell(session, timeout_ms: float, ops) -> None:
 class PreviewGestureInputProcessor(GestureInputProcessor):
     """Track preview hover/navigation without changing or executing elements."""
 
+    @staticmethod
+    def _handle_repair_click(session, ops, event) -> bool:
+        # Preview is strictly read-only, including broken-item editor handoff.
+        return False
+
     def _handle_property_drag(self, session, ops, event):
         return None
 

@@ -25,7 +25,7 @@ DIVIDING_LINE = (0.18, 0.19, 0.21, 1.0)
 OUTLINE = (0.18, 0.19, 0.21, 0.92)
 OUTLINE_ACTIVE = (0.16, 0.42, 0.78, 0.95)
 
-# Element state accents. The row background remains neutral.
+# Element state colors. Errors also fill runtime item backgrounds.
 STATUS_DISABLED = (0.24, 0.25, 0.27, 1.0)
 STATUS_WARNING = (0.72, 0.30, 0.035, 1.0)
 STATUS_ERROR = (0.62, 0.055, 0.045, 1.0)

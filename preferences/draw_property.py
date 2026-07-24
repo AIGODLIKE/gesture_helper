@@ -59,12 +59,13 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
     force_show_panels_during_modal: BoolProperty(
-        name='Always update gesture panels',
-        # Override heavy-panel pause while another modal (e.g. view/nav) is live.
+        name='Update panels during other operators',
+        # Override the pause for generic operators only. Animation and the
+        # add-on's own gesture/value drags always stay on the safe frozen path.
         description=(
-            'Keep the Gesture item and element panels updating during gestures, '
-            'animation playback, and other modal operators. Enable only when '
-            'the panels remain paused; continuous updates may reduce performance'
+            'Keep the Gesture panels updating during other modal operators. '
+            'Animation playback and Gesture Helper drags still pause panel '
+            'updates to avoid frame drops and input-state interference'
         ),
         default=False,
         update=lambda self, context: DrawProperty._on_force_show_update(context),
@@ -102,9 +103,17 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=6, min=2, max=60,
     )
     margin: IntVectorProperty(
-        name='Margin',
+        name='Gesture item margin',
         description='Inner padding for GPU-drawn gesture buttons',
         default=(10, 6),
+        min=0,
+        max=120,
+        size=2,
+    )
+    layout_margin: IntVectorProperty(
+        name='Layout margin',
+        description='Padding around row, column, box, and extension layouts',
+        default=(5, 3),
         min=0,
         max=120,
         size=2,
@@ -199,7 +208,11 @@ class DrawProperty(bpy.types.PropertyGroup):
 
     @staticmethod
     def _on_force_show_update(context):
-        from ..utils.ui_draw_sync import tag_gesture_ui_regions
+        from ..utils.ui_draw_sync import (
+            invalidate_panel_pause_cache,
+            tag_gesture_ui_regions,
+        )
+        invalidate_panel_pause_cache()
         tag_gesture_ui_regions()
 
     @staticmethod
@@ -208,29 +221,21 @@ class DrawProperty(bpy.types.PropertyGroup):
         pref = get_pref()
         draw = pref.draw_property
 
-        radius_is_alert = draw.text_gpu_draw_radius > min(draw.margin)
-
         col = layout.box().column(align=True)
         col.prop(draw, 'element_draw_child_icon')
         col.prop(draw, 'element_draw_property_toggle_icon')
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
-        cr.alert = radius_is_alert
         cr.prop(draw, 'text_gpu_draw_radius')
         col.separator()
         col.prop(draw, 'element_extension_item_offset')
         col.separator()
         col.prop(draw, 'margin')
+        col.prop(draw, 'layout_margin')
         col.separator()
         col.prop(draw, 'gesture_point_name_size')
         col.prop(draw, 'line_width')
         col.prop(draw, 'outline_width')
-        if radius_is_alert:
-            cb = col.box()
-            cb.alert = True
-            cb.label(text="Corner radius is larger than the margin")
-            cb.label(text="Corners are clamped to the smaller margin")
-        col.separator()
         col.prop(draw, 'dividing_line_height')
 
     @staticmethod

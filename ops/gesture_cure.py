@@ -17,12 +17,13 @@ from ..utils.structure_cache_ops import StructureCacheOps
 def add_all_preset():
     from ..utils.preset import get_preset_gesture_list
     count = 0
-    for k, v in get_preset_gesture_list().items():
-        bpy.ops.wm.gesture_import(
-            filepath=v,
+    for filepath in get_preset_gesture_list(include_debug_only=True).values():
+        result = bpy.ops.wm.gesture_import(
+            filepath=filepath,
             run_execute=True,
         )
-        count += 1
+        if 'FINISHED' in result:
+            count += 1
     return count
 
 
@@ -40,7 +41,8 @@ class GestureCURE:
         bl_label = 'Add gesture'
         bl_description = (
             'Add a new gesture. '
-            'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+            'Hold Ctrl+Alt+Shift while clicking to import every bundled preset, '
+            'including examples'
         )
         bl_options = {'REGISTER'}
 

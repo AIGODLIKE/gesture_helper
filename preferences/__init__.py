@@ -70,7 +70,7 @@ class GesturePreferences(PublicProperty,
         )
         from ..utils.property import get_property
 
-        def filter_data(filter_dict, exclude_keywords=None):
+        def filter_data(filter_dict, exclude_keywords=None, source=None):
             if exclude_keywords is None:
                 exclude_keywords = []
             res = {}
@@ -91,7 +91,21 @@ class GesturePreferences(PublicProperty,
                 exclude = exclude_keywords.copy()
                 if element_type == "CHILD_GESTURE" and filter_dict.get('direction', None) == "9":  # Bottom gesture: skip direction export
                     exclude.append("direction")
-                res['element'] = {k: filter_data(v, exclude) for k, v in filter_dict['element'].items()}
+
+                child_source = getattr(source, 'element', None)
+
+                def get_child_source(key):
+                    if child_source is None:
+                        return None
+                    try:
+                        return child_source[int(key)]
+                    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+                        return None
+
+                res['element'] = {
+                    k: filter_data(v, exclude, get_child_source(k))
+                    for k, v in filter_dict['element'].items()
+                }
 
             # Strip default export values
             if "enabled" in res and res['enabled']:  # Enabled is default; skip export
@@ -111,8 +125,41 @@ class GesturePreferences(PublicProperty,
                 res.pop("main_item")
             if "layout_alignment" in res and res["layout_alignment"] == "EXPAND":
                 res.pop("layout_alignment")
+            if element_type in {"ROW", "COLUMN", "BOX"}:
+                scale_x = res.get("layout_scale_x")
+                scale_y = res.get("layout_scale_y")
+
+                # Old AddonPreferences DNA can still contain only an explicit
+                # legacy scale while the newly added axes remain at defaults.
+                # Preserve that value until the normal import migration runs.
+                is_property_set = getattr(source, 'is_property_set', None)
+                if callable(is_property_set):
+                    try:
+                        if (
+                                is_property_set('layout_scale')
+                                and not is_property_set('layout_scale_x')
+                                and not is_property_set('layout_scale_y')
+                        ):
+                            scale_x = scale_y = res.get('layout_scale')
+                            if scale_x is not None:
+                                res['layout_scale_x'] = scale_x
+                                res['layout_scale_y'] = scale_y
+                    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                        pass
+
+                if scale_x is not None and scale_y is not None:
+                    # Keep uniform values readable by older add-on versions.
+                    # A non-uniform pair has no faithful legacy representation.
+                    if scale_x == scale_y:
+                        res["layout_scale"] = scale_x
+                    else:
+                        res.pop("layout_scale", None)
             if "layout_scale" in res and res["layout_scale"] == 1.0:
                 res.pop("layout_scale")
+            if "layout_scale_x" in res and res["layout_scale_x"] == 1.0:
+                res.pop("layout_scale_x")
+            if "layout_scale_y" in res and res["layout_scale_y"] == 1.0:
+                res.pop("layout_scale_y")
 
             for k in exclude_keywords:
                 if k in res:
@@ -127,7 +174,7 @@ class GesturePreferences(PublicProperty,
         for index, g in enumerate(gestures):
             if g.selected or get_all:
                 origin = get_property(g, EXPORT_PROPERTY_EXCLUDE)
-                item = filter_data(origin)
+                item = filter_data(origin, source=g)
                 data[str(index)] = item
         return data
 

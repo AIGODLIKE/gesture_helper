@@ -137,15 +137,46 @@ class GestureSession:
         self._suppress_property_execute = False
         # True once the active drag moved far enough to count as a scrub.
         self._property_drag_moved = False
+        # Per-event modal consumption marker. False only means that the event
+        # may continue into the normal execute/exit checks.
+        self._event_consumed = False
+        # Invalid runtime item requested by an explicit LMB click. The modal
+        # owner consumes it after cleanup and reveals the existing editor.
+        self.repair_element = None
         self._gesture_circle_center: Vector | None = None
         self._last_trajectory_mouse: Vector | None = None
         self._derived_cache_key = None
         self._direction_items_memo = None
         # (cache_key, {element: items}) — replaced wholesale when the key changes.
         self._gpu_extension_items_cache = None
+        # Status values are keyed by derived generation/context, but a new
+        # modal session must not retain dictionaries keyed by old RNA proxies.
+        self._element_status_cache = None
+        # Poll expressions are context-sensitive, but normally do not depend on
+        # the mouse event itself. Keep one fingerprint per modal snapshot so
+        # item/status caches can survive ordinary cursor motion.
+        self._poll_context_fingerprint = None
+        self._poll_context_serial = -1
+        self._input_event_serial = 0
+        # External RNA values can change during a property scrub without
+        # touching the add-on's derived-cache generation. Bump this only when
+        # the value really changes so condition-dependent items stay correct.
+        self._poll_context_revision = 0
         # Per-draw automatic radial offsets. User-authored ``overlay_offset``
         # remains separate and is added only by the renderer.
         self.radial_auto_offsets: dict = {}
+        self._radial_offset_cache = None
+        # Visibility of the optional Modal Event panel captured at modal
+        # entry.  While the gesture owns the UI, Panel.poll must not resolve
+        # the active RNA element again: doing so can rebuild selection state
+        # while the input handler is still dispatching events.
+        self._modal_event_panel_element = None
+        self._frozen_active_gesture = None
+        self._frozen_active_element = None
+        self._frozen_preview_active = False
+        self._frozen_preview_scope = ''
+        self._frozen_ui_selection_key: tuple[int, int] | None = None
+        self._frozen_panel_status_info: dict[int, object] = {}
         # Canonical Element proxy pool — see ``canonical_element``.
         self._element_proxy_pool: dict = {}
         self._element_proxy_pool_generation = None

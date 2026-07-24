@@ -303,6 +303,9 @@ class OperatorProperty:
             return
         debug_print("update_operator_properties:", self.operator_properties, key='operator')
         self.to_operator_tmp_kmi()
+        # Operator arguments participate in status/poll results. Invalidate
+        # the derived UI/GPU caches only after this real RNA content change.
+        self.clear_derived_cache()
 
     operator_bl_idname: StringProperty(
         name='Operator bl_idname',

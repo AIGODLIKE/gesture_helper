@@ -25,6 +25,11 @@ from .temp_keymap import draw_temp_keymap_item, get_temp_kmi
 default_key = {'type': 'RIGHTMOUSE', 'value': 'PRESS'}
 
 _key_restart_suppression = 0
+_TEMP_KMI_SIGNATURES: dict[tuple[int, str], tuple] = {}
+_TEMP_KMI_FIELDS = (
+    'map_type', 'type', 'value', 'direction', 'any',
+    'shift', 'ctrl', 'alt', 'oskey', 'key_modifier', 'repeat', 'head',
+)
 
 _KEY_TEXT_FIELDS = frozenset({
     'type',
@@ -42,6 +47,20 @@ _KEY_BOOL_FIELDS = frozenset({
     'repeat',
     'head',
 })
+
+
+def _rna_identity(value) -> int:
+    try:
+        return int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return id(value)
+
+
+def _temp_kmi_signature(kmi) -> tuple:
+    return (
+        _rna_identity(kmi),
+        *(getattr(kmi, field, None) for field in _TEMP_KMI_FIELDS),
+    )
 
 
 def validate_keymap_data(data: dict) -> None:
@@ -168,9 +187,13 @@ class GestureKeymap(KeymapProperty):
         if kmi.map_type != mt:
             kmi.map_type = mt
         set_property(kmi, key)
+        _TEMP_KMI_SIGNATURES[(_rna_identity(self), self.name)] = (
+            _temp_kmi_signature(kmi)
+        )
 
     def draw_key(self, layout) -> None:
-        draw_temp_keymap_item(layout, self.temp_kmi, self.keymaps)
+        kmi = self.temp_kmi
+        draw_temp_keymap_item(layout, kmi, self.keymaps)
         if get_debug():
             layout.label(text=str(self.key))
             layout.label(text=str(self.keymaps))
@@ -180,10 +203,19 @@ class GestureKeymap(KeymapProperty):
         # Do not write RNA / restart keymaps inside draw — debounce instead.
         from ..utils.ui_draw_sync import schedule
 
+        cache_key = (_rna_identity(self), self.name)
+        signature = _temp_kmi_signature(kmi)
+        previous = _TEMP_KMI_SIGNATURES.get(cache_key)
+        _TEMP_KMI_SIGNATURES[cache_key] = signature
+        if previous is None or previous == signature:
+            return
+
+        gesture_identity = cache_key[0]
+
         def _flush():
             from ..utils.public import get_pref
             active = get_pref().active_gesture
-            if active is not None:
+            if active is not None and _rna_identity(active) == gesture_identity:
                 active.from_temp_key_update_data()
 
         schedule('gesture_temp_key_sync', _flush)

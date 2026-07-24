@@ -30,6 +30,11 @@ class DebugProperty(bpy.types.PropertyGroup):
         description='Log export, import, and backup operations',
         default=False,
     )
+    show_example_presets: BoolProperty(
+        name='Show example presets',
+        description='Show bundled example presets in the preset import list',
+        default=False,
+    )
     debug_operator: BoolProperty(
         name='Debug operator',
         description='Log operator element execution',
@@ -78,6 +83,7 @@ class DebugProperty(bpy.types.PropertyGroup):
         col.prop(debug, 'debug_kmi_sync')
         col.prop(debug, 'debug_draw_gpu_mode')
         col.prop(debug, 'debug_export_import')
+        col.prop(debug, 'show_example_presets')
         col.prop(debug, 'debug_operator')
         col.prop(debug, 'debug_modal')
         col.prop(debug, 'debug_poll')

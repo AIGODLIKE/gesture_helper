@@ -102,6 +102,7 @@ class GestureMenuRuntime(PublicGpu):
     _active_by_window = {}
     _active_by_area = {}
     _draw_handles = {}
+    _tracks_session_menu_state = True
 
     @classmethod
     def _context_instance(cls):
@@ -145,12 +146,13 @@ class GestureMenuRuntime(PublicGpu):
         cls._active_by_window.clear()
         cls._active_by_area.clear()
         cls._remove_draw_handlers()
-        try:
-            from ..utils.session_state import SessionState
+        if cls._tracks_session_menu_state:
+            try:
+                from ..utils.session_state import SessionState
 
-            SessionState.gesture_menu_active = False
-        except ImportError:
-            ...
+                SessionState.gesture_menu_active = False
+            except ImportError:
+                ...
 
     @classmethod
     def _remove_draw_handlers(cls) -> None:
@@ -191,9 +193,10 @@ class GestureMenuRuntime(PublicGpu):
         self._active_by_area[area_key] = self
         self._menu_window_key = window_key
         self._menu_area_key = area_key
-        from ..utils.session_state import SessionState
+        if self._tracks_session_menu_state:
+            from ..utils.session_state import SessionState
 
-        SessionState.gesture_menu_active = True
+            SessionState.gesture_menu_active = True
         self._tag_menu_redraw()
         return True
 
@@ -206,19 +209,22 @@ class GestureMenuRuntime(PublicGpu):
             self._active_by_area.pop(area_key, None)
         if not self._active_by_window:
             self._remove_draw_handlers()
-        try:
-            from ..utils.session_state import SessionState
+        if self._tracks_session_menu_state:
+            try:
+                from ..utils.session_state import SessionState
 
-            SessionState.gesture_menu_active = bool(self._active_by_window)
-        except ImportError:
-            ...
+                SessionState.gesture_menu_active = bool(self._active_by_window)
+            except ImportError:
+                ...
         self._tag_menu_redraw()
 
     def _tag_menu_redraw(self) -> None:
+        """Redraw the GPU menu without waking the owner area's sidebar."""
         area = getattr(self, '_menu_area', None)
         try:
-            if area is not None:
-                area.tag_redraw()
+            region = find_window_region(area)
+            if region is not None:
+                region.tag_redraw()
         except ReferenceError:
             ...
 
@@ -376,12 +382,21 @@ class GestureMenuRuntime(PublicGpu):
             gesture_key = gesture.as_pointer() if gesture is not None else 0
         except (AttributeError, ReferenceError):
             gesture_key = 0
+        area = getattr(self, '_menu_area', None)
+        region = find_window_region(area)
+        region_size = (
+            int(getattr(region, 'width', 0)),
+            int(getattr(region, 'height', 0)),
+        )
         return (
             gesture_key,
             PublicCache.__structure_generation__,
             PublicCache.__derived_generation__,
             poll_context_fingerprint(),
             self._menu_style(),
+            bool(getattr(self, '_menu_centered', False)),
+            tuple(getattr(self, '_menu_anchor', (0.0, 0.0))),
+            region_size,
             tuple(id(item) for item in getattr(self, '_menu_open_path', ())),
         )
 
@@ -447,8 +462,14 @@ class GestureMenuRuntime(PublicGpu):
 
         metrics = self._metrics()
         root = MenuPanel(0, self._make_rows(gesture.element), title=gesture.name_translate)
-        anchor = self._menu_anchor
-        self._place_panel(root, anchor[0], anchor[1], region, metrics)
+        if getattr(self, '_menu_centered', False):
+            root_w, root_h = self._panel_size(root, metrics)
+            root_x = (float(region.width) - root_w) * 0.5
+            root_top = (float(region.height) + root_h) * 0.5
+            self._place_panel(root, root_x, root_top, region, metrics)
+        else:
+            anchor = self._menu_anchor
+            self._place_panel(root, anchor[0], anchor[1], region, metrics)
         panels = [root]
 
         valid_path = []
@@ -560,18 +581,19 @@ class GestureMenuRuntime(PublicGpu):
             return
 
         hovered = row is self._menu_hovered_row
-        if hovered and row.enabled:
+        status = getattr(row.status_info, 'status', ElementStatus.VALID)
+        if status.is_error or (hovered and row.enabled):
             inset = 2.0 * metrics.scale
+            row_color = colors.error if status.is_error else colors.hover
             self.draw_rounded_rectangle_area(
                 (x1 + width * 0.5, y1 + height * 0.5),
-                color=colors.hover,
+                color=row_color,
                 radius=max(1.0, metrics.radius - inset),
                 width=max(1.0, width - inset * 2.0),
                 height=max(1.0, height - inset),
             )
-        status = getattr(row.status_info, 'status', ElementStatus.VALID)
         if status is not ElementStatus.VALID:
-            marker_color = colors.error if status.is_error else colors.warning
+            marker_color = colors.text_hover if status.is_error else colors.warning
             marker_w = max(2.0, 2.0 * metrics.scale)
             self.draw_rectangle(
                 x1 + 2.0 * metrics.scale,
@@ -581,9 +603,12 @@ class GestureMenuRuntime(PublicGpu):
                 marker_color,
             )
 
-        text_color = colors.text_hover if hovered and row.enabled else (
-            colors.text if row.enabled else colors.text_disabled
-        )
+        if status.is_error:
+            text_color = colors.text_hover
+        elif hovered and row.enabled:
+            text_color = colors.text_hover
+        else:
+            text_color = colors.text if row.enabled else colors.text_disabled
         cursor_x = x1 + metrics.pad_x
         element = row.element
         if element is not None and getattr(element, 'is_draw_icon', False):
@@ -609,7 +634,7 @@ class GestureMenuRuntime(PublicGpu):
         if badge:
             badge_size = metrics.font_size * 0.72
             badge_w, _line = measure_text(badge, badge_size)
-            badge_color = colors.error if status.is_error else colors.warning
+            badge_color = colors.text_hover if status.is_error else colors.warning
             self.draw_text(
                 badge,
                 position=(x2 - right_reserve - badge_w, y2 - (height - metrics.line_height) * 0.5),
@@ -657,6 +682,9 @@ class GestureMenuRuntime(PublicGpu):
         area = getattr(self, '_menu_area', None)
         if area is not None and bpy.context.area != area:
             return
+        region = find_window_region(area)
+        if region is None:
+            return
         self._ensure_layout()
         if not self._menu_panels:
             return
@@ -669,9 +697,58 @@ class GestureMenuRuntime(PublicGpu):
                 self._draw_header(panel, metrics, colors)
                 for row in panel.rows:
                     self._draw_row(row, metrics, colors)
+            self._draw_hover_annotation(metrics, colors, region)
         finally:
             gpu_draw_end()
         self._menu_draw_count += 1
+
+    def _draw_hover_annotation(self, metrics, colors, region) -> None:
+        """Show native help or the repair reason below the hovered menu panel."""
+        row = self._menu_hovered_row
+        element = getattr(row, 'element', None) if row is not None else None
+        if element is None:
+            return
+        text = element.runtime_annotation_text
+        if not text:
+            return
+        info = element.element_status_info
+        if info.status.is_error and not getattr(self, 'preview_read_only', False):
+            hint = bpy.app.translations.pgettext_iface(
+                'Click this item to open gesture settings'
+            )
+            text = f'{text} - {hint}'
+        if info.status.is_error:
+            accent = colors.error
+            mark = '!'
+        elif info.status.is_warning:
+            accent = colors.warning
+            mark = '!'
+        elif not info.is_valid:
+            accent = colors.text_disabled
+            mark = 'i'
+        else:
+            accent = colors.hover
+            mark = 'i'
+        panel = next(
+            (panel for panel in self._menu_panels if row in panel.rows),
+            None,
+        )
+        if panel is None:
+            return
+        self.draw_annotation_row(
+            text,
+            anchor_rect=panel.rect,
+            viewport_size=(region.width, region.height),
+            size=max(10.0, metrics.font_size * 0.92),
+            scale=metrics.scale,
+            fill=colors.error if info.status.is_error else colors.background,
+            stroke=accent,
+            accent=colors.background if info.status.is_error else accent,
+            text_color=color_to_srgb(
+                colors.text_hover if info.status.is_error else colors.text
+            ),
+            mark=mark,
+        )
 
     def _menu_mouse(self, event):
         return mouse_in_window_region(event, getattr(self, '_menu_area', None))
@@ -715,9 +792,12 @@ class GestureMenuRuntime(PublicGpu):
     def _menu_clicked_row(self, event):
         self._update_menu_hover(event)
         row = self._menu_hovered_row
-        if row is None or not row.enabled or row.kind not in {'OPERATOR', 'PROPERTY'}:
+        if row is None or row.kind not in {'OPERATOR', 'PROPERTY'}:
             return None
-        return row
+        if row.enabled:
+            return row
+        status = getattr(row.status_info, 'status', ElementStatus.VALID)
+        return row if status.is_error else None
 
     def _menu_mark_context_changed(self) -> None:
         self._menu_layout_dirty = True

@@ -1,0 +1,76 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: nested layout containers, alignment, scaling, and a main action",
+  "gesture": {
+    "0": {
+      "name": "Layout Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Viewport Layout",
+          "element_type": "BOX",
+          "direction": "1",
+          "layout_alignment": "CENTER",
+          "layout_scale_x": 1.2,
+          "layout_scale_y": 0.85,
+          "element": {
+            "0": {
+              "name": "Framing",
+              "element_type": "ROW",
+              "layout_alignment": "LEFT",
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "main_item": true,
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "1": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "2": {
+              "name": "View Modes",
+              "element_type": "COLUMN",
+              "layout_alignment": "RIGHT",
+              "element": {
+                "0": {
+                  "name": "Perspective / Orthographic",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_persportho"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Shows BOX, ROW, COLUMN, a divider, alignment, X/Y scale, and a main action"
+    }
+  }
+}

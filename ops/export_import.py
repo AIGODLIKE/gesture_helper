@@ -94,6 +94,7 @@ EXPORT_PROPERTY_ITEM = {
         'property_data_path',
         'property_drag_mode',
         'property_drag_invert',
+        'property_wheel_step',
         'property_show_value',
         'property_value_format',
         'property_value_precision',
@@ -107,17 +108,20 @@ EXPORT_PROPERTY_ITEM = {
     'ROW': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+        'direction', 'main_item', 'layout_alignment',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'COLUMN': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+        'direction', 'main_item', 'layout_alignment',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'BOX': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment', 'layout_scale',
+        'direction', 'main_item', 'layout_alignment',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
 }
 
@@ -231,6 +235,8 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
         if elements:
             _remove_legacy_script_from_tree(elements)
             _migrate_legacy_operator_ids_in_tree(elements)
+            from ..utils.layout_scale import migrate_legacy_layout_scales
+            migrate_legacy_layout_scales(elements)
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data

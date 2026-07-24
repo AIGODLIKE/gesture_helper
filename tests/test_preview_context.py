@@ -31,8 +31,16 @@ def _load_preview_module():
         package.__path__ = []
 
     bpy = _module("bpy")
-    bpy.types = types.SimpleNamespace(Context=object, Event=object)
-    _module("bpy.props", StringProperty=lambda: None)
+    bpy.types = types.SimpleNamespace(
+        Context=object,
+        Event=object,
+        Operator=object,
+    )
+    _module(
+        "bpy.props",
+        EnumProperty=lambda **_kwargs: None,
+        StringProperty=lambda **_kwargs: None,
+    )
 
     class Vector(tuple):
         def __new__(cls, value):
@@ -52,13 +60,27 @@ def _load_preview_module():
     class GestureRuntimeMixin:
         pass
 
+    class GestureMenuRuntime:
+        pass
+
     class PublicOperator:
         pass
 
     _module(f"{PACKAGE}.ops.quick_add.draw_gpu", DrawGpu=DrawGpu)
+    _module(
+        f"{PACKAGE}.gesture.element_preview",
+        ElementPreviewAdapter=type("ElementPreviewAdapter", (), {}),
+    )
     _module(f"{PACKAGE}.gesture.gesture_draw_gpu", GestureGpuDraw=GestureGpuDraw)
     _module(f"{PACKAGE}.gesture.gesture_handle", GestureHandle=GestureHandle)
-    _module(f"{PACKAGE}.gesture.gesture_input", refresh_snapshot=lambda *_args: None)
+    _module(
+        f"{PACKAGE}.gesture.gesture_input",
+        clear_gesture_item_memos=lambda *_args: None,
+        refresh_poll_context_fingerprint=lambda *_args: None,
+        refresh_snapshot=lambda *_args: None,
+        update_extension_hover=lambda *_args: None,
+    )
+    _module(f"{PACKAGE}.gesture.menu", GestureMenuRuntime=GestureMenuRuntime)
     _module(
         f"{PACKAGE}.gesture.preview_input",
         PreviewGestureInputProcessor=type("PreviewGestureInputProcessor", (), {}),

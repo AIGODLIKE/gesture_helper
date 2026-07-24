@@ -2,7 +2,6 @@ import math
 from functools import cache
 
 import blf
-import bpy
 import gpu
 from gpu_extras.batch import batch_for_shader
 from .color import clear_color_cache, color_to_gpu, color_to_srgb, linear_to_srgb_tuple
@@ -169,17 +168,25 @@ def _round_rect_segments(radius: float, segments: int) -> int:
     return max(4, min(int(segments), auto, 32))
 
 
+def _clamp_rounded_radius(radius, width, height) -> float:
+    """Clamp a radius only to the actual rectangle dimensions."""
+    return min(
+        max(0.0, float(radius)),
+        max(0.0, float(width)) * 0.5,
+        max(0.0, float(height)) * 0.5,
+    )
+
+
 @cache
 def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) -> tuple:
     """Outline vertices for a centered rounded rect (CCW, Y-up).
 
-    Each corner contributes ``segments`` samples (start inclusive, end exclusive)
-    so straight edges between corners are single segments — no duplicated joints
-    that break stroke joins into zero-length cracks.
+    Each corner contributes ``segments + 1`` samples, including both tangent
+    endpoints, so opposite corners and all four straight edges are symmetric.
     """
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
-    radius = float(max(0.01, min(radius, width * 0.5, height * 0.5)))
+    radius = _clamp_rounded_radius(radius, width, height)
     segments = _round_rect_segments(radius, segments)
     hw = width * 0.5 - radius
     hh = height * 0.5 - radius
@@ -193,7 +200,7 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) 
     vertex = []
     step = 90.0 / segments
     for cx, cy, start in corners:
-        for j in range(segments):
+        for j in range(segments + 1):
             a = math.radians(start + step * j)
             vertex.append((cx + radius * math.cos(a), cy + radius * math.sin(a)))
     return tuple(vertex)
@@ -221,13 +228,6 @@ def get_rounded_fill_mesh(radius, width, height, segments):
     return verts, indices
 
 
-def _rounded_radius(radius):
-    scale = bpy.context.preferences.view.ui_scale
-    from .public import get_pref
-    margin = min(get_pref().draw_property.margin) * scale
-    return min(float(radius), float(margin))
-
-
 def _get_rounded_fill_batch(radius, width, height, segments):
     segs = _round_rect_segments(radius, segments)
     key = (round(radius, 3), round(width, 3), round(height, 3), int(segs))
@@ -244,7 +244,7 @@ def _get_rounded_fill_batch(radius, width, height, segments):
 def _draw_rounded_fill(position, color, radius, width, height, segments):
     if width <= 0 or height <= 0:
         return
-    r = min(float(radius), width * 0.5, height * 0.5)
+    r = _clamp_rounded_radius(radius, width, height)
     _ensure_alpha_blend()
     shader = _get_shader('UNIFORM_COLOR')
     batch = _get_rounded_fill_batch(r, width, height, segments)
@@ -322,6 +322,122 @@ class PublicGpu:
         blf.position(font_id, x, y - ascent - line_h * column, z)
         blf.draw(font_id, str(text))
 
+    @classmethod
+    def draw_annotation_row(
+            cls,
+            text,
+            *,
+            anchor_rect,
+            viewport_size,
+            size,
+            scale=1.0,
+            fill=(0.08, 0.08, 0.08, 0.96),
+            stroke=(0.35, 0.35, 0.35, 0.8),
+            accent=(0.25, 0.5, 0.9, 1.0),
+            text_color=(1.0, 1.0, 1.0, 1.0),
+            mark="i",
+            max_lines=2,
+    ):
+        """Draw a compact annotation beside an existing runtime item."""
+        if not text or anchor_rect is None:
+            return None
+        from .blf_text import measure_text, wrap_text
+
+        viewport_w, viewport_h = (float(value) for value in viewport_size)
+        scale = max(0.5, float(scale))
+        margin = max(6.0, 8.0 * scale)
+        gap = max(4.0, 5.0 * scale)
+        pad_x = max(7.0, 8.0 * scale)
+        pad_y = max(4.0, 5.0 * scale)
+        icon_gap = max(5.0, 6.0 * scale)
+        _sample_w, line_h = measure_text("Ag", size)
+        icon_size = max(14.0 * scale, line_h)
+        max_width = max(
+            1.0,
+            min(520.0 * scale, viewport_w - margin * 2.0),
+        )
+        text_max_width = max(
+            1.0,
+            max_width - pad_x * 2.0 - icon_size - icon_gap,
+        )
+        lines = wrap_text(
+            text,
+            text_max_width,
+            size,
+            max_lines=max_lines,
+        )
+        if not lines:
+            return None
+
+        text_w = max(measure_text(line, size)[0] for line in lines)
+        content_w = pad_x * 2.0 + icon_size + icon_gap + text_w
+        anchor_x1, anchor_y1, anchor_x2, anchor_y2 = (
+            float(value) for value in anchor_rect
+        )
+        anchor_w = max(0.0, anchor_x2 - anchor_x1)
+        width = min(max_width, max(content_w, min(anchor_w, max_width)))
+        height = max(
+            icon_size + pad_y * 2.0,
+            line_h * len(lines) + pad_y * 2.0,
+        )
+
+        center_x = (anchor_x1 + anchor_x2) * 0.5
+        center_x = min(
+            viewport_w - margin - width * 0.5,
+            max(margin + width * 0.5, center_x),
+        )
+        below_top = anchor_y1 - gap
+        if below_top - height >= margin:
+            top = below_top
+        elif anchor_y2 + gap + height <= viewport_h - margin:
+            top = anchor_y2 + gap + height
+        else:
+            top = min(viewport_h - margin, max(margin + height, below_top))
+        bottom = top - height
+        center_y = bottom + height * 0.5
+
+        cls.draw_rounded_rectangle_outlined(
+            (center_x, center_y),
+            fill=fill,
+            stroke=stroke,
+            radius=min(5.0 * scale, height * 0.2),
+            width=width,
+            height=height,
+            line_width=max(0.75, scale),
+        )
+
+        left = center_x - width * 0.5 + pad_x
+        cls.draw_rounded_rectangle_area(
+            (left + icon_size * 0.5, center_y),
+            color=accent,
+            radius=min(3.0 * scale, icon_size * 0.22),
+            width=icon_size,
+            height=icon_size,
+        )
+        mark_w, _mark_h = measure_text(mark, size)
+        cls.draw_text(
+            mark,
+            position=(left + (icon_size - mark_w) * 0.5, center_y + line_h * 0.5),
+            size=size,
+            color=(1.0, 1.0, 1.0, 0.98),
+        )
+
+        text_x = left + icon_size + icon_gap
+        text_top = center_y + line_h * len(lines) * 0.5
+        for index, line in enumerate(lines):
+            cls.draw_text(
+                line,
+                position=(text_x, text_top - line_h * index),
+                size=size,
+                color=text_color,
+            )
+        return (
+            center_x - width * 0.5,
+            bottom,
+            center_x + width * 0.5,
+            top,
+        )
+
     @staticmethod
     def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):
         draw_line(pos, color, line_width, is_cycle=False)
@@ -387,7 +503,7 @@ class PublicGpu:
             position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
             segments=DEFAULT_ROUND_SEGMENTS,
     ):
-        r = _rounded_radius(radius)
+        r = _clamp_rounded_radius(radius, width, height)
         _draw_rounded_fill(position, color, r, width, height, segments)
 
     @staticmethod
@@ -407,7 +523,9 @@ class PublicGpu:
         Draw fill at full size first, then stroke on top. Insetting the fill
         under an AA stroke left corner gaps (panel chrome showing through).
         """
-        r = _rounded_radius(radius)
+        if width <= 0 or height <= 0:
+            return
+        r = _clamp_rounded_radius(radius, width, height)
         lw = max(0.5, float(line_width))
         segs = _round_rect_segments(r, segments)
         # Full-size fill — stroke AA covers the hard triangle silhouette.

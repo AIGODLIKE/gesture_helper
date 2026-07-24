@@ -37,6 +37,16 @@ def _select_sibling_after_remove(element, parent, index, is_last):
 class ElementCURE:
     """CRUD operations for elements."""
 
+    class FrozenADD(bpy.types.Operator):
+        """Property-free stand-in for disabled Add buttons during UI freeze."""
+
+        bl_label = 'Add element item'
+        bl_idname = 'wm.gesture_element_add_frozen'
+        bl_options = {'INTERNAL'}
+
+        def execute(self, _context):
+            return {'CANCELLED'}
+
     @cache_update_lock
     def copy(self):
         """Copy element."""
@@ -188,7 +198,7 @@ class ElementCURE:
         bl_label = 'Add Layout Preset'
         bl_idname = 'wm.gesture_layout_preset_add'
         bl_description = 'Add a prebuilt gesture layout structure'
-        bl_options = {'REGISTER', 'UNDO'}
+        bl_options = {'UNDO'}
 
         preset: EnumProperty(
             name='Layout preset',
@@ -199,6 +209,7 @@ class ElementCURE:
                 ('SAMPLING', 'Sampling Panel', 'Cycles adaptive sampling controls'),
             ),
             default='PANEL',
+            options={'HIDDEN', 'SKIP_SAVE'},
         )
 
         _PRESETS = {

@@ -47,6 +47,7 @@ class GestureOperator(
         operator_setattr(self, "_input", GestureInputProcessor())
         operator_setattr(self, "_executor", GestureExecutor())
         operator_setattr(self, "_modal_cleaned", False)
+        operator_setattr(self, "_modal_cancelled", False)
 
     def tag_redraw(self):
         """Redraw the gesture screen (override PublicOperator.tag_redraw)."""
@@ -72,9 +73,14 @@ class GestureOperator(
         if area is not None and area.type in {'PREFERENCES', 'FILE_BROWSER'}:
             return {'CANCELLED'}
 
+        from ..utils.session_state import SessionState
+
+        SessionState.request_gesture_preview_close()
+
         self.init_invoke(event)
         self.session.reset(event, context.area, context.screen, self.gesture)
         operator_setattr(self, "_modal_cleaned", False)
+        operator_setattr(self, "_modal_cancelled", False)
         gesture = self.operator_gesture
         if gesture is None or gesture.gesture_type != 'RADIAL':
             context.window_manager.popup_menu(self.__class__.draw_error,
@@ -87,8 +93,17 @@ class GestureOperator(
         PublicCacheFunc.ensure_gesture_structure(gesture)
         ensure_trajectory_seed(self.session)
         refresh_snapshot(self.session, self)
-        schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)
-        self.register_draw()
+        try:
+            schedule_timeout_timer(
+                self.session,
+                self.pref.gesture_property.timeout,
+                self,
+            )
+            self.register_draw()
+            context.window_manager.modal_handler_add(self)
+        except BaseException:
+            self._cleanup_modal_after_error()
+            raise
 
         debug_print(
             "invoke", self.bl_idname,
@@ -97,8 +112,6 @@ class GestureOperator(
             key='modal',
         )
 
-        wm = context.window_manager
-        wm.modal_handler_add(self)
         debug_print(self.bl_idname, event.type, event.value, key='modal')
         return {'RUNNING_MODAL'}
 
@@ -109,8 +122,36 @@ class GestureOperator(
     def _finish_leftover_modal(self, event) -> set:
         """Blender may keep delivering events after we already returned FINISHED."""
         # Idempotent: draw/timer already torn down on the real exit path.
+        self._input.cancel_property_drag(self.session, self, refresh=False)
         self.__exit_modal__()
         return {'FINISHED'}
+
+    def _cancel_modal(self) -> None:
+        """Cancel input, restore an active scrub, and release UI ownership."""
+        if getattr(self, "_modal_cancelled", False):
+            return
+        operator_setattr(self, "_modal_cancelled", True)
+        self._mark_modal_done()
+        try:
+            self._input.cancel_property_drag(self.session, self, refresh=False)
+        finally:
+            try:
+                self.session._suppress_property_execute = False
+                self.session.repair_element = None
+                self.session.clear_handoff()
+            finally:
+                try:
+                    self.__exit_modal__()
+                finally:
+                    from ..gesture.gesture_input import clear_gesture_item_memos
+                    clear_gesture_item_memos(self.session, self)
+
+    def _cleanup_modal_after_error(self) -> None:
+        """Best-effort cleanup without replacing the active exception."""
+        try:
+            self._cancel_modal()
+        except BaseException:
+            pass
 
     def modal(self, context, event):
         """
@@ -128,20 +169,45 @@ class GestureOperator(
             return self._finish_leftover_modal(event)
 
         if event.type == 'WINDOW_DEACTIVATE':
-            self._mark_modal_done()
-            self.__exit_modal__()
+            self._cancel_modal()
             return {'CANCELLED'}
 
-        self.init_modal(event)
-        dirty = self._input.on_event(self.session, self, event)
+        if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
+            self._cancel_modal()
+            return {'CANCELLED'}
+
+        try:
+            self.init_modal(event)
+            dirty = self._input.on_event(self.session, self, event)
+        except BaseException:
+            self._cleanup_modal_after_error()
+            raise
         if dirty:
             self.tag_redraw()
+
+        repair_element = getattr(self.session, 'repair_element', None)
+        if repair_element is not None:
+            return self._finish_for_repair(repair_element)
+
+        # A property-row drag consumes its modal event even when integer
+        # rounding leaves the value unchanged. Do not let that event fall
+        # through to immediate execution or gesture exit checks.
+        if getattr(self.session, '_event_consumed', False):
+            return {'RUNNING_MODAL'}
 
         debug_print(
             self.bl_idname, f"\tmodal\t{event.value}\t{event.type}",
             "\tprev", event.type_prev, event.value_prev, key='modal',
         )
-        if self._executor.try_immediate_implementation(self.session, self):
+        try:
+            immediate = self._executor.try_immediate_implementation(
+                self.session,
+                self,
+            )
+        except BaseException:
+            self._cleanup_modal_after_error()
+            raise
+        if immediate:
             # Mark before any further work — immediate already ran the op.
             return self._finish_from_dispatch(context, event, from_immediate=True)
         if self.is_exit:
@@ -155,15 +221,60 @@ class GestureOperator(
         # Mark done BEFORE cleanup/ops so a re-entrant modal call during
         # prefs/window open cannot start a second dispatch on this session.
         self._mark_modal_done()
-        self.__exit_modal__()
-        if from_immediate:
-            # Immediate path already ran the operator inside try_immediate.
+        # unregister_draw() removes the GPU handler before the final dispatch,
+        # so keep the panel pause marker alive until every execute/cleanup path
+        # below has finished. Otherwise a redraw can walk Element RNA and
+        # replace the hit-box proxies while the release event is still being
+        # dispatched.
+        self.mark_modal_finishing()
+        try:
+            self.__exit_modal__()
+            if from_immediate:
+                # Immediate path already ran the operator inside try_immediate.
+                from ..gesture.gesture_input import clear_gesture_item_memos
+                clear_gesture_item_memos(self.session, self)
+                if self.session.handoff.needs_interface:
+                    return {'FINISHED', 'INTERFACE'}
+                return {'FINISHED'}
+            return self.exit(context, event)
+        finally:
+            self.clear_modal_finishing()
+            from ..utils.ui_draw_sync import (
+                cancel_modal_ui_refresh,
+                tag_gesture_ui_regions,
+            )
+            cancel_modal_ui_refresh()
+            tag_gesture_ui_regions()
+
+    def _finish_for_repair(self, element) -> set:
+        """End the gesture, focus the broken item, then open its editor."""
+        self._mark_modal_done()
+        self.mark_modal_finishing()
+        focused = False
+        try:
+            self.__exit_modal__()
+            from ..utils.selection import focus_element_settings
+            focused = focus_element_settings(element)
             from ..gesture.gesture_input import clear_gesture_item_memos
             clear_gesture_item_memos(self.session, self)
-            if self.session.handoff.needs_interface:
-                return {'FINISHED', 'INTERFACE'}
+        finally:
+            self.clear_modal_finishing()
+            from ..utils.ui_draw_sync import (
+                cancel_modal_ui_refresh,
+                tag_gesture_ui_regions,
+            )
+            cancel_modal_ui_refresh()
+            tag_gesture_ui_regions()
+
+        if not focused:
             return {'FINISHED'}
-        return self.exit(context, event)
+        try:
+            result = bpy.ops.wm.gesture_show_preferences('EXEC_DEFAULT')
+        except (AttributeError, RuntimeError, TypeError):
+            return {'FINISHED'}
+        if 'FINISHED' in result:
+            return {'FINISHED', 'INTERFACE'}
+        return {'FINISHED'}
 
     def exit(self, context: bpy.types.Context, event: bpy.types.Event):
         # Refresh snapshot once more with the release event before dispatch.
@@ -233,18 +344,30 @@ class GestureOperator(
         return ret
 
     def cancel(self, context):
-        # ESC / system cancel: mark done so leftover events cannot resume.
-        self._mark_modal_done()
-        self.__exit_modal__()
-        from ..gesture.gesture_input import clear_gesture_item_memos
-        clear_gesture_item_memos(self.session, self)
+        # Blender may call cancel after our modal branch already cleaned up.
+        if (
+                getattr(self, "_modal_cleaned", False)
+                and not getattr(self, "_modal_cancelled", False)
+        ):
+            return
+        self._cancel_modal()
 
     def __exit_modal__(self):
         if getattr(self, "_modal_cleaned", False):
             return
         operator_setattr(self, "_modal_cleaned", True)
-        self.unregister_draw()
-        self._cancel_gesture_timeout_timer()
+        try:
+            self.unregister_draw()
+        finally:
+            try:
+                # A cancelled/deactivated modal has no final-dispatch wrapper
+                # to do this. Avoid leaving the post-modal poller around to tag
+                # the same UI regions again after the handler was removed.
+                if id(self) not in GestureGpuDraw.__finishing_draw_instances__:
+                    from ..utils.ui_draw_sync import cancel_modal_ui_refresh
+                    cancel_modal_ui_refresh()
+            finally:
+                self._cancel_gesture_timeout_timer()
         # Do not clear item memos here — exit() still needs draw-area attrs on
         # cached extension Element proxies for try_running_operator.
         # Keep session.handoff until invoke reset — exit()/immediate still read it

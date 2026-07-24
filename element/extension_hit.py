@@ -142,10 +142,7 @@ def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None
         x, y = mouse
         if x1 < x < x2:
             flags |= VERTICAL_BAND
-            try:
-                _w, h = el.extension_dimensions
-            except (AttributeError, TypeError, ValueError):
-                h = 0.0
+            h = max(0.0, y2 - y1)
             if h:
                 if (y1 - h < y < y1) or (y2 < y < y2 + h):
                     flags |= VERTICAL_TRAVEL
@@ -178,11 +175,9 @@ def _hit_right_band(el, ops, mouse: tuple[float, float]) -> bool:
     item = getattr(el, "extension_draw_area", None)
     if item is None:
         return False
-    try:
-        w, h = el.extension_dimensions
-    except (AttributeError, TypeError, ValueError):
-        return False
     x1, y1, x2, y2 = item
+    w = max(0.0, x2 - x1)
+    h = max(0.0, y2 - y1)
     return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
 
 

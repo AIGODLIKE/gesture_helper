@@ -52,6 +52,10 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         if area is None or area.type in {'PREFERENCES', 'FILE_BROWSER'}:
             return {'CANCELLED'}
 
+        from ..utils.session_state import SessionState
+
+        SessionState.request_gesture_preview_close()
+
         from ..utils.gesture_store import get_gestures
 
         gestures = get_gestures()
@@ -193,6 +197,14 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             self.report({'INFO'}, element.name_translate)
         self._menu_mark_context_changed()
 
+    def _repair_menu_row(self, row):
+        """Close the menu before opening the existing element editor."""
+        result = self._finish_menu()
+        from ..utils.selection import reveal_element_settings
+        if reveal_element_settings(row.element):
+            result.add('INTERFACE')
+        return result
+
     def modal(self, context, event):
         operator_setattr(self, 'event', event)
         if self._menu_close_requested:
@@ -222,6 +234,9 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 return self._finish_menu()
             row = self._menu_clicked_row(event)
             if row is not None:
+                status = getattr(row.status_info, 'status', None)
+                if status is not None and status.is_error:
+                    return self._repair_menu_row(row)
                 self._execute_menu_row(row)
                 return {'RUNNING_MODAL'}
             if not self._menu_contains(self._menu_mouse(event)):

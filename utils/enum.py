@@ -62,7 +62,7 @@ ENUM_ELEMENT_TYPE = [
     ('OPERATOR', 'Op', 'Operator'),
     ('DIVIDING_LINE', 'Div', 'Dividing line'),
     # New identifiers must stay appended — enum values are stored by index.
-    ('PROPERTY', 'Property', 'Show a property in the gesture; click or drag to change it'),
+    ('PROPERTY', 'Property', 'Show a property in the gesture; click, drag, or scroll to change it'),
     ('ROW', 'Row', 'Horizontal layout container'),
     ('COLUMN', 'Column', 'Vertical layout container'),
     ('BOX', 'Box', 'Boxed vertical layout container'),

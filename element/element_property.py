@@ -232,8 +232,32 @@ class ElementLayoutProperty:
         update=lambda self, context: self.clear_derived_cache(),
     )
     layout_scale: FloatProperty(
-        name='Scale',
-        description='Scale this layout and its contents',
+        name='Legacy Scale',
+        description='Legacy uniform layout scale used by older presets',
+        default=1.0,
+        min=0.25,
+        max=4.0,
+        soft_min=0.5,
+        soft_max=2.0,
+        step=10,
+        precision=2,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
+    layout_scale_x: FloatProperty(
+        name='Scale X',
+        description='Horizontal layout scale',
+        default=1.0,
+        min=0.25,
+        max=4.0,
+        soft_min=0.5,
+        soft_max=2.0,
+        step=10,
+        precision=2,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
+    layout_scale_y: FloatProperty(
+        name='Scale Y',
+        description='Vertical layout scale',
         default=1.0,
         min=0.25,
         max=4.0,
@@ -265,6 +289,17 @@ class ElementLayoutProperty:
         name='Invert',
         description='Reverse the direction used to adjust numeric values',
         default=False,
+    )
+    property_wheel_step: FloatProperty(
+        name='Wheel Step',
+        description='Value changed by one mouse-wheel notch on numeric properties',
+        default=1.0,
+        min=0.000001,
+        max=1000000.0,
+        soft_min=0.01,
+        soft_max=100.0,
+        step=1,
+        precision=4,
     )
     property_show_value: BoolProperty(
         name='Show Value',
@@ -385,6 +420,38 @@ class ElementLayoutProperty:
         self.sync_name_from_source()
 
     @property
+    def source_description(self) -> str:
+        """Translated native RNA description for an operator or property."""
+        source = None
+        if self.is_operator:
+            func = self.operator_func
+            if func is not None:
+                try:
+                    source = func.get_rna_type()
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    source = None
+        elif self.is_property_display:
+            resolved = self.resolve_property()
+            if resolved is not None:
+                source = resolved[1]
+        if source is None:
+            return ''
+
+        description = getattr(source, 'description', '') or ''
+        if not description:
+            return ''
+        context = getattr(source, 'translation_context', None)
+        try:
+            from bpy.app.translations import pgettext_tip
+            return pgettext_tip(description, context)
+        except (AttributeError, ImportError, TypeError):
+            from bpy.app.translations import pgettext_iface
+            try:
+                return pgettext_iface(description, context)
+            except TypeError:
+                return pgettext_iface(description)
+
+    @property
     def source_name(self) -> str:
         """Name supplied by the configured operator or RNA property."""
         if self.is_property_display:
@@ -479,8 +546,11 @@ class ElementLayoutProperty:
             return False
         owner, rna_prop = resolved
         try:
+            current = getattr(owner, rna_prop.identifier)
+            if current == value:
+                return False
             setattr(owner, rna_prop.identifier, value)
-            return True
+            return getattr(owner, rna_prop.identifier) != current
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
 
@@ -560,6 +630,43 @@ class ElementLayoutProperty:
             delta = delta_x
         return -delta if self.property_drag_invert else delta
 
+    def apply_property_wheel(self, direction: int, *, precise: bool = False) -> bool:
+        """Apply one wheel notch to the displayed scalar numeric property."""
+        if direction == 0 or not self.display_property_is_editable:
+            return False
+        resolved = self.resolve_property()
+        if resolved is None:
+            return False
+        owner, rna_prop = resolved
+        if rna_prop.type not in {'INT', 'FLOAT'} or getattr(rna_prop, 'is_array', False):
+            return False
+
+        try:
+            current = getattr(owner, rna_prop.identifier)
+            step = abs(float(getattr(self, 'property_wheel_step', 1.0)))
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+            return False
+        if step <= 0.0:
+            step = 1.0 if rna_prop.type == 'INT' else 0.01
+        if precise and rna_prop.type == 'FLOAT':
+            step *= 0.1
+        if rna_prop.type == 'INT':
+            step = max(1, int(round(step)))
+
+        sign = 1 if direction > 0 else -1
+        if self.property_drag_invert:
+            sign = -sign
+        value = current + sign * step
+        try:
+            value = min(max(value, rna_prop.hard_min), rna_prop.hard_max)
+        except (AttributeError, TypeError, ValueError):
+            pass
+        if rna_prop.type == 'INT':
+            value = int(round(value))
+        else:
+            value = round(float(value), 12)
+        return self.set_display_property_value(value)
+
     @property
     def display_property_fraction(self) -> float | None:
         """Value position inside the soft range (slider fill), or None."""
@@ -580,16 +687,16 @@ class ElementLayoutProperty:
             return None
         return min(1.0, max(0.0, (value - soft_min) / span))
 
-    def apply_property_drag(self, start_value, delta_px: float, *, precise: bool = False) -> None:
-        """Set value from a horizontal drag distance in pixels."""
+    def apply_property_drag(self, start_value, delta_px: float, *, precise: bool = False) -> bool:
+        """Set a scrubbed value and report whether the RNA value changed."""
         if not self.display_property_is_editable:
-            return
+            return False
         resolved = self.resolve_property()
         if resolved is None:
-            return
+            return False
         owner, rna_prop = resolved
         if rna_prop.type not in {'INT', 'FLOAT'} or getattr(rna_prop, 'is_array', False):
-            return
+            return False
         soft_min = rna_prop.soft_min
         soft_max = rna_prop.soft_max
         span = soft_max - soft_min
@@ -608,9 +715,13 @@ class ElementLayoutProperty:
         if rna_prop.type == 'INT':
             value = int(round(value))
         try:
+            current = getattr(owner, rna_prop.identifier)
+            if current == value:
+                return False
             setattr(owner, rna_prop.identifier, value)
+            return getattr(owner, rna_prop.identifier) != current
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
-            ...
+            return False
 
     def toggle_display_property(self) -> bool:
         """Cycle the value in place (bool toggle / enum cycle). Returns success."""

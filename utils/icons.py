@@ -9,6 +9,10 @@ icons = None
 icons_map = None
 icons_path_map: dict[str, str] | None = None
 _builtin_icon_names: frozenset[str] | None = None
+# Preview objects remain valid for the lifetime of their collection. Panel and
+# UIList draws ask for the same handful of icons repeatedly, so keep the
+# validated objects instead of checking the PNG path and pixel buffers again.
+_loaded_previews: dict[str, object] = {}
 
 CUSTOM_ICONS_DIR_NAME = "custom_icons"
 CUSTOM_ICONS_EXPORT_FILENAME = "gesture_helper_custom_icons.zip"
@@ -190,6 +194,10 @@ def ensure_preview_loaded(key: str):
     if not lookup:
         return None
 
+    cached = _loaded_previews.get(lookup)
+    if cached is not None:
+        return cached
+
     path = icons_path_map.get(lookup) if icons_path_map else None
     if path is None:
         # Hot-reload / zip-drop can register before PNGs finish extracting.
@@ -214,6 +222,7 @@ def ensure_preview_loaded(key: str):
         preview = icons.load(lookup, path, 'IMAGE', force_reload=True)
         if _preview_is_empty(preview):
             return None
+    _loaded_previews[lookup] = preview
     return preview
 
 
@@ -224,6 +233,7 @@ class Icons:
         global icons, icons_map, icons_path_map
         if icons is not None:
             return
+        _loaded_previews.clear()
         icons = bpy.utils.previews.new()
         icons_map = {"ADDON": [], "BLENDER": [], "CUSTOM": []}
         icons_path_map = {}
@@ -274,6 +284,7 @@ class Icons:
         icons_map = None
         icons_path_map = None
         _builtin_icon_names = None
+        _loaded_previews.clear()
         from .texture import Texture
         Texture.clear()
 

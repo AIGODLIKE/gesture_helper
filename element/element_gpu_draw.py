@@ -7,7 +7,7 @@ from bl_operators.wm import context_path_validate
 from gpu_extras.presets import draw_circle_2d
 from mathutils import Vector
 
-from ..utils.gpu import get_now_2d_offset_position
+from ..utils.gpu import get_current_2d_rect, get_now_2d_offset_position
 from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
@@ -53,6 +53,14 @@ class ElementGpuProperty:
         return draw.status_disabled_color
 
     @property
+    def runtime_annotation_text(self) -> str:
+        """Native source annotation, or the current status reason when blocked."""
+        info = self.element_status_info
+        if not info.is_valid:
+            return info.message
+        return self.source_description
+
+    @property
     def status_badge_size(self) -> tuple[float, float]:
         info = self.element_status_info
         if info.is_valid:
@@ -81,6 +89,14 @@ class ElementGpuProperty:
             return [ctx.margin_x, ctx.margin_y]
         scale = bpy.context.preferences.view.ui_scale
         return [i * scale for i in self.draw_property.margin]
+
+    @property
+    def layout_margin(self):
+        ctx = self._draw_frame_ctx()
+        if ctx is not None:
+            return [ctx.layout_margin_x, ctx.layout_margin_y]
+        scale = bpy.context.preferences.view.ui_scale
+        return [i * scale for i in self.draw_property.layout_margin]
 
     @property
     def text_radius(self):
@@ -161,14 +177,15 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
-        color = tuple(draw.text_active_color if self.is_active_direction else draw.text_default_color)
         status = self.element_status_info.status
+        if status.is_error:
+            color = tuple(draw.text_active_color)
+            return (*color[:3], max(0.92, color[3]))
+        color = tuple(draw.text_active_color if self.is_active_direction else draw.text_default_color)
         if status is ElementStatus.DISABLED:
             return (*color[:3], color[3] * 0.38)
         if status in {ElementStatus.POLL_BLOCKED, ElementStatus.READ_ONLY_PROPERTY}:
             return (*color[:3], color[3] * 0.72)
-        if status.is_error:
-            return (*color[:3], color[3] * 0.82)
         return color
 
     def _in_extension_ui(self) -> bool:
@@ -187,6 +204,8 @@ class ElementGpuProperty:
         :return:
         """
         draw = self.draw_property
+        if self.element_status_info.status.is_error:
+            return draw.status_error_color
         # Full active fill only in CONFIRM — BEYOND keeps outline via is_active_direction.
         if self.is_confirm_direction and not self._in_extension_ui():
             if self.is_property_display:
@@ -239,6 +258,8 @@ class ElementGpuProperty:
     @property
     def extension_background_color(self):
         draw = self.draw_property
+        if self.element_status_info.status.is_error:
+            return draw.status_error_color
         if self.extension_by_child_is_hover or self in self.ops.extension_hover:
             return draw.background_child_active_color
         return draw.background_child_color
@@ -274,12 +295,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         both automatic and manual offsets.
         """
         direction = str(self.direction)
-        margin_x, margin_y = self.text_margin
+        margin_x, margin_y = (
+            self.layout_margin
+            if self.is_layout_container or direction == '9'
+            else self.text_margin
+        )
 
         if self.is_layout_container:
             width, height = self.layout_panel_content_size
             if direction == '9':
-                gap = max(self.text_margin) * 1.5
+                gap = max(self.layout_margin) * 1.5
                 y = -self.text_dimensions[1] - gap if (
                     '7' in self.ops.direction_items
                 ) else -gap
@@ -310,20 +335,34 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 
     @property
     def extension_items(self) -> list:
-        """Extension items (bottom menu), memoized per element per input event.
+        """Extension items (bottom menu), memoized per content/context state.
 
-        One dict entry per element (bounded); the key part invalidates on every
-        modal event and on structure-cache rebuilds, so poll results never
-        outlive one event.
+        Poll expressions depend on Blender context rather than cursor position,
+        so ordinary mouse motion must not rebuild the condition tree. One dict
+        entry per element is retained while the derived generation and poll
+        fingerprint stay unchanged.
         """
         ops = getattr(self, 'ops', None)
         session = getattr(ops, 'session', None)
+        poll_key = getattr(session, '_poll_context_fingerprint', None)
+        if poll_key is None:
+            try:
+                from ..utils.gesture_items import poll_context_fingerprint
+                poll_key = poll_context_fingerprint()
+                if session is not None:
+                    session._poll_context_fingerprint = poll_key
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                poll_key = ()
+        poll_key = (
+            poll_key,
+            getattr(session, '_poll_context_revision', 0),
+        )
         cache_key = (
             PublicCache.__derived_generation__,
-            getattr(session, 'event_count', 0),
+            poll_key,
         )
-        # One map per (generation, event). Replacing the whole map when the key
-        # changes keeps the cache bounded (no per-event residue).
+        # One map per (generation, context). Replacing the whole map when the
+        # key changes keeps the cache bounded (no per-event residue).
         items_map = None
         if session is not None:
             packed = session._gpu_extension_items_cache
@@ -380,7 +419,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             if direction == '9':
                 position = get_position('7', radius)
                 w, _h = self.layout_panel_content_size
-                gap = max(self.text_margin) * 1.5
+                gap = max(self.layout_margin) * 1.5
                 with gpu.matrix.push_pop():
                     gpu.matrix.translate(position + radial_offset)
                     if '7' in self.ops.direction_items.keys():
@@ -435,13 +474,14 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.draw_direction_offset)
                 self.gpu_draw_margin()
-                x, y = get_now_2d_offset_position()
+                self.item_draw_area = get_current_2d_rect(
+                    (-margin_x, -h - margin_y, w + margin_x, margin_y),
+                )
                 self.gpu_draw_status_badge()
                 self.gpu_draw_icon()
                 self.gpu_draw_label()
                 self.gpu_draw_child_icon()
 
-                self.item_draw_area = [x - margin_x, y - h - margin_y, x + w + margin_x, y + margin_y]
                 self._gesture_layout_token = ops.session.layout_token
 
 
@@ -567,7 +607,6 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             gpu.matrix.translate((w / 2, -h / 2))
             draw_debug_point()
 
-            radius = self.text_radius if (h / 2 > self.text_radius) else h / 2
             # BEYOND: active outline only; CONFIRM: outline + filled background.
             stroke, line_width = self._outline_colors(
                 active=self.is_active_direction and not self._in_extension_ui(),
@@ -579,7 +618,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 (0, 0),
                 fill=self.background_color,
                 stroke=stroke,
-                radius=radius,
+                radius=self.text_radius,
                 width=w + wm * 2,
                 height=h + hm * 2,
                 line_width=line_width,
@@ -656,8 +695,8 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
 class ElementGpuExtensionItem:
     """Bottom / nested flyout (direction 9) layout.
 
-    Measure content only; outer margin (scaled via text_margin) is chrome around
-    the panel — same split as radial buttons. Do not bake margin into content size.
+    Measure content only; outer margin (scaled via layout_margin) is chrome
+    around the panel. Do not bake margin into content size.
 
     Row columns: ``[icon?][gap][label........][gap][chevron?]``
     - Left icon column only if any row draws a left icon (aligned slots).
@@ -708,11 +747,15 @@ class ElementGpuExtensionItem:
         # Stable metric line height — identical for every label at this size.
         from ..utils.blf_text import text_line_height
         label_h = text_line_height(self.text_size)
+        margin_x, margin_y = self.layout_margin
 
         icon_size = label_h
         gap = icon_size * self._GAP_FRAC
         chevron_size = icon_size * self._CHEVRON_FRAC
-        row_h = icon_size * (1.0 + self._ROW_INTERVAL)
+        row_h = max(
+            icon_size * (1.0 + self._ROW_INTERVAL),
+            icon_size + float(margin_y) * 2.0,
+        )
 
         has_icon_col = False
         has_chevron_col = False
@@ -751,7 +794,7 @@ class ElementGpuExtensionItem:
             else:
                 content_h += row_h
 
-        mx, my = self.text_margin  # scaled; outer chrome only
+        mx, my = margin_x, margin_y  # scaled; outer layout chrome only
 
         layout = SimpleNamespace(
             margin_x=float(mx),
@@ -826,7 +869,6 @@ class ElementGpuExtensionItem:
                 # is ``my``; keep the same inset on left/right so hover padding
                 # matches on X and Y.
                 hover_w = max(1.0, w + mx * 2.0 - my * 2.0)
-                side_inset = my
                 # Numeric property rows paint a slider fill over the soft range.
                 fraction = item.display_property_fraction if item.is_property_display else None
                 if fraction is not None and fraction > 0.0:
@@ -839,8 +881,10 @@ class ElementGpuExtensionItem:
                         width=fill_w,
                         height=row_h,
                     )
-                if item.extension_by_child_is_hover:
-                    stroke, line_width = self._outline_colors(active=True)
+                hovered = item.extension_by_child_is_hover
+                is_error = item.element_status_info.status.is_error
+                if is_error or hovered:
+                    stroke, line_width = self._outline_colors(active=hovered)
                     self.draw_rounded_rectangle_outlined(
                         (w * 0.5, -row_h * 0.5),
                         fill=item.extension_background_color,
@@ -854,7 +898,6 @@ class ElementGpuExtensionItem:
                     (w * 0.5, -row_h * 0.5), hover_w, row_h,
                 )
 
-                sx, sy = get_now_2d_offset_position()
                 with gpu.matrix.push_pop():
                     # Vertically center the icon/text band inside the row.
                     gpu.matrix.translate((0, -((row_h - lay.icon_size) * 0.5)))
@@ -906,12 +949,13 @@ class ElementGpuExtensionItem:
                             self.draw_image([chev_x, y], s, s, texture=tex)
 
                 # Hit box matches the inset hover rect.
-                item.extension_by_child_draw_area = [
-                    sx - mx + side_inset,
-                    sy - row_h,
-                    sx + w + mx - side_inset,
-                    sy,
-                ]
+                row_left = (w - hover_w) * 0.5
+                item.extension_by_child_draw_area = get_current_2d_rect((
+                    row_left,
+                    -row_h,
+                    row_left + hover_w,
+                    0.0,
+                ))
                 item._gesture_layout_token = ops.session.layout_token
 
                 if item.is_child_gesture and (
@@ -935,8 +979,9 @@ class ElementGpuExtensionItem:
         lay = getattr(self, "_extension_layout_cache", None) or self._compute_extension_layout()
         w, h = lay.content_w, lay.content_h
         mx, my = lay.margin_x, lay.margin_y
-        x, y = get_now_2d_offset_position()
-        self.extension_draw_area = [x - mx, y - h - my, x + w + mx, y + my]
+        self.extension_draw_area = get_current_2d_rect(
+            (-mx, -h - my, w + mx, my),
+        )
         session = getattr(getattr(self, 'ops', None), 'session', None)
         if session is not None:
             self._gesture_layout_token = session.layout_token

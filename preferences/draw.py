@@ -2,6 +2,12 @@ import bpy
 
 from .draw_gesture import GestureDraw
 from ..utils.public import get_pref
+from ..utils.ui_draw_sync import (
+    get_frozen_active_element,
+    get_frozen_active_gesture,
+    get_frozen_preview_state,
+    panel_pause_state,
+)
 
 
 class PreferencesDraw(GestureDraw):
@@ -11,28 +17,81 @@ class PreferencesDraw(GestureDraw):
         """Draw preferences panel
         """
         pref = get_pref()
+        context = bpy.context
+        # Resolve the pause source once for this context.  The cached result
+        # lets both freeze checks avoid another global gesture/modal scan.
+        message, layout_frozen = panel_pause_state(context)
         column = layout.column(align=True)
 
-        PreferencesDraw.draw_topbar(column)
+        PreferencesDraw.draw_topbar(column, message)
+
+        # Keep the preview row in the same place while paused so the page does
+        # not jump. It follows the rest of the frozen surface and is disabled.
+        if pref.show_page == 'GESTURE':
+            preview_column = column.column(align=True)
+            preview_column.enabled = not message
+            if layout_frozen:
+                preview_active, preview_scope = get_frozen_preview_state(context)
+            else:
+                preview_active = None
+                preview_scope = None
+            PreferencesDraw.draw_gesture_preview_button(
+                preview_column,
+                active_gesture=(
+                    get_frozen_active_gesture(context)
+                    if layout_frozen
+                    else pref.active_gesture
+                ),
+                active_element=(
+                    get_frozen_active_element(context)
+                    if layout_frozen
+                    else pref.active_element
+                ),
+                frozen=bool(message),
+                preview_active=preview_active,
+                preview_scope=preview_scope,
+            )
+
+        if message and not layout_frozen:
+            # Foreign modals can redraw Preferences repeatedly. The title
+            # already explains the pause; do not build either heavy page.
+            return
 
         sub_column = column.column(align=True)
-        if pref.is_show_gesture:
-            sub_column.enabled = pref.enabled
+        # A live gesture freezes the whole preferences surface.  The enabled
+        # preference only gates the Gesture page during normal editing; the
+        # Property page remains available when the add-on itself is disabled.
+        sub_column.enabled = (
+            (pref.enabled if pref.is_show_gesture else True)
+            and not layout_frozen
+        )
 
         if draw_func := getattr(pref, f'draw_ui_{pref.show_page.lower()}', None):
-            draw_func(sub_column)
+            if pref.show_page == 'GESTURE':
+                draw_func(
+                    sub_column,
+                    allow_frozen=layout_frozen,
+                    draw_preview=False,
+                )
+            else:
+                draw_func(sub_column)
 
     @staticmethod
-    def draw_topbar(layout: 'bpy.types.UILayout'):
+    def draw_topbar(layout: 'bpy.types.UILayout', message):
         """Draw preferences header bar."""
         pref = get_pref()
         row = layout.row(align=True)
+        row.enabled = not message
         rr = row.row(align=True)
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
         rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
 
         row.prop(pref, 'show_page', expand=True)
+        if message:
+            status = row.row(align=True)
+            status.enabled = False
+            status.label(text=message, icon="PAUSE")
 
     @staticmethod
     def draw_ui_property(layout):

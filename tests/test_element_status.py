@@ -6,6 +6,7 @@ import sys
 import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 MODULE_PATH = Path(__file__).parents[1] / "element" / "element_status.py"
@@ -111,6 +112,11 @@ class FakeElement:
 
 class ElementStatusTests(unittest.TestCase):
     def setUp(self):
+        status_module._UI_STATUS_VALUES.clear()
+        status_module._UI_STATUS_INFO_VALUES.clear()
+        status_module._UI_STATUS_CONTEXT_CACHE = None
+        status_module._UI_STATUS_GENERATION = None
+        status_module.PublicCache.__derived_generation__ = 0
         self.properties = {
             "enabled": FakeProperty("enabled", "BOOLEAN"),
             "count": FakeProperty("count", "INT", hard_min=1, hard_max=8),
@@ -218,6 +224,74 @@ class ElementStatusTests(unittest.TestCase):
             for item in (invalid_operator, invalid_arguments, poll_blocked)
         }
         self.assertEqual(badges, {"OP", "ARG", "CTX"})
+
+    def test_status_cache_reuses_unchanged_content(self):
+        element = FakeElement({}, self.properties)
+        session = types.SimpleNamespace(
+            _poll_context_fingerprint=("OBJECT", 1),
+            _poll_context_revision=0,
+        )
+        ops = types.SimpleNamespace(session=session)
+
+        with patch.object(
+                status_module,
+                "_evaluate_status",
+                wraps=status_module._evaluate_status,
+        ) as evaluate:
+            first = status_module.get_element_status(element, ops=ops)
+            second = status_module.get_element_status(element, ops=ops)
+
+        self.assertIs(first, status_module.ElementStatus.VALID)
+        self.assertIs(second, first)
+        evaluate.assert_called_once_with(element, include_poll=True)
+
+    def test_status_cache_invalidates_when_poll_revision_changes(self):
+        element = FakeElement({}, self.properties)
+        session = types.SimpleNamespace(
+            _poll_context_fingerprint=("OBJECT", 1),
+            _poll_context_revision=0,
+        )
+        ops = types.SimpleNamespace(session=session)
+
+        with patch.object(
+                status_module,
+                "_evaluate_status",
+                wraps=status_module._evaluate_status,
+        ) as evaluate:
+            status_module.get_element_status(element, ops=ops)
+            session._poll_context_revision = 1
+            status_module.get_element_status(element, ops=ops)
+
+        self.assertEqual(evaluate.call_count, 2)
+
+    def test_normal_panel_status_cache_reuses_unchanged_content(self):
+        element = FakeElement({}, self.properties)
+
+        with patch.object(
+                status_module,
+                "_evaluate_status",
+                wraps=status_module._evaluate_status,
+        ) as evaluate:
+            first = status_module.get_element_status(element)
+            second = status_module.get_element_status(element)
+
+        self.assertIs(first, status_module.ElementStatus.VALID)
+        self.assertIs(second, first)
+        evaluate.assert_called_once_with(element, include_poll=True)
+
+    def test_normal_panel_status_cache_invalidates_on_content_generation(self):
+        element = FakeElement({}, self.properties)
+
+        with patch.object(
+                status_module,
+                "_evaluate_status",
+                wraps=status_module._evaluate_status,
+        ) as evaluate:
+            status_module.get_element_status(element)
+            status_module.PublicCache.__derived_generation__ += 1
+            status_module.get_element_status(element)
+
+        self.assertEqual(evaluate.call_count, 2)
 
 
 if __name__ == "__main__":

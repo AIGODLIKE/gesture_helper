@@ -8,6 +8,9 @@ from ..utils.public import get_pref
 from ..utils.public_ui import icon_two
 
 
+_ACTIVE_ELEMENT_UNSET = object()
+
+
 class ElementDraw:
     def draw_name(self, layout: 'bpy.types.UILayout') -> None:
         """Draw the element name and a source-sync button when available."""
@@ -28,10 +31,23 @@ class ElementDraw:
             return
         layout.prop(self, 'overlay_offset', text='Draw Offset')
 
-    def draw_item(self, layout: 'bpy.types.UILayout', *, _active_element=None):
+    def draw_item(
+            self,
+            layout: 'bpy.types.UILayout',
+            *,
+            _active_element=_ACTIVE_ELEMENT_UNSET,
+            _frozen: bool = False,
+    ):
         pref = get_pref()
         draw = pref.draw_property
-        active = _active_element if _active_element is not None else pref.active_element
+        active = (
+            pref.active_element
+            if (
+                _active_element is _ACTIVE_ELEMENT_UNSET
+                or (_active_element is None and not _frozen)
+            )
+            else _active_element
+        )
 
         layout.context_pointer_set('move_element', self)
         layout.context_pointer_set('cut_element', self)
@@ -39,7 +55,11 @@ class ElementDraw:
         column = layout.column(align=True)
         item_row = column.row(align=True)
 
-        status_info = self.list_status_info
+        if _frozen:
+            from ..utils.ui_draw_sync import get_frozen_element_status_info
+            status_info = get_frozen_element_status_info(self, bpy.context)
+        else:
+            status_info = self.list_status_info
         leading = item_row.row(align=True)
         leading.ui_units_x = 2.0 + (
             1.0 if draw.element_show_enabled_button else 0.0
@@ -76,7 +96,7 @@ class ElementDraw:
             r.ui_units_x = 1.0
             r.active = r.enabled = self.is_can_be_cut
             r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
-        self.draw_item_child(column, active)
+        self.draw_item_child(column, active, frozen=_frozen)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
         from ..utils.icons import ui_icon
@@ -126,10 +146,9 @@ class ElementDraw:
             status_info=None,
             show_icon=True,
     ):
-        name_layout.label(text=self.name_translate, translate=False)
-
         if status_info is None:
             status_info = self.list_status_info
+        name_layout.label(text=self.name_translate, translate=False)
         status_row = controls.row(align=True)
         status_row.ui_units_x = 2.75
         if not status_info.is_valid:
@@ -171,12 +190,16 @@ class ElementDraw:
             emboss=False,
         )
 
-    def draw_item_child(self, layout, active_element=None):
+    def draw_item_child(self, layout, active_element=None, *, frozen=False):
         if self.show_child and len(self.element):
             child = layout.box().column(align=True)
             child.enabled = self.enabled
             for element in self.element:
-                element.draw_item(child, _active_element=active_element)
+                element.draw_item(
+                    child,
+                    _active_element=active_element,
+                    _frozen=frozen,
+                )
             child.separator()
 
     def draw_item_property(self, layout: 'bpy.types.UILayout', *, include_modal: bool = True) -> None:
@@ -248,6 +271,7 @@ class ElementDraw:
                 drag = advanced.row(align=True)
                 drag.prop(self, 'property_drag_mode', text='')
                 drag.prop(self, 'property_drag_invert', text='', icon='ARROW_LEFTRIGHT')
+                advanced.prop(self, 'property_wheel_step')
                 if prop_type == 'FLOAT' and self.property_show_value:
                     advanced.prop(self, 'property_value_precision')
             elif prop_type == 'BOOLEAN':
@@ -294,7 +318,7 @@ class ElementDraw:
 
         alignment = column.row(align=True)
         alignment.label(text='Alignment')
-        alignment.prop(self, 'layout_alignment', text='')
+        alignment.prop(self, 'layout_alignment', text='', expand=True)
 
         actions = [
             item for item in self.panel_leaf_items
@@ -324,7 +348,8 @@ class ElementDraw:
         )
         if self.show_layout_advanced:
             advanced = column.column(align=True)
-            advanced.prop(self, 'layout_scale')
+            advanced.prop(self, 'layout_scale_x')
+            advanced.prop(self, 'layout_scale_y')
 
         self.draw_overlay_offset(column)
 
@@ -474,6 +499,7 @@ class ElementDraw:
             SetDirection.draw_direction(row.column())
 
         if is_operator or is_modal:
+            is_change = self.properties != self.operator_tmp_kmi_properties
             if self.other_property.auto_update_element_operator_properties:
                 # Do not write RNA inside draw — debounce instead.
                 from ..utils.ui_draw_sync import schedule
@@ -489,8 +515,8 @@ class ElementDraw:
                     ):
                         active.from_tmp_kmi_operator_update_properties()
 
-                schedule('operator_tmp_kmi_sync', _flush)
-            is_change = self.properties != self.operator_tmp_kmi_properties
+                if is_change:
+                    schedule('operator_tmp_kmi_sync', _flush)
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
             row.alert = is_change

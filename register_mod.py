@@ -17,6 +17,8 @@ module_list = (
 
 _load_pre_handler = None
 _load_post_handler = None
+_animation_playback_pre_handler = None
+_animation_playback_post_handler = None
 _load_gesture_snapshot = None
 _deferred_init_done = False
 
@@ -66,6 +68,22 @@ def _register_load_handlers():
     )
 
 
+def _register_animation_handlers():
+    """Invalidate the panel pause snapshot only at playback transitions."""
+    global _animation_playback_pre_handler, _animation_playback_post_handler
+    handlers = bpy.app.handlers
+    playback_pre = getattr(handlers, 'animation_playback_pre', None)
+    playback_post = getattr(handlers, 'animation_playback_post', None)
+    if playback_pre is not None:
+        _animation_playback_pre_handler = _ensure_load_handler(
+            playback_pre, _on_animation_playback_transition
+        )
+    if playback_post is not None:
+        _animation_playback_post_handler = _ensure_load_handler(
+            playback_post, _on_animation_playback_transition
+        )
+
+
 def _unregister_load_handlers():
     global _load_pre_handler, _load_post_handler, _load_gesture_snapshot
     _remove_load_handler(
@@ -77,6 +95,25 @@ def _unregister_load_handlers():
     _load_pre_handler = None
     _load_post_handler = None
     _load_gesture_snapshot = None
+
+
+def _unregister_animation_handlers():
+    global _animation_playback_pre_handler, _animation_playback_post_handler
+    handlers = bpy.app.handlers
+    playback_pre = getattr(handlers, 'animation_playback_pre', None)
+    playback_post = getattr(handlers, 'animation_playback_post', None)
+    if playback_pre is not None:
+        _remove_load_handler(
+            playback_pre,
+            _animation_playback_pre_handler or _on_animation_playback_transition,
+        )
+    if playback_post is not None:
+        _remove_load_handler(
+            playback_post,
+            _animation_playback_post_handler or _on_animation_playback_transition,
+        )
+    _animation_playback_pre_handler = None
+    _animation_playback_post_handler = None
 
 
 def _sync_addon_state():
@@ -92,7 +129,7 @@ def _sync_addon_state():
 
 
 @persistent
-def _on_load_pre(_dummy):
+def _on_load_pre(*_args):
     """Flush pending global gesture edits before Blender clears the WM store."""
     global _load_gesture_snapshot
     _load_gesture_snapshot = None
@@ -114,7 +151,7 @@ def _on_load_pre(_dummy):
 
 
 @persistent
-def _on_load_post(_dummy):
+def _on_load_post(*_args):
     global _load_gesture_snapshot
     snapshot = _load_gesture_snapshot
     _load_gesture_snapshot = None
@@ -138,6 +175,26 @@ def _on_load_post(_dummy):
                     load_gestures_from_disk()
             _sync_addon_state()
     except (KeyError, AttributeError, RuntimeError):
+        ...
+    return None
+
+
+@persistent
+def _on_animation_playback_transition(*_args):
+    """Refresh the disabled panel once when playback starts or stops."""
+    try:
+        from .utils.ui_draw_sync import (
+            cancel_modal_ui_refresh,
+            invalidate_playback_panel_state,
+            tag_gesture_ui_regions,
+        )
+        # A foreign-modal recovery timer can still be alive when playback
+        # starts. Leaving it registered adds an otherwise pointless 8 Hz poll
+        # to the playback hot path; playback has its own start/stop lifecycle.
+        invalidate_playback_panel_state()
+        cancel_modal_ui_refresh()
+        tag_gesture_ui_regions()
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
         ...
     return None
 
@@ -191,6 +248,7 @@ def register():
         _deferred_init_done = True
         init_register()
     _register_load_handlers()
+    _register_animation_handlers()
 
 
 def unregister():
@@ -210,12 +268,17 @@ def unregister():
     from .gesture.gesture_handle import GestureHandle
     from .gesture.gesture_draw_gpu import GestureGpuDraw
     from .gesture.pass_through import cancel_deferred_operator_timers
-    from .utils.ui_draw_sync import cancel_all as cancel_ui_draw_sync
+    from .utils.ui_draw_sync import (
+        cancel_all as cancel_ui_draw_sync,
+        clear_panel_layout_freezes,
+    )
 
     _unregister_load_handlers()
+    _unregister_animation_handlers()
     cancel_poll_cache_timer()
     cancel_scheduled_gesture_save()
     cancel_ui_draw_sync()
+    clear_panel_layout_freezes()
     GestureHandle.cancel_active_gesture_timeout_timer()
     cancel_deferred_operator_timers()
     GestureGpuDraw.force_unregister_draw()

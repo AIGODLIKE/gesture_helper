@@ -35,8 +35,23 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
 
     def draw_item(self, context, layout: bpy.types.UILayout, data, item, icon, active_data, active_property, index,
                   flt_flag):
-        active = self.pref.active_element
-        item.draw_item(layout.column(align=True), _active_element=active)
+        from ..utils.ui_draw_sync import get_frozen_ui_selection
+
+        # Keep every row tied to the selection captured at modal entry.  The
+        # live ``pref.active_element`` resolver traverses the element tree on a
+        # cache miss and must not run once per UIList row during a forced redraw.
+        snapshot = get_frozen_ui_selection(data, context)
+        frozen = snapshot is not None
+        active = snapshot[1] if frozen else self.pref.active_element
+        item_layout = layout.column(align=True)
+        if frozen:
+            item.draw_item(
+                item_layout,
+                _active_element=active,
+                _frozen=True,
+            )
+        else:
+            item.draw_item(item_layout, _active_element=active)
 
     def draw_filter(self, context, layout):
         from ..element.element_cure import ElementCURE

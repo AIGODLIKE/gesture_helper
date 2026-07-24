@@ -1,0 +1,81 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: editable float, integer, enum, and boolean property displays",
+  "gesture": {
+    "0": {
+      "name": "Property Display Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Focal Length",
+          "element_type": "PROPERTY",
+          "direction": "1",
+          "property_data_path": "space_data.lens",
+          "property_drag_mode": "MOUSE_CHANGES_HORIZONTAL",
+          "property_value_precision": 1,
+          "property_value_format": "{name}: {value} mm"
+        },
+        "1": {
+          "name": "Resolution Scale",
+          "element_type": "PROPERTY",
+          "direction": "3",
+          "property_data_path": "scene.render.resolution_percentage",
+          "property_drag_mode": "MOUSE_CHANGES_VERTICAL",
+          "property_drag_invert": true,
+          "property_value_format": "{name}: {value}%"
+        },
+        "2": {
+          "name": "Clip End",
+          "element_type": "PROPERTY",
+          "direction": "4",
+          "property_data_path": "space_data.clip_end",
+          "property_drag_mode": "MOUSE_CHANGES_ARBITRARY",
+          "property_wheel_step": 0.5,
+          "property_value_precision": 2,
+          "property_value_format": "{name}: {value} m",
+          "overlay_offset": [
+            -10,
+            8
+          ]
+        },
+        "3": {
+          "name": "Viewport Shading",
+          "element_type": "PROPERTY",
+          "direction": "5",
+          "property_data_path": "space_data.shading.type"
+        },
+        "4": {
+          "name": "Overlays",
+          "element_type": "PROPERTY",
+          "direction": "7",
+          "property_data_path": "space_data.overlay.show_overlays",
+          "property_true_text": "Visible",
+          "property_false_text": "Hidden",
+          "property_bool_icons_enabled": false
+        },
+        "5": {
+          "name": "Gizmo (Name Only)",
+          "element_type": "PROPERTY",
+          "direction": "2",
+          "property_data_path": "space_data.show_gizmo",
+          "property_show_value": false
+        }
+      },
+      "description": "Drag numeric values and click enum or boolean values to change them"
+    }
+  }
+}

@@ -181,6 +181,35 @@ assert matching_handlers(
 assert matching_handlers(
     bpy.app.handlers.load_post, register_mod._on_load_post,
 ) == 1
+animation_pre = getattr(bpy.app.handlers, "animation_playback_pre", None)
+animation_post = getattr(bpy.app.handlers, "animation_playback_post", None)
+if animation_pre is not None:
+    assert matching_handlers(
+        animation_pre,
+        register_mod._on_animation_playback_transition,
+    ) == 1
+if animation_post is not None:
+    assert matching_handlers(
+        animation_post,
+        register_mod._on_animation_playback_transition,
+    ) == 1
+
+import gesture_helper.utils.ui_draw_sync as ui_draw_sync  # noqa: E402
+
+
+def pending_modal_refresh():
+    return None
+
+
+bpy.app.timers.register(pending_modal_refresh, first_interval=60.0)
+ui_draw_sync._modal_ui_refresh_fn = pending_modal_refresh
+ui_draw_sync._playback_panel_snapshots[123] = (
+    ui_draw_sync._PanelContentSnapshot()
+)
+register_mod._on_animation_playback_transition()
+assert ui_draw_sync._modal_ui_refresh_fn is None
+assert not bpy.app.timers.is_registered(pending_modal_refresh)
+assert not ui_draw_sync._playback_panel_snapshots
 
 assert bpy.ops.preferences.addon_disable(module="gesture_helper") == {"FINISHED"}
 assert not gesture_bindings(), gesture_bindings()
@@ -190,5 +219,15 @@ assert matching_handlers(
 assert matching_handlers(
     bpy.app.handlers.load_post, register_mod._on_load_post,
 ) == 0
+if animation_pre is not None:
+    assert matching_handlers(
+        animation_pre,
+        register_mod._on_animation_playback_transition,
+    ) == 0
+if animation_post is not None:
+    assert matching_handlers(
+        animation_post,
+        register_mod._on_animation_playback_transition,
+    ) == 0
 
 print(f"LIFECYCLE_SMOKE_OK Blender {bpy.app.version_string}")

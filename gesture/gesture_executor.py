@@ -157,6 +157,13 @@ class GestureExecutor:
         de = snap.direction_element
         if de and snap.threshold_zone.is_confirm and session.phase.shows_radial_ui:
             if de.is_operator or de.is_property_display or de.is_layout_container:
+                from ..element.element_status import ElementStatus, get_element_status
+                action = de.main_element if de.is_layout_container else de
+                if (
+                        action is None
+                        or get_element_status(action, ops=ops) is not ElementStatus.VALID
+                ):
+                    return False
                 self.try_running_operator(session, ops)
                 return True
         return False
