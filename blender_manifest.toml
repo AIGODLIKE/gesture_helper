@@ -39,7 +39,6 @@ paths_exclude_pattern = [
     "/.gitignore",
     "/.gitattributes",
     "/README.md",
-    "/KIMI_HANDOFF.md",
     "/backups/",
     "/auto_backups/",
     "**/svg_2_png.py",
