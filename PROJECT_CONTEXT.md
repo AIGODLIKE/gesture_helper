@@ -57,6 +57,13 @@ with bundled JSON presets, translations, and PNG icon assets.
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip
    timers are cancelled on target changes, modal reset/exit, and unregister.
+   Read-only radial previews enter `UI_VISIBLE` immediately (without the
+   gesture timeout or trajectory overlay); menu previews use the dedicated
+   `GestureMenuRuntime` draw handler. The preview gesture selector is a compact,
+   translated HUD whose hover events do not consume space-drag navigation.
+   Large layout previews cache static measurements, cull off-screen subtrees,
+   publish only token-current visible hit rows, and resolve each visible row's
+   status, label, icon, and display metrics once per draw.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
@@ -76,6 +83,10 @@ with bundled JSON presets, translations, and PNG icon assets.
   sub-panels; `ui/` defines lists, menus, context-menu integration, and the
   main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
   and modal pause status is the first header item after that title.
+  Expanded element trees with more than 48 visible descendants use a cached,
+  area/root-scoped 32-row page; selection changes reveal their page, while
+  explicit page changes are preserved. Layout Gesture Action choices are built
+  lazily in a menu instead of as hundreds of controls on every panel draw.
   Gesture preferences include the hover-tooltip delay in milliseconds (100 ms
   by default); runtime tooltip fade-in is fixed and does not persist state.
   `ops/quick_add/` implements context-sensitive creation helpers and previews.
@@ -119,6 +130,11 @@ flowchart TD
   rollback/keymaps, lifecycle/reload, preview, and panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
+- Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
+  `GH_PANEL_AB_MODE=ELEMENT_PREVIEW`, and `GH_PANEL_AB_ELEMENT_COUNT=300`, then
+  run `tests/blender_panel_profile_ab.py` in foreground Blender. The 300-leaf,
+  426-node Blender 5.2 fixture measures about 6.25 ms per Element N-panel draw;
+  its centered GPU preview measures about 32.3 ms per draw.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
 
@@ -158,6 +174,8 @@ flowchart TD
 - JSON is UTF-8; conditional `IF`/`ELIF`/`ELSE` elements must be consecutive.
 - Dynamic RNA paths must validate the live owner and fail closed when collection
   identity cannot be preserved.
+- Keep the Gesture N-panel Type and menu-style controls on one row, and keep
+  Add Element controls at a stable height when `CHILD` is invalid for a leaf.
 - Keep the exported preset author signature in `preferences/draw_property.py`
   unchanged; ordinary source UI and manifest text remain English.
 - Never include `AGENTS.md`, `PROJECT_CONTEXT.md`, tests, or caches in release

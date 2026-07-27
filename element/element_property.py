@@ -16,7 +16,19 @@ from ..utils.enum import (
     LAYOUT_CONTAINER_TYPES,
 )
 from ..utils.public import get_pref
-from ..utils.public_cache import PublicCacheFunc, cache_update_lock
+from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
+
+
+_UI_PANEL_LEAF_ITEMS_CACHE = None
+
+
+def _update_show_child(_self, _context) -> None:
+    try:
+        from ..ui.ui_list import clear_element_tree_cache
+
+        clear_element_tree_cache()
+    except (AttributeError, ImportError, RuntimeError):
+        pass
 
 
 def _translate_rna_text(text: str, context, *, tooltip: bool) -> str:
@@ -807,13 +819,62 @@ class ElementLayoutProperty:
     @property
     def panel_leaf_items(self) -> list:
         """Interactive leaves of this element's panel, flattened through containers."""
-        from ..utils.gesture_items import iter_panel_leaves
-        leaves = iter_panel_leaves(self.extension_items)
-        session = getattr(getattr(self, 'ops', None), 'session', None)
+        from ..utils.gesture_items import iter_panel_leaves, poll_context_fingerprint
+        try:
+            ops = getattr(self, 'ops', None)
+            session = getattr(ops, 'session', None)
+        except ReferenceError:
+            self.ops = None
+            session = None
         if session is None:
-            return list(leaves)
-        # Stable proxies — hit boxes stamped by the panel draw must be visible.
-        return [session.canonical_element(item) for item in leaves]
+            global _UI_PANEL_LEAF_ITEMS_CACHE
+            try:
+                poll_key = poll_context_fingerprint()
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                poll_key = ()
+            key = (
+                PublicCache.__structure_generation__,
+                PublicCache.__derived_generation__,
+                poll_key,
+            )
+            packed = _UI_PANEL_LEAF_ITEMS_CACHE
+            if packed is None or packed[0] != key:
+                values = {}
+                _UI_PANEL_LEAF_ITEMS_CACHE = (key, values)
+            else:
+                values = packed[1]
+            try:
+                element_key = int(self.as_pointer())
+            except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+                element_key = id(self)
+            cached = values.get(element_key)
+            if cached is not None:
+                return cached
+            result = list(iter_panel_leaves(self.extension_items))
+            values[element_key] = result
+            return result
+
+        key = (
+            PublicCache.__derived_generation__,
+            getattr(session, '_poll_context_fingerprint', None),
+            getattr(session, '_poll_context_revision', 0),
+        )
+        packed = getattr(session, '_gpu_panel_leaf_items_cache', None)
+        if packed is None or packed[0] != key:
+            values = {}
+            session._gpu_panel_leaf_items_cache = (key, values)
+        else:
+            values = packed[1]
+        cached = values.get(self)
+        if cached is not None:
+            return cached
+        # Stable proxies: hit boxes stamped by the panel draw must be visible.
+        result = [
+            session.canonical_element(item)
+            for item in iter_panel_leaves(self.extension_items)
+        ]
+        values[self] = result
+        return result
 
 
 class ElementProperty(
@@ -830,5 +891,9 @@ class ElementProperty(
         update=lambda self, context: self.clear_derived_cache(),
     )
 
-    show_child: BoolProperty(name='Show Children', default=False)
+    show_child: BoolProperty(
+        name='Show Children',
+        default=False,
+        update=_update_show_child,
+    )
     level: IntProperty(name="Element Level", default=0)

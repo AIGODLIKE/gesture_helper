@@ -37,6 +37,7 @@ class ElementDraw:
             *,
             _active_element=_ACTIVE_ELEMENT_UNSET,
             _frozen: bool = False,
+            _draw_children: bool = True,
     ):
         pref = get_pref()
         draw = pref.draw_property
@@ -96,7 +97,8 @@ class ElementDraw:
             r.ui_units_x = 1.0
             r.active = r.enabled = self.is_can_be_cut
             r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
-        self.draw_item_child(column, active, frozen=_frozen)
+        if _draw_children:
+            self.draw_item_child(column, active, frozen=_frozen)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
         from ..utils.icons import ui_icon
@@ -320,23 +322,18 @@ class ElementDraw:
         alignment.label(text='Alignment')
         alignment.prop(self, 'layout_alignment', text='', expand=True)
 
-        actions = [
-            item for item in self.panel_leaf_items
-            if item.is_operator or item.is_property_display
-        ]
-        if actions:
+        effective = self.main_element
+        if effective is not None:
+            from ..ui.menu import GESTURE_MT_main_action_menu
+
             column.separator()
             column.label(text='Gesture Action')
-            action_column = column.column(align=True)
-            effective = self.main_element
-            for item in actions:
-                action_column.prop(
-                    item,
-                    'main_item',
-                    text=item.name_translate,
-                    icon='RADIOBUT_ON' if item == effective else 'RADIOBUT_OFF',
-                    toggle=True,
-                )
+            column.context_pointer_set('gesture_main_action_layout', self)
+            column.menu(
+                GESTURE_MT_main_action_menu.__name__,
+                text=effective.name_translate,
+                icon='RADIOBUT_ON',
+            )
 
         advanced_header = column.row(align=True)
         advanced_header.prop(

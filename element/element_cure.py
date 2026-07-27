@@ -1,7 +1,6 @@
 import bpy
 from bpy.props import BoolProperty, EnumProperty
 
-from .element_property import ElementAddProperty
 from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_LAYOUT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import (
     PublicOperator,
@@ -130,7 +129,6 @@ class ElementCURE:
         selected_type: EnumProperty(
             name='Structure type',
             items=ENUM_SELECTED_TYPE,
-            update=lambda self, context: ElementAddProperty.update_selected_type(),
         )
 
         @classmethod

@@ -164,6 +164,11 @@ class GestureGpuDraw(DrawDebug):
                 session = getattr(self, "session", None)
                 if session is not None and getattr(session, "draw_ctx", None) is None:
                     refresh_draw_frame_context(session, self)
+                if session is not None:
+                    session._layout_frame_measure_cache = {}
+                    # A fresh token makes geometry omitted by viewport culling
+                    # ineligible for hit testing immediately after this draw.
+                    session.layout_token = object()
                 gpu_draw_begin()
                 try:
                     self.gpu_draw_gesture()
@@ -544,13 +549,14 @@ class GestureGpuDraw(DrawDebug):
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
             self.gpu_draw_direction_element()
-            if self.session.phase.shows_radial_ui:
-                self.gpu_draw_trajectory_gesture_line()
-            else:
-                if self.is_window_region_type:
+            preview = bool(getattr(self, 'preview_read_only', False))
+            if not preview:
+                if self.session.phase.shows_radial_ui:
+                    self.gpu_draw_trajectory_gesture_line()
+                elif self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
-            self.gpu_draw_trajectory_gesture_point()
-            self.gpu_draw_last_item_name()
+                self.gpu_draw_trajectory_gesture_point()
+                self.gpu_draw_last_item_name()
         if self.session.phase.shows_radial_ui:
             center = self.__circle_center_region_position__
             if center is None:

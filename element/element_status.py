@@ -21,6 +21,15 @@ _UI_STATUS_INFO_VALUES: dict[
 ] = {}
 
 
+def _element_cache_key(element, include_poll: bool) -> tuple[int, bool]:
+    """Stable UI-cache key across Blender's short-lived RNA proxies."""
+    try:
+        pointer = int(element.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        pointer = id(element)
+    return pointer, include_poll
+
+
 def _ui_status_context_key(include_poll: bool) -> tuple:
     """Return a short-lived UI context key shared by every list row."""
     global _UI_STATUS_CONTEXT_CACHE, _UI_STATUS_GENERATION
@@ -310,14 +319,21 @@ def get_element_status(element, *, ops=None, include_poll: bool = True) -> Eleme
     """Return a status cached until derived data or poll context changes."""
     if ops is None:
         ops = getattr(element, "ops", None)
-    session = getattr(ops, "session", None)
+    try:
+        session = getattr(ops, "session", None)
+    except ReferenceError:
+        session = None
+        try:
+            element.ops = None
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            pass
     if session is None:
         # Normal panel draws also repeat for viewport/animation notifiers. Keep
         # one result per element and poll-context fingerprint, invalidating on
         # derived content changes. The short fingerprint TTL coalesces rows and
         # avoids a full active-tool/selection lookup for every row.
         context_key = _ui_status_context_key(include_poll)
-        cache_key = (element, include_poll)
+        cache_key = _element_cache_key(element, include_poll)
         packed = _UI_STATUS_VALUES.get(cache_key)
         if packed is not None and packed[0] == context_key:
             return packed[1]
@@ -358,10 +374,48 @@ def get_element_status(element, *, ops=None, include_poll: bool = True) -> Eleme
 
 
 def get_element_status_info(element, *, ops=None, include_poll: bool = True) -> ElementStatusInfo:
+    if ops is None:
+        ops = getattr(element, "ops", None)
+    try:
+        session = getattr(ops, "session", None)
+    except ReferenceError:
+        session = None
+        ops = None
+        try:
+            element.ops = None
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            pass
+
+    session_values = None
+    session_cache_key = None
+    if session is not None:
+        if include_poll:
+            context_key = getattr(session, "_poll_context_fingerprint", None)
+            if context_key is None:
+                context_key = poll_context_fingerprint()
+                session._poll_context_fingerprint = context_key
+            context_key = (
+                context_key,
+                getattr(session, '_poll_context_revision', 0),
+            )
+        else:
+            context_key = None
+        key = (PublicCache.__derived_generation__, context_key)
+        packed = getattr(session, '_element_status_info_cache', None)
+        if packed is None or packed[0] != key:
+            session_values = {}
+            session._element_status_info_cache = (key, session_values)
+        else:
+            session_values = packed[1]
+        session_cache_key = (element, include_poll)
+        cached = session_values.get(session_cache_key)
+        if cached is not None:
+            return cached
+
     ui_context_key = None
-    if ops is None and getattr(element, "ops", None) is None:
+    if session is None and ops is None:
         ui_context_key = _ui_status_context_key(include_poll)
-        cache_key = (element, include_poll)
+        cache_key = _element_cache_key(element, include_poll)
         packed = _UI_STATUS_INFO_VALUES.get(cache_key)
         if packed is not None and packed[0] == ui_context_key:
             return packed[1]
@@ -370,19 +424,24 @@ def get_element_status_info(element, *, ops=None, include_poll: bool = True) -> 
     if info.status is ElementStatus.INVALID_ARGUMENTS:
         message = get_operator_argument_error(element)
         if message:
-            return replace(info, message=message)
-    if info.status is ElementStatus.INVALID_OPERATOR:
+            info = replace(info, message=message)
+    elif info.status is ElementStatus.INVALID_OPERATOR:
         bl_idname = getattr(element, "operator_bl_idname", "")
         if bl_idname:
             template = _translate_status_message("Operator not found: %s")
-            return replace(info, message=template % bl_idname)
-    if info.status is ElementStatus.INVALID_PROPERTY:
+            info = replace(info, message=template % bl_idname)
+    elif info.status is ElementStatus.INVALID_PROPERTY:
         data_path = getattr(element, "property_data_path", "")
         if data_path:
             template = _translate_status_message("Property path not found: %s")
             info = replace(info, message=template % data_path)
+    if session_values is not None:
+        session_values[session_cache_key] = info
     if ui_context_key is not None:
-        _UI_STATUS_INFO_VALUES[(element, include_poll)] = (ui_context_key, info)
+        _UI_STATUS_INFO_VALUES[_element_cache_key(element, include_poll)] = (
+            ui_context_key,
+            info,
+        )
     return info
 
 
@@ -392,7 +451,9 @@ def get_cached_ui_status_info(
         include_poll: bool = True,
 ) -> ElementStatusInfo | None:
     """Return the last visible panel status without evaluating live context."""
-    packed = _UI_STATUS_INFO_VALUES.get((element, include_poll))
+    packed = _UI_STATUS_INFO_VALUES.get(
+        _element_cache_key(element, include_poll)
+    )
     if packed is None:
         return None
     context_key, info = packed

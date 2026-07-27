@@ -151,9 +151,11 @@ class GestureSession:
         self._direction_items_memo = None
         # (cache_key, {element: items}) — replaced wholesale when the key changes.
         self._gpu_extension_items_cache = None
+        self._gpu_panel_leaf_items_cache = None
         # Status values are keyed by derived generation/context, but a new
         # modal session must not retain dictionaries keyed by old RNA proxies.
         self._element_status_cache = None
+        self._element_status_info_cache = None
         # Poll expressions are context-sensitive, but normally do not depend on
         # the mouse event itself. Keep one fingerprint per modal snapshot so
         # item/status caches can survive ordinary cursor motion.
@@ -188,6 +190,13 @@ class GestureSession:
         self._bottom_child_dwell_deadline = None
         self.tooltip_state = HoverTooltipState()
         self.draw_ctx = None  # DrawFrameContext | None
+        # Static layout sizes survive GPU callbacks while their complete
+        # content/context/style signature stays unchanged. Dynamic property
+        # labels still use the per-frame cache only.
+        self._layout_measure_cache = {}
+        self._layout_measure_cache_key = None
+        self._layout_measure_stability = {}
+        self._layout_frame_measure_cache = None
         self.layout_token = object()
 
     def reset(self, event, area, screen, gesture_name: str = ""):
@@ -211,10 +220,31 @@ class GestureSession:
         (RNA pointers may be gone) and on session reset.
         """
         from ..utils.public_cache import PublicCache
-        if self._element_proxy_pool_generation != PublicCache.__derived_generation__:
+        generation = PublicCache.__structure_generation__
+        if self._element_proxy_pool_generation != generation:
+            self.release_element_proxies()
             self._element_proxy_pool.clear()
-            self._element_proxy_pool_generation = PublicCache.__derived_generation__
+            self._element_proxy_pool_generation = generation
         return self._element_proxy_pool.setdefault(element, element)
+
+    def release_element_proxies(self, owner=None) -> None:
+        """Detach transient modal owners before Blender removes their RNA."""
+        for element in tuple(self._element_proxy_pool.values()):
+            try:
+                current = getattr(element, 'ops', None)
+                if current is None:
+                    continue
+                if owner is not None and current is not owner:
+                    continue
+                if owner is None:
+                    try:
+                        if getattr(current, 'session', None) is not self:
+                            continue
+                    except ReferenceError:
+                        pass
+                element.ops = None
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
 
     # ---- phase transitions (single write path) ----
 

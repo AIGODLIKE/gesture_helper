@@ -38,3 +38,24 @@ class GESTURE_MT_layout_preset_menu(bpy.types.Menu):
                 icon=icon,
             )
             operator.preset = identifier
+
+
+class GESTURE_MT_main_action_menu(bpy.types.Menu):
+    bl_label = 'Gesture Action'
+
+    def draw(self, context):
+        container = getattr(context, 'gesture_main_action_layout', None)
+        if container is None:
+            return
+        layout = self.layout
+        effective = container.main_element
+        for item in container.panel_leaf_items:
+            if not (item.is_operator or item.is_property_display):
+                continue
+            layout.prop(
+                item,
+                'main_item',
+                text=item.name_translate,
+                icon='RADIOBUT_ON' if item == effective else 'RADIOBUT_OFF',
+                toggle=True,
+            )

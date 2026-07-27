@@ -479,8 +479,13 @@ class OverlayLayout:
         node = self._hover
         if node is None:
             return False
-        if event.type != 'LEFTMOUSE' or event.value != 'RELEASE':
-            return True  # hovered: swallow so clicks cannot fall through
+        # Hovering the selector must not block preview navigation or the
+        # space-drag used to reposition the gesture. Only own the left-click
+        # sequence that activates a row.
+        if event.type != 'LEFTMOUSE':
+            return False
+        if event.value != 'RELEASE':
+            return True
         if node.kind == "PROPERTY":
             value = getattr(node.data, node.prop)
             if isinstance(value, bool):

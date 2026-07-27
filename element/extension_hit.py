@@ -191,6 +191,22 @@ def hit_test_child_row(item, ops=None, *, mouse: tuple[float, float] | None = No
     return point_in_rect(mouse, getattr(item, "extension_by_child_draw_area", None))
 
 
+def panel_hit_items(container, ops, *, mouse=None):
+    """Rows worth scanning for the current pointer position.
+
+    Layout leaves are entirely contained by their root panel. Avoid walking a
+    large visible-row list while the pointer is in the N-panel or elsewhere
+    outside that GPU panel.
+    """
+    if getattr(container, 'is_layout_container', False):
+        if mouse is None:
+            mouse = _mouse_for(container, ops)
+        if not (hit_test_extension(container, ops, mouse=mouse) & PANEL):
+            return ()
+        return container.panel_leaf_items
+    return getattr(container, 'extension_items', ()) or ()
+
+
 def stack_hits_flags(
         extension_hover: list,
         ops,
@@ -206,10 +222,7 @@ def stack_hits_flags(
     for el in extension_hover:
         el.ops = ops
         combined |= hit_test_extension(el, ops, mouse=mouse)
-        if getattr(el, "is_layout_container", False):
-            items = el.panel_leaf_items
-        else:
-            items = getattr(el, "extension_items", []) or []
+        items = panel_hit_items(el, ops, mouse=mouse)
         for item in items:
             item.ops = ops
             if hit_test_child_row(item, ops, mouse=mouse):

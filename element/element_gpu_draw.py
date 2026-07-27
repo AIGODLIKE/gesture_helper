@@ -63,9 +63,13 @@ class ElementGpuProperty:
     @property
     def status_badge_size(self) -> tuple[float, float]:
         info = self.element_status_info
+        return self._status_badge_size_for(info, self.text_size)
+
+    @staticmethod
+    def _status_badge_size_for(info, text_size) -> tuple[float, float]:
         if info.is_valid:
             return 0.0, 0.0
-        size = max(8, round(self.text_size * 0.58))
+        size = max(8, round(text_size * 0.58))
         width, height = from_text_get_dimensions(info.badge, size)
         pad = max(2.0, height * 0.28)
         return width + pad * 2.0, height + 2.0
@@ -172,12 +176,17 @@ class ElementGpuProperty:
 
     @property
     def text_color(self):
+        return self._text_color_for(
+            self.element_status_info,
+            self.draw_property,
+        )
+
+    def _text_color_for(self, info, draw):
         """
         Text color
         :return:
         """
-        draw = self.draw_property
-        status = self.element_status_info.status
+        status = info.status
         if status.is_error:
             color = tuple(draw.text_active_color)
             return (*color[:3], max(0.92, color[3]))
@@ -485,17 +494,27 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self._gesture_layout_token = ops.session.layout_token
 
 
-    def gpu_draw_label(self, use_offset=True):
+    def gpu_draw_label(
+            self, use_offset=True, *, text=None, dimensions=None,
+            color=None, size=None,
+    ):
         """Draw the label with its line-box top at the current origin.
 
         ``draw_text`` places the baseline from measured font metrics, so every
         label (CJK, capitals, descenders) fills the same stable line box — no
         per-script nudge tables.
         """
-        w, _h = self.text_dimensions
+        if text is None:
+            text = self.text
+        if size is None:
+            size = self.text_size
+        if dimensions is None:
+            dimensions = from_text_get_dimensions(text, size)
+        if color is None:
+            color = self.text_color
+        w, _h = dimensions
         self.draw_text(
-            self.text, position=[0, 0], color=color_to_srgb(self.text_color),
-            size=self.text_size,
+            text, position=[0, 0], color=color_to_srgb(color), size=size,
         )
         if use_offset:
             gpu.matrix.translate((w, 0))
@@ -550,10 +569,16 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((size, 0))
 
-    def gpu_draw_status_badge(self, use_offset=True, slot_width=None):
+    def gpu_draw_status_badge(
+            self, use_offset=True, slot_width=None, *, info=None,
+            badge_size=None,
+    ):
         """Draw a compact status code; color carries severity, text carries cause."""
-        info = self.element_status_info
-        width, height = self.status_badge_size
+        if info is None:
+            info = self.element_status_info
+        if badge_size is None:
+            badge_size = self.status_badge_size
+        width, height = badge_size
         if info.is_valid or width <= 0.0:
             return
         slot_width = max(width, float(slot_width or width))
@@ -576,8 +601,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         if use_offset:
             gpu.matrix.translate((slot_width + self.content_gap, 0))
 
-    def gpu_draw_status_accent(self, center, width, height):
-        info = self.element_status_info
+    def gpu_draw_status_accent(self, center, width, height, *, info=None):
+        if info is None:
+            info = self.element_status_info
         if info.is_valid:
             return
         scale = self._element_ui_scale()

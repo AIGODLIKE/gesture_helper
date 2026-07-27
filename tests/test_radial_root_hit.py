@@ -23,12 +23,16 @@ class FakeOps:
 
 
 class FakeElement:
-    def __init__(self, direction, token, *, item_area=None, panel_area=None, layout=False):
+    def __init__(
+            self, direction, token, *, item_area=None, panel_area=None,
+            layout=False, panel_items=(),
+    ):
         self.direction = str(direction)
         self._gesture_layout_token = token
         self.item_draw_area = item_area
         self.extension_draw_area = panel_area
         self.is_layout_container = layout
+        self.panel_leaf_items = panel_items
 
 
 class RadialRootHitTests(unittest.TestCase):
@@ -130,6 +134,29 @@ class RadialRootHitTests(unittest.TestCase):
         )
 
         self.assertIsNone(hit)
+
+    def test_large_layout_rows_are_only_scanned_inside_the_panel(self):
+        rows = [object() for _index in range(300)]
+        layout = FakeElement(
+            4,
+            self.token,
+            panel_area=(10.0, 10.0, 110.0, 110.0),
+            layout=True,
+            panel_items=rows,
+        )
+
+        self.assertEqual(
+            extension_hit.panel_hit_items(
+                layout, self.ops, mouse=(200.0, 200.0),
+            ),
+            (),
+        )
+        self.assertIs(
+            extension_hit.panel_hit_items(
+                layout, self.ops, mouse=(50.0, 50.0),
+            ),
+            rows,
+        )
 
 
 if __name__ == "__main__":

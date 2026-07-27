@@ -199,6 +199,12 @@ def clear_gesture_item_memos(session: GestureSession, ops=None) -> None:
     """Drop direction/extension item memos (call on gesture exit / reset)."""
     session._direction_items_memo = None
     session._gpu_extension_items_cache = None
+    session._gpu_panel_leaf_items_cache = None
+    session._element_status_info_cache = None
+    session._layout_measure_cache.clear()
+    session._layout_measure_cache_key = None
+    session._layout_measure_stability.clear()
+    session._layout_frame_measure_cache = None
     if ops is not None:
         ops._gpu_extension_items_cache = None
 
@@ -492,10 +498,8 @@ def update_extension_hover(session: GestureSession, ops):
         guard += 1
         last = session.extension_hover[-1]
         last.ops = ops
-        if last.is_layout_container:
-            items = last.panel_leaf_items
-        else:
-            items = getattr(last, 'extension_items', [])
+        from ..element.extension_hit import panel_hit_items
+        items = panel_hit_items(last, ops)
         found = None
         for item in items:
             item.ops = ops
@@ -520,10 +524,8 @@ def get_runtime_hovered_element(session: GestureSession, ops):
     """Return the visible runtime item targeted for annotation or clicking."""
     for container in reversed(tuple(session.extension_hover)):
         container.ops = ops
-        if container.is_layout_container:
-            items = container.panel_leaf_items
-        else:
-            items = getattr(container, 'extension_items', []) or []
+        from ..element.extension_hit import panel_hit_items
+        items = panel_hit_items(container, ops)
         for item in items:
             item.ops = ops
             if item.extension_by_child_is_hover:
@@ -732,10 +734,8 @@ class GestureInputProcessor:
             return None
         if session.extension_hover:
             last = session.extension_hover[-1]
-            if last.is_layout_container:
-                items = last.panel_leaf_items
-            else:
-                items = getattr(last, 'extension_items', []) or []
+            from ..element.extension_hit import panel_hit_items
+            items = panel_hit_items(last, ops)
             for item in items:
                 item.ops = ops
                 if item.is_property_display and item.extension_by_child_is_hover:

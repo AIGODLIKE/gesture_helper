@@ -167,54 +167,56 @@ class DrawElement:
         row.prop(add, 'relationship', expand=True)
         row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
 
-        if add_child:
-            structure = column.column(align=True)
-            row = draw_label(structure, 'Selected Structure:')
-            for i, n, d in ENUM_SELECTED_TYPE:
-                cls._draw_add_operator(
-                    row,
-                    n,
-                    frozen=frozen,
-                    element_type='SELECTED_STRUCTURE',
-                    selected_type=i,
-                )
-            items = column.column(align=True)
-            row = draw_label(items, 'Add item:')
-            for i, n, d in ENUM_ELEMENT_TYPE:
-                if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
-                    continue
-                if i == "DIVIDING_LINE":
-                    cls.draw_element_add_div_property(row, frozen=frozen)
-                else:
-                    cls._draw_add_operator(
-                        row,
-                        n,
-                        frozen=frozen,
-                        element_type=i,
-                    )
+        # Keep the same three control rows for every relationship. When the
+        # active element is a leaf and CHILD is selected, disable the controls
+        # instead of replacing them with warning rows that change panel height.
+        controls_enabled = bool(add_child)
 
-            from ..utils.enum import ENUM_LAYOUT_TYPE
-            layout_column = column.column(align=True)
-            row = draw_label(layout_column, 'Layout:')
-            for i, n, d in ENUM_LAYOUT_TYPE:
+        structure = column.column(align=True)
+        row = draw_label(structure, 'Selected Structure:')
+        row.enabled = controls_enabled
+        for i, n, d in ENUM_SELECTED_TYPE:
+            cls._draw_add_operator(
+                row,
+                n,
+                frozen=frozen,
+                element_type='SELECTED_STRUCTURE',
+                selected_type=i,
+            )
+
+        items = column.column(align=True)
+        row = draw_label(items, 'Add item:')
+        row.enabled = controls_enabled
+        for i, n, d in ENUM_ELEMENT_TYPE:
+            if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
+                continue
+            if i == "DIVIDING_LINE":
+                cls.draw_element_add_div_property(row, frozen=frozen)
+            else:
                 cls._draw_add_operator(
                     row,
                     n,
                     frozen=frozen,
                     element_type=i,
                 )
-            row.menu(
-                GESTURE_MT_layout_preset_menu.__name__,
-                icon='PRESET',
-                text='',
+
+        from ..utils.enum import ENUM_LAYOUT_TYPE
+        layout_column = column.column(align=True)
+        row = draw_label(layout_column, 'Layout:')
+        row.enabled = controls_enabled
+        for i, n, d in ENUM_LAYOUT_TYPE:
+            cls._draw_add_operator(
+                row,
+                n,
+                frozen=frozen,
+                element_type=i,
             )
-            row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
-        else:
-            column.separator()
-            row = column.row(align=True)
-            row.enabled = False
-            row.row(align=True).label(text="Cannot add a child to an operator element")
-            column.label(text="Operators cannot have child elements")
+        row.menu(
+            GESTURE_MT_layout_preset_menu.__name__,
+            icon='PRESET',
+            text='',
+        )
+        row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
 
     @classmethod
     def draw_element_add_div_property(

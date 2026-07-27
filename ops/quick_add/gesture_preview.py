@@ -1,5 +1,3 @@
-import time
-
 import bpy
 from bpy.props import EnumProperty, StringProperty
 from mathutils import Vector
@@ -27,6 +25,15 @@ PREVIEW_SCOPE_ITEMS = (
     ('GESTURE', 'Gesture', 'Preview the active gesture or menu'),
     ('ELEMENT', 'Element', 'Preview the active element and its subtree'),
 )
+
+_PREVIEW_TIMER_EVENTS = frozenset({
+    'TIMER', 'TIMER0', 'TIMER1', 'TIMER2', 'TIMER_JOBS',
+    'TIMER_AUTOSAVE', 'TIMER_REPORT', 'TIMERREGION',
+})
+_ELEMENT_POINTER_EVENTS = frozenset({
+    'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'LEFTMOUSE',
+    'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+})
 
 
 def _rna_identity(value) -> int:
@@ -214,6 +221,8 @@ class GesturePreview(
         return renderer, gesture
 
     def _enter_radial_renderer(self, context, event, gesture) -> bool:
+        from ...utils.public_cache import PublicCache
+
         anchor = self._preview_anchor(context, event)
         self.gesture = gesture.name
         self.session.reset(event, context.area, context.screen, self.gesture)
@@ -222,21 +231,26 @@ class GesturePreview(
         self.session._gesture_circle_center = anchor.copy()
         self.session._last_trajectory_mouse = anchor.copy()
         self.trajectory_tree.append(None, anchor.copy())
-        self.trajectory_mouse_move.append(anchor.copy())
-        self.trajectory_mouse_move_time.append(time.time())
-        self._schedule_gesture_timeout_timer()
+        # Preview is a static inspection surface: show radial items at once
+        # instead of replaying the invoke timeout/tracking phase.
+        self.session.advance_to_ui_visible()
         refresh_snapshot(self.session, self)
-        self.trajectory_event_update(context, event)
         self.register_draw()
         operator_setattr(self, '_preview_gpu_registered', True)
         operator_setattr(
             self,
             '_preview_target_key',
-            ('RADIAL', _rna_identity(gesture), gesture.name),
+            (
+                'RADIAL', _rna_identity(gesture), gesture.name,
+                PublicCache.__structure_generation__,
+                PublicCache.__derived_generation__,
+            ),
         )
         return True
 
     def _enter_menu_renderer(self, context, event, gesture) -> bool:
+        from ...utils.public_cache import PublicCache
+
         self.gesture = gesture.name
         self.session.reset(event, context.area, context.screen, self.gesture)
         operator_setattr(self, '_menu_area', context.area)
@@ -257,7 +271,11 @@ class GesturePreview(
         operator_setattr(
             self,
             '_preview_target_key',
-            ('MENU', _rna_identity(gesture), gesture.name),
+            (
+                'MENU', _rna_identity(gesture), gesture.name,
+                PublicCache.__structure_generation__,
+                PublicCache.__derived_generation__,
+            ),
         )
         return True
 
@@ -294,6 +312,7 @@ class GesturePreview(
                 operator_setattr(self, '_preview_gpu_registered', False)
                 self.unregister_draw()
             self._cancel_gesture_timeout_timer()
+            self.session.release_element_proxies(self)
             clear_gesture_item_memos(self.session, self)
         elif renderer == 'MENU' and self._preview_menu_registered:
             operator_setattr(self, '_preview_menu_registered', False)
@@ -308,8 +327,23 @@ class GesturePreview(
         return self._enter_renderer(context, event, renderer, target)
 
     def _sync_radial_target(self, gesture) -> None:
-        key = ('RADIAL', _rna_identity(gesture), gesture.name)
+        from ...utils.public_cache import PublicCache
+
+        identity = ('RADIAL', _rna_identity(gesture), gesture.name)
+        key = (
+            *identity,
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
         if key == self._preview_target_key:
+            return
+        previous = self._preview_target_key
+        if previous is not None and previous[:3] == identity:
+            clear_gesture_item_memos(self.session, self)
+            self.session._element_status_cache = None
+            refresh_snapshot(self.session, self)
+            operator_setattr(self, '_preview_target_key', key)
+            self.tag_redraw()
             return
         tree = self.trajectory_tree
         center = tree.points_list[0].copy() if tree.points_list else self.offset_position.copy()
@@ -323,24 +357,47 @@ class GesturePreview(
         self.session._gesture_circle_center = center.copy()
         self.session._last_trajectory_mouse = center.copy()
         self.trajectory_tree.append(None, center.copy())
-        self.trajectory_mouse_move.append(center.copy())
-        self.trajectory_mouse_move_time.append(0.0)
-        self._schedule_gesture_timeout_timer()
+        self.session.advance_to_ui_visible()
         refresh_snapshot(self.session, self)
         operator_setattr(self, '_preview_target_key', key)
         self.tag_redraw()
 
     def _sync_menu_target(self, gesture) -> None:
-        key = ('MENU', _rna_identity(gesture), gesture.name)
-        if key != self._preview_target_key:
-            self.gesture = gesture.name
-            operator_setattr(self, '_menu_gesture_ref', gesture)
+        from ...utils.public_cache import PublicCache
+
+        identity = ('MENU', _rna_identity(gesture), gesture.name)
+        key = (
+            *identity,
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
+        if key == self._preview_target_key:
+            return
+        previous = self._preview_target_key
+        self.gesture = gesture.name
+        operator_setattr(self, '_menu_gesture_ref', gesture)
+        if previous is None or previous[:3] != identity:
             operator_setattr(self, '_menu_open_path', [])
             operator_setattr(self, '_menu_hovered_row', None)
-            operator_setattr(self, '_menu_layout_key', None)
-            operator_setattr(self, '_menu_layout_dirty', True)
-            operator_setattr(self, '_preview_target_key', key)
+        operator_setattr(self, '_menu_layout_dirty', True)
+        self._ensure_layout()
+        operator_setattr(self, '_preview_target_key', key)
         self._tag_menu_redraw()
+
+    def _refresh_preview_poll_context(self, event, *, restore_event: bool) -> bool:
+        session = self.session
+        previous_event = session.event
+        previous = session._poll_context_fingerprint
+        session.event = event
+        session._input_event_serial += 1
+        current = refresh_poll_context_fingerprint(session)
+        if restore_event:
+            session.event = previous_event
+        if previous == current:
+            return False
+        session._element_status_cache = None
+        clear_gesture_item_memos(session, self)
+        return True
 
     def _sync_element_target(self, element, *, force=False) -> None:
         from ...utils.public_cache import PublicCache, PublicCacheFunc
@@ -367,8 +424,6 @@ class GesturePreview(
         self.session.layout_token = object()
         self.session.draw_ctx = None
         self.session._element_status_cache = None
-        self.session._poll_context_fingerprint = None
-        self.session._poll_context_serial = -1
         clear_gesture_item_memos(self.session, self)
         self._element_preview_adapter.set_element(canonical, self.session)
         self.session.snapshot.direction_element = None
@@ -487,6 +542,11 @@ class GesturePreview(
         return self._modal_element(event)
 
     def _modal_radial(self, context, event):
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            if self._refresh_preview_poll_context(event, restore_event=True):
+                refresh_snapshot(self.session, self)
+                self.tag_redraw()
+            return {'PASS_THROUGH'}
         self.trajectory_event_update(context, event)
         self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         result = self.gpu.draw_run(self, event)
@@ -495,8 +555,6 @@ class GesturePreview(
         drag_result = self._radial_drag_event(event)
         if drag_result:
             return drag_result
-        if event.type == 'TIMER':
-            self.tag_redraw()
         return {'PASS_THROUGH'}
 
     def _modal_menu(self, event):
@@ -505,9 +563,11 @@ class GesturePreview(
             if self._update_menu_hover(event):
                 self._tag_menu_redraw()
             return {'PASS_THROUGH'}
-        if event.type == 'TIMER':
-            operator_setattr(self, '_menu_layout_dirty', True)
-            self._tag_menu_redraw()
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            previous_key = self._menu_layout_key
+            self._ensure_layout()
+            if self._menu_layout_key != previous_key:
+                self._tag_menu_redraw()
             return {'PASS_THROUGH'}
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self._ensure_layout()
@@ -525,10 +585,20 @@ class GesturePreview(
 
     def _modal_element(self, event):
         session = self.session
+        poll_changed = self._refresh_preview_poll_context(
+            event,
+            restore_event=event.type in _PREVIEW_TIMER_EVENTS,
+        )
+        if poll_changed:
+            _renderer, target = self._active_preview_target()
+            self._sync_element_target(target, force=True)
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            return {'PASS_THROUGH'}
+        if event.type not in _ELEMENT_POINTER_EVENTS:
+            return {'PASS_THROUGH'}
+
         session.event = event
         session.event_count += 1
-        session._input_event_serial += 1
-        refresh_poll_context_fingerprint(session)
         session.snapshot.mouse_window = Vector((event.mouse_x, event.mouse_y))
         session.draw_ctx = None
         from ...gesture.draw_frame_context import refresh_draw_frame_context
@@ -541,7 +611,6 @@ class GesturePreview(
         tooltip_changed = sync_runtime_tooltip(session, self)
         if (
                 before != tuple(session.extension_hover)
-                or event.type == 'TIMER'
                 or tooltip_changed
         ):
             self.tag_redraw()
@@ -629,10 +698,15 @@ class GesturePreview(
         if self._preview_cleaned:
             return
         operator_setattr(self, '_preview_cleaned', True)
-        self._remove_preview_event_timer()
-        self._leave_renderer()
-        SessionState.end_gesture_preview(self)
-        operator_setattr(self, '_preview_window', None)
+        try:
+            self._remove_preview_event_timer()
+        finally:
+            try:
+                self._leave_renderer()
+            finally:
+                self.session.release_element_proxies(self)
+                SessionState.end_gesture_preview(self)
+                operator_setattr(self, '_preview_window', None)
         try:
             from ...utils.public import tag_redraw
 

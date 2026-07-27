@@ -24,6 +24,7 @@ from gesture_helper.element.element_tooltip import (  # noqa: E402
     build_runtime_tooltip,
 )
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
+from gesture_helper.ui import ui_list  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
@@ -66,6 +67,12 @@ assert preview_rna.get('gesture') is not None
 assert preview_rna.get('scope') is not None
 assert bpy.types.Operator.bl_rna_get_subclass_py('WM_OT_gesture_preview') is not None
 assert bpy.types.Operator.bl_rna_get_subclass_py('WM_OT_gesture_preview_close') is not None
+assert bpy.types.Operator.bl_rna_get_subclass_py(
+    'WM_OT_gesture_element_tree_page'
+) is not None
+assert bpy.types.Menu.bl_rna_get_subclass_py(
+    'GESTURE_MT_main_action_menu'
+) is not None
 
 window = bpy.context.window
 area = next(candidate for candidate in window.screen.areas if candidate.type == 'VIEW_3D')
@@ -86,6 +93,8 @@ def assert_preview_globals_clean() -> None:
 def assert_preview_clean(instance) -> None:
     assert_preview_globals_clean()
     assert instance._preview_event_timer is None
+    for element in instance.session._element_proxy_pool.values():
+        assert getattr(element, 'ops', None) is not instance
     state = instance.session.tooltip_state
     assert state.target is None
     assert state.timer is None
@@ -116,6 +125,25 @@ def close_preview(instance) -> None:
             preview_event(region, 'TIMER'),
         ) == {'FINISHED'}
     assert_preview_clean(instance)
+
+
+class FakeUILayout:
+    def __init__(self):
+        self.enabled = True
+        self.ui_units_x = 0.0
+        self.labels = []
+
+    def row(self, **_kwargs):
+        return self
+
+    def column(self, **_kwargs):
+        return self
+
+    def label(self, *, text='', **_kwargs):
+        self.labels.append(text)
+
+    def operator(self, *_args, **_kwargs):
+        return SimpleNamespace()
 
 
 store = get_gesture_store()
@@ -165,10 +193,68 @@ with suppress_gesture_disk_save():
     nested.element_type = 'OPERATOR'
     nested.__init_element__()
     nested.name = 'Nested'
+
+    page_root = gesture.element.add()
+    page_root.element_type = 'COLUMN'
+    page_root.__init_element__()
+    page_root.name = 'Paged Tree'
+    page_root.show_child = True
+    for index in range(64):
+        item = page_root.element.add()
+        item.element_type = 'OPERATOR'
+        item.__init_element__()
+        item.name = f'Paged {index + 1}'
+
     store.index_gesture = 0
     select_element(first)
 
+    descendants = ui_list._visible_tree_descendants(page_root)
+    assert len(descendants) == 64
+    assert ui_list._visible_tree_descendants(page_root) is descendants
+    page_root.show_child = False
+    page_root.show_child = True
+    refreshed_descendants = ui_list._visible_tree_descendants(page_root)
+    assert refreshed_descendants is not descendants
+    descendants = refreshed_descendants
+    page_context = SimpleNamespace(area=area)
+    original_draw_item = type(page_root).draw_item
+    type(page_root).draw_item = lambda self, layout, **kwargs: None
+    try:
+        page_layout = FakeUILayout()
+        ui_list.ElementUIList._draw_tree_page(
+            page_context,
+            page_layout,
+            page_root,
+            descendants,
+            active=first,
+            frozen=False,
+        )
+        assert '1-32 / 64' in page_layout.labels
+        with bpy.context.temp_override(**override):
+            assert bpy.ops.wm.gesture_element_tree_page(
+                'EXEC_DEFAULT',
+                root_pointer=str(page_root.as_pointer()),
+                page=1,
+            ) == {'FINISHED'}
+        page_layout = FakeUILayout()
+        ui_list.ElementUIList._draw_tree_page(
+            page_context,
+            page_layout,
+            page_root,
+            descendants,
+            active=first,
+            frozen=False,
+        )
+        assert '33-64 / 64' in page_layout.labels
+    finally:
+        type(page_root).draw_item = original_draw_item
+    gesture.element.remove(len(gesture.element) - 1)
+    ui_list.clear_element_tree_cache(clear_pages=True)
+
     radial_preview = start_preview('GESTURE', 'RADIAL')
+    assert radial_preview.session.phase.shows_radial_ui
+    assert radial_preview.session._gesture_timeout_timer is None
+    assert not radial_preview.trajectory_mouse_move
     radial_tooltip_state = radial_preview.session.tooltip_state
     assert sync_hover_tooltip(
         radial_tooltip_state,
@@ -203,6 +289,7 @@ with suppress_gesture_disk_save():
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
     menu_preview._ensure_layout(force=True)
+    assert menu_preview._menu_panels
     assert {row.label for row in menu_preview._menu_panels[0].rows} >= {
         'First',
         'Nested',

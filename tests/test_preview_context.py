@@ -166,6 +166,50 @@ class PreviewContextTests(unittest.TestCase):
         self.assertIs(override["window"], current_window)
         self.assertIs(override["area"], current_area)
 
+    def test_element_timer_skips_hit_testing_and_redraw_when_unchanged(self):
+        redraws = []
+        session = types.SimpleNamespace()
+        owner = types.SimpleNamespace(
+            session=session,
+            _refresh_preview_poll_context=lambda *_args, **_kwargs: False,
+            tag_redraw=lambda: redraws.append(True),
+        )
+        event = types.SimpleNamespace(type="TIMER")
+
+        result = preview_module.GesturePreview._modal_element(owner, event)
+
+        self.assertEqual(result, {"PASS_THROUGH"})
+        self.assertEqual(redraws, [])
+        self.assertFalse(hasattr(session, "event_count"))
+
+    def test_poll_refresh_restores_the_last_pointer_event_for_timer(self):
+        pointer_event = types.SimpleNamespace(type="MOUSEMOVE")
+        timer_event = types.SimpleNamespace(type="TIMER")
+        fingerprint = ("OBJECT", 1)
+        session = types.SimpleNamespace(
+            event=pointer_event,
+            _input_event_serial=3,
+            _poll_context_fingerprint=fingerprint,
+            _element_status_cache=object(),
+        )
+        owner = types.SimpleNamespace(session=session)
+        original_refresh = preview_module.refresh_poll_context_fingerprint
+        try:
+            preview_module.refresh_poll_context_fingerprint = (
+                lambda current: current._poll_context_fingerprint
+            )
+            changed = preview_module.GesturePreview._refresh_preview_poll_context(
+                owner,
+                timer_event,
+                restore_event=True,
+            )
+        finally:
+            preview_module.refresh_poll_context_fingerprint = original_refresh
+
+        self.assertFalse(changed)
+        self.assertIs(session.event, pointer_event)
+        self.assertEqual(session._input_event_serial, 4)
+
 
 if __name__ == "__main__":
     unittest.main()

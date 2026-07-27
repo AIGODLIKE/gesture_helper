@@ -34,6 +34,7 @@ class ElementPreviewAdapter(ElementGpuDraw, ElementLayoutGpu):
         self.ops = None
         self.element = None
         self._items = []
+        self._panel_leaf_items = []
 
     @property
     def draw_property(self):
@@ -52,7 +53,13 @@ class ElementPreviewAdapter(ElementGpuDraw, ElementLayoutGpu):
 
     @property
     def panel_leaf_items(self):
-        return list(iter_panel_leaves(self._items))
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        if (
+                session is not None
+                and getattr(self, '_layout_visible_token', None) is session.layout_token
+        ):
+            return getattr(self, '_layout_visible_leaf_items', ())
+        return self._panel_leaf_items
 
     @property
     def layout_panel_content_size(self):
@@ -70,6 +77,10 @@ class ElementPreviewAdapter(ElementGpuDraw, ElementLayoutGpu):
         else:
             items = (element,)
         self._items = [session.canonical_element(item) for item in items]
+        self._panel_leaf_items = [
+            session.canonical_element(item)
+            for item in iter_panel_leaves(self._items)
+        ]
 
     def initial_hover_path(self) -> list:
         path = [self]

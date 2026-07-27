@@ -171,7 +171,12 @@ class GestureMenuRuntime(PublicGpu):
     def _register_menu_runtime(self, context) -> bool:
         area = context.area
         window = context.window
-        space = context.space_data
+        space = getattr(context, 'space_data', None)
+        if space is None:
+            try:
+                space = area.spaces.active
+            except (AttributeError, ReferenceError, RuntimeError):
+                space = None
         if area is None or window is None or space is None:
             return False
         try:

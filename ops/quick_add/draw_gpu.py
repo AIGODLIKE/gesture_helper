@@ -8,13 +8,26 @@ class DrawGpu:
         super().__init__(*args, **kwargs)
         self.gesture_bpu = OverlayLayout()
         self.gesture_bpu.anchor = 'RIGHT_CENTER'
-        self.gesture_bpu.font_size = 20
+        # Keep the selector compact so the viewport remains usable while
+        # previewing the gesture.
+        self.gesture_bpu.font_size = 14
+        self.gesture_bpu.padding = 5
+        self.gesture_bpu.gap = 2
+        self.gesture_bpu.corner_radius = 4
         self.tips = GestureShowTips()
         self._bpu_content_key = None
 
     def _gesture_content_key(self, gesture_list):
+        from ...src.translate import __name_translate__
+
         return tuple(
-            (g.index, bool(g.is_active), g.name, getattr(g, '__key_str__', ''))
+            (
+                g.index,
+                bool(g.is_active),
+                g.name,
+                __name_translate__(g.name),
+                getattr(g, '__key_str__', ''),
+            )
             for g in gesture_list
         )
 
@@ -35,7 +48,7 @@ class DrawGpu:
                     bpu.separator()
                     if gesture_list:
                         for g in gesture_list:
-                            name = f"{g.name}({g.__key_str__})"
+                            name = f"{__name_translate__(g.name)}({g.__key_str__})"
                             o = bpu.operator("wm.context_set_int", name, active=g.is_active)
                             o.data_path = "window_manager.gesture_index"
                             o.value = g.index
