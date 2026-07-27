@@ -19,6 +19,32 @@ from ..utils.public import get_pref
 from ..utils.public_cache import PublicCacheFunc, cache_update_lock
 
 
+def _translate_rna_text(text: str, context, *, tooltip: bool) -> str:
+    """Translate RNA text, tolerating strings catalogued under another context."""
+    if not text:
+        return ''
+    try:
+        import bpy
+        from bpy.app.translations import pgettext_iface, pgettext_tip
+
+        translate = pgettext_tip if tooltip else pgettext_iface
+        contexts = (context, *tuple(bpy.app.translations.contexts))
+        seen = set()
+        for msgctxt in contexts:
+            if msgctxt in seen:
+                continue
+            seen.add(msgctxt)
+            try:
+                translated = translate(text, msgctxt)
+            except TypeError:
+                translated = translate(text)
+            if translated != text:
+                return translated
+    except (AttributeError, ImportError, TypeError):
+        pass
+    return text
+
+
 class ElementAddProperty:
     element_type: EnumProperty(
         name='Type',
@@ -441,15 +467,30 @@ class ElementLayoutProperty:
         if not description:
             return ''
         context = getattr(source, 'translation_context', None)
-        try:
-            from bpy.app.translations import pgettext_tip
-            return pgettext_tip(description, context)
-        except (AttributeError, ImportError, TypeError):
-            from bpy.app.translations import pgettext_iface
-            try:
-                return pgettext_iface(description, context)
-            except TypeError:
-                return pgettext_iface(description)
+        return _translate_rna_text(description, context, tooltip=True)
+
+    @property
+    def source_name_translate(self) -> str:
+        """Translated native operator/property name for runtime tooltips."""
+        source = None
+        if self.is_operator:
+            func = self.operator_func
+            if func is not None:
+                try:
+                    source = func.get_rna_type()
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    source = None
+        elif self.is_property_display:
+            resolved = self.resolve_property()
+            if resolved is not None:
+                source = resolved[1]
+        if source is None:
+            return ''
+        return _translate_rna_text(
+            getattr(source, 'name', '') or '',
+            getattr(source, 'translation_context', None),
+            tooltip=False,
+        )
 
     @property
     def source_name(self) -> str:

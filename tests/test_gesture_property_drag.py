@@ -214,6 +214,22 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertEqual(window.redraws, 1)
         self.assertEqual(sidebar.redraws, 0)
 
+    def test_timeout_promotion_starts_tooltip_hover_without_another_event(self):
+        session = types.SimpleNamespace(
+            advance_to_ui_visible=lambda: True,
+        )
+        ops = object()
+
+        with (
+            patch.object(gesture_input, "ensure_trajectory_seed"),
+            patch.object(gesture_input, "sync_runtime_tooltip") as sync,
+            patch.object(gesture_input, "tag_redraw_gesture_screen"),
+        ):
+            changed = gesture_input._promote_ui_visible(session, ops)
+
+        self.assertTrue(changed)
+        sync.assert_called_once_with(session, ops)
+
     def test_unchanged_mousemove_is_consumed_without_refresh(self):
         element = FakeElement(changed=False)
         session = _session(element)

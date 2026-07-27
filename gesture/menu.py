@@ -139,6 +139,11 @@ class GestureMenuRuntime(PublicGpu):
     def force_close_all(cls) -> None:
         for instance in tuple(cls._active_by_window.values()):
             try:
+                from .runtime_tooltip import cancel_hover_tooltip
+
+                cancel_hover_tooltip(
+                    getattr(instance, '_menu_tooltip_state', None),
+                )
                 instance._menu_close_requested = True
                 instance._tag_menu_redraw()
             except (AttributeError, ReferenceError, RuntimeError):
@@ -201,6 +206,9 @@ class GestureMenuRuntime(PublicGpu):
         return True
 
     def _unregister_menu_runtime(self) -> None:
+        from .runtime_tooltip import cancel_hover_tooltip
+
+        cancel_hover_tooltip(getattr(self, '_menu_tooltip_state', None))
         window_key = getattr(self, '_menu_window_key', None)
         area_key = getattr(self, '_menu_area_key', None)
         if window_key is not None and self._active_by_window.get(window_key) is self:
@@ -703,51 +711,39 @@ class GestureMenuRuntime(PublicGpu):
         self._menu_draw_count += 1
 
     def _draw_hover_annotation(self, metrics, colors, region) -> None:
-        """Show native help or the repair reason below the hovered menu panel."""
+        """Show delayed source metadata and diagnostics for the hovered row."""
         row = self._menu_hovered_row
         element = getattr(row, 'element', None) if row is not None else None
-        if element is None:
+        state = getattr(self, '_menu_tooltip_state', None)
+        tooltip = getattr(state, 'tooltip', None)
+        if element is None or tooltip is None or state.target is not element:
             return
-        text = element.runtime_annotation_text
-        if not text:
+        from .runtime_tooltip import tooltip_reveal
+
+        reveal = tooltip_reveal(state, element)
+        if reveal <= 0.0:
             return
-        info = element.element_status_info
-        if info.status.is_error and not getattr(self, 'preview_read_only', False):
-            hint = bpy.app.translations.pgettext_iface(
-                'Click this item to open gesture settings'
-            )
-            text = f'{text} - {hint}'
-        if info.status.is_error:
+        if tooltip.color_role == 'error':
             accent = colors.error
-            mark = '!'
-        elif info.status.is_warning:
+        elif tooltip.color_role == 'warning':
             accent = colors.warning
-            mark = '!'
-        elif not info.is_valid:
+        elif tooltip.color_role == 'disabled':
             accent = colors.text_disabled
-            mark = 'i'
         else:
             accent = colors.hover
-            mark = 'i'
-        panel = next(
-            (panel for panel in self._menu_panels if row in panel.rows),
-            None,
-        )
-        if panel is None:
-            return
-        self.draw_annotation_row(
-            text,
-            anchor_rect=panel.rect,
+        metadata = (*colors.text[:3], colors.text[3] * 0.62)
+        self.draw_runtime_tooltip(
+            tooltip,
+            anchor_rect=row.rect,
             viewport_size=(region.width, region.height),
             size=max(10.0, metrics.font_size * 0.92),
             scale=metrics.scale,
-            fill=colors.error if info.status.is_error else colors.background,
+            fill=colors.background,
             stroke=accent,
-            accent=colors.background if info.status.is_error else accent,
-            text_color=color_to_srgb(
-                colors.text_hover if info.status.is_error else colors.text
-            ),
-            mark=mark,
+            text_color=color_to_srgb(colors.text),
+            metadata_color=color_to_srgb(metadata),
+            issue_color=color_to_srgb(accent),
+            reveal=reveal,
         )
 
     def _menu_mouse(self, event):
@@ -772,6 +768,9 @@ class GestureMenuRuntime(PublicGpu):
                 break
 
         self._menu_hovered_row = hovered
+        tooltip_changed = self._sync_menu_tooltip(
+            getattr(hovered, 'element', None) if hovered is not None else None
+        )
         path_changed = False
         if hovered_panel is not None:
             keep = list(self._menu_open_path[:hovered_panel.depth])
@@ -782,7 +781,49 @@ class GestureMenuRuntime(PublicGpu):
                 self._menu_layout_dirty = True
                 self._ensure_layout(force=True)
                 path_changed = True
-        return old_row is not hovered or path_changed
+        return old_row is not hovered or path_changed or tooltip_changed
+
+    def _sync_menu_tooltip(self, element) -> bool:
+        from .runtime_tooltip import HoverTooltipState, sync_hover_tooltip
+
+        state = getattr(self, '_menu_tooltip_state', None)
+        if state is None:
+            state = HoverTooltipState()
+            try:
+                from ..utils.adapter import operator_setattr
+
+                operator_setattr(self, '_menu_tooltip_state', state)
+            except (AttributeError, ImportError, TypeError):
+                self._menu_tooltip_state = state
+        from ..utils.public import get_pref
+
+        changed = sync_hover_tooltip(
+            state,
+            element,
+            delay_ms=getattr(
+                get_pref().gesture_property,
+                'hover_tooltip_delay',
+                100,
+            ),
+            redraw=self._tag_menu_redraw,
+        )
+        if not changed:
+            return False
+        if element is not None:
+            from ..element.element_tooltip import build_runtime_tooltip
+
+            state.tooltip = build_runtime_tooltip(
+                element,
+                preview_read_only=bool(getattr(self, 'preview_read_only', False)),
+            )
+            if state.tooltip is None:
+                sync_hover_tooltip(
+                    state,
+                    None,
+                    delay_ms=0,
+                    redraw=self._tag_menu_redraw,
+                )
+        return True
 
     def _menu_close_hit(self, event) -> bool:
         if not self._menu_panels:
@@ -801,4 +842,12 @@ class GestureMenuRuntime(PublicGpu):
 
     def _menu_mark_context_changed(self) -> None:
         self._menu_layout_dirty = True
+        state = getattr(self, '_menu_tooltip_state', None)
+        if state is not None and state.target is not None:
+            from ..element.element_tooltip import build_runtime_tooltip
+
+            state.tooltip = build_runtime_tooltip(
+                state.target,
+                preview_read_only=bool(getattr(self, 'preview_read_only', False)),
+            )
         self._tag_menu_redraw()

@@ -2,7 +2,6 @@ import time
 
 import bpy
 import gpu
-from bpy.app.translations import pgettext_iface
 from mathutils import Vector
 
 from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
@@ -482,52 +481,45 @@ class GestureGpuDraw(DrawDebug):
         return getattr(element, 'item_draw_area', None) or row_rect
 
     def gpu_draw_runtime_annotation(self, region) -> None:
-        """Draw native RNA help or a status explanation for the active item."""
+        """Draw delayed native RNA metadata and diagnostics for the hover."""
         if not self.session.phase.shows_radial_ui:
             return
-        from .gesture_input import get_runtime_action_element
-
-        element = get_runtime_action_element(self.session, self)
-        if element is None:
+        state = getattr(self.session, 'tooltip_state', None)
+        element = getattr(state, 'target', None)
+        tooltip = getattr(state, 'tooltip', None)
+        if element is None or tooltip is None:
             return
-        text = element.runtime_annotation_text
-        if not text:
-            return
+        from .runtime_tooltip import tooltip_reveal
 
-        info = element.element_status_info
-        if info.status.is_error and not getattr(self, 'preview_read_only', False):
-            hint = pgettext_iface('Click this item to open gesture settings')
-            text = f'{text} - {hint}'
+        reveal = tooltip_reveal(state, element)
+        if reveal <= 0.0:
+            return
 
         draw = self.draw_property
-        if info.status.is_error:
+        if tooltip.color_role == 'error':
             accent = draw.status_error_color
-            mark = '!'
-        elif info.status.is_warning:
+        elif tooltip.color_role == 'warning':
             accent = draw.status_warning_color
-            mark = '!'
-        elif not info.is_valid:
+        elif tooltip.color_role == 'disabled':
             accent = draw.status_disabled_color
-            mark = 'i'
         else:
             accent = draw.outline_active_color
-            mark = 'i'
         scale = self._draw_ui_scale()
-        size = max(10, round(draw.text_gpu_draw_size * scale * 0.72))
-        is_error = info.status.is_error
-        self.draw_annotation_row(
-            text,
+        size = max(10, round(draw.text_gpu_draw_size * scale * 0.78))
+        metadata = tuple(color_to_srgb(draw.text_default_color))
+        metadata = (*metadata[:3], metadata[3] * 0.62)
+        self.draw_runtime_tooltip(
+            tooltip,
             anchor_rect=self._runtime_annotation_anchor(element),
             viewport_size=(region.width, region.height),
             size=size,
             scale=scale,
-            fill=draw.status_error_color if is_error else draw.background_child_color,
+            fill=draw.background_child_color,
             stroke=accent,
-            accent=draw.background_child_color if is_error else accent,
-            text_color=color_to_srgb(
-                draw.text_active_color if is_error else draw.text_default_color
-            ),
-            mark=mark,
+            text_color=color_to_srgb(draw.text_default_color),
+            metadata_color=metadata,
+            issue_color=color_to_srgb(accent),
+            reveal=reveal,
         )
 
     def gpu_draw_gesture(self):

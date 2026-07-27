@@ -342,6 +342,7 @@ def _arm_bottom_child_dwell(session: GestureSession, timeout_ms: float, ops) -> 
                     and not in_ext
             ):
                 _enter_child_level(session, ops, de, snap.mouse_window)
+                sync_runtime_tooltip(session, ops)
                 tag_redraw_gesture_screen(session)
         except (AttributeError, ReferenceError):
             session._bottom_child_dwell_timer = None
@@ -406,6 +407,8 @@ def _promote_ui_visible(session: GestureSession, ops=None) -> bool:
     if not session.advance_to_ui_visible():
         return False
     ensure_trajectory_seed(session)
+    if ops is not None:
+        sync_runtime_tooltip(session, ops)
     tag_redraw_gesture_screen(session)
     return True
 
@@ -547,6 +550,45 @@ def get_runtime_action_element(session: GestureSession, ops):
     if element is not None:
         element.ops = ops
     return element
+
+
+def sync_runtime_tooltip(session: GestureSession, ops) -> bool:
+    """Update delayed tooltip ownership after input has resolved the hover."""
+    from .runtime_tooltip import sync_hover_tooltip
+
+    target = (
+        get_runtime_action_element(session, ops)
+        if session.phase.shows_radial_ui
+        else None
+    )
+    state = session.tooltip_state
+    changed = sync_hover_tooltip(
+        state,
+        target,
+        delay_ms=getattr(
+            ops.pref.gesture_property,
+            'hover_tooltip_delay',
+            100,
+        ),
+        redraw=lambda: tag_redraw_gesture_screen(session),
+    )
+    if not changed:
+        return False
+    if target is not None:
+        from ..element.element_tooltip import build_runtime_tooltip
+
+        state.tooltip = build_runtime_tooltip(
+            target,
+            preview_read_only=bool(getattr(ops, 'preview_read_only', False)),
+        )
+        if state.tooltip is None:
+            sync_hover_tooltip(
+                state,
+                None,
+                delay_ms=0,
+                redraw=lambda: tag_redraw_gesture_screen(session),
+            )
+    return True
 
 
 def check_return_previous(session: GestureSession, return_distance: float, operator_gesture, ops=None):
@@ -947,6 +989,9 @@ class GestureInputProcessor:
 
     def on_event(self, session: GestureSession, ops, event) -> bool:
         """Update session from *event*. Returns whether a redraw is needed."""
+        def finish(result: bool) -> bool:
+            return bool(sync_runtime_tooltip(session, ops) or result)
+
         session.event = event
         session._input_event_serial = getattr(session, '_input_event_serial', 0) + 1
         session._event_consumed = False
@@ -956,10 +1001,10 @@ class GestureInputProcessor:
         # affected content caches.
         refresh_poll_context_fingerprint(session)
         if self._handle_repair_click(session, ops, event):
-            return True
+            return finish(True)
         drag_result = self._handle_property_drag(session, ops, event)
         if drag_result is not None:
-            return drag_result
+            return finish(drag_result)
         visual_dirty = False
         moved = False
         if event.type == "MOUSEMOVE":
@@ -973,7 +1018,7 @@ class GestureInputProcessor:
                 session.advance_to_tracking()
             else:
                 # Sub-pixel jitter: bump timeout only, skip snapshot/redraw work.
-                return False
+                return finish(False)
 
         session.event_count += 1
 
@@ -1007,7 +1052,7 @@ class GestureInputProcessor:
                 if session.extension_hover != before:
                     visual_dirty = True
                     refresh_snapshot(session, ops)
-            return visual_dirty
+            return finish(visual_dirty)
 
         # Significant mouse move: trail / child enter / hover updates.
         visual_dirty = True
@@ -1049,4 +1094,4 @@ class GestureInputProcessor:
             if session.extension_hover != before_hover:
                 refresh_snapshot(session, ops)
 
-        return visual_dirty
+        return finish(visual_dirty)

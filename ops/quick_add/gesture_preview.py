@@ -536,7 +536,14 @@ class GesturePreview(
         refresh_draw_frame_context(session, self)
         before = tuple(session.extension_hover)
         update_extension_hover(session, self)
-        if before != tuple(session.extension_hover) or event.type == 'TIMER':
+        from ...gesture.gesture_input import sync_runtime_tooltip
+
+        tooltip_changed = sync_runtime_tooltip(session, self)
+        if (
+                before != tuple(session.extension_hover)
+                or event.type == 'TIMER'
+                or tooltip_changed
+        ):
             self.tag_redraw()
 
         if event.type in {'LEFTMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:

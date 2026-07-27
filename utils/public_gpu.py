@@ -438,6 +438,159 @@ class PublicGpu:
             top,
         )
 
+    @classmethod
+    def draw_runtime_tooltip(
+            cls,
+            tooltip,
+            *,
+            anchor_rect,
+            viewport_size,
+            size,
+            scale=1.0,
+            fill=(0.055, 0.055, 0.055, 0.97),
+            stroke=(0.28, 0.28, 0.28, 0.9),
+            text_color=(0.92, 0.92, 0.92, 1.0),
+            metadata_color=(0.56, 0.56, 0.56, 1.0),
+            issue_color=(0.9, 0.35, 0.18, 1.0),
+            reveal=1.0,
+    ):
+        """Draw a Blender-style metadata tooltip with a delayed fade-in."""
+        if tooltip is None or anchor_rect is None:
+            return None
+        reveal = min(1.0, max(0.0, float(reveal)))
+        if reveal <= 0.0:
+            return None
+        from .blf_text import measure_text, wrap_text
+
+        def faded(color):
+            value = tuple(color)
+            if len(value) == 3:
+                value = (*value, 1.0)
+            return (*value[:3], value[3] * reveal)
+
+        viewport_w, viewport_h = (float(value) for value in viewport_size)
+        scale = max(0.5, float(scale))
+        margin = max(6.0, 8.0 * scale)
+        gap = max(4.0, 5.0 * scale)
+        pad_x = max(8.0, 10.0 * scale)
+        pad_y = max(6.0, 7.0 * scale)
+        section_gap = max(3.0, 4.0 * scale)
+        title_size = max(10.0, float(size))
+        body_size = max(9.0, title_size * 0.94)
+        metadata_size = max(8.0, title_size * 0.88)
+        max_width = max(
+            1.0,
+            min(580.0 * scale, viewport_w - margin * 2.0),
+        )
+        text_max_width = max(1.0, max_width - pad_x * 2.0)
+        entries = []
+
+        def add_block(text, font_size, color, max_lines, *, block_gap=0.0):
+            lines = wrap_text(
+                text,
+                text_max_width,
+                font_size,
+                max_lines=max_lines,
+            )
+            for index, line in enumerate(lines):
+                entries.append((
+                    line,
+                    font_size,
+                    color,
+                    block_gap if index == 0 and entries else 0.0,
+                ))
+
+        add_block(tooltip.title, title_size, text_color, 2)
+        if tooltip.description:
+            add_block(
+                tooltip.description,
+                body_size,
+                text_color,
+                3,
+                block_gap=section_gap,
+            )
+        if tooltip.details:
+            for index, detail in enumerate(tooltip.details):
+                add_block(
+                    f"{detail.label}: {detail.value}",
+                    metadata_size,
+                    metadata_color,
+                    2,
+                    block_gap=section_gap if index == 0 else 0.0,
+                )
+        if tooltip.issues:
+            for index, issue in enumerate(tooltip.issues):
+                add_block(
+                    f"! {issue}",
+                    body_size,
+                    issue_color,
+                    2,
+                    block_gap=section_gap if index == 0 else 0.0,
+                )
+        if not entries:
+            return None
+
+        content_width = max(
+            measure_text(line, font_size)[0]
+            for line, font_size, _color, _gap_before in entries
+        )
+        anchor_x1, anchor_y1, anchor_x2, anchor_y2 = (
+            float(value) for value in anchor_rect
+        )
+        anchor_w = max(0.0, anchor_x2 - anchor_x1)
+        width = min(
+            max_width,
+            max(content_width + pad_x * 2.0, min(anchor_w, max_width)),
+        )
+        height = pad_y * 2.0
+        for _line, font_size, _color, gap_before in entries:
+            height += gap_before + measure_text("Ag", font_size)[1]
+
+        center_x = (anchor_x1 + anchor_x2) * 0.5
+        center_x = min(
+            viewport_w - margin - width * 0.5,
+            max(margin + width * 0.5, center_x),
+        )
+        below_top = anchor_y1 - gap
+        placed_below = below_top - height >= margin
+        if placed_below:
+            top = below_top
+        elif anchor_y2 + gap + height <= viewport_h - margin:
+            top = anchor_y2 + gap + height
+        else:
+            top = min(viewport_h - margin, max(margin + height, below_top))
+        slide = max(0.0, 4.0 * scale * (1.0 - reveal))
+        top += slide if placed_below else -slide
+        bottom = top - height
+        center_y = bottom + height * 0.5
+
+        cls.draw_rounded_rectangle_outlined(
+            (center_x, center_y),
+            fill=faded(fill),
+            stroke=faded(stroke),
+            radius=min(4.0 * scale, height * 0.12),
+            width=width,
+            height=height,
+            line_width=max(0.75, scale),
+        )
+        text_x = center_x - width * 0.5 + pad_x
+        cursor_top = top - pad_y
+        for line, font_size, color, gap_before in entries:
+            cursor_top -= gap_before
+            cls.draw_text(
+                line,
+                position=(text_x, cursor_top),
+                size=font_size,
+                color=faded(color),
+            )
+            cursor_top -= measure_text("Ag", font_size)[1]
+        return (
+            center_x - width * 0.5,
+            bottom,
+            center_x + width * 0.5,
+            top,
+        )
+
     @staticmethod
     def draw_2d_line(pos, color=(1.0, 1.0, 1.0, 1), line_width=1):
         draw_line(pos, color, line_width, is_cycle=False)

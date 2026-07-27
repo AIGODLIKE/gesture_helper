@@ -17,9 +17,16 @@ assert bpy.ops.preferences.addon_enable(module='gesture_helper') == {'FINISHED'}
 
 from gesture_helper.gesture.gesture_draw_gpu import GestureGpuDraw  # noqa: E402
 from gesture_helper.gesture.menu import GestureMenuRuntime  # noqa: E402
+from gesture_helper.gesture.runtime_tooltip import (  # noqa: E402
+    sync_hover_tooltip,
+)
+from gesture_helper.element.element_tooltip import (  # noqa: E402
+    build_runtime_tooltip,
+)
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
+from gesture_helper.utils.public import get_pref  # noqa: E402
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
 
@@ -79,6 +86,13 @@ def assert_preview_globals_clean() -> None:
 def assert_preview_clean(instance) -> None:
     assert_preview_globals_clean()
     assert instance._preview_event_timer is None
+    state = instance.session.tooltip_state
+    assert state.target is None
+    assert state.timer is None
+    menu_state = getattr(instance, '_menu_tooltip_state', None)
+    if menu_state is not None:
+        assert menu_state.target is None
+        assert menu_state.timer is None
 
 
 def start_preview(scope, renderer):
@@ -106,6 +120,7 @@ def close_preview(instance) -> None:
 
 store = get_gesture_store()
 assert store is not None
+assert get_pref().gesture_property.hover_tooltip_delay == 100
 with suppress_gesture_disk_save():
     store.gesture.clear()
     gesture = store.gesture.add()
@@ -115,6 +130,33 @@ with suppress_gesture_disk_save():
     first.element_type = 'OPERATOR'
     first.__init_element__()
     first.name = 'First'
+    first.operator_bl_idname = 'object.metaball_add'
+    first.operator_properties = "{'type': 'CAPSULE'}"
+    first.operator_context = 'EXEC_DEFAULT'
+    first.enabled_icon = True
+    first.icon = 'GESTURE_HELPER_SMOKE_MISSING_ICON'
+
+    tooltip = build_runtime_tooltip(first, preview_read_only=True)
+    details = {detail.label: detail.value for detail in tooltip.details}
+    assert details['Operator ID'] == 'object.metaball_add'
+    assert "'type': 'CAPSULE'" in details['Parameters']
+    assert details['Context'] == 'EXEC_DEFAULT'
+    assert details['Python'] == "bpy.ops.object.metaball_add(type='CAPSULE')"
+    assert details['Icon'] == 'GESTURE_HELPER_SMOKE_MISSING_ICON'
+    assert 'Icon not found: GESTURE_HELPER_SMOKE_MISSING_ICON' in tooltip.issues
+    assert tooltip.color_role == 'warning'
+
+    view = bpy.context.preferences.view
+    previous_language = view.language
+    previous_translate_interface = view.use_translate_interface
+    view.language = 'zh_HANS'
+    view.use_translate_interface = True
+    native_rna = first.operator_func.get_rna_type()
+    assert first.source_name_translate != native_rna.name
+    assert first.source_description != native_rna.description
+    view.language = previous_language
+    view.use_translate_interface = previous_translate_interface
+
     second = gesture.element.add()
     second.element_type = 'BOX'
     second.__init_element__()
@@ -127,6 +169,15 @@ with suppress_gesture_disk_save():
     select_element(first)
 
     radial_preview = start_preview('GESTURE', 'RADIAL')
+    radial_tooltip_state = radial_preview.session.tooltip_state
+    assert sync_hover_tooltip(
+        radial_tooltip_state,
+        first,
+        delay_ms=100,
+        redraw=lambda: None,
+    )
+    assert radial_tooltip_state.timer is not None
+    assert bpy.app.timers.is_registered(radial_tooltip_state.timer)
     gesture.gesture_type = 'MENU'
     with bpy.context.temp_override(**override):
         assert radial_preview.modal(
@@ -134,6 +185,8 @@ with suppress_gesture_disk_save():
             preview_event(region, 'TIMER'),
         ) == {'PASS_THROUGH'}
     assert radial_preview._preview_renderer == 'MENU'
+    assert radial_tooltip_state.target is None
+    assert radial_tooltip_state.timer is None
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
     gesture.gesture_type = 'RADIAL'
@@ -161,7 +214,13 @@ with suppress_gesture_disk_save():
     )
     assert abs(root_center[0] - region.width * 0.5) < 0.01, root_center
     assert abs(root_center[1] - region.height * 0.5) < 0.01, root_center
+    assert menu_preview._sync_menu_tooltip(first)
+    menu_tooltip_state = menu_preview._menu_tooltip_state
+    assert menu_tooltip_state.timer is not None
+    assert bpy.app.timers.is_registered(menu_tooltip_state.timer)
     close_preview(menu_preview)
+    assert menu_tooltip_state.target is None
+    assert menu_tooltip_state.timer is None
 
     gesture.gesture_type = 'RADIAL'
     select_element(first)

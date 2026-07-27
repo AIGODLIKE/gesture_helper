@@ -49,6 +49,8 @@ class GestureHandle:
         cancel_timeout_timer(self.session)
         from .gesture_input import cancel_bottom_child_dwell_timer
         cancel_bottom_child_dwell_timer(self.session)
+        from .runtime_tooltip import cancel_hover_tooltip
+        cancel_hover_tooltip(getattr(self.session, "tooltip_state", None))
 
     @classmethod
     def cancel_active_gesture_timeout_timer(cls) -> None:

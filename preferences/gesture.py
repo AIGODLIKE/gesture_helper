@@ -12,6 +12,14 @@ class GestureProperty(bpy.types.PropertyGroup):
         description='Idle time before the radial gesture UI appears',
         **_gen_gesture_prop(200, 'TIME'),
     )
+    hover_tooltip_delay: IntProperty(
+        name='Hover Tooltip Delay (ms)',
+        description='Time the pointer must remain on an item before its tooltip appears',
+        default=100,
+        min=0,
+        max=5000,
+        subtype='TIME',
+    )
     radius: IntProperty(
         name='Gesture Radius',
         description='Radius of the gesture pie / direction ring',
@@ -57,6 +65,7 @@ class GestureProperty(bpy.types.PropertyGroup):
         col = layout.box().column(align=True)
         g = pref.gesture_property
         col.prop(g, 'timeout')
+        col.prop(g, 'hover_tooltip_delay')
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')

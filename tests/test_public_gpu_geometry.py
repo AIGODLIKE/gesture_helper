@@ -170,6 +170,40 @@ class PublicGpuGeometryTests(unittest.TestCase):
         self.assertLessEqual(rect[2], 220.0)
         self.assertLessEqual(rect[3], 140.0)
 
+    def test_runtime_tooltip_stays_in_viewport_during_reveal(self):
+        text_module = types.ModuleType(f"{PACKAGE}.utils.blf_text")
+        text_module.measure_text = lambda text, _size: (len(str(text)) * 6.0, 12.0)
+        text_module.wrap_text = (
+            lambda text, _width, _size, max_lines=2: [str(text)][:max_lines]
+        )
+        tooltip = types.SimpleNamespace(
+            title="Add Cube",
+            description="Construct a cube mesh",
+            details=(types.SimpleNamespace(label="Python", value="bpy.ops.mesh.primitive_cube_add()"),),
+            issues=("Unavailable in this context",),
+        )
+        with (
+            mock.patch.dict(sys.modules, {text_module.__name__: text_module}),
+            mock.patch.object(
+                self.module.PublicGpu,
+                "draw_rounded_rectangle_outlined",
+            ),
+            mock.patch.object(self.module.PublicGpu, "draw_text"),
+        ):
+            rect = self.module.PublicGpu.draw_runtime_tooltip(
+                tooltip,
+                anchor_rect=(60.0, 8.0, 160.0, 28.0),
+                viewport_size=(240.0, 180.0),
+                size=12.0,
+                reveal=0.5,
+            )
+
+        self.assertIsNotNone(rect)
+        self.assertGreater(rect[1], 28.0)
+        self.assertGreaterEqual(rect[0], 0.0)
+        self.assertLessEqual(rect[2], 240.0)
+        self.assertLessEqual(rect[3], 180.0)
+
 
 if __name__ == "__main__":
     unittest.main()

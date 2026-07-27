@@ -53,7 +53,10 @@ with bundled JSON presets, translations, and PNG icon assets.
 4. `gesture/gesture_draw_gpu.py`, `element/*draw*.py`, and `src/lib` calculate
    GPU geometry and hit boxes. `gesture/menu.py` renders persistent menus;
    `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
-   nested menus.
+   nested menus. `gesture/runtime_tooltip.py` owns delayed hover/fade state and
+   short-lived redraw timers; `element/element_tooltip.py` builds translated
+   operator/property metadata and independent status/icon diagnostics. Tooltip
+   timers are cancelled on target changes, modal reset/exit, and unregister.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
@@ -73,6 +76,8 @@ with bundled JSON presets, translations, and PNG icon assets.
   sub-panels; `ui/` defines lists, menus, context-menu integration, and the
   main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
   and modal pause status is the first header item after that title.
+  Gesture preferences include the hover-tooltip delay in milliseconds (100 ms
+  by default); runtime tooltip fade-in is fixed and does not persist state.
   `ops/quick_add/` implements context-sensitive creation helpers and previews.
 - `utils/preset.py` discovers `src/preset/*.json`; files beginning `Example `
   are opt-in debug fixtures. `src/translate/` holds locale JSON and translation
@@ -95,6 +100,8 @@ flowchart TD
     Exec --> Elements[element recursive model]
     Elements --> Blender[bpy operators and live RNA]
     Session --> Draw[GPU overlay / menu hit boxes]
+    Session --> Tooltip[delayed translated runtime tooltips]
+    Elements --> Tooltip
     Cache[cache_state + public_cache + ui_draw_sync] --> Session
     Keymap[gesture_keymap + addon_keymap] --> Ops
     Presets[src/preset] --> Persist
@@ -125,27 +132,24 @@ flowchart TD
 2. **Lint failure (reproducible):** `python -m ruff check .` reports `E402`
    at `utils/__init__.py:2` because `import bpy` follows `public_color`.
    This is low-risk behaviorally but blocks a clean lint gate.
-3. **Compile verification is environment-blocked:** `compileall` fails to write
-   `.pyc` files under both the repository cache and `C:\tmp` with Windows
-   `PermissionError`. The 172 passing tests import much of the code without a
-   syntax failure, but scripts not imported by those tests remain unverified;
-   rerun with a writable bytecode cache outside this restricted environment.
-4. **Blender-only behavior remains higher risk than unit coverage:** keymap
-   creation, context-sensitive operator polls, RNA collection identity,
-   draw-handler/timer cleanup, and file-load restoration require real Blender
-   smoke runs on 4.2 and current 5.x. The 172 pure tests cannot prove these.
-5. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
+3. **Blender-only behavior remains higher risk than unit coverage:** real RNA
+   status checks and preview lifecycle pass in Blender 4.2.1 and 5.2.0, and the
+   4.2.1 full lifecycle smoke passes. Foreground visual placement, multi-window
+   behavior, and file-load restoration still require targeted manual checks.
+4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
    `gesture_input.py`, or `utils/ui_draw_sync.py` should include a focused
    Blender smoke run and reload/disable verification.
-6. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
+5. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
    after Blender's flat build; changes to manifest exclusions or workflow
    layout should be checked by inspecting ZIP entries.
-7. **Local Blender verification unavailable:** no `blender` executable is on
-   PATH in the current environment, so background smoke, Extension validation,
-   package build, and Blender 4.2/5.x compatibility were not rerun in this
-   architecture audit.
+6. **Blender 5.2 lifecycle smoke crash:** the full lifecycle script exits with
+   a native `tbbmalloc.dll` access violation and no Python backtrace, while the
+   same 5.2 install passes element-status and preview smoke and Blender 4.2.1
+   passes all three. Treat 5.2 full-lifecycle coverage as unresolved until the
+   allocator crash is isolated; Extension validation/package build were not
+   rerun for the tooltip-only change.
 
 ## Constraints
 

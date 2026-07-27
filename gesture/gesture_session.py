@@ -10,6 +10,7 @@ from typing import Any
 from mathutils import Vector
 
 from .gesture_point_kd_tree import GesturePointKDTree
+from .runtime_tooltip import HoverTooltipState, cancel_hover_tooltip
 
 
 class GesturePhase(Enum):
@@ -119,6 +120,7 @@ class GestureSession:
 
     def _clear_runtime(self, *, event_count: int, move_count: int, stamp_time: bool):
         """Shared wipe for ``__init__`` and ``reset`` (keeps fields in sync)."""
+        cancel_hover_tooltip(getattr(self, "tooltip_state", None))
         self.trajectory_tree = GesturePointKDTree()
         self.trajectory_mouse_move = []
         self.trajectory_mouse_move_time = []
@@ -184,6 +186,7 @@ class GestureSession:
         self._gesture_timeout_deadline = None
         self._bottom_child_dwell_timer = None
         self._bottom_child_dwell_deadline = None
+        self.tooltip_state = HoverTooltipState()
         self.draw_ctx = None  # DrawFrameContext | None
         self.layout_token = object()
 
