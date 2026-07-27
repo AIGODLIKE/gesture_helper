@@ -181,6 +181,9 @@ class BackupsPreferences:
             export_path = get_preferences_backup_path()
         log_backup(f"preferences start -> {export_path}")
         data = get_property(self, exclude=("gesture", "index_gesture", "name", "init_addon"))
+        draw = data.get("draw_property")
+        if isinstance(draw, dict):
+            draw.pop("force_show_panels_during_modal", None)
         with open(export_path, "w", encoding="utf-8") as file:
             file.write(json.dumps(data, ensure_ascii=True, indent=2))
         log_backup(f"preferences ok -> {export_path}")
@@ -232,6 +235,9 @@ class BackupsPreferences:
         gesture_prop = data.get("gesture_property")
         if isinstance(gesture_prop, dict):
             gesture_prop.pop("pass_through_keymap_type", None)
+        draw = data.get("draw_property")
+        if isinstance(draw, dict):
+            draw.pop("force_show_panels_during_modal", None)
         # Gestures live in CONFIG JSON; never merge from preference backups.
         data.pop("gesture", None)
         data.pop("index_gesture", None)

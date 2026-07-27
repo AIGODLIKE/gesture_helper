@@ -211,6 +211,7 @@ def init_register():
 
     clear_pref_cache()
     pref = get_pref()
+    pref.draw_property.force_show_panels_during_modal = False
     register_panel()
     icons.Icons.register()
 

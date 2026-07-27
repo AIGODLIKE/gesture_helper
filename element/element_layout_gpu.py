@@ -79,10 +79,11 @@ class ElementLayoutGpu:
             children = node._layout_children()
             sizes = [node._layout_node_size(child, metrics) for child in children]
             scale = self._layout_scale_for(node)
+            scale_vector = Vector(scale)
             if not sizes:
                 return (
                     self._empty_layout_size(metrics, boxed=node.is_box)
-                    * scale
+                    * scale_vector
                 )
             elif node.is_row:
                 size = Vector((
@@ -96,7 +97,7 @@ class ElementLayoutGpu:
                 ))
             if node.is_box:
                 size += Vector((metrics.pad_x * 2.0, metrics.pad_y * 2.0))
-            return size * scale
+            return size * scale_vector
         if node.is_dividing_line:
             return Vector((metrics.row_h, metrics.sep_h))
         tw, th = node.text_dimensions

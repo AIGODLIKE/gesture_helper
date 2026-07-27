@@ -59,7 +59,9 @@ with bundled JSON presets, translations, and PNG icon assets.
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
    pauses both the N-panel and Preferences with their full layouts disabled.
    Their headers expose a non-persistent, default-off update override for the
-   duration of the modal. `utils/session_state.py` arbitrates preview ownership.
+   duration of the modal. Registration resets it to false, and preference
+   backup/restore explicitly excludes it. `utils/session_state.py` arbitrates
+   preview ownership.
 6. `gesture/pass_through/*` handles forwarding to Blender's native keymaps when
    a gesture does not consume the event.
 
@@ -67,8 +69,9 @@ with bundled JSON presets, translations, and PNG icon assets.
 
 - `preferences/` defines AddonPreferences and editor/drawing/debug/backup
   sub-panels; `ui/` defines lists, menus, context-menu integration, and the
-  main sidebar panel. `ops/quick_add/` implements context-sensitive creation
-  helpers and previews.
+  main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
+  and modal pause status is the first header item after that title.
+  `ops/quick_add/` implements context-sensitive creation helpers and previews.
 - `utils/preset.py` discovers `src/preset/*.json`; files beginning `Example `
   are opt-in debug fixtures. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.

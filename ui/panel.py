@@ -1,12 +1,13 @@
+from functools import cache
+
 import bpy
 
 from ..preferences.draw import PreferencesDraw
 from ..preferences.draw_gesture import GestureDraw
-from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
+from ..utils.pref_access import PrefAccess
 from ..utils.public import get_pref
 from ..utils.rna_register import register_classes_safe, unregister_classes_safe
-
 
 _MODAL_EVENT_VISIBILITY: dict[int, bool] = {}
 
@@ -33,6 +34,15 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         except (KeyError, AttributeError):
             return False
 
+    def draw_label_ang_version(self, layout):
+        @cache
+        def text():
+            from .. import ADDON_VERSION
+            label = f"{self.bl_label} {'.'.join(map(str, ADDON_VERSION))}"
+            return label
+
+        layout.label(text=text())
+
     def draw_header(self, context):
         from ..utils.ui_draw_sync import (
             heavy_panel_skip_message,
@@ -47,6 +57,8 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
         rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
+        self.draw_label_ang_version(row)
+
         if message:
             status = row.row(align=True)
             status.enabled = False
