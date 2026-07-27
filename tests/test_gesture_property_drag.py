@@ -356,6 +356,35 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertTrue(session._event_consumed)
         self.assertEqual(element.wheel_calls, [])
 
+    def test_numeric_arrow_click_steps_without_starting_a_drag(self):
+        element = FakeElement(changed=True, property_type="FLOAT")
+        session = _session(element)
+        session.property_drag = None
+        element.display_property_value = 0.2
+        extension_hit = types.ModuleType(
+            f"{PACKAGE}.element.extension_hit",
+        )
+        extension_hit.numeric_property_arrow_direction = lambda *_args: -1
+
+        with (
+            patch.dict(sys.modules, {extension_hit.__name__: extension_hit}),
+            patch.object(self.processor, "_hovered_property_row", return_value=element),
+            patch.object(gesture_input, "refresh_snapshot") as refresh,
+        ):
+            result = self.processor._handle_property_drag(
+                session,
+                self.ops,
+                _event("LEFTMOUSE", "PRESS", shift=True),
+            )
+
+        self.assertTrue(result)
+        self.assertTrue(session._event_consumed)
+        self.assertTrue(session._suppress_property_execute)
+        self.assertIsNone(session.property_drag)
+        self.assertEqual(element.wheel_calls, [(-1, True)])
+        self.assertEqual(session._poll_context_revision, 5)
+        refresh.assert_called_once_with(session, self.ops)
+
     def test_cancel_property_drag_restores_once(self):
         element = FakeElement(changed=True)
         session = _session(element, moved=True)

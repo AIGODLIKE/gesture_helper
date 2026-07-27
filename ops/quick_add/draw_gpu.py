@@ -44,7 +44,7 @@ class DrawGpu:
             if content_key != self._bpu_content_key or not self.gesture_bpu.root.children:
                 with self.gesture_bpu as bpu:
                     bpu.sync_input(offset, mouse)
-                    bpu.label(__name_translate__("Select Gesture"))
+                    bpu.label(__name_translate__("Select Gesture"), draggable=True)
                     bpu.separator()
                     if gesture_list:
                         for g in gesture_list:
@@ -58,7 +58,13 @@ class DrawGpu:
             else:
                 self.gesture_bpu.sync_input(offset, mouse)
 
+            drag_revision = self.gesture_bpu.drag_revision
             if self.gesture_bpu.check_event(event):
+                if self.gesture_bpu.drag_revision != drag_revision:
+                    if getattr(ops, '_preview_renderer', '') == 'MENU':
+                        ops._tag_menu_redraw()
+                    else:
+                        ops.tag_redraw()
                 return {'RUNNING_MODAL'}
 
             if not self.tips.root.children:

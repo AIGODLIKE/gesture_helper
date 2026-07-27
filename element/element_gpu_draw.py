@@ -13,6 +13,11 @@ from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
 from ..utils.color import color_to_srgb
 from ..utils.public_gpu import PublicGpu
+from ..utils.number_arrows import (
+    number_arrow_rects,
+    number_arrow_slot_width,
+    show_number_arrows,
+)
 from ..utils.texture import Texture
 from .element_status import ElementStatus, get_element_status_info
 
@@ -265,6 +270,61 @@ class ElementGpuProperty:
         return draw.background_operator_active_color
 
     @property
+    def numeric_arrows_visible(self) -> bool:
+        return bool(
+            self.is_property_display
+            and self.display_property_type in {'INT', 'FLOAT'}
+            and self.display_property_is_editable
+            and show_number_arrows()
+        )
+
+    def numeric_arrow_slot(self, row_height: float) -> float:
+        if not self.numeric_arrows_visible:
+            return 0.0
+        return number_arrow_slot_width(row_height)
+
+    def publish_numeric_arrow_areas(self, rect, row_height: float) -> float:
+        slot = self.numeric_arrow_slot(row_height)
+        decrement, increment = number_arrow_rects(rect, slot)
+        self.property_decrement_draw_area = decrement
+        self.property_increment_draw_area = increment
+        return slot
+
+    def gpu_draw_numeric_arrows(self, width: float, row_height: float) -> float:
+        """Draw local-space chevrons and return the reserved edge slot width."""
+        slot = self.numeric_arrow_slot(row_height)
+        if slot <= 0.0:
+            return 0.0
+        center_y = -row_height * 0.5
+        half_h = max(2.5, min(row_height * 0.18, slot * 0.22))
+        half_w = max(1.8, half_h * 0.62)
+        line_width = max(1.0, row_height * 0.055)
+        color = self.text_color
+        left_x = slot * 0.5
+        right_x = width - slot * 0.5
+        self.draw_2d_line(
+            ((left_x + half_w, center_y + half_h), (left_x - half_w, center_y)),
+            color=color,
+            line_width=line_width,
+        )
+        self.draw_2d_line(
+            ((left_x - half_w, center_y), (left_x + half_w, center_y - half_h)),
+            color=color,
+            line_width=line_width,
+        )
+        self.draw_2d_line(
+            ((right_x - half_w, center_y + half_h), (right_x + half_w, center_y)),
+            color=color,
+            line_width=line_width,
+        )
+        self.draw_2d_line(
+            ((right_x + half_w, center_y), (right_x - half_w, center_y - half_h)),
+            color=color,
+            line_width=line_width,
+        )
+        return slot
+
+    @property
     def extension_background_color(self):
         draw = self.draw_property
         if self.element_status_info.status.is_error:
@@ -486,6 +546,13 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
                 self.item_draw_area = get_current_2d_rect(
                     (-margin_x, -h - margin_y, w + margin_x, margin_y),
                 )
+                arrow_slot = self.publish_numeric_arrow_areas(
+                    get_current_2d_rect((0.0, -h, w, 0.0)),
+                    h,
+                )
+                self.gpu_draw_numeric_arrows(w, h)
+                if arrow_slot:
+                    gpu.matrix.translate((arrow_slot, 0.0))
                 self.gpu_draw_status_badge()
                 self.gpu_draw_icon()
                 self.gpu_draw_label()
@@ -688,6 +755,9 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             w += self.content_icon_size + gap
         if self.is_draw_child_icon and Texture.get_texture("1") is not None:
             w += gap + self.content_chevron_size
+        arrow_slot = self.numeric_arrow_slot(th)
+        if arrow_slot:
+            w += arrow_slot * 2.0
         return Vector((w, th))
 
     @property
@@ -785,6 +855,7 @@ class ElementGpuExtensionItem:
 
         has_icon_col = False
         has_chevron_col = False
+        has_number_arrows = False
         status_col_w = 0.0
         for item in items:
             if item.is_dividing_line:
@@ -795,6 +866,8 @@ class ElementGpuExtensionItem:
                 has_icon_col = True
             if item.is_child_gesture and Texture.get_texture("1") is not None:
                 has_chevron_col = True
+            if item.numeric_arrows_visible:
+                has_number_arrows = True
 
         # Content width = columns only (old code always added icon*2 even when unused).
         content_w = label_w
@@ -804,6 +877,9 @@ class ElementGpuExtensionItem:
             content_w += icon_size + gap
         if has_chevron_col:
             content_w += gap + chevron_size
+        number_arrow_slot = number_arrow_slot_width(row_h) if has_number_arrows else 0.0
+        if number_arrow_slot:
+            content_w += number_arrow_slot * 2.0
 
         content_h = 0.0
         layout_metrics = self._layout_metrics()
@@ -833,6 +909,8 @@ class ElementGpuExtensionItem:
             label_h=label_h,
             has_icon_col=has_icon_col,
             has_chevron_col=has_chevron_col,
+            has_number_arrows=has_number_arrows,
+            number_arrow_slot=number_arrow_slot,
             status_col_w=status_col_w,
             content_w=content_w,
             content_h=content_h,
@@ -906,6 +984,10 @@ class ElementGpuExtensionItem:
                 mouse = getattr(draw_ctx, 'mouse_region', None) if draw_ctx is not None else None
                 from .extension_hit import publish_child_row_hit
                 hovered = publish_child_row_hit(item, ops, row_rect, mouse=mouse)
+                item.publish_numeric_arrow_areas(
+                    get_current_2d_rect((0.0, -row_h, w, 0.0)),
+                    row_h,
+                )
                 # Numeric property rows paint a slider fill over the soft range.
                 fraction = item.display_property_fraction if item.is_property_display else None
                 if fraction is not None and fraction > 0.0:
@@ -933,12 +1015,13 @@ class ElementGpuExtensionItem:
                 item.gpu_draw_status_accent(
                     (w * 0.5, -row_h * 0.5), hover_w, row_h,
                 )
+                item.gpu_draw_numeric_arrows(w, row_h)
 
                 with gpu.matrix.push_pop():
                     # Vertically center the icon/text band inside the row.
                     gpu.matrix.translate((0, -((row_h - lay.icon_size) * 0.5)))
 
-                    cursor_x = 0.0
+                    cursor_x = lay.number_arrow_slot if lay.has_number_arrows else 0.0
                     if lay.status_col_w:
                         with gpu.matrix.push_pop():
                             gpu.matrix.translate((cursor_x, 0))

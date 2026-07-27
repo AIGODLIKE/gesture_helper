@@ -15,7 +15,7 @@ class GestureProperty(bpy.types.PropertyGroup):
     hover_tooltip_delay: IntProperty(
         name='Hover Tooltip Delay (ms)',
         description='Time the pointer must remain on an item before its tooltip appears',
-        default=100,
+        default=300,
         min=0,
         max=5000,
         subtype='TIME',

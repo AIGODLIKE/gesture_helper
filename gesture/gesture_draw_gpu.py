@@ -490,13 +490,9 @@ class GestureGpuDraw(DrawDebug):
         if not self.session.phase.shows_radial_ui:
             return
         state = getattr(self.session, 'tooltip_state', None)
-        element = getattr(state, 'target', None)
-        tooltip = getattr(state, 'tooltip', None)
-        if element is None or tooltip is None:
-            return
-        from .runtime_tooltip import tooltip_reveal
+        from .runtime_tooltip import tooltip_draw_data
 
-        reveal = tooltip_reveal(state, element)
+        element, tooltip, reveal = tooltip_draw_data(state)
         if reveal <= 0.0:
             return
 
@@ -512,7 +508,7 @@ class GestureGpuDraw(DrawDebug):
         scale = self._draw_ui_scale()
         size = max(10, round(draw.text_gpu_draw_size * scale * 0.78))
         metadata = tuple(color_to_srgb(draw.text_default_color))
-        metadata = (*metadata[:3], metadata[3] * 0.62)
+        metadata = (*metadata[:3], metadata[3] * 0.38)
         self.draw_runtime_tooltip(
             tooltip,
             anchor_rect=self._runtime_annotation_anchor(element),

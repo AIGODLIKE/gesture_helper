@@ -256,6 +256,51 @@ class PreviewContextTests(unittest.TestCase):
         )
         self.assertIsNone(owner._menu_drag_mouse)
 
+    def test_menu_preview_can_drag_from_header_with_left_mouse(self):
+        redraws = []
+        root = types.SimpleNamespace(rect=(10.0, 20.0, 110.0, 80.0))
+        owner = types.SimpleNamespace(
+            _menu_centered=True,
+            _menu_panels=[root],
+            _menu_anchor=(0.0, 0.0),
+            _menu_drag_mouse=None,
+            _menu_drag_button=None,
+            _menu_layout_dirty=False,
+            _menu_mouse=lambda event: event.point,
+            _menu_header_hit=lambda _event: True,
+            _ensure_layout=lambda **_kwargs: None,
+            _tag_menu_redraw=lambda: redraws.append(True),
+        )
+        press = types.SimpleNamespace(
+            type="LEFTMOUSE", value="PRESS", alt=False, ctrl=False, shift=False,
+            point=(30.0, 70.0),
+        )
+        move = types.SimpleNamespace(
+            type="MOUSEMOVE", value="NOTHING", alt=False, ctrl=False, shift=False,
+            point=(42.0, 75.0),
+        )
+        release = types.SimpleNamespace(
+            type="LEFTMOUSE", value="RELEASE", alt=False, ctrl=False, shift=False,
+            point=(42.0, 75.0),
+        )
+
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, press),
+            {"RUNNING_MODAL"},
+        )
+        self.assertEqual(owner._menu_anchor, (10.0, 80.0))
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, move),
+            {"RUNNING_MODAL"},
+        )
+        self.assertEqual(owner._menu_anchor, (22.0, 85.0))
+        self.assertEqual(redraws, [True])
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, release),
+            {"RUNNING_MODAL"},
+        )
+        self.assertIsNone(owner._menu_drag_button)
+
     def test_menu_preview_routes_events_to_shared_hud_first(self):
         calls = []
         event = types.SimpleNamespace(

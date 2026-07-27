@@ -570,7 +570,7 @@ def sync_runtime_tooltip(session: GestureSession, ops) -> bool:
         delay_ms=getattr(
             ops.pref.gesture_property,
             'hover_tooltip_delay',
-            100,
+            300,
         ),
         redraw=lambda: tag_redraw_gesture_screen(session),
     )
@@ -917,6 +917,22 @@ class GestureInputProcessor:
                 return False
             prop_type = item.display_property_type
             if prop_type in {'INT', 'FLOAT'}:
+                from ..element.extension_hit import numeric_property_arrow_direction
+
+                arrow_direction = numeric_property_arrow_direction(item, ops)
+                if arrow_direction:
+                    session._event_consumed = True
+                    session._suppress_property_execute = True
+                    changed = item.apply_property_wheel(
+                        arrow_direction,
+                        precise=getattr(event, 'shift', False),
+                    )
+                    if changed:
+                        session._poll_context_revision = (
+                            getattr(session, '_poll_context_revision', 0) + 1
+                        )
+                        refresh_snapshot(session, ops)
+                    return changed
                 start_value = item.display_property_value
                 if start_value is None:
                     return None

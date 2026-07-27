@@ -5,7 +5,7 @@ import sys
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 MODULE_PATH = Path(__file__).parents[1] / "gesture" / "menu.py"
@@ -208,6 +208,140 @@ class MenuRedrawScopeTests(unittest.TestCase):
 
         runtime._draw_menu.assert_called_once_with()
         self.assertEqual(runtime._menu_last_draw_error, '')
+
+    def test_menu_transition_reveal_is_bidirectional(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_opened_at = 10.0
+        runtime._menu_closing_at = 0.0
+
+        self.assertEqual(runtime._menu_animation_reveal(now=10.0), 0.0)
+        self.assertAlmostEqual(
+            runtime._menu_animation_reveal(
+                now=10.0 + menu_module.MENU_TRANSITION_SECONDS * 0.5,
+            ),
+            0.5,
+        )
+        self.assertEqual(
+            runtime._menu_animation_reveal(
+                now=10.0 + menu_module.MENU_TRANSITION_SECONDS,
+            ),
+            1.0,
+        )
+
+        runtime._menu_closing_at = 20.0
+        runtime._menu_close_start_reveal = 1.0
+        self.assertEqual(runtime._menu_animation_reveal(now=20.0), 1.0)
+        self.assertAlmostEqual(
+            runtime._menu_animation_reveal(
+                now=20.0 + menu_module.MENU_TRANSITION_SECONDS * 0.5,
+            ),
+            0.5,
+        )
+        self.assertEqual(
+            runtime._menu_animation_reveal(
+                now=20.0 + menu_module.MENU_TRANSITION_SECONDS,
+            ),
+            0.0,
+        )
+
+    def test_close_started_after_open_preserves_full_reveal(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_opened_at = 10.0
+        runtime._menu_closing_at = 0.0
+        runtime._menu_close_requested = False
+        runtime._menu_close_start_reveal = 1.0
+        runtime._menu_tooltip_state = None
+        runtime._menu_hovered_row = object()
+        runtime._menu_drag_mouse = (1.0, 2.0)
+        runtime._menu_drag_button = "LEFTMOUSE"
+        runtime._schedule_menu_animation = Mock()
+        runtime._tag_menu_redraw = Mock()
+
+        with patch.object(menu_module.time, "monotonic", return_value=20.0):
+            self.assertTrue(runtime._begin_menu_close())
+
+        self.assertEqual(runtime._menu_close_start_reveal, 1.0)
+        self.assertEqual(runtime._menu_closing_at, 20.0)
+        self.assertIsNone(runtime._menu_hovered_row)
+        self.assertIsNone(runtime._menu_drag_mouse)
+        runtime._schedule_menu_animation.assert_called_once_with()
+        runtime._tag_menu_redraw.assert_called_once_with()
+
+    def test_header_drag_moves_centered_menu_from_its_drawn_position(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_panels = [menu_module.MenuPanel(
+            depth=0,
+            rows=[],
+            rect=(20.0, 30.0, 120.0, 90.0),
+            header_rect=(20.0, 70.0, 120.0, 90.0),
+            close_rect=(100.0, 70.0, 120.0, 90.0),
+        )]
+        runtime._menu_centered = True
+        runtime._menu_anchor = (0.0, 0.0)
+        runtime._menu_drag_mouse = None
+        runtime._menu_drag_button = None
+        runtime._menu_layout_dirty = False
+        runtime._menu_mouse = lambda event: event.point
+        runtime._ensure_layout = lambda **_kwargs: None
+        runtime._sync_menu_tooltip = lambda _row: None
+        runtime._tag_menu_redraw = Mock()
+
+        press = types.SimpleNamespace(point=(40.0, 80.0))
+        move = types.SimpleNamespace(type="MOUSEMOVE", point=(55.0, 72.0))
+        self.assertTrue(runtime._menu_header_hit(press))
+        self.assertTrue(runtime._start_menu_drag(press, button="LEFTMOUSE"))
+        self.assertFalse(runtime._menu_centered)
+        self.assertEqual(runtime._menu_anchor, (20.0, 90.0))
+        self.assertTrue(runtime._move_menu_drag(move))
+        self.assertEqual(runtime._menu_anchor, (35.0, 82.0))
+        self.assertTrue(runtime._menu_layout_dirty)
+        runtime._tag_menu_redraw.assert_called_once_with()
+        self.assertTrue(runtime._finish_menu_drag(button="LEFTMOUSE"))
+
+    def test_boolean_property_draws_a_switch_and_numeric_property_draws_arrows(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_hovered_row = None
+        runtime._menu_current_reveal = 1.0
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        colors = self._colors()
+
+        boolean_row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="BOOLEAN",
+                display_property_value=True,
+                display_property_fraction=None,
+                is_draw_icon=False,
+            ),
+            "Enabled",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        runtime._draw_row(boolean_row, self._metrics(), colors)
+        self.assertGreaterEqual(runtime.draw_rounded_rectangle_area.call_count, 3)
+        self.assertIsNone(boolean_row.decrement_rect)
+        self.assertIsNone(boolean_row.increment_rect)
+
+        runtime.draw_2d_line.reset_mock()
+        numeric_row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="FLOAT",
+                display_property_value=0.2,
+                display_property_fraction=0.2,
+                is_draw_icon=False,
+            ),
+            "Amount  0.20",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        with patch.object(menu_module, "show_number_arrows", return_value=True):
+            runtime._draw_row(numeric_row, self._metrics(), colors)
+        self.assertIsNotNone(numeric_row.decrement_rect)
+        self.assertIsNotNone(numeric_row.increment_rect)
+        self.assertEqual(runtime.draw_2d_line.call_count, 4)
 
 
 if __name__ == "__main__":

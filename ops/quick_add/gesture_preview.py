@@ -108,6 +108,12 @@ class GesturePreview(
         operator_setattr(self, '_menu_draw_count', 0)
         operator_setattr(self, '_menu_last_draw_error', '')
         operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
+        operator_setattr(self, '_menu_opened_at', 0.0)
+        operator_setattr(self, '_menu_closing_at', 0.0)
+        operator_setattr(self, '_menu_close_start_reveal', 1.0)
+        operator_setattr(self, '_menu_animation_timer', None)
+        operator_setattr(self, '_menu_animation_serial', 0)
 
     @classmethod
     def poll(cls, context):
@@ -268,6 +274,7 @@ class GesturePreview(
         operator_setattr(self, '_menu_close_requested', False)
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
         operator_setattr(self, 'event', event)
         if not self._register_menu_runtime(context):
             return False
@@ -277,6 +284,7 @@ class GesturePreview(
         # path to receive its first modal event.
         self._preview_hud_event(event)
         self._ensure_layout(force=True)
+        self._start_menu_open_animation()
         operator_setattr(
             self,
             '_preview_target_key',
@@ -329,6 +337,7 @@ class GesturePreview(
             self._unregister_menu_runtime()
         operator_setattr(self, '_menu_close_requested', False)
         operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
         operator_setattr(self, '_preview_renderer', '')
         operator_setattr(self, '_preview_target_key', None)
 
@@ -530,6 +539,9 @@ class GesturePreview(
     def modal(self, context, event):
         if self._preview_cleaned:
             return {'FINISHED'}
+        if self._preview_renderer == 'MENU' and self._menu_close_requested:
+            self.__exit_modal__()
+            return {'FINISHED'}
         if self._preview_close_requested:
             self.__exit_modal__()
             return {'FINISHED'}
@@ -542,6 +554,9 @@ class GesturePreview(
             self.__exit_modal__()
             return {'FINISHED'}
         if self.is_exit:
+            if self._preview_renderer == 'MENU':
+                self._begin_menu_close()
+                return {'RUNNING_MODAL'}
             self.__exit_modal__()
             return {'FINISHED'}
 
@@ -568,6 +583,8 @@ class GesturePreview(
 
     def _modal_menu(self, event):
         operator_setattr(self, 'event', event)
+        if getattr(self, '_menu_closing_at', 0.0):
+            return {'RUNNING_MODAL'}
         hud_result = self._preview_hud_event(event)
         if hud_result:
             return hud_result
@@ -587,8 +604,8 @@ class GesturePreview(
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self._ensure_layout()
             if self._menu_close_hit(event):
-                self.__exit_modal__()
-                return {'FINISHED'}
+                self._begin_menu_close()
+                return {'RUNNING_MODAL'}
             self._update_menu_hover(event)
             if self._menu_contains(self._menu_mouse(event)):
                 return {'RUNNING_MODAL'}
@@ -598,8 +615,56 @@ class GesturePreview(
                 return {'RUNNING_MODAL'}
         return {'PASS_THROUGH'}
 
+    @staticmethod
+    def _preview_menu_drag_start(owner, event, button) -> bool:
+        point = owner._menu_mouse(event)
+        if point is None:
+            return False
+        owner._ensure_layout()
+        panels = getattr(owner, '_menu_panels', ())
+        if getattr(owner, '_menu_centered', False) and panels:
+            root_rect = panels[0].rect
+            owner._menu_anchor = (root_rect[0], root_rect[3])
+            owner._menu_centered = False
+        owner._menu_drag_mouse = point
+        owner._menu_drag_button = button
+        sync_tooltip = getattr(owner, '_sync_menu_tooltip', None)
+        if callable(sync_tooltip):
+            sync_tooltip(None)
+        return True
+
+    @staticmethod
+    def _preview_menu_drag_finish(owner, button) -> bool:
+        active_button = getattr(owner, '_menu_drag_button', None)
+        if active_button is None and button == 'SPACE' and owner._menu_drag_mouse is not None:
+            active_button = 'SPACE'
+        if active_button != button:
+            return False
+        owner._menu_drag_mouse = None
+        owner._menu_drag_button = None
+        return True
+
+    @staticmethod
+    def _preview_menu_drag_move(owner, event) -> bool:
+        previous = owner._menu_drag_mouse
+        if previous is None or event.type != 'MOUSEMOVE':
+            return False
+        point = owner._menu_mouse(event)
+        if point is None:
+            return True
+        anchor_x, anchor_y = owner._menu_anchor
+        owner._menu_anchor = (
+            anchor_x + point[0] - previous[0],
+            anchor_y + point[1] - previous[1],
+        )
+        owner._menu_drag_mouse = point
+        owner._menu_layout_dirty = True
+        owner._ensure_layout(force=True)
+        owner._tag_menu_redraw()
+        return True
+
     def _menu_drag_event(self, event):
-        """Move a read-only menu preview with plain Space + pointer motion."""
+        """Move a menu preview from its header or with plain Space."""
         plain_space = (
             event.type == 'SPACE'
             and not event.alt
@@ -607,41 +672,27 @@ class GesturePreview(
             and not event.shift
         )
         if plain_space and event.value == 'PRESS':
-            point = self._menu_mouse(event)
-            if point is None:
-                return {'RUNNING_MODAL'}
-            self._ensure_layout()
-            panels = getattr(self, '_menu_panels', ())
-            if self._menu_centered and panels:
-                root_rect = panels[0].rect
-                operator_setattr(self, '_menu_anchor', (root_rect[0], root_rect[3]))
-                operator_setattr(self, '_menu_centered', False)
-            operator_setattr(self, '_menu_drag_mouse', point)
+            GesturePreview._preview_menu_drag_start(self, event, 'SPACE')
             return {'RUNNING_MODAL'}
 
         if plain_space and event.value == 'RELEASE':
-            if self._menu_drag_mouse is None:
+            if not GesturePreview._preview_menu_drag_finish(self, 'SPACE'):
                 return None
-            operator_setattr(self, '_menu_drag_mouse', None)
             return {'RUNNING_MODAL'}
 
-        if event.type != 'MOUSEMOVE' or self._menu_drag_mouse is None:
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            if self._menu_header_hit(event):
+                GesturePreview._preview_menu_drag_start(self, event, 'LEFTMOUSE')
+                return {'RUNNING_MODAL'}
             return None
-        point = self._menu_mouse(event)
-        if point is None:
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if GesturePreview._preview_menu_drag_finish(self, 'LEFTMOUSE'):
+                return {'RUNNING_MODAL'}
+            return None
+
+        if GesturePreview._preview_menu_drag_move(self, event):
             return {'RUNNING_MODAL'}
-        previous_x, previous_y = self._menu_drag_mouse
-        anchor_x, anchor_y = self._menu_anchor
-        operator_setattr(
-            self,
-            '_menu_anchor',
-            (anchor_x + point[0] - previous_x, anchor_y + point[1] - previous_y),
-        )
-        operator_setattr(self, '_menu_drag_mouse', point)
-        operator_setattr(self, '_menu_layout_dirty', True)
-        self._ensure_layout(force=True)
-        self._tag_menu_redraw()
-        return {'RUNNING_MODAL'}
+        return None
 
     def _modal_element(self, event):
         session = self.session
@@ -762,6 +813,9 @@ class GesturePreview(
 
     def _request_preview_close(self) -> None:
         if self._preview_cleaned:
+            return
+        if self._preview_renderer == 'MENU':
+            self._begin_menu_close()
             return
         operator_setattr(self, '_preview_close_requested', True)
         operator_setattr(self, '_menu_close_requested', True)

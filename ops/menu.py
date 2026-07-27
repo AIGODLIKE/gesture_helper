@@ -41,6 +41,15 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, '_menu_draw_count', 0)
         operator_setattr(self, '_menu_last_draw_error', '')
+        operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
+        operator_setattr(self, '_menu_opened_at', 0.0)
+        operator_setattr(self, '_menu_closing_at', 0.0)
+        operator_setattr(self, '_menu_close_start_reveal', 1.0)
+        operator_setattr(self, '_menu_animation_timer', None)
+        operator_setattr(self, '_menu_animation_serial', 0)
+        operator_setattr(self, '_menu_animation_event_timer', None)
+        operator_setattr(self, '_menu_window_manager', None)
 
     @staticmethod
     def _draw_error(menu, _context):
@@ -79,6 +88,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_area', area)
         operator_setattr(self, '_menu_screen', context.screen)
         operator_setattr(self, '_menu_window', context.window)
+        operator_setattr(self, '_menu_window_manager', context.window_manager)
         operator_setattr(self, '_menu_gesture_ref', gesture)
         operator_setattr(self, '_menu_anchor', (mouse[0] + 6.0, mouse[1] + 6.0))
         operator_setattr(self, '_menu_close_requested', False)
@@ -95,8 +105,37 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         if not self._register_menu_runtime(context):
             return {'CANCELLED'}
         self._ensure_layout(force=True)
+        self._start_menu_open_animation()
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
+
+    def _ensure_menu_animation_event_timer(self) -> None:
+        if self._menu_animation_event_timer is not None:
+            return
+        wm = self._menu_window_manager
+        window = self._menu_window
+        if wm is None or window is None:
+            operator_setattr(self, '_menu_close_requested', True)
+            return
+        try:
+            from ..gesture.menu import MENU_FRAME_SECONDS
+
+            timer = wm.event_timer_add(MENU_FRAME_SECONDS, window=window)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            operator_setattr(self, '_menu_close_requested', True)
+            return
+        operator_setattr(self, '_menu_animation_event_timer', timer)
+
+    def _remove_menu_animation_event_timer(self) -> None:
+        timer = self._menu_animation_event_timer
+        wm = self._menu_window_manager
+        operator_setattr(self, '_menu_animation_event_timer', None)
+        if timer is None or wm is None:
+            return
+        try:
+            wm.event_timer_remove(timer)
+        except (AttributeError, ReferenceError, RuntimeError, ValueError):
+            ...
 
     def _area_is_live(self) -> bool:
         area = self._menu_area
@@ -156,7 +195,10 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
     def _finish_menu(self, *, cancelled=False, pass_through=False):
         if not self._menu_runtime_cleaned:
             operator_setattr(self, '_menu_runtime_cleaned', True)
-            self._unregister_menu_runtime()
+            try:
+                self._remove_menu_animation_event_timer()
+            finally:
+                self._unregister_menu_runtime()
         result = {'CANCELLED'} if cancelled else {'FINISHED'}
         if pass_through:
             result.add('PASS_THROUGH')
@@ -211,6 +253,8 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             return self._finish_menu(pass_through=True)
         if not self._area_is_live() or event.type == 'WINDOW_DEACTIVATE':
             return self._finish_menu(cancelled=True)
+        if self._menu_closing_at:
+            return {'RUNNING_MODAL'}
 
         external_modal = self._has_external_modal(context)
         if external_modal:
@@ -221,26 +265,47 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             self._menu_mark_context_changed()
 
         if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
-            return self._finish_menu()
+            self._begin_menu_close()
+            return {'RUNNING_MODAL'}
 
         if event.type == 'MOUSEMOVE':
+            if self._move_menu_drag(event):
+                return {'RUNNING_MODAL'}
             if self._update_menu_hover(event):
                 self._tag_menu_redraw()
             return {'PASS_THROUGH'}
 
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if self._finish_menu_drag(button='LEFTMOUSE'):
+                return {'RUNNING_MODAL'}
+
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self._ensure_layout()
             if self._menu_close_hit(event):
-                return self._finish_menu()
+                self._begin_menu_close()
+                return {'RUNNING_MODAL'}
+            if self._menu_header_hit(event):
+                self._start_menu_drag(event, button='LEFTMOUSE')
+                return {'RUNNING_MODAL'}
             row = self._menu_clicked_row(event)
             if row is not None:
                 status = getattr(row.status_info, 'status', None)
                 if status is not None and status.is_error:
                     return self._repair_menu_row(row)
+                arrow_direction = self._menu_property_arrow_direction(row, event)
+                if arrow_direction:
+                    changed = row.element.apply_property_wheel(
+                        arrow_direction,
+                        precise=getattr(event, 'shift', False),
+                    )
+                    if changed:
+                        self._menu_mark_context_changed()
+                    return {'RUNNING_MODAL'}
                 self._execute_menu_row(row)
                 return {'RUNNING_MODAL'}
             if not self._menu_contains(self._menu_mouse(event)):
-                return self._finish_menu(pass_through=True)
+                self._begin_menu_close()
+                return {'PASS_THROUGH'}
             return {'RUNNING_MODAL'}
 
         return {'PASS_THROUGH'}

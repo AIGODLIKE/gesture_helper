@@ -222,6 +222,11 @@ class DrawProperty(bpy.types.PropertyGroup):
         col = layout.box().column(align=True)
         col.prop(draw, 'element_draw_child_icon')
         col.prop(draw, 'element_draw_property_toggle_icon')
+        view = bpy.context.preferences.view
+        if getattr(getattr(view, 'bl_rna', None), 'properties', {}).get(
+                'show_number_arrows'
+        ) is not None:
+            col.prop(view, 'show_number_arrows', text='Numeric Input Arrows')
         col.prop(draw, 'text_gpu_draw_size')
         cr = col.row(align=True)
         cr.prop(draw, 'text_gpu_draw_radius')

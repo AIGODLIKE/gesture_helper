@@ -9,6 +9,13 @@ _ACTIVE_ELEMENT_UNSET = object()
 _ACTIVE_GESTURE_UNSET = object()
 
 
+def _pgettext_iface(text: str) -> str:
+    try:
+        return bpy.app.translations.pgettext_iface(text)
+    except AttributeError:
+        return text
+
+
 class GestureDraw:
 
     @staticmethod
@@ -285,15 +292,15 @@ class GestureDraw:
                 if preview_scope == 'ELEMENT'
                 else 'Previewing Gesture'
             )
-            row.label(text=label, icon=ui_icon('HIDE_OFF'))
+            row.label(text=_pgettext_iface(label), icon=ui_icon('HIDE_OFF'))
             row.operator(
                 (
                     GesturePreviewFrozen.bl_idname
                     if frozen
                     else GesturePreviewClose.bl_idname
                 ),
-                text='Close Preview',
-                icon='X',
+                text=_pgettext_iface('Close Preview'),
+                icon=ui_icon('X'),
             )
             return
 
@@ -317,7 +324,7 @@ class GestureDraw:
         ops = gesture_button.operator(
             preview_operator.bl_idname,
             icon=ui_icon('HIDE_OFF'),
-            text="Preview Gesture",
+            text=_pgettext_iface("Preview Gesture"),
         )
         if not frozen:
             ops.gesture = ag.name
@@ -327,8 +334,8 @@ class GestureDraw:
         element_button.enabled = pref.enabled and ae is not None
         ops = element_button.operator(
             preview_operator.bl_idname,
-            icon='ZOOM_IN',
-            text='Preview Element',
+            icon=ui_icon('ZOOM_IN'),
+            text=_pgettext_iface('Preview Element'),
         )
         if not frozen:
             ops.gesture = ag.name

@@ -94,6 +94,7 @@ class OverlayNode:
     properties: SimpleNamespace | None = None
     data: object | None = None
     prop: str = ""
+    draggable: bool = False
     children: list["OverlayNode"] = field(default_factory=list)
     # (x1, y1, x2, y2) in window coordinates after arrange.
     rect: tuple[float, float, float, float] | None = None
@@ -210,6 +211,7 @@ class OverlayLayout:
         self.corner_radius = 6
         self.background = (0.10, 0.10, 0.10, 0.92)
         self.row_color = (0.22, 0.22, 0.22, 0.9)
+        self.header_color = (0.16, 0.17, 0.19, 0.96)
         self.hover_color = (0.28, 0.45, 0.75, 0.95)
         self.active_color = (0.20, 0.38, 0.65, 0.95)
         self.alert_color = (0.48, 0.12, 0.12, 0.95)
@@ -220,6 +222,10 @@ class OverlayLayout:
         self._content_gen = 0
         self._cached_rects: _RectBatch | None = None
         self._cached_batch_sig = None
+        self.drag_offset = Vector((0.0, 0.0))
+        self._base_offset_position = Vector((0.0, 0.0))
+        self._drag_mouse = None
+        self.drag_revision = 0
 
     # ---- build API (with-statement rebuilds content) ----
 
@@ -239,8 +245,13 @@ class OverlayLayout:
         self._stack[-1].children.append(node)
         return node
 
-    def label(self, text="", alert=False):
-        return self._add(OverlayNode("LABEL", text=str(text), alert=alert))
+    def label(self, text="", alert=False, draggable=False):
+        return self._add(OverlayNode(
+            "LABEL",
+            text=str(text),
+            alert=alert,
+            draggable=draggable,
+        ))
 
     def separator(self):
         return self._add(OverlayNode("SEPARATOR"))
@@ -308,6 +319,9 @@ class OverlayLayout:
         cx, cy = x + inset, y - inset
         for child in node.children:
             self._arrange(child, cx, cy)
+            if child.draggable and node.kind in {'COLUMN', 'BOX'}:
+                x1, y1, _x2, y2 = child.rect
+                child.rect = (x1, y1, x + node.size.x - inset, y2)
             if node.kind == "ROW":
                 cx += child.size.x + self.gap
             else:
@@ -338,8 +352,10 @@ class OverlayLayout:
         Offset changes invalidate measure/arrange. Mouse-only moves only
         recompute hover (point-in-rect), keeping layout geometry cached.
         """
-        offset = Vector(offset)
+        base_offset = Vector(offset)
+        offset = base_offset + self.drag_offset
         mouse = Vector(mouse) if mouse is not None else Vector((-1e6, -1e6))
+        self._base_offset_position = base_offset
         offset_changed = offset != self.offset_position
         mouse_changed = mouse != self.mouse_position
         if not offset_changed and not mouse_changed:
@@ -383,6 +399,8 @@ class OverlayLayout:
     def _node_fill(self, node):
         if node is self._hover:
             return self.hover_color
+        if node.draggable:
+            return self.header_color
         if node.active:
             return self.active_color
         if node.alert and node.kind != "LABEL":
@@ -409,7 +427,7 @@ class OverlayLayout:
                 rects.add(x1 - ox, mid - 0.75 - oy, x1 + w - ox, mid + 0.75 - oy,
                           self.separator_color, 0.75)
                 continue
-            if node.kind not in {"OPERATOR", "PROPERTY", "BOX"}:
+            if node.kind not in {"OPERATOR", "PROPERTY", "BOX"} and not node.draggable:
                 continue
             rects.add(x1 - ox, y1 - oy, x2 - ox, y2 - oy,
                       self._node_fill(node), self.corner_radius)
@@ -427,6 +445,7 @@ class OverlayLayout:
             oy,
             self.background,
             self.row_color,
+            self.header_color,
             self.hover_color,
             self.active_color,
             self.alert_color,
@@ -476,6 +495,37 @@ class OverlayLayout:
         if not self.root.children:
             return False
         self._ensure_layout()
+        if self._drag_mouse is not None:
+            if event.type == 'MOUSEMOVE':
+                mouse = Vector((event.mouse_x, event.mouse_y))
+                diff = mouse - self._drag_mouse
+                if diff.length_squared > 0.0:
+                    self.drag_offset += diff
+                    self.offset_position = self._base_offset_position + self.drag_offset
+                    self.mouse_position = mouse
+                    self._drag_mouse = mouse
+                    self._laid_out = False
+                    self._cached_batch_sig = None
+                    self.drag_revision += 1
+                return True
+            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+                self._drag_mouse = None
+                return True
+            return event.type == 'LEFTMOUSE'
+
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            header = next(
+                (
+                    node
+                    for node in self._walk()
+                    if node.draggable and self._contains(node.rect, self.mouse_position)
+                ),
+                None,
+            )
+            if header is not None:
+                self._drag_mouse = Vector((event.mouse_x, event.mouse_y))
+                return True
+
         node = self._hover
         if node is None:
             return False

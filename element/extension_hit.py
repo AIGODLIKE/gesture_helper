@@ -191,6 +191,22 @@ def hit_test_child_row(item, ops=None, *, mouse: tuple[float, float] | None = No
     return point_in_rect(mouse, getattr(item, "extension_by_child_draw_area", None))
 
 
+def numeric_property_arrow_direction(item, ops=None, *, mouse=None) -> int:
+    """Return -1/1 for a current numeric arrow hit, otherwise 0."""
+    ops = ops or getattr(item, 'ops', None)
+    if not layout_is_current(item, ops):
+        return 0
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    from ..utils.number_arrows import number_arrow_direction
+
+    return number_arrow_direction(
+        mouse,
+        getattr(item, 'property_decrement_draw_area', None),
+        getattr(item, 'property_increment_draw_area', None),
+    )
+
+
 def publish_child_row_hit(item, ops, rect, *, mouse=None) -> bool:
     """Publish current draw geometry, then resolve hover against that geometry."""
     item.extension_by_child_draw_area = rect

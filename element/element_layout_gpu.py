@@ -62,6 +62,11 @@ class ElementLayoutGpu:
         # Blender's Layout::row/column sets space_ to zero for align=True.
         return 0.0 if self._layout_align_for(node) else metrics.gap
 
+    @staticmethod
+    def _layout_separator_height(metrics) -> float:
+        """Actual line height; separators do not own hidden vertical padding."""
+        return max(1.0, metrics.sep_h * 0.25)
+
     def _layout_metrics(self):
         from ..utils.blf_text import text_line_height
         text_size = float(self.text_size)
@@ -217,7 +222,7 @@ class ElementLayoutGpu:
                 size += Vector((inset_x * 2.0, inset_y * 2.0))
             size = size * scale_vector
         elif node.is_dividing_line:
-            size = Vector((metrics.row_h, metrics.sep_h))
+            size = Vector((metrics.row_h, self._layout_separator_height(metrics)))
         else:
             tw, _th = node.text_dimensions
             w = float(tw) + metrics.pad_x * 2.0
@@ -230,6 +235,9 @@ class ElementLayoutGpu:
                 w += metrics.gap + metrics.chevron
             if node.is_draw_icon and Texture.get_texture(node._gpu_draw_icon_name()) is not None:
                 w += metrics.label_h + metrics.gap
+            arrow_slot = node.numeric_arrow_slot(metrics.row_h)
+            if arrow_slot:
+                w += arrow_slot * 2.0
             size = Vector((w, metrics.row_h))
         return size
 
@@ -474,15 +482,19 @@ class ElementLayoutGpu:
                     )
             return
         if node.is_dividing_line:
-            rect = get_current_2d_rect((0.0, -metrics.sep_h, avail_w, 0.0))
+            separator_h = self._layout_separator_height(metrics)
+            rect = get_current_2d_rect((0.0, -separator_h, avail_w, 0.0))
             if not self._layout_rect_is_visible(rect):
                 return
             color = self.draw_property.dividing_line_color
-            dh = max(1.0, metrics.sep_h * 0.25)
             with gpu.matrix.push_pop():
-                gpu.matrix.translate((avail_w * 0.5, -metrics.sep_h * 0.5))
+                gpu.matrix.translate((avail_w * 0.5, -separator_h * 0.5))
                 self.draw_rounded_rectangle_area(
-                    (0, 0), color=color, radius=dh * 0.5, width=avail_w, height=dh,
+                    (0, 0),
+                    color=color,
+                    radius=separator_h * 0.5,
+                    width=avail_w,
+                    height=separator_h,
                 )
             return
         rect = get_current_2d_rect((0.0, -metrics.row_h, avail_w, 0.0))
@@ -573,10 +585,12 @@ class ElementLayoutGpu:
             (avail_w * 0.5, -row_h * 0.5), avail_w, row_h,
             info=status_info,
         )
+        arrow_slot = item.publish_numeric_arrow_areas(draw_rect, row_h)
+        item.gpu_draw_numeric_arrows(avail_w, row_h)
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate((metrics.pad_x, -((row_h - metrics.label_h) * 0.5)))
-            cursor_x = 0.0
+            cursor_x = arrow_slot
             status_w, _status_h = status_size
             if status_w:
                 with gpu.matrix.push_pop():

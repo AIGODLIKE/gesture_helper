@@ -95,6 +95,59 @@ class RuntimeTooltipStateTests(unittest.TestCase):
         self.assertIsNone(state.target)
         self.assertIsNone(state.timer)
 
+    def test_visible_tooltip_fades_out_after_pointer_leaves(self):
+        state = tooltip_module.HoverTooltipState()
+        target = FakeTarget(77)
+        tooltip = object()
+        redraws = []
+        with (
+            patch.dict(sys.modules, {"bpy": self.bpy}),
+            patch.object(
+                tooltip_module.time,
+                "monotonic",
+                side_effect=lambda: self.clock[0],
+            ),
+        ):
+            tooltip_module.sync_hover_tooltip(
+                state,
+                target,
+                delay_ms=0,
+                redraw=lambda: redraws.append(self.clock[0]),
+            )
+            state.tooltip = tooltip
+            self.clock[0] = 10.12
+            self.assertEqual(tooltip_module.tooltip_reveal(state, target), 1.0)
+
+            self.assertTrue(
+                tooltip_module.sync_hover_tooltip(
+                    state,
+                    None,
+                    delay_ms=0,
+                    redraw=lambda: redraws.append(self.clock[0]),
+                )
+            )
+            callback, first_interval = self.timers.registered[-1]
+            self.assertAlmostEqual(
+                first_interval,
+                tooltip_module.TOOLTIP_FRAME_SECONDS,
+            )
+            draw_target, draw_tooltip, reveal = tooltip_module.tooltip_draw_data(state)
+            self.assertIs(draw_target, target)
+            self.assertIs(draw_tooltip, tooltip)
+            self.assertEqual(reveal, 1.0)
+
+            self.clock[0] = 10.18
+            self.assertIsNotNone(callback())
+            _target, _tooltip, reveal = tooltip_module.tooltip_draw_data(state)
+            self.assertGreater(reveal, 0.0)
+            self.assertLess(reveal, 1.0)
+
+            self.clock[0] = 10.25
+            self.assertIsNone(callback())
+            self.assertEqual(tooltip_module.tooltip_draw_data(state), (None, None, 0.0))
+            self.assertIsNone(state.closing_target)
+            self.assertTrue(redraws)
+
 
 if __name__ == "__main__":
     unittest.main()

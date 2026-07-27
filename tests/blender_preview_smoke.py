@@ -16,18 +16,25 @@ sys.path.insert(0, str(REPOSITORY.parent))
 assert bpy.ops.preferences.addon_enable(module='gesture_helper') == {'FINISHED'}
 
 from gesture_helper.gesture.gesture_draw_gpu import GestureGpuDraw  # noqa: E402
-from gesture_helper.gesture.menu import GestureMenuRuntime  # noqa: E402
+from gesture_helper.gesture.menu import (  # noqa: E402
+    MENU_TRANSITION_SECONDS,
+    GestureMenuRuntime,
+)
 from gesture_helper.gesture.runtime_tooltip import (  # noqa: E402
     sync_hover_tooltip,
 )
 from gesture_helper.element.element_tooltip import (  # noqa: E402
     build_runtime_tooltip,
 )
+from gesture_helper.element.extension_hit import (  # noqa: E402
+    numeric_property_arrow_direction,
+)
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
 from gesture_helper.ui import ui_list  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
+from gesture_helper.utils.number_arrows import show_number_arrows  # noqa: E402
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
 
@@ -93,6 +100,7 @@ def assert_preview_globals_clean() -> None:
 def assert_preview_clean(instance) -> None:
     assert_preview_globals_clean()
     assert instance._preview_event_timer is None
+    assert getattr(instance, '_menu_animation_timer', None) is None
     for element in instance.session._element_proxy_pool.values():
         assert getattr(element, 'ops', None) is not instance
     state = instance.session.tooltip_state
@@ -118,7 +126,19 @@ def start_preview(scope, renderer):
 def close_preview(instance) -> None:
     with bpy.context.temp_override(**override):
         assert bpy.ops.wm.gesture_preview_close('EXEC_DEFAULT') == {'FINISHED'}
-    assert instance._preview_close_requested
+    if instance._preview_renderer == 'MENU':
+        assert instance._menu_closing_at > 0.0
+        # A synthetic background close may occur in the first clock tick of
+        # the open transition, in which case there is no visible alpha to
+        # fade. The regular elapsed-open close path is covered by unit tests.
+        assert 0.0 <= instance._menu_close_start_reveal <= 1.0
+        assert instance._menu_animation_timer is not None
+        assert bpy.app.timers.is_registered(instance._menu_animation_timer)
+        # The reveal curve itself is unit-tested. Finish through the normal
+        # modal cleanup path without sleeping in this background smoke test.
+        instance._menu_close_requested = True
+    else:
+        assert instance._preview_close_requested
     with bpy.context.temp_override(**override):
         assert instance.modal(
             bpy.context,
@@ -148,7 +168,13 @@ class FakeUILayout:
 
 store = get_gesture_store()
 assert store is not None
-assert get_pref().gesture_property.hover_tooltip_delay == 100
+gesture_preferences = get_pref().gesture_property
+assert gesture_preferences.bl_rna.properties['hover_tooltip_delay'].default == 300
+gesture_preferences.hover_tooltip_delay = 300
+view_preferences = bpy.context.preferences.view
+if view_preferences.bl_rna.properties.get('show_number_arrows') is not None:
+    view_preferences.show_number_arrows = True
+assert show_number_arrows(bpy.context)
 with suppress_gesture_disk_save():
     store.gesture.clear()
     gesture = store.gesture.add()
@@ -192,6 +218,9 @@ with suppress_gesture_disk_save():
     previous_translate_interface = view.use_translate_interface
     view.language = 'zh_HANS'
     view.use_translate_interface = True
+    assert bpy.app.translations.pgettext_iface('Preview Gesture') != 'Preview Gesture'
+    assert bpy.app.translations.pgettext_iface('Preview Element') != 'Preview Element'
+    assert bpy.app.translations.pgettext_iface('Gesture Preview') != 'Gesture Preview'
     native_rna = first.operator_func.get_rna_type()
     assert first.source_name_translate != native_rna.name
     assert first.source_description != native_rna.description
@@ -213,6 +242,34 @@ with suppress_gesture_disk_save():
     nested.element_type = 'OPERATOR'
     nested.__init_element__()
     nested.name = 'Nested'
+    divider = second.element.add()
+    divider.element_type = 'DIVIDING_LINE'
+    divider.__init_element__()
+    layout_metrics = second._layout_metrics()
+    divider_size = second._layout_node_size(divider, layout_metrics)
+    expected_divider_height = second._layout_separator_height(layout_metrics)
+    assert abs(divider_size.y - expected_divider_height) < 0.001
+    assert divider_size.y < layout_metrics.sep_h
+
+    numeric = gesture.element.add()
+    numeric.element_type = 'PROPERTY'
+    numeric.__init_element__()
+    assert numeric.display_property_type in {'INT', 'FLOAT'}
+    assert numeric.numeric_arrows_visible
+    token = object()
+    numeric._gesture_layout_token = token
+    numeric.publish_numeric_arrow_areas((10.0, 20.0, 110.0, 44.0), 24.0)
+    numeric_ops = SimpleNamespace(session=SimpleNamespace(layout_token=token))
+    assert numeric_property_arrow_direction(
+        numeric,
+        numeric_ops,
+        mouse=(12.0, 32.0),
+    ) == -1
+    assert numeric_property_arrow_direction(
+        numeric,
+        numeric_ops,
+        mouse=(108.0, 32.0),
+    ) == 1
 
     exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
     exported_box = next(
@@ -326,6 +383,9 @@ with suppress_gesture_disk_save():
     assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview
     assert menu_preview.gpu.gesture_bpu.root.children
     assert menu_preview.gpu.tips.root.children
+    assert 0.0 <= menu_preview._menu_animation_reveal() < 1.0
+    assert menu_preview._menu_animation_timer is not None
+    assert bpy.app.timers.is_registered(menu_preview._menu_animation_timer)
     with bpy.context.temp_override(**override):
         menu_preview.gpu.gesture_bpu._ensure_layout()
         menu_preview.gpu.tips._ensure_layout()
@@ -367,6 +427,35 @@ with suppress_gesture_disk_save():
     assert menu_preview.gpu.tips in drawn_overlays
     assert menu_preview.gpu.gesture_bpu in drawn_overlays
 
+    selector = menu_preview.gpu.gesture_bpu
+    selector._ensure_layout()
+    selector_header = next(node for node in selector._walk() if node.draggable)
+    sx1, sy1, sx2, sy2 = selector_header.rect
+    selector_press = preview_event(region, 'LEFTMOUSE')
+    selector_press.mouse_x = int((sx1 + sx2) * 0.5)
+    selector_press.mouse_y = int((sy1 + sy2) * 0.5)
+    selector_press.value = 'PRESS'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, selector_press) == {'RUNNING_MODAL'}
+    selector_before = selector.drag_offset.copy()
+    selector_move = preview_event(region, 'MOUSEMOVE')
+    selector_move.mouse_x = selector_press.mouse_x + 18
+    selector_move.mouse_y = selector_press.mouse_y - 9
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, selector_move) == {'RUNNING_MODAL'}
+    assert tuple(selector.drag_offset) == (
+        selector_before.x + 18,
+        selector_before.y - 9,
+    )
+    assert selector.drag_revision > 0
+    selector_release = preview_event(region, 'LEFTMOUSE')
+    selector_release.mouse_x = selector_move.mouse_x
+    selector_release.mouse_y = selector_move.mouse_y
+    selector_release.value = 'RELEASE'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, selector_release) == {'RUNNING_MODAL'}
+    assert selector._drag_mouse is None
+
     press = preview_event(region, 'SPACE')
     press.value = 'PRESS'
     with bpy.context.temp_override(**override):
@@ -382,6 +471,33 @@ with suppress_gesture_disk_save():
     release.value = 'RELEASE'
     with bpy.context.temp_override(**override):
         assert menu_preview.modal(bpy.context, release) == {'RUNNING_MODAL'}
+    assert menu_preview._menu_drag_mouse is None
+    menu_preview._ensure_layout(force=True)
+    header_rect = menu_preview._menu_panels[0].header_rect
+    hx1, hy1, hx2, hy2 = header_rect
+    header_press = preview_event(region, 'LEFTMOUSE')
+    # Menu geometry is region-local; wmEvent coordinates are window-local.
+    header_press.mouse_x = int(region.x + hx1 + (hx2 - hx1) * 0.35)
+    header_press.mouse_y = int(region.y + (hy1 + hy2) * 0.5)
+    header_press.value = 'PRESS'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, header_press) == {'RUNNING_MODAL'}
+    header_anchor = menu_preview._menu_anchor
+    header_move = preview_event(region, 'MOUSEMOVE')
+    header_move.mouse_x = header_press.mouse_x - 11
+    header_move.mouse_y = header_press.mouse_y + 7
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, header_move) == {'RUNNING_MODAL'}
+    assert menu_preview._menu_anchor == (
+        header_anchor[0] - 11,
+        header_anchor[1] + 7,
+    )
+    header_release = preview_event(region, 'LEFTMOUSE')
+    header_release.mouse_x = header_move.mouse_x
+    header_release.mouse_y = header_move.mouse_y
+    header_release.value = 'RELEASE'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, header_release) == {'RUNNING_MODAL'}
     assert menu_preview._menu_drag_mouse is None
     assert menu_preview._sync_menu_tooltip(first)
     menu_tooltip_state = menu_preview._menu_tooltip_state
