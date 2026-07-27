@@ -94,9 +94,16 @@ class GestureDraw:
             column.prop(ag, 'description')
             type_row = column.row(align=True)
             type_row.label(text='Type')
-            # Keep both selectors on one stable row so switching RADIAL/MENU
-            # does not resize the N-panel.
-            type_row.prop(ag, 'gesture_type', text='')
+            # Type selects a different runtime/keymap implementation.  Keep it
+            # visible for clarity, but render it as ordinary read-only text so
+            # it matches the surrounding rows rather than a disabled dropdown.
+            from ..utils.icons import ui_icon
+
+            is_menu = ag.gesture_type == 'MENU'
+            type_row.label(
+                text='Menu' if is_menu else 'Gesture',
+                icon=ui_icon('MENU_PANEL' if is_menu else 'MOUSE_MOVE'),
+            )
             if ag.gesture_type == 'MENU':
                 type_row.prop(ag, 'menu_style', text='')
         GestureDraw.draw_gesture_key(column, active_gesture=active)

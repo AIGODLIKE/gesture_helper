@@ -158,6 +158,21 @@ class RadialRootHitTests(unittest.TestCase):
             rows,
         )
 
+    def test_bottom_row_hover_uses_geometry_published_in_current_draw(self):
+        row = FakeElement(9, object())
+        rect = (-80.0, -140.0, 80.0, -110.0)
+
+        hovered = extension_hit.publish_child_row_hit(
+            row,
+            self.ops,
+            rect,
+            mouse=(0.0, -125.0),
+        )
+
+        self.assertTrue(hovered)
+        self.assertIs(row._gesture_layout_token, self.token)
+        self.assertEqual(row.extension_by_child_draw_area, rect)
+
 
 if __name__ == "__main__":
     unittest.main()

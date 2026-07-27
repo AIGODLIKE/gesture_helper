@@ -305,6 +305,7 @@ class ElementDraw:
     def draw_layout_container(self, layout: 'bpy.types.UILayout') -> None:
         from ..element.element_cure import ElementCURE
         from ..utils.enum import ENUM_LAYOUT_TYPE
+        from ..utils.icons import ui_icon
         row = layout.row(align=True)
         column = row.column(align=True)
         self.draw_name(column)
@@ -318,9 +319,20 @@ class ElementDraw:
             )
             operator.layout_type = identifier
 
+        column.prop(self, 'layout_align', text='Align', toggle=True)
         alignment = column.row(align=True)
         alignment.label(text='Alignment')
-        alignment.prop(self, 'layout_alignment', text='', expand=True)
+        for identifier, label in (
+                ('EXPAND', 'Expand'),
+                ('LEFT', 'Left'),
+                ('CENTER', 'Center'),
+                ('RIGHT', 'Right')):
+            alignment.prop_enum(
+                self,
+                'layout_alignment',
+                identifier,
+                text=label,
+            )
 
         effective = self.main_element
         if effective is not None:
@@ -332,7 +344,7 @@ class ElementDraw:
             column.menu(
                 GESTURE_MT_main_action_menu.__name__,
                 text=effective.name_translate,
-                icon='RADIOBUT_ON',
+                icon=ui_icon('RADIOBUT_ON'),
             )
 
         advanced_header = column.row(align=True)
@@ -340,7 +352,7 @@ class ElementDraw:
             self,
             'show_layout_advanced',
             text='Advanced',
-            icon='TRIA_DOWN' if self.show_layout_advanced else 'TRIA_RIGHT',
+            icon=ui_icon('TRIA_DOWN' if self.show_layout_advanced else 'TRIA_RIGHT'),
             emboss=False,
         )
         if self.show_layout_advanced:
@@ -351,7 +363,7 @@ class ElementDraw:
         self.draw_overlay_offset(column)
 
         if not self.element:
-            column.label(text='No child items. Please add some.', icon='INFO')
+            column.label(text='No child items. Please add some.', icon=ui_icon('INFO'))
         if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
 

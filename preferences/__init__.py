@@ -125,6 +125,8 @@ class GesturePreferences(PublicProperty,
                 res.pop("main_item")
             if "layout_alignment" in res and res["layout_alignment"] == "EXPAND":
                 res.pop("layout_alignment")
+            if "layout_align" in res and res["layout_align"]:
+                res.pop("layout_align")
             if element_type in {"ROW", "COLUMN", "BOX"}:
                 scale_x = res.get("layout_scale_x")
                 scale_y = res.get("layout_scale_y")

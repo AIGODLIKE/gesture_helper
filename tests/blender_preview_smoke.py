@@ -174,6 +174,19 @@ with suppress_gesture_disk_save():
     assert 'Icon not found: GESTURE_HELPER_SMOKE_MISSING_ICON' in tooltip.issues
     assert tooltip.color_role == 'warning'
 
+    empty_layout = gesture.element.add()
+    empty_layout.element_type = 'BOX'
+    empty_layout.__init_element__()
+    empty_layout.name = 'Empty Layout'
+    empty_nested = empty_layout.element.add()
+    empty_nested.element_type = 'COLUMN'
+    empty_nested.__init_element__()
+    assert tuple(empty_nested.layout_panel_content_size) == (0.0, 0.0)
+    assert tuple(empty_layout.layout_panel_content_size) == (0.0, 0.0)
+    empty_layout.draw_gpu_layout_panel(SimpleNamespace(session=None))
+    assert empty_layout.extension_draw_area is None
+    gesture.element.remove(len(gesture.element) - 1)
+
     view = bpy.context.preferences.view
     previous_language = view.language
     previous_translate_interface = view.use_translate_interface
@@ -189,10 +202,32 @@ with suppress_gesture_disk_save():
     second.element_type = 'BOX'
     second.__init_element__()
     second.name = 'Second'
+    assert second.layout_align is True
+    assert second.bl_rna.properties['layout_align'] is not None
+    alignment_items = {
+        item.identifier
+        for item in second.bl_rna.properties['layout_alignment'].enum_items
+    }
+    assert alignment_items == {'EXPAND', 'LEFT', 'CENTER', 'RIGHT'}
     nested = second.element.add()
     nested.element_type = 'OPERATOR'
     nested.__init_element__()
     nested.name = 'Nested'
+
+    exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
+    exported_box = next(
+        item for item in exported_gesture['element'].values()
+        if item.get('name') == 'Second'
+    )
+    assert 'layout_align' not in exported_box
+    second.layout_align = False
+    exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
+    exported_box = next(
+        item for item in exported_gesture['element'].values()
+        if item.get('name') == 'Second'
+    )
+    assert exported_box['layout_align'] is False
+    second.layout_align = True
 
     page_root = gesture.element.add()
     page_root.element_type = 'COLUMN'
@@ -288,6 +323,16 @@ with suppress_gesture_disk_save():
     menu_preview = start_preview('GESTURE', 'MENU')
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
+    assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview
+    assert menu_preview.gpu.gesture_bpu.root.children
+    assert menu_preview.gpu.tips.root.children
+    with bpy.context.temp_override(**override):
+        menu_preview.gpu.gesture_bpu._ensure_layout()
+        menu_preview.gpu.tips._ensure_layout()
+    for overlay in (menu_preview.gpu.gesture_bpu, menu_preview.gpu.tips):
+        x1, y1, x2, y2 = overlay.root.rect
+        assert x2 > region.x and x1 < region.x + region.width, overlay.root.rect
+        assert y2 > region.y and y1 < region.y + region.height, overlay.root.rect
     menu_preview._ensure_layout(force=True)
     assert menu_preview._menu_panels
     assert {row.label for row in menu_preview._menu_panels[0].rows} >= {
@@ -301,6 +346,43 @@ with suppress_gesture_disk_save():
     )
     assert abs(root_center[0] - region.width * 0.5) < 0.01, root_center
     assert abs(root_center[1] - region.height * 0.5) < 0.01, root_center
+    original_draw_menu = GestureMenuRuntime._draw_menu
+    overlay_layout_type = type(menu_preview.gpu.gesture_bpu)
+    original_draw_overlay = overlay_layout_type.__gpu_draw__
+    drawn_overlays = []
+    GestureMenuRuntime._draw_menu = (
+        lambda self: setattr(self, '_menu_draw_count', self._menu_draw_count + 1)
+    )
+    overlay_layout_type.__gpu_draw__ = lambda self: drawn_overlays.append(self)
+    try:
+        with bpy.context.temp_override(**override):
+            assert bpy.context.area == area
+            assert GesturePreview._menu_context_instance() is menu_preview
+            GesturePreview._draw_callback()
+    finally:
+        GestureMenuRuntime._draw_menu = original_draw_menu
+        overlay_layout_type.__gpu_draw__ = original_draw_overlay
+    assert menu_preview._menu_last_draw_error == '', menu_preview._menu_last_draw_error
+    assert menu_preview._menu_draw_count > 0
+    assert menu_preview.gpu.tips in drawn_overlays
+    assert menu_preview.gpu.gesture_bpu in drawn_overlays
+
+    press = preview_event(region, 'SPACE')
+    press.value = 'PRESS'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, press) == {'RUNNING_MODAL'}
+    old_anchor = menu_preview._menu_anchor
+    move = preview_event(region, 'MOUSEMOVE')
+    move.mouse_x += 24
+    move.mouse_y -= 12
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, move) == {'RUNNING_MODAL'}
+    assert menu_preview._menu_anchor == (old_anchor[0] + 24, old_anchor[1] - 12)
+    release = preview_event(region, 'SPACE')
+    release.value = 'RELEASE'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, release) == {'RUNNING_MODAL'}
+    assert menu_preview._menu_drag_mouse is None
     assert menu_preview._sync_menu_tooltip(first)
     menu_tooltip_state = menu_preview._menu_tooltip_state
     assert menu_tooltip_state.timer is not None

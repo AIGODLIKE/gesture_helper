@@ -43,7 +43,7 @@ class GestureProperty(PrefAccess, ActiveSelection, StructureCacheOps):
 
     gesture_type: EnumProperty(
         name='Type',
-        description='Runtime presentation chosen when this item is created',
+        description='Runtime presentation chosen at creation; this type cannot be changed later',
         items=GESTURE_TYPE_ITEMS,
         default='RADIAL',
         update=_update_gesture_type,

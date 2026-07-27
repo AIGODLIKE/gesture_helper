@@ -178,11 +178,18 @@ def _clamp_rounded_radius(radius, width, height) -> float:
 
 
 @cache
-def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) -> tuple:
+def get_rounded_rectangle_vertex(
+        radius=10,
+        width=200,
+        height=200,
+        segments=12,
+        corner_mask=(True, True, True, True),
+) -> tuple:
     """Outline vertices for a centered rounded rect (CCW, Y-up).
 
     Each corner contributes ``segments + 1`` samples, including both tangent
     endpoints, so opposite corners and all four straight edges are symmetric.
+    ``corner_mask`` is ``(top-left, top-right, bottom-right, bottom-left)``.
     """
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
@@ -190,6 +197,16 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) 
     segments = _round_rect_segments(radius, segments)
     hw = width * 0.5 - radius
     hh = height * 0.5 - radius
+    top_left, top_right, bottom_right, bottom_left = (
+        bool(value) for value in corner_mask
+    )
+    round_flags = (top_right, top_left, bottom_left, bottom_right)
+    square_points = (
+        (width * 0.5, height * 0.5),
+        (-width * 0.5, height * 0.5),
+        (-width * 0.5, -height * 0.5),
+        (width * 0.5, -height * 0.5),
+    )
     # Corner centers: TR, TL, BL, BR — each arc covers 90°.
     corners = (
         (hw, hh, 0.0),        # TR: 0 → 90
@@ -199,7 +216,10 @@ def get_rounded_rectangle_vertex(radius=10, width=200, height=200, segments=12) 
     )
     vertex = []
     step = 90.0 / segments
-    for cx, cy, start in corners:
+    for index, (cx, cy, start) in enumerate(corners):
+        if not round_flags[index]:
+            vertex.append(square_points[index])
+            continue
         for j in range(segments + 1):
             a = math.radians(start + step * j)
             vertex.append((cx + radius * math.cos(a), cy + radius * math.sin(a)))
@@ -218,36 +238,45 @@ def get_arc_vertex(arc, segments=40):
 
 
 @cache
-def get_rounded_fill_mesh(radius, width, height, segments):
+def get_rounded_fill_mesh(
+        radius,
+        width,
+        height,
+        segments,
+        corner_mask=(True, True, True, True),
+):
     """Center-fan mesh for a filled rounded rect."""
     segs = _round_rect_segments(radius, segments)
-    outline = get_rounded_rectangle_vertex(radius, width, height, segs)
+    outline = get_rounded_rectangle_vertex(radius, width, height, segs, corner_mask)
     verts = ((0.0, 0.0),) + outline
     n = len(outline)
     indices = tuple((0, i, i + 1) for i in range(1, n)) + ((0, n, 1),)
     return verts, indices
 
 
-def _get_rounded_fill_batch(radius, width, height, segments):
+def _get_rounded_fill_batch(radius, width, height, segments, corner_mask):
     segs = _round_rect_segments(radius, segments)
-    key = (round(radius, 3), round(width, 3), round(height, 3), int(segs))
+    corner_mask = tuple(bool(value) for value in corner_mask)
+    key = (
+        round(radius, 3), round(width, 3), round(height, 3), int(segs), corner_mask,
+    )
     shader = _get_shader('UNIFORM_COLOR')
     entry = _ROUNDED_FILL_BATCH.get(key)
     if entry is not None and entry[0] is shader:
         return entry[1]
-    verts, indices = get_rounded_fill_mesh(radius, width, height, segs)
+    verts, indices = get_rounded_fill_mesh(radius, width, height, segs, corner_mask)
     batch = batch_for_shader(shader, 'TRIS', {"pos": verts}, indices=indices)
     _ROUNDED_FILL_BATCH[key] = (shader, batch)
     return batch
 
 
-def _draw_rounded_fill(position, color, radius, width, height, segments):
+def _draw_rounded_fill(position, color, radius, width, height, segments, corner_mask):
     if width <= 0 or height <= 0:
         return
     r = _clamp_rounded_radius(radius, width, height)
     _ensure_alpha_blend()
     shader = _get_shader('UNIFORM_COLOR')
-    batch = _get_rounded_fill_batch(r, width, height, segments)
+    batch = _get_rounded_fill_batch(r, width, height, segments, corner_mask)
     with gpu.matrix.push_pop():
         gpu.matrix.translate(position)
         shader.bind()
@@ -655,9 +684,11 @@ class PublicGpu:
     def draw_rounded_rectangle_area(
             position, color=(1, 1, 1, 1.0), *, radius=10, width=200, height=200,
             segments=DEFAULT_ROUND_SEGMENTS,
+            corner_mask=(True, True, True, True),
     ):
         r = _clamp_rounded_radius(radius, width, height)
-        _draw_rounded_fill(position, color, r, width, height, segments)
+        corner_mask = tuple(bool(value) for value in corner_mask)
+        _draw_rounded_fill(position, color, r, width, height, segments, corner_mask)
 
     @staticmethod
     def draw_rounded_rectangle_outlined(
@@ -670,6 +701,7 @@ class PublicGpu:
             height=200,
             line_width=0.8,
             segments=DEFAULT_ROUND_SEGMENTS,
+            corner_mask=(True, True, True, True),
     ):
         """Flat filled rounded rect with a thin anti-aliased outline.
 
@@ -681,11 +713,12 @@ class PublicGpu:
         r = _clamp_rounded_radius(radius, width, height)
         lw = max(0.5, float(line_width))
         segs = _round_rect_segments(r, segments)
+        corner_mask = tuple(bool(value) for value in corner_mask)
         # Full-size fill — stroke AA covers the hard triangle silhouette.
-        _draw_rounded_fill(position, fill, r, width, height, segs)
+        _draw_rounded_fill(position, fill, r, width, height, segs, corner_mask)
         with gpu.matrix.push_pop():
             gpu.matrix.translate(position)
-            vertex = get_rounded_rectangle_vertex(r, width, height, segs)
+            vertex = get_rounded_rectangle_vertex(r, width, height, segs, corner_mask)
             draw_line(vertex, stroke, line_width=lw, is_cycle=True)
 
     @staticmethod

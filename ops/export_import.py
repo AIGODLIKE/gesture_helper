@@ -108,19 +108,19 @@ EXPORT_PROPERTY_ITEM = {
     'ROW': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment',
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'COLUMN': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment',
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'BOX': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
-        'direction', 'main_item', 'layout_alignment',
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
 }

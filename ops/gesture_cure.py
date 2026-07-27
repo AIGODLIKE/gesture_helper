@@ -67,8 +67,15 @@ class GestureCURE:
 
         def draw(self, _context):
             column = self.layout.column(align=True)
-            column.label(text='Choose a type for the new item')
+            column.label(text='Choose the type for the new item')
             column.prop(self, 'gesture_type', expand=True)
+            column.separator()
+
+            gesture_info = column.box()
+            gesture_info.label(text='Gesture: drag in a direction to choose an action.')
+            menu_info = column.box()
+            menu_info.label(text='Menu: open a persistent menu at the cursor and click an item.')
+            column.label(text='The type is fixed after creation.', icon='INFO')
 
         def execute(self, _):
             from ..utils.gesture_store import get_gesture_store, get_gestures

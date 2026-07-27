@@ -183,6 +183,32 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertEqual(ui_region.redraws, 0)
         self.assertEqual(area.redraws, 0)
 
+    def test_menu_draw_callback_ignores_conflicting_gpu_context_lookup(self):
+        class ConflictingGpuBase:
+            @staticmethod
+            def _context_instance():
+                return None
+
+        class PreviewLike(ConflictingGpuBase, menu_module.GestureMenuRuntime):
+            _active_by_area = {}
+
+        area = types.SimpleNamespace(as_pointer=lambda: 17)
+        runtime = types.SimpleNamespace(
+            _menu_close_requested=False,
+            _menu_last_draw_error='',
+            _draw_menu=Mock(),
+        )
+        PreviewLike._active_by_area[17] = runtime
+        previous_area = getattr(menu_module.bpy.context, 'area', None)
+        try:
+            menu_module.bpy.context.area = area
+            PreviewLike._draw_callback()
+        finally:
+            menu_module.bpy.context.area = previous_area
+
+        runtime._draw_menu.assert_called_once_with()
+        self.assertEqual(runtime._menu_last_draw_error, '')
+
 
 if __name__ == "__main__":
     unittest.main()

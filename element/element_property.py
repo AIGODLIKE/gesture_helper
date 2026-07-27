@@ -269,6 +269,12 @@ class ElementLayoutProperty:
         default='EXPAND',
         update=lambda self, context: self.clear_derived_cache(),
     )
+    layout_align: BoolProperty(
+        name='Align',
+        description='Remove spacing and merge adjacent item corners like Blender align=True',
+        default=True,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
     layout_scale: FloatProperty(
         name='Legacy Scale',
         description='Legacy uniform layout scale used by older presets',

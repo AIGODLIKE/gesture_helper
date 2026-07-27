@@ -105,7 +105,13 @@ class GestureMenuRuntime(PublicGpu):
     _tracks_session_menu_state = True
 
     @classmethod
-    def _context_instance(cls):
+    def _menu_context_instance(cls):
+        """Return this runtime's menu for the current area.
+
+        Keep this name distinct from ``GestureGpuDraw._context_instance``:
+        the unified preview inherits both renderers, and normal MRO lookup
+        would otherwise route the menu draw callback through the radial map.
+        """
         area = getattr(bpy.context, 'area', None)
         if area is None:
             return None
@@ -116,7 +122,7 @@ class GestureMenuRuntime(PublicGpu):
 
     @classmethod
     def _draw_callback(cls):
-        instance = cls._context_instance()
+        instance = cls._menu_context_instance()
         if instance is None or getattr(instance, '_menu_close_requested', False):
             return
         try:

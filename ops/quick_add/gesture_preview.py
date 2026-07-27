@@ -107,6 +107,7 @@ class GesturePreview(
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, '_menu_draw_count', 0)
         operator_setattr(self, '_menu_last_draw_error', '')
+        operator_setattr(self, '_menu_drag_mouse', None)
 
     @classmethod
     def poll(cls, context):
@@ -251,8 +252,11 @@ class GesturePreview(
     def _enter_menu_renderer(self, context, event, gesture) -> bool:
         from ...utils.public_cache import PublicCache
 
+        anchor = self._preview_anchor(context, event)
         self.gesture = gesture.name
         self.session.reset(event, context.area, context.screen, self.gesture)
+        self.offset_position = anchor.copy()
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
         operator_setattr(self, '_menu_area', context.area)
         operator_setattr(self, '_menu_screen', context.screen)
         operator_setattr(self, '_menu_window', context.window)
@@ -263,10 +267,15 @@ class GesturePreview(
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
         operator_setattr(self, '_menu_runtime_cleaned', False)
+        operator_setattr(self, '_menu_drag_mouse', None)
         operator_setattr(self, 'event', event)
         if not self._register_menu_runtime(context):
             return False
         operator_setattr(self, '_preview_menu_registered', True)
+        # The menu backend owns a separate draw handler, so initialize the
+        # shared selector/tips HUD here instead of waiting for the radial draw
+        # path to receive its first modal event.
+        self._preview_hud_event(event)
         self._ensure_layout(force=True)
         operator_setattr(
             self,
@@ -319,6 +328,7 @@ class GesturePreview(
             operator_setattr(self, '_menu_runtime_cleaned', True)
             self._unregister_menu_runtime()
         operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_drag_mouse', None)
         operator_setattr(self, '_preview_renderer', '')
         operator_setattr(self, '_preview_target_key', None)
 
@@ -548,8 +558,7 @@ class GesturePreview(
                 self.tag_redraw()
             return {'PASS_THROUGH'}
         self.trajectory_event_update(context, event)
-        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
-        result = self.gpu.draw_run(self, event)
+        result = self._preview_hud_event(event)
         if result:
             return result
         drag_result = self._radial_drag_event(event)
@@ -559,6 +568,12 @@ class GesturePreview(
 
     def _modal_menu(self, event):
         operator_setattr(self, 'event', event)
+        hud_result = self._preview_hud_event(event)
+        if hud_result:
+            return hud_result
+        drag_result = self._menu_drag_event(event)
+        if drag_result is not None:
+            return drag_result
         if event.type == 'MOUSEMOVE':
             if self._update_menu_hover(event):
                 self._tag_menu_redraw()
@@ -582,6 +597,51 @@ class GesturePreview(
             if self._menu_contains(self._menu_mouse(event)):
                 return {'RUNNING_MODAL'}
         return {'PASS_THROUGH'}
+
+    def _menu_drag_event(self, event):
+        """Move a read-only menu preview with plain Space + pointer motion."""
+        plain_space = (
+            event.type == 'SPACE'
+            and not event.alt
+            and not event.ctrl
+            and not event.shift
+        )
+        if plain_space and event.value == 'PRESS':
+            point = self._menu_mouse(event)
+            if point is None:
+                return {'RUNNING_MODAL'}
+            self._ensure_layout()
+            panels = getattr(self, '_menu_panels', ())
+            if self._menu_centered and panels:
+                root_rect = panels[0].rect
+                operator_setattr(self, '_menu_anchor', (root_rect[0], root_rect[3]))
+                operator_setattr(self, '_menu_centered', False)
+            operator_setattr(self, '_menu_drag_mouse', point)
+            return {'RUNNING_MODAL'}
+
+        if plain_space and event.value == 'RELEASE':
+            if self._menu_drag_mouse is None:
+                return None
+            operator_setattr(self, '_menu_drag_mouse', None)
+            return {'RUNNING_MODAL'}
+
+        if event.type != 'MOUSEMOVE' or self._menu_drag_mouse is None:
+            return None
+        point = self._menu_mouse(event)
+        if point is None:
+            return {'RUNNING_MODAL'}
+        previous_x, previous_y = self._menu_drag_mouse
+        anchor_x, anchor_y = self._menu_anchor
+        operator_setattr(
+            self,
+            '_menu_anchor',
+            (anchor_x + point[0] - previous_x, anchor_y + point[1] - previous_y),
+        )
+        operator_setattr(self, '_menu_drag_mouse', point)
+        operator_setattr(self, '_menu_layout_dirty', True)
+        self._ensure_layout(force=True)
+        self._tag_menu_redraw()
+        return {'RUNNING_MODAL'}
 
     def _modal_element(self, event):
         session = self.session
@@ -653,10 +713,26 @@ class GesturePreview(
             self._apply_trajectory_drag(diff)
         return {'PASS_THROUGH', 'RUNNING_MODAL'}
 
+    def _preview_hud_event(self, event) -> set:
+        """Refresh and route input to the HUD shared by gesture previews."""
+        if self.scope != 'GESTURE':
+            return set()
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
+        return self.gpu.draw_run(self, event)
+
+    def _draw_preview_hud(self) -> None:
+        """Draw the selector and instructions above the active backend."""
+        self.gpu.tips.__gpu_draw__()
+        self.gpu.gesture_bpu.__gpu_draw__()
+
+    def _draw_menu(self) -> None:
+        GestureMenuRuntime._draw_menu(self)
+        if self._preview_renderer == 'MENU':
+            self._draw_preview_hud()
+
     def __gpu_draw__(self):
         if self._preview_renderer == 'RADIAL':
-            self.gpu.tips.__gpu_draw__()
-            self.gpu.gesture_bpu.__gpu_draw__()
+            self._draw_preview_hud()
         GestureGpuDraw.__gpu_draw__(self)
 
     def gpu_draw_gesture(self):

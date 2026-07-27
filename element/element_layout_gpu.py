@@ -16,7 +16,11 @@ from mathutils import Vector
 
 from ..utils.gpu import get_current_2d_rect
 from ..utils.layout_alignment import (
+    ROUND_CORNERS_ALL,
+    aligned_surface_corner_masks,
+    blend_layout_hover_color,
     normalize_layout_alignment,
+    resolve_box_inset,
     resolve_layout_cross_axis,
     resolve_layout_line,
 )
@@ -31,6 +35,7 @@ class ElementLayoutGpu:
     _LAYOUT_GAP_FRAC = 0.35
     _LAYOUT_CHEVRON_FRAC = 0.78
     _LAYOUT_SEP_FRAC = 0.4
+    _LAYOUT_HOVER_BLEND = 0.35
 
     @staticmethod
     def _layout_scale_for(node) -> tuple[float, float]:
@@ -40,6 +45,22 @@ class ElementLayoutGpu:
     @staticmethod
     def _layout_alignment_for(node) -> str:
         return normalize_layout_alignment(getattr(node, 'layout_alignment', 'EXPAND'))
+
+    @staticmethod
+    def _layout_align_for(node) -> bool:
+        return bool(getattr(node, 'layout_align', True))
+
+    def _layout_hover_color(self, color):
+        """Blend a fill toward the active theme color without adding a border."""
+        return blend_layout_hover_color(
+            color,
+            self.draw_property.background_child_active_color,
+            self._LAYOUT_HOVER_BLEND,
+        )
+
+    def _layout_gap_for(self, node, metrics) -> float:
+        # Blender's Layout::row/column sets space_ to zero for align=True.
+        return 0.0 if self._layout_align_for(node) else metrics.gap
 
     def _layout_metrics(self):
         from ..utils.blf_text import text_line_height
@@ -130,16 +151,6 @@ class ElementLayoutGpu:
             and y1 < float(region.height)
         )
 
-    def _empty_layout_size(self, metrics, *, boxed: bool) -> Vector:
-        from ..utils.blf_text import measure_text
-
-        text = bpy.app.translations.pgettext_iface("No child items. Please add some.")
-        text_w, _text_h = measure_text(text, self.text_size)
-        size = Vector((max(metrics.row_h * 3.0, text_w + metrics.pad_x * 2.0), metrics.row_h))
-        if boxed:
-            size += Vector((metrics.pad_x * 2.0, metrics.pad_y * 2.0))
-        return size
-
     def _layout_node_size(self, node, metrics) -> Vector:
         session = getattr(getattr(self, 'ops', None), 'session', None)
         frame_cache = getattr(session, '_layout_frame_measure_cache', None)
@@ -163,29 +174,47 @@ class ElementLayoutGpu:
             stable_cache[cache_key] = size
         return size
 
+    @staticmethod
+    def _layout_child_entries(node, metrics):
+        """Return children with positive measured area, omitting empty layouts."""
+        entries = []
+        for child in node._layout_children():
+            size = node._layout_node_size(child, metrics)
+            if size.x > 0.0 and size.y > 0.0:
+                entries.append((child, size))
+        return entries
+
     def _measure_layout_node(self, node, metrics) -> Vector:
         ops = getattr(self, 'ops', None)
         if ops is not None:
             node.ops = ops
         if node.is_layout_container:
-            children = node._layout_children()
-            sizes = [node._layout_node_size(child, metrics) for child in children]
+            entries = self._layout_child_entries(node, metrics)
+            if not entries:
+                return Vector((0.0, 0.0))
+            sizes = [size for _child, size in entries]
             scale = self._layout_scale_for(node)
             scale_vector = Vector(scale)
-            if not sizes:
-                size = self._empty_layout_size(metrics, boxed=node.is_box)
-            elif node.is_row:
+            if node.is_row:
+                gap = self._layout_gap_for(node, metrics)
                 size = Vector((
-                    sum(s.x for s in sizes) + metrics.gap * (len(sizes) - 1),
+                    sum(s.x for s in sizes) + gap * (len(sizes) - 1),
                     max(s.y for s in sizes),
                 ))
             else:
+                gap = self._layout_gap_for(node, metrics)
                 size = Vector((
                     max(s.x for s in sizes),
-                    sum(s.y for s in sizes) + metrics.gap * (len(sizes) - 1),
+                    sum(s.y for s in sizes) + gap * (len(sizes) - 1),
                 ))
             if node.is_box:
-                size += Vector((metrics.pad_x * 2.0, metrics.pad_y * 2.0))
+                inset_x, inset_y = resolve_box_inset(
+                    self._layout_align_for(node),
+                    True,
+                    metrics.pad_x,
+                    metrics.pad_y,
+                )
+                size += Vector((inset_x * 2.0, inset_y * 2.0))
             size = size * scale_vector
         elif node.is_dividing_line:
             size = Vector((metrics.row_h, metrics.sep_h))
@@ -251,15 +280,24 @@ class ElementLayoutGpu:
         w, h = content.x, content.y
         mx, my = metrics.margin_x, metrics.margin_y
 
-        self.extension_draw_area = get_current_2d_rect(
-            (-mx, -h - my, w + mx, my),
-        )
         session = getattr(ops, 'session', None)
         if session is not None:
             self._gesture_layout_token = session.layout_token
             self._layout_visible_token = session.layout_token
             self._layout_visible_leaf_items = []
-        self._draw_layout_node(self, ops, metrics, w)
+        if w <= 0.0 or h <= 0.0:
+            self.extension_draw_area = None
+            return
+        self.extension_draw_area = get_current_2d_rect(
+            (-mx, -h - my, w + mx, my),
+        )
+        self._draw_layout_node(
+            self,
+            ops,
+            metrics,
+            w,
+            corner_mask=ROUND_CORNERS_ALL,
+        )
 
     def draw_gpu_layout_inline(self, ops, width: float) -> None:
         """Draw a layout inside an existing flyout without outer panel margins."""
@@ -267,54 +305,105 @@ class ElementLayoutGpu:
         metrics = self._layout_metrics()
         self._prepare_layout_measure_cache(metrics)
         size = self._layout_node_size(self, metrics)
-        width = max(float(width), float(size.x))
-        self.extension_draw_area = get_current_2d_rect(
-            (0.0, -size.y, width, 0.0),
-        )
         session = getattr(ops, 'session', None)
         if session is not None:
             self._gesture_layout_token = session.layout_token
             self._layout_visible_token = session.layout_token
             self._layout_visible_leaf_items = []
-        self._draw_layout_node(self, ops, metrics, width)
+        if size.x <= 0.0 or size.y <= 0.0:
+            self.extension_draw_area = None
+            return
+        width = max(float(width), float(size.x))
+        self.extension_draw_area = get_current_2d_rect(
+            (0.0, -size.y, width, 0.0),
+        )
+        self._draw_layout_node(
+            self,
+            ops,
+            metrics,
+            width,
+            corner_mask=ROUND_CORNERS_ALL,
+        )
 
     def _draw_layout_children(
             self, container, children, ops, metrics, avail_w, *, horizontal,
-            inside_box=False,
+            inside_box=False, outer_corner_mask=ROUND_CORNERS_ALL,
     ):
         """Draw children with Blender-style EXPAND/LEFT/CENTER/RIGHT alignment."""
         sizes = [self._layout_node_size(child, metrics) for child in children]
         alignment = self._layout_alignment_for(container)
+        aligned = self._layout_align_for(container)
+        gap = 0.0 if aligned else metrics.gap
+        corner_masks = (
+            aligned_surface_corner_masks(
+                (
+                    not child.is_dividing_line
+                    and (
+                        not child.is_layout_container
+                        or child.is_box
+                        or self._layout_align_for(child)
+                    )
+                    for child in children
+                ),
+                horizontal=horizontal,
+                outer=outer_corner_mask,
+            )
+            if aligned
+            else (ROUND_CORNERS_ALL,) * len(children)
+        )
 
         if horizontal:
             slots = resolve_layout_line(
-                (size.x for size in sizes), avail_w, metrics.gap, alignment,
+                (size.x for size in sizes), avail_w, gap, alignment,
             )
         else:
             slots = None
             cursor = 0.0
 
-        for index, (child, size) in enumerate(zip(children, sizes)):
+        for index, (child, size, corner_mask) in enumerate(
+                zip(children, sizes, corner_masks)):
             with gpu.matrix.push_pop():
                 if horizontal:
                     x, child_w = slots[index]
                     gpu.matrix.translate((x, 0.0))
                     self._draw_layout_node(
-                        child, ops, metrics, child_w, inside_box=inside_box,
+                        child,
+                        ops,
+                        metrics,
+                        child_w,
+                        inside_box=inside_box,
+                        corner_mask=corner_mask,
                     )
                 else:
                     x, child_w = resolve_layout_cross_axis(size.x, avail_w, alignment)
                     gpu.matrix.translate((x, -cursor))
                     self._draw_layout_node(
-                        child, ops, metrics, child_w, inside_box=inside_box,
+                        child,
+                        ops,
+                        metrics,
+                        child_w,
+                        inside_box=inside_box,
+                        corner_mask=corner_mask,
                     )
             if not horizontal:
-                cursor += size.y + metrics.gap
+                cursor += size.y + gap
 
-    def _draw_layout_node(self, node, ops, metrics, avail_w, *, inside_box=False):
+    def _draw_layout_node(
+            self,
+            node,
+            ops,
+            metrics,
+            avail_w,
+            *,
+            inside_box=False,
+            corner_mask=ROUND_CORNERS_ALL,
+    ):
         node.ops = ops
         if node.is_layout_container:
-            children = node._layout_children()
+            entries = self._layout_child_entries(node, metrics)
+            if not entries:
+                return
+            children = [child for child, _size in entries]
             size = self._layout_node_size(node, metrics)
             rect = get_current_2d_rect((0.0, -size.y, avail_w, 0.0))
             if not self._layout_rect_is_visible(rect):
@@ -327,34 +416,61 @@ class ElementLayoutGpu:
                 if node.is_box:
                     draw = self.draw_property
                     stroke, line_width = self._outline_colors(active=False)
-                    self.draw_rounded_rectangle_outlined(
-                        (local_w / 2, -local_h / 2),
-                        fill=draw.background_child_color,
-                        stroke=stroke,
-                        radius=self.text_radius,
-                        width=local_w,
-                        height=local_h,
-                        line_width=line_width,
+                    aligned_box = self._layout_align_for(node) and bool(children)
+                    if aligned_box:
+                        self.draw_rounded_rectangle_area(
+                            (local_w / 2, -local_h / 2),
+                            color=draw.background_child_color,
+                            radius=self.text_radius,
+                            width=local_w,
+                            height=local_h,
+                            corner_mask=corner_mask,
+                        )
+                    else:
+                        self.draw_rounded_rectangle_outlined(
+                            (local_w / 2, -local_h / 2),
+                            fill=draw.background_child_color,
+                            stroke=stroke,
+                            radius=self.text_radius,
+                            width=local_w,
+                            height=local_h,
+                            line_width=line_width,
+                            corner_mask=corner_mask,
+                        )
+                    inset_x, inset_y = resolve_box_inset(
+                        aligned_box,
+                        True,
+                        metrics.pad_x,
+                        metrics.pad_y,
                     )
-                    if not children:
-                        self._draw_empty_layout(metrics, local_w, local_h, boxed=True)
-                        return
-                    child_w = max(1.0, local_w - metrics.pad_x * 2.0)
+                    child_w = max(1.0, local_w - inset_x * 2.0)
                     with gpu.matrix.push_pop():
-                        gpu.matrix.translate((metrics.pad_x, -metrics.pad_y))
+                        gpu.matrix.translate((inset_x, -inset_y))
                         self._draw_layout_children(
                             node, children, ops, metrics, child_w,
                             horizontal=node.is_row,
-                            inside_box=True,
+                            inside_box=not aligned_box,
+                            outer_corner_mask=corner_mask,
+                        )
+                    if aligned_box:
+                        # Child fills share the box boundary; restore the common
+                        # border above them so the outer roundbox stays crisp.
+                        self.draw_rounded_rectangle_outlined(
+                            (local_w / 2, -local_h / 2),
+                            fill=(0.0, 0.0, 0.0, 0.0),
+                            stroke=stroke,
+                            radius=self.text_radius,
+                            width=local_w,
+                            height=local_h,
+                            line_width=line_width,
+                            corner_mask=corner_mask,
                         )
                 else:
-                    if not children:
-                        self._draw_empty_layout(metrics, local_w, local_h, boxed=False)
-                        return
                     self._draw_layout_children(
                         node, children, ops, metrics, local_w,
                         horizontal=node.is_row,
                         inside_box=inside_box,
+                        outer_corner_mask=corner_mask,
                     )
             return
         if node.is_dividing_line:
@@ -382,42 +498,25 @@ class ElementLayoutGpu:
             avail_w,
             inside_box=inside_box,
             draw_rect=rect,
-        )
-
-    def _draw_empty_layout(self, metrics, width, height, *, boxed: bool) -> None:
-        if not boxed:
-            self.draw_rounded_rectangle_area(
-                (width / 2, -height / 2),
-                color=self.draw_property.background_child_color,
-                radius=self.text_radius,
-                width=width,
-                height=height,
-            )
-        self.draw_text(
-            bpy.app.translations.pgettext_iface("No child items. Please add some."),
-            size=self.text_size,
-            position=[metrics.pad_x, -metrics.pad_y if boxed else 0.0],
+            corner_mask=corner_mask,
         )
 
     def _draw_layout_leaf(
             self, item, ops, metrics, avail_w, *, inside_box=False,
-            draw_rect=None,
+            draw_rect=None, corner_mask=ROUND_CORNERS_ALL,
     ):
         row_h = metrics.row_h
         draw = self.draw_property
-        item.extension_by_child_draw_area = (
+        draw_rect = (
             draw_rect
             if draw_rect is not None
             else get_current_2d_rect((0.0, -row_h, avail_w, 0.0))
         )
         session = getattr(ops, 'session', None)
-        if session is not None:
-            item._gesture_layout_token = session.layout_token
-
-        from .extension_hit import point_in_rect
         draw_ctx = getattr(session, 'draw_ctx', None) if session is not None else None
         mouse = getattr(draw_ctx, 'mouse_region', None) if draw_ctx is not None else None
-        hovered = point_in_rect(mouse, item.extension_by_child_draw_area)
+        from .extension_hit import publish_child_row_hit
+        hovered = publish_child_row_hit(item, ops, draw_rect, mouse=mouse)
         # Blender's box() draws one outer roundbox and marks its child buttons
         # as box items, so the content rows do not become separate pills.
         radius = 0.0 if inside_box else self.text_radius
@@ -442,35 +541,33 @@ class ElementLayoutGpu:
             base_color = draw.background_child_color
         else:
             base_color = draw.background_child_color
+        if hovered:
+            base_color = self._layout_hover_color(base_color)
         self.draw_rounded_rectangle_area(
             (avail_w * 0.5, -row_h * 0.5),
             color=base_color,
             radius=radius,
             width=avail_w,
             height=row_h,
+            corner_mask=corner_mask,
         )
 
         # Slider fill for numeric properties (soft range -> row width).
         fraction = item.display_property_fraction if is_property_display else None
         if fraction is not None and fraction > 0.0:
             fill_w = max(2.0, avail_w * fraction)
+            slider_color = item._property_slider_color()
+            if hovered:
+                # Apply the same affine blend to both field and slider so the
+                # value fraction stays visible while the whole row highlights.
+                slider_color = self._layout_hover_color(slider_color)
             self.draw_rounded_rectangle_area(
                 (fill_w * 0.5, -row_h * 0.5),
-                color=item._property_slider_color(),
+                color=slider_color,
                 radius=radius,
                 width=fill_w,
                 height=row_h,
-            )
-        if hovered:
-            stroke, line_width = self._outline_colors(active=True)
-            self.draw_rounded_rectangle_outlined(
-                (avail_w * 0.5, -row_h * 0.5),
-                fill=item.extension_background_color,
-                stroke=stroke,
-                radius=radius,
-                width=avail_w,
-                height=row_h,
-                line_width=line_width,
+                corner_mask=corner_mask,
             )
         item.gpu_draw_status_accent(
             (avail_w * 0.5, -row_h * 0.5), avail_w, row_h,

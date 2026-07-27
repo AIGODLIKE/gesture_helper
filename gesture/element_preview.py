@@ -29,6 +29,7 @@ class ElementPreviewAdapter(ElementGpuDraw, ElementLayoutGpu):
     layout_scale = 1.0
     layout_scale_x = 1.0
     layout_scale_y = 1.0
+    layout_align = False
 
     def __init__(self):
         self.ops = None

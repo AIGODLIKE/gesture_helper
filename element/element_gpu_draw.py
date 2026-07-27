@@ -895,6 +895,17 @@ class ElementGpuExtensionItem:
                 # is ``my``; keep the same inset on left/right so hover padding
                 # matches on X and Y.
                 hover_w = max(1.0, w + mx * 2.0 - my * 2.0)
+                row_left = (w - hover_w) * 0.5
+                row_rect = get_current_2d_rect((
+                    row_left,
+                    -row_h,
+                    row_left + hover_w,
+                    0.0,
+                ))
+                draw_ctx = getattr(getattr(ops, 'session', None), 'draw_ctx', None)
+                mouse = getattr(draw_ctx, 'mouse_region', None) if draw_ctx is not None else None
+                from .extension_hit import publish_child_row_hit
+                hovered = publish_child_row_hit(item, ops, row_rect, mouse=mouse)
                 # Numeric property rows paint a slider fill over the soft range.
                 fraction = item.display_property_fraction if item.is_property_display else None
                 if fraction is not None and fraction > 0.0:
@@ -907,7 +918,6 @@ class ElementGpuExtensionItem:
                         width=fill_w,
                         height=row_h,
                     )
-                hovered = item.extension_by_child_is_hover
                 is_error = item.element_status_info.status.is_error
                 if is_error or hovered:
                     stroke, line_width = self._outline_colors(active=hovered)
@@ -974,18 +984,8 @@ class ElementGpuExtensionItem:
                             y = -(lay.icon_size + s) * 0.5
                             self.draw_image([chev_x, y], s, s, texture=tex)
 
-                # Hit box matches the inset hover rect.
-                row_left = (w - hover_w) * 0.5
-                item.extension_by_child_draw_area = get_current_2d_rect((
-                    row_left,
-                    -row_h,
-                    row_left + hover_w,
-                    0.0,
-                ))
-                item._gesture_layout_token = ops.session.layout_token
-
                 if item.is_child_gesture and (
-                        item.extension_by_child_is_hover or item in ops.extension_hover
+                        hovered or item in ops.extension_hover
                 ):
                     with gpu.matrix.push_pop():
                         gpu.matrix.translate((w + max(lay.gap, lay.margin_x), 0))

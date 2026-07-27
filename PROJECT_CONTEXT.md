@@ -53,17 +53,36 @@ with bundled JSON presets, translations, and PNG icon assets.
 4. `gesture/gesture_draw_gpu.py`, `element/*draw*.py`, and `src/lib` calculate
    GPU geometry and hit boxes. `gesture/menu.py` renders persistent menus;
    `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
-   nested menus. `gesture/runtime_tooltip.py` owns delayed hover/fade state and
+   nested menus. Layout containers keep Blender's two alignment concepts
+   separate: `layout_align` defaults on, removes inter-item spacing, makes a
+   populated BOX flush with its child surfaces, and treats every drawable
+   child surface as one rounded group with a single outer border.
+   `layout_alignment`
+   controls horizontal `EXPAND`/`LEFT`/`CENTER`/`RIGHT` distribution.
+   Separators do not restart rounded corners on either side; empty layout
+   containers measure to zero, are omitted by their parent, and publish no
+   draw or hit area. Layout-row hover changes only the background fill (no
+   hover outline); property backgrounds and slider fills receive the same
+   color blend so their value fraction remains visible.
+   `gesture/runtime_tooltip.py` owns delayed hover/fade state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip
    timers are cancelled on target changes, modal reset/exit, and unregister.
    Read-only radial previews enter `UI_VISIBLE` immediately (without the
    gesture timeout or trajectory overlay); menu previews use the dedicated
-   `GestureMenuRuntime` draw handler. The preview gesture selector is a compact,
-   translated HUD whose hover events do not consume space-drag navigation.
+   `GestureMenuRuntime` draw handler and a menu-specific area lookup so the
+   unified preview's radial GPU base cannot shadow its draw routing. Plain
+   Space-drag converts a centered menu preview to a movable anchored preview.
+   Radial and menu gesture previews share the compact translated selector and
+   viewport instruction HUD; the menu backend initializes, draws, and routes
+   selector input through its own handler before menu hit testing. Selector
+   hover events do not consume Space-drag navigation.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
    status, label, icon, and display metrics once per draw.
+   Ordinary bottom-extension rows also publish their current-token hit geometry
+   before evaluating draw-time hover, so highlight and delayed tooltip state do
+   not disappear when each GPU frame rotates the layout token.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
@@ -127,7 +146,8 @@ flowchart TD
 - Syntax: `python -m compileall -q element gesture ops preferences ui utils tests`.
 - Lint: `python -m ruff check .`.
 - Blender smoke scripts cover preset coverage, property data paths, import
-  rollback/keymaps, lifecycle/reload, preview, and panel behavior. Run them
+  rollback/keymaps, lifecycle/reload, preview (including menu draw routing,
+  alignment RNA, and Space-drag), and panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,

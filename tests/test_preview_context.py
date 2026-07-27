@@ -61,7 +61,8 @@ def _load_preview_module():
         pass
 
     class GestureMenuRuntime:
-        pass
+        def _draw_menu(self):
+            self.draw_order.append('menu')
 
     class PublicOperator:
         pass
@@ -209,6 +210,91 @@ class PreviewContextTests(unittest.TestCase):
         self.assertFalse(changed)
         self.assertIs(session.event, pointer_event)
         self.assertEqual(session._input_event_serial, 4)
+
+    def test_menu_preview_space_drag_switches_from_centered_to_anchor(self):
+        redraws = []
+        root = types.SimpleNamespace(rect=(20.0, 30.0, 120.0, 90.0))
+        owner = types.SimpleNamespace(
+            _menu_centered=True,
+            _menu_panels=[root],
+            _menu_anchor=(0.0, 0.0),
+            _menu_drag_mouse=None,
+            _menu_layout_dirty=False,
+            _menu_mouse=lambda event: event.point,
+            _ensure_layout=lambda **_kwargs: None,
+            _tag_menu_redraw=lambda: redraws.append(True),
+        )
+        press = types.SimpleNamespace(
+            type='SPACE', value='PRESS', alt=False, ctrl=False, shift=False,
+            point=(40.0, 50.0),
+        )
+        move = types.SimpleNamespace(
+            type='MOUSEMOVE', value='NOTHING', alt=False, ctrl=False, shift=False,
+            point=(55.0, 42.0),
+        )
+        release = types.SimpleNamespace(
+            type='SPACE', value='RELEASE', alt=False, ctrl=False, shift=False,
+            point=(55.0, 42.0),
+        )
+
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, press),
+            {'RUNNING_MODAL'},
+        )
+        self.assertFalse(owner._menu_centered)
+        self.assertEqual(owner._menu_anchor, (20.0, 90.0))
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, move),
+            {'RUNNING_MODAL'},
+        )
+        self.assertEqual(owner._menu_anchor, (35.0, 82.0))
+        self.assertTrue(owner._menu_layout_dirty)
+        self.assertEqual(redraws, [True])
+        self.assertEqual(
+            preview_module.GesturePreview._menu_drag_event(owner, release),
+            {'RUNNING_MODAL'},
+        )
+        self.assertIsNone(owner._menu_drag_mouse)
+
+    def test_menu_preview_routes_events_to_shared_hud_first(self):
+        calls = []
+        event = types.SimpleNamespace(
+            type='LEFTMOUSE', value='PRESS', mouse_x=24, mouse_y=48,
+        )
+        owner = types.SimpleNamespace(
+            event=None,
+            _preview_hud_event=lambda current: (
+                calls.append(current) or {'RUNNING_MODAL'}
+            ),
+        )
+
+        result = preview_module.GesturePreview._modal_menu(owner, event)
+
+        self.assertEqual(result, {'RUNNING_MODAL'})
+        self.assertIs(owner.event, event)
+        self.assertEqual(calls, [event])
+
+    def test_menu_preview_draws_menu_then_shared_hud(self):
+        draw_order = []
+        owner = types.SimpleNamespace(
+            _preview_renderer='MENU',
+            draw_order=draw_order,
+            gpu=types.SimpleNamespace(
+                tips=types.SimpleNamespace(
+                    __gpu_draw__=lambda: draw_order.append('tips'),
+                ),
+                gesture_bpu=types.SimpleNamespace(
+                    __gpu_draw__=lambda: draw_order.append('selector'),
+                ),
+            ),
+        )
+        owner._draw_preview_hud = lambda: (
+            preview_module.GesturePreview._draw_preview_hud(owner)
+        )
+
+        preview_module.GesturePreview._draw_menu(owner)
+
+        self.assertEqual(draw_order, ['menu', 'tips', 'selector'])
 
 
 if __name__ == "__main__":

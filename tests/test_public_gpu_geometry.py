@@ -104,6 +104,35 @@ class PublicGpuGeometryTests(unittest.TestCase):
             )
         self.assertEqual(draw_fill.call_args.args[2], 9.0)
 
+    def test_corner_mask_squares_only_the_requested_aligned_edges(self):
+        points = self.module.get_rounded_rectangle_vertex(
+            8,
+            100,
+            30,
+            12,
+            (True, False, False, True),
+        )
+
+        self.assertIn((50.0, 15.0), points)
+        self.assertIn((50.0, -15.0), points)
+        self.assertNotIn((-50.0, 15.0), points)
+        self.assertNotIn((-50.0, -15.0), points)
+
+    def test_corner_mask_is_forwarded_to_fill_and_outline(self):
+        corner_mask = (True, False, False, True)
+        with (
+            mock.patch.object(self.module, "_draw_rounded_fill") as draw_fill,
+            mock.patch.object(self.module, "draw_line"),
+        ):
+            self.module.PublicGpu.draw_rounded_rectangle_outlined(
+                (0, 0),
+                radius=6,
+                width=40,
+                height=20,
+                corner_mask=corner_mask,
+            )
+        self.assertEqual(draw_fill.call_args.args[-1], corner_mask)
+
     def test_outline_has_symmetric_inclusive_tangent_endpoints(self):
         radius = 12
         width = 100

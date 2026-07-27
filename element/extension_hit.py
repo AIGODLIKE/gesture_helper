@@ -191,6 +191,17 @@ def hit_test_child_row(item, ops=None, *, mouse: tuple[float, float] | None = No
     return point_in_rect(mouse, getattr(item, "extension_by_child_draw_area", None))
 
 
+def publish_child_row_hit(item, ops, rect, *, mouse=None) -> bool:
+    """Publish current draw geometry, then resolve hover against that geometry."""
+    item.extension_by_child_draw_area = rect
+    session = getattr(ops, "session", None) if ops is not None else None
+    if session is not None:
+        item._gesture_layout_token = session.layout_token
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    return point_in_rect(mouse, rect)
+
+
 def panel_hit_items(container, ops, *, mouse=None):
     """Rows worth scanning for the current pointer position.
 
