@@ -21,7 +21,7 @@ def _panel_area_key(context) -> int:
 
 
 class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
-    bl_label = "Gesture"
+    bl_label = ""
     bl_idname = "GESTURE_PT_Layout"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -38,7 +38,7 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         @cache
         def text():
             from .. import ADDON_VERSION
-            label = f"{self.bl_label} {'.'.join(map(str, ADDON_VERSION))}"
+            label = f"{bpy.app.translations.pgettext_iface('Gesture')} {'.'.join(map(str, ADDON_VERSION))}"
             return label
 
         layout.label(text=text())

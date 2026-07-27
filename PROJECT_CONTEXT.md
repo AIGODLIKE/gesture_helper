@@ -57,7 +57,9 @@ with bundled JSON presets, translations, and PNG icon assets.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
-   pauses both the N-panel and Preferences with their full layouts disabled.
+   pauses both the N-panel and Preferences with their full layouts disabled;
+   the read-only `wm.gesture_preview` modal is excluded for both gesture and
+   element preview scopes so those panels remain editable.
    Their headers expose a non-persistent, default-off update override for the
    duration of the modal. Registration resets it to false, and preference
    backup/restore explicitly excludes it. `utils/session_state.py` arbitrates
