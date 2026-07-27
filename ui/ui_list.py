@@ -5,7 +5,6 @@ from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.public_ui import icon_two
 
-
 _ELEMENT_TREE_FULL_DRAW_LIMIT = 48
 _ELEMENT_TREE_PAGE_SIZE = 32
 _ELEMENT_TREE_PAGES: dict[tuple[int, int], tuple[int, int]] = {}
@@ -103,12 +102,7 @@ class GestureUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
 
     def draw_filter(self, context, layout):
         column = layout.column(align=True)
-        row = column.row(align=True)
-
         prop = self.draw_property
-        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.gesture_show_enabled_button, "HIDE"))
-        row.prop(prop, 'gesture_show_keymap', icon="BLANK1")
-        row.prop(prop, 'gesture_show_description', icon="INFO")
 
         row = column.row(align=True)
         row.active = prop.gesture_show_keymap
@@ -117,6 +111,11 @@ class GestureUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         row = column.row(align=True)
         row.prop(prop, "gesture_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
         row.prop(prop, "enable_name_translation", icon="BLANK1")
+
+        row = column.row(align=True)
+        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.gesture_show_enabled_button, "HIDE"))
+        row.prop(prop, 'gesture_show_keymap', icon="BLANK1")
+        row.prop(prop, 'gesture_show_description', icon="INFO")
 
 
 class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
@@ -163,13 +162,13 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
 
     @staticmethod
     def _draw_tree_page(
-            context, layout, root, descendants, *, active, frozen,
+        context, layout, root, descendants, *, active, frozen,
     ) -> None:
         root_pointer = _rna_pointer(root)
         key = (root_pointer, _rna_pointer(getattr(context, 'area', None)))
         page_count = (
-            len(descendants) + _ELEMENT_TREE_PAGE_SIZE - 1
-        ) // _ELEMENT_TREE_PAGE_SIZE
+                         len(descendants) + _ELEMENT_TREE_PAGE_SIZE - 1
+                     ) // _ELEMENT_TREE_PAGE_SIZE
         active_pointer = _rna_pointer(active) if active is not None else 0
         state = _ELEMENT_TREE_PAGES.get(key)
         if state is None:
@@ -179,9 +178,9 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         page = min(page, page_count - 1)
 
         if (
-                active_pointer
-                and active_pointer != root_pointer
-                and active_pointer != previous_active_pointer
+            active_pointer
+            and active_pointer != root_pointer
+            and active_pointer != previous_active_pointer
         ):
             for active_index, (element, _depth) in enumerate(descendants):
                 if _rna_pointer(element) == active_pointer:
