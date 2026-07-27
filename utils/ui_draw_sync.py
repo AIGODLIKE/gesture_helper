@@ -15,24 +15,9 @@ _MSG_GESTURE = "Paused: gesture"
 _MSG_ANIMATION = "Paused: playback"
 _MSG_OPERATOR = "Paused: operator"
 
-# Any live modal pauses heavy panels, except our gesture / preview.
-_MODAL_SKIP_EXCLUDE_PREFIXES = (
-    "WM_OT_gesture_operator",
-    "WM_OT_gesture_preview",
-    "WM_gesture_operator",
-    "WM_gesture_preview",
-)
-_MODAL_SKIP_EXCLUDE_NORMALIZED = tuple(
-    prefix.casefold().replace(".", "_")
-    for prefix in _MODAL_SKIP_EXCLUDE_PREFIXES
-)
-
-# One-shot poller: after a generic modal skip, refresh UI once the modal ends.
+# One-shot poller: after a modal skip, refresh UI once the modal ends.
 _modal_ui_refresh_fn: Optional[Callable[[], Optional[float]]] = None
-# Modal-stack discovery walks every window.  It is only a fallback for foreign
-# modals, so coalesce it across a normal UI redraw burst instead of polling at
-# frame rate.  The short delay still lets a newly-started modal take effect
-# without making the panel path hot.
+# Coalesce modal checks across a normal UI redraw burst.
 _PANEL_IDLE_CACHE_SEC = 0.12
 # Playback and modal state is stable for the duration of a UI redraw burst.
 # Re-reading ``Screen.is_animation_playing`` for every panel header/body is
@@ -77,6 +62,8 @@ class _OwnedPanelFreeze:
 # once at entry; this pins its inputs if Blender later requests another UI
 # refresh without re-running selection/status discovery.
 _playback_panel_snapshots: dict[int, _PanelContentSnapshot] = {}
+# Area pointer -> snapshot retained while a regular window modal is running.
+_modal_panel_snapshots: dict[int, _PanelContentSnapshot] = {}
 # Add-on-owned modal drags explicitly freeze the existing panel layout.  They
 # are tracked here because Blender does not expose a cheap modal-start signal
 # to Panel.draw, and scanning every window's modal stack on every row is costly.
@@ -126,6 +113,21 @@ def _playback_panel_snapshot(context, *, capture: bool = False):
     snapshot = _capture_panel_content()
     _playback_panel_snapshots[area_key] = snapshot
     return snapshot
+
+
+def _modal_panel_snapshot(context, *, capture: bool = False):
+    area_key = _rna_pointer(getattr(context, 'area', None))
+    snapshot = _modal_panel_snapshots.get(area_key)
+    if snapshot is not None or not capture:
+        return snapshot
+    snapshot = _capture_panel_content()
+    _modal_panel_snapshots[area_key] = snapshot
+    return snapshot
+
+
+def invalidate_modal_panel_state() -> None:
+    _modal_panel_snapshots.clear()
+    invalidate_panel_pause_cache()
 
 
 def invalidate_panel_pause_cache() -> None:
@@ -207,9 +209,10 @@ def _cached_panel_pause_entry(
         _playback_panel_snapshots.pop(cache_key[0], None)
         return None
     if source == 'MODAL':
-        if _modal_ui_refresh_fn is not None:
+        if _is_blocking_modal() or _modal_ui_refresh_fn is not None:
             return cached
         _panel_pause_cache.pop(cache_key, None)
+        _modal_panel_snapshots.pop(cache_key[0], None)
         return None
     if source == 'IDLE' and time.monotonic() < expiry:
         return cached
@@ -258,6 +261,7 @@ def clear_panel_layout_freezes() -> None:
     """Drop every frozen panel snapshot during add-on teardown."""
     _panel_layout_freezes.clear()
     _frozen_ui_selection.clear()
+    _modal_panel_snapshots.clear()
     invalidate_playback_panel_state()
 
 
@@ -355,14 +359,14 @@ def is_panel_layout_frozen(context=None) -> bool:
     if context is not None:
         cached = _cached_panel_pause_entry(context)
         if cached is not None:
-            return cached[0] in {'GESTURE', 'EXPLICIT', 'ANIMATION'}
+            return cached[0] in {'GESTURE', 'EXPLICIT', 'ANIMATION', 'MODAL'}
     elif isinstance(_panel_pause_cache, dict):
         # Finite ANIMATION entries represent timeline scrubbing, which has no
         # playback pre/post handler. Validate an expired entry against the live
         # global context so it cannot freeze schedules forever or retain a
         # stale per-area selection snapshot.
         for cache_key, entry in tuple(_panel_pause_cache.items()):
-            if entry[0] not in {'GESTURE', 'EXPLICIT', 'ANIMATION'}:
+            if entry[0] not in {'GESTURE', 'EXPLICIT', 'ANIMATION', 'MODAL'}:
                 continue
             if entry[0] != 'ANIMATION':
                 return True
@@ -448,6 +452,9 @@ def get_frozen_active_element(context=None):
     playback = _playback_panel_snapshot(context)
     if playback is not None:
         return playback.active_element
+    modal = _modal_panel_snapshot(context)
+    if modal is not None:
+        return modal.active_element
     session = get_gesture_modal_session(context)
     return getattr(session, "_frozen_active_element", None)
 
@@ -512,6 +519,12 @@ def get_frozen_ui_selection(gesture, context=None):
             and _rna_pointer(playback.active_gesture) == gesture_key
     ):
         return playback.active_gesture, playback.active_element
+    modal = _modal_panel_snapshot(context)
+    if (
+            modal is not None
+            and _rna_pointer(modal.active_gesture) == gesture_key
+    ):
+        return modal.active_gesture, modal.active_element
     snapshot = _frozen_ui_selection.get((gesture_key, area_key))
     if snapshot is not None:
         return snapshot
@@ -544,6 +557,9 @@ def get_frozen_active_gesture(context=None):
     playback = _playback_panel_snapshot(context)
     if playback is not None:
         return playback.active_gesture
+    modal = _modal_panel_snapshot(context)
+    if modal is not None:
+        return modal.active_gesture
     session = get_gesture_modal_session(context)
     return getattr(session, "_frozen_active_gesture", None)
 
@@ -557,6 +573,9 @@ def get_frozen_preview_state(context=None) -> tuple[bool, str]:
     playback = _playback_panel_snapshot(context)
     if playback is not None:
         return playback.preview_active, playback.preview_scope
+    modal = _modal_panel_snapshot(context)
+    if modal is not None:
+        return modal.preview_active, modal.preview_scope
     session = get_gesture_modal_session(context)
     return (
         bool(getattr(session, "_frozen_preview_active", False)),
@@ -574,6 +593,10 @@ def get_frozen_element_status_info(element, context=None):
         playback = _playback_panel_snapshot(context)
         if playback is not None:
             cache = playback.status_infos
+    if cache is None:
+        modal = _modal_panel_snapshot(context)
+        if modal is not None:
+            cache = modal.status_infos
     if cache is None:
         session = get_gesture_modal_session(context)
         if session is not None:
@@ -636,39 +659,6 @@ def _is_animation_busy(context) -> bool:
     )
 
 
-def _modal_operator_ids(context) -> list[str]:
-    """bl_idname-like identifiers on any window's modal stack.
-
-    Preferences often runs in a separate window; only checking
-    ``context.window`` would miss view/transform modals on the 3D window.
-    """
-    out: list[str] = []
-    seen: set[str] = set()
-
-    def _collect(window) -> None:
-        if window is None:
-            return
-        try:
-            for op in window.modal_operators:
-                bl = getattr(op, "bl_idname", None) or type(op).__name__
-                if bl not in seen:
-                    seen.add(bl)
-                    out.append(bl)
-        except Exception:
-            ...
-
-    wm = getattr(context, "window_manager", None)
-    if wm is None:
-        wm = getattr(bpy.context, "window_manager", None)
-    windows = getattr(wm, "windows", None) if wm is not None else None
-    if windows:
-        for window in windows:
-            _collect(window)
-    else:
-        _collect(getattr(context, "window", None) or getattr(bpy.context, "window", None))
-    return out
-
-
 def _is_force_show_panels() -> bool:
     try:
         from .pref import get_pref
@@ -677,18 +667,33 @@ def _is_force_show_panels() -> bool:
         return False
 
 
-def _blocking_modal_match(modals: list[str]) -> Optional[str]:
-    """First modal that should pause heavy panels (excludes our gesture/preview)."""
-    for mid in modals:
-        normalized = str(mid).casefold().replace(".", "_")
-        if normalized.startswith(_MODAL_SKIP_EXCLUDE_NORMALIZED):
-            continue
-        return mid
-    return None
+def _is_blocking_modal(_context=None) -> bool:
+    try:
+        return bool(bpy.context.window.modal_operators[:])
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        return False
 
 
-def _is_blocking_modal(context) -> bool:
-    return _blocking_modal_match(_modal_operator_ids(context)) is not None
+def _has_cached_modal_pause() -> bool:
+    if not isinstance(_panel_pause_cache, dict):
+        return False
+    return any(
+        entry[0] == 'MODAL'
+        for entry in _panel_pause_cache.values()
+    )
+
+
+def is_panel_pause_source_active(context=None) -> bool:
+    context = context if context is not None else bpy.context
+    window_modal = _is_blocking_modal() or _has_cached_modal_pause()
+    if window_modal:
+        _schedule_modal_ui_refresh()
+    return bool(
+        window_modal
+        or _explicit_panel_freeze(context) is not None
+        or _is_animation_busy(context)
+        or is_gesture_modal_active(context)
+    )
 
 
 def tag_gesture_ui_regions() -> None:
@@ -717,7 +722,7 @@ def tag_gesture_ui_regions() -> None:
 
 
 def _schedule_modal_ui_refresh() -> None:
-    """After skipping for a generic modal, poll until it ends and redraw once."""
+    """After skipping for a modal, poll until it ends and redraw once."""
     global _modal_ui_refresh_fn
     if _modal_ui_refresh_fn is not None:
         return
@@ -726,21 +731,20 @@ def _schedule_modal_ui_refresh() -> None:
         global _modal_ui_refresh_fn
         try:
             # Animation and add-on-owned freezes have their own lifecycle and
-            # never start this poller. If either begins while a generic modal
-            # timer is alive, avoid scanning every window's modal stack.
-            if _is_animation_busy(bpy.context) or is_panel_layout_frozen():
+            # never start this poller. If either begins while the timer is
+            # alive, defer to its explicit lifecycle.
+            if (
+                    _is_animation_busy(bpy.context)
+                    or _explicit_panel_freeze(bpy.context) is not None
+                    or is_gesture_modal_active(bpy.context)
+            ):
                 return 0.12
-            if _is_force_show_panels():
-                _modal_ui_refresh_fn = None
-                invalidate_panel_pause_cache()
-                tag_gesture_ui_regions()
-                return None
-            if _is_blocking_modal(bpy.context):
+            if _is_blocking_modal():
                 return 0.12
         except Exception:
             ...
         _modal_ui_refresh_fn = None
-        invalidate_panel_pause_cache()
+        invalidate_modal_panel_state()
         try:
             tag_gesture_ui_regions()
         except Exception:
@@ -771,15 +775,20 @@ def draw_heavy_panel_paused(layout, _message: str) -> None:
 def heavy_panel_skip_message(context) -> Optional[str]:
     """Message when Element/Modal panels should skip heavy draw; else None.
 
-    Skips during gesture modal, animation play/scrub, and any other live modal.
-    Real gestures and add-on-owned drags always win over the generic override.
-    Only foreign modal operators use the recovery timer; playback and gestures
-    have explicit redraw transitions.
+    Skips during gesture modal, animation play/scrub, and any modal operator in
+    ``bpy.context.window.modal_operators``. The temporary force-show preference
+    overrides every pause source.
     """
     global _panel_pause_cache
     try:
         if not isinstance(_panel_pause_cache, dict):
             _panel_pause_cache = {}
+        # This is an explicit override for every pause source.  Check it
+        # before consulting the cache so the preference has unambiguous
+        # semantics even when a redraw arrives before its update callback.
+        if _is_force_show_panels():
+            _panel_pause_cache.clear()
+            return None
         cache_key = _panel_context_key(context)
         cached = _cached_panel_pause_entry(context, cache_key=cache_key)
         if cached is not None:
@@ -808,13 +817,12 @@ def heavy_panel_skip_message(context) -> Optional[str]:
             _panel_pause_cache[cache_key] = ('GESTURE', message, 0.0)
             return message
 
-        if not _is_force_show_panels():
-            modals = _modal_operator_ids(context)
-            if _blocking_modal_match(modals):
-                message = _MSG_OPERATOR
-                _panel_pause_cache[cache_key] = ('MODAL', message, 0.0)
-                _schedule_modal_ui_refresh()
-                return message
+        if _is_blocking_modal() or _has_cached_modal_pause():
+            message = _MSG_OPERATOR
+            _modal_panel_snapshot(context, capture=True)
+            _panel_pause_cache[cache_key] = ('MODAL', message, 0.0)
+            _schedule_modal_ui_refresh()
+            return message
 
         now = time.monotonic()
         _panel_pause_cache[cache_key] = (
@@ -832,7 +840,7 @@ def panel_pause_state(context) -> tuple[Optional[str], bool]:
         return None, False
     cached = _cached_panel_pause_entry(context, refresh_animation=False)
     if cached is not None:
-        return message, cached[0] in {'GESTURE', 'EXPLICIT', 'ANIMATION'}
+        return message, cached[0] in {'GESTURE', 'EXPLICIT', 'ANIMATION', 'MODAL'}
     return message, is_panel_layout_frozen(context)
 
 

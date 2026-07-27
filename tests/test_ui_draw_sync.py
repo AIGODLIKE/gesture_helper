@@ -85,6 +85,7 @@ class GestureModalStateTests(unittest.TestCase):
         ui_draw_sync._gesture_panel_session_cache.clear()
         ui_draw_sync._frozen_ui_selection.clear()
         ui_draw_sync._playback_panel_snapshots.clear()
+        ui_draw_sync._modal_panel_snapshots.clear()
 
     def test_preview_only_does_not_pause_panels(self):
         GestureGpuDraw.__active_draw_instances__[1] = FakeOperator(
@@ -92,8 +93,18 @@ class GestureModalStateTests(unittest.TestCase):
         )
 
         self.assertFalse(ui_draw_sync.is_gesture_modal_active())
-        self.assertIsNone(ui_draw_sync._blocking_modal_match(["wm.gesture_preview"]))
-        self.assertIsNone(ui_draw_sync._blocking_modal_match(["WM_OT_GESTURE_PREVIEW"]))
+
+    def test_current_window_modal_operator_blocks_panels(self):
+        old_window = ui_draw_sync.bpy.context.window
+        try:
+            ui_draw_sync.bpy.context.window = types.SimpleNamespace(
+                modal_operators=[object()],
+            )
+            self.assertTrue(ui_draw_sync._is_blocking_modal())
+            ui_draw_sync.bpy.context.window.modal_operators.clear()
+            self.assertFalse(ui_draw_sync._is_blocking_modal())
+        finally:
+            ui_draw_sync.bpy.context.window = old_window
 
     def test_real_gesture_is_detected_after_same_area_preview_is_replaced(self):
         area_key = 1
@@ -227,7 +238,7 @@ class GestureModalStateTests(unittest.TestCase):
         self.assertFalse(row.enabled)
         self.assertEqual(row.labels, [{"text": "", "icon": "BLANK1"}])
 
-    def test_real_gesture_pause_overrides_force_show_setting(self):
+    def test_force_show_setting_overrides_real_gesture(self):
         with (
                 patch.object(ui_draw_sync, "is_gesture_modal_active", return_value=True),
                 patch.object(ui_draw_sync, "_is_force_show_panels", return_value=True),
@@ -235,7 +246,7 @@ class GestureModalStateTests(unittest.TestCase):
         ):
             message = ui_draw_sync.heavy_panel_skip_message(object())
 
-        self.assertEqual(message, ui_draw_sync._MSG_GESTURE)
+        self.assertIsNone(message)
         schedule.assert_not_called()
 
     def test_animation_pause_is_stable_across_redraws_without_a_timer(self):
@@ -251,7 +262,7 @@ class GestureModalStateTests(unittest.TestCase):
                     "is_gesture_modal_active",
                     return_value=False,
                 ) as gesture_active,
-                patch.object(ui_draw_sync, "_modal_operator_ids") as modal_ids,
+                patch.object(ui_draw_sync, "_is_blocking_modal") as blocking_modal,
                 patch.object(ui_draw_sync, "_schedule_modal_ui_refresh") as schedule,
         ):
             messages = [
@@ -261,7 +272,7 @@ class GestureModalStateTests(unittest.TestCase):
 
         self.assertEqual(messages, [ui_draw_sync._MSG_ANIMATION] * 20)
         gesture_active.assert_not_called()
-        modal_ids.assert_not_called()
+        blocking_modal.assert_not_called()
         schedule.assert_not_called()
 
         screen.is_animation_playing = False
@@ -271,11 +282,11 @@ class GestureModalStateTests(unittest.TestCase):
         with (
                 patch.object(ui_draw_sync, "is_gesture_modal_active", return_value=False),
                 patch.object(ui_draw_sync, "_is_force_show_panels", return_value=False),
-                patch.object(ui_draw_sync, "_modal_operator_ids", return_value=[]),
+                patch.object(ui_draw_sync, "_is_blocking_modal", return_value=False),
         ):
             self.assertIsNone(ui_draw_sync.heavy_panel_skip_message(context))
 
-    def test_animation_pause_ignores_the_generic_force_show_override(self):
+    def test_force_show_setting_overrides_animation(self):
         context = types.SimpleNamespace(
             area=None,
             screen=types.SimpleNamespace(
@@ -289,7 +300,7 @@ class GestureModalStateTests(unittest.TestCase):
         ):
             message = ui_draw_sync.heavy_panel_skip_message(context)
 
-        self.assertEqual(message, ui_draw_sync._MSG_ANIMATION)
+        self.assertIsNone(message)
 
     def test_playback_in_another_window_pauses_this_panel(self):
         local_screen = types.SimpleNamespace(
@@ -390,6 +401,50 @@ class GestureModalStateTests(unittest.TestCase):
         ui_draw_sync.invalidate_playback_panel_state()
         self.assertEqual(ui_draw_sync._playback_panel_snapshots, {})
 
+    def test_window_modal_preserves_and_disables_the_full_layout(self):
+        class FakeArea:
+            def as_pointer(self):
+                return 72
+
+        gesture = object()
+        element = object()
+        pref_module = types.ModuleType(f"{PACKAGE}.utils.pref")
+        pref_module.get_pref = lambda: types.SimpleNamespace(
+            active_gesture=gesture,
+            active_element=element,
+            draw_property=types.SimpleNamespace(
+                force_show_panels_during_modal=False,
+            ),
+        )
+        context = types.SimpleNamespace(
+            area=FakeArea(),
+            screen=types.SimpleNamespace(
+                is_animation_playing=False,
+                is_scrubbing=False,
+            ),
+        )
+        old_window = ui_draw_sync.bpy.context.window
+        ui_draw_sync.bpy.context.window = types.SimpleNamespace(
+            modal_operators=[object()],
+        )
+        try:
+            with (
+                    patch.dict(sys.modules, {pref_module.__name__: pref_module}),
+                    patch.object(ui_draw_sync, "is_gesture_modal_active", return_value=False),
+                    patch.object(ui_draw_sync, "_schedule_modal_ui_refresh"),
+            ):
+                self.assertEqual(
+                    ui_draw_sync.panel_pause_state(context),
+                    (ui_draw_sync._MSG_OPERATOR, True),
+                )
+            self.assertIs(ui_draw_sync.get_frozen_active_gesture(context), gesture)
+            self.assertIs(ui_draw_sync.get_frozen_active_element(context), element)
+        finally:
+            ui_draw_sync.bpy.context.window = old_window
+
+        ui_draw_sync.invalidate_modal_panel_state()
+        self.assertEqual(ui_draw_sync._modal_panel_snapshots, {})
+
     def test_non_playback_lifecycles_preserve_every_area_snapshot(self):
         class FakeArea:
             type = "VIEW_3D"
@@ -445,6 +500,12 @@ class GestureModalStateTests(unittest.TestCase):
                 active_element=object(),
             )
         )
+        ui_draw_sync._modal_panel_snapshots[1] = (
+            ui_draw_sync._PanelContentSnapshot(
+                active_gesture=object(),
+                active_element=object(),
+            )
+        )
         ui_draw_sync._panel_pause_cache[(1, 2)] = ('ANIMATION', 'paused', None)
 
         ui_draw_sync.clear_panel_layout_freezes()
@@ -452,6 +513,7 @@ class GestureModalStateTests(unittest.TestCase):
         self.assertEqual(ui_draw_sync._panel_layout_freezes, {})
         self.assertEqual(ui_draw_sync._frozen_ui_selection, {})
         self.assertEqual(ui_draw_sync._playback_panel_snapshots, {})
+        self.assertEqual(ui_draw_sync._modal_panel_snapshots, {})
         self.assertEqual(ui_draw_sync._panel_pause_cache, {})
 
     def test_playback_snapshot_pins_preview_state_across_other_invalidations(self):
@@ -949,12 +1011,12 @@ class GestureModalStateTests(unittest.TestCase):
         with (
                 patch.object(ui_draw_sync, "is_gesture_modal_active", return_value=False),
                 patch.object(ui_draw_sync, "_is_force_show_panels", return_value=False),
-                patch.object(ui_draw_sync, "_modal_operator_ids", return_value=[]) as modal_ids,
+                patch.object(ui_draw_sync, "_is_blocking_modal", return_value=False) as blocking_modal,
         ):
             for _index in range(10):
                 self.assertIsNone(ui_draw_sync.heavy_panel_skip_message(context))
 
-        modal_ids.assert_called_once_with(context)
+        blocking_modal.assert_called_once_with()
 
     def test_explicit_drag_freeze_preserves_layout_without_modal_polling(self):
         owner = object()
@@ -970,7 +1032,7 @@ class GestureModalStateTests(unittest.TestCase):
         try:
             with (
                     patch.object(ui_draw_sync, "is_gesture_modal_active", return_value=False),
-                    patch.object(ui_draw_sync, "_modal_operator_ids") as modal_ids,
+                    patch.object(ui_draw_sync, "_is_blocking_modal") as blocking_modal,
                     patch.object(ui_draw_sync, "_schedule_modal_ui_refresh") as schedule,
             ):
                 self.assertTrue(ui_draw_sync.is_panel_layout_frozen())
@@ -978,7 +1040,7 @@ class GestureModalStateTests(unittest.TestCase):
                     ui_draw_sync.heavy_panel_skip_message(context),
                     ui_draw_sync._MSG_OPERATOR,
                 )
-            modal_ids.assert_not_called()
+            blocking_modal.assert_not_called()
             schedule.assert_not_called()
         finally:
             ui_draw_sync.end_panel_layout_freeze(owner)

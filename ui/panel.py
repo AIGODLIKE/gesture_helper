@@ -34,13 +34,16 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
             return False
 
     def draw_header(self, context):
-        from ..utils.ui_draw_sync import heavy_panel_skip_message
+        from ..utils.ui_draw_sync import (
+            heavy_panel_skip_message,
+            is_panel_pause_source_active,
+        )
 
         pref = self.pref
         row = self.layout.row(align=True)
         message = heavy_panel_skip_message(context)
-        row.enabled = not message
         rr = row.row(align=True)
+        rr.enabled = not message
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
         rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
@@ -48,6 +51,15 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
             status = row.row(align=True)
             status.enabled = False
             status.label(text=message, icon="PAUSE")
+        if is_panel_pause_source_active(context):
+            toggle = row.row(align=True)
+            toggle.enabled = True
+            toggle.prop(
+                pref.draw_property,
+                'force_show_panels_during_modal',
+                text="Update panels",
+                toggle=True,
+            )
 
     def draw_header_preset(self, context):
         """Right side of the panel title — open add-on preferences."""

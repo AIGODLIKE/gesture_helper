@@ -55,6 +55,9 @@
   "Animation is playing (UI updates paused)": "动画播放中（界面更新已暂停）",
   "View navigation (UI updates paused)": "视图操作中（界面已暂停刷新）",
   "Operator is running (UI updates paused)": "操作进行中（界面已暂停刷新）",
+  "Paused: gesture": "已暂停：手势运行中",
+  "Paused: playback": "已暂停：动画播放中",
+  "Paused: operator": "已暂停：模态操作运行中",
   "Always update gesture panels": "始终刷新手势面板",
   "Keep the Gesture item and element panels updating during animation playback and other modal operators. Real gestures always pause these panels; continuous updates may reduce performance": "动画播放或其它模态操作运行时持续刷新手势和元素面板。真实手势运行时始终暂停这些面板；持续刷新可能降低性能",
   "Import gesture": "导入手势",
@@ -748,5 +751,8 @@
   "Cycles adaptive sampling controls": "Cycles 自适应采样控件",
   "Add a prebuilt gesture layout structure": "添加预构建的手势布局结构",
   "Top Left": "左上",
-  "Top Right": "右上"
+  "Top Right": "右上",
+  "Update panels during modal operations": "模态操作期间更新面板",
+  "Update panels": "更新面板",
+  "Keep Gesture panels live during all modal operations, including Gesture Helper sessions and animation playback": "所有模态操作期间保持手势面板实时更新，包括 Gesture Helper 会话和动画播放"
 }

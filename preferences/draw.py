@@ -6,6 +6,7 @@ from ..utils.ui_draw_sync import (
     get_frozen_active_element,
     get_frozen_active_gesture,
     get_frozen_preview_state,
+    is_panel_pause_source_active,
     panel_pause_state,
 )
 
@@ -81,8 +82,8 @@ class PreferencesDraw(GestureDraw):
         """Draw preferences header bar."""
         pref = get_pref()
         row = layout.row(align=True)
-        row.enabled = not message
         rr = row.row(align=True)
+        rr.enabled = not message
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
         rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
@@ -92,6 +93,15 @@ class PreferencesDraw(GestureDraw):
             status = row.row(align=True)
             status.enabled = False
             status.label(text=message, icon="PAUSE")
+        if is_panel_pause_source_active(bpy.context):
+            toggle = row.row(align=True)
+            toggle.enabled = True
+            toggle.prop(
+                pref.draw_property,
+                'force_show_panels_during_modal',
+                text="Update panels",
+                toggle=True,
+            )
 
     @staticmethod
     def draw_ui_property(layout):

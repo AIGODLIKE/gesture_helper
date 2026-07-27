@@ -59,15 +59,13 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=True,
     )
     force_show_panels_during_modal: BoolProperty(
-        name='Update panels during other operators',
-        # Override the pause for generic operators only. Animation and the
-        # add-on's own gesture/value drags always stay on the safe frozen path.
+        name='Update panels during modal operations',
         description=(
-            'Keep the Gesture panels updating during other modal operators. '
-            'Animation playback and Gesture Helper drags still pause panel '
-            'updates to avoid frame drops and input-state interference'
+            'Keep Gesture panels live during all modal operations, including '
+            'Gesture Helper sessions and animation playback'
         ),
         default=False,
+        options={'SKIP_SAVE'},
         update=lambda self, context: DrawProperty._on_force_show_update(context),
     )
     element_remove_tips: BoolProperty(

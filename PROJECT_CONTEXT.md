@@ -56,7 +56,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    nested menus.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
-   modal input/playback. `utils/session_state.py` arbitrates preview ownership.
+   modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
+   pauses both the N-panel and Preferences with their full layouts disabled.
+   Their headers expose a non-persistent, default-off update override for the
+   duration of the modal. `utils/session_state.py` arbitrates preview ownership.
 6. `gesture/pass_through/*` handles forwarding to Blender's native keymaps when
    a gesture does not consume the event.
 
@@ -119,13 +122,13 @@ flowchart TD
    This is low-risk behaviorally but blocks a clean lint gate.
 3. **Compile verification is environment-blocked:** `compileall` fails to write
    `.pyc` files under both the repository cache and `C:\tmp` with Windows
-   `PermissionError`. The 170 passing tests import much of the code without a
+   `PermissionError`. The 172 passing tests import much of the code without a
    syntax failure, but scripts not imported by those tests remain unverified;
    rerun with a writable bytecode cache outside this restricted environment.
 4. **Blender-only behavior remains higher risk than unit coverage:** keymap
    creation, context-sensitive operator polls, RNA collection identity,
    draw-handler/timer cleanup, and file-load restoration require real Blender
-   smoke runs on 4.2 and current 5.x. The 170 pure tests cannot prove these.
+   smoke runs on 4.2 and current 5.x. The 172 pure tests cannot prove these.
 5. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
