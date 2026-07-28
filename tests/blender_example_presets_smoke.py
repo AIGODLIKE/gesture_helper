@@ -81,7 +81,7 @@ assert {gesture.name for gesture in store.gesture} >= {
     "Panel Menu Example",
     "Compact Menu Example",
     "Borderless Menu Example",
-    "Element Types Example",
+    "Element and Layout Example",
     "Modal Modes Example",
     "Direction Slots Example",
     "Operator Contexts Example",
@@ -353,7 +353,7 @@ with bpy.context.temp_override(**_view3d_override()):
 
     # Exercise the mutually exclusive IF / ELIF / ELSE example in all three
     # contexts. This prevents an overly broad IF from making ELIF unreachable.
-    conditional = gestures_by_name["Element Types Example"]
+    conditional = gestures_by_name["Element and Layout Example"]
     panel_menu = gestures_by_name["Panel Menu Example"]
     practical_menu = gestures_by_name["Practical Viewport Menu"]
 

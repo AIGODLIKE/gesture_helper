@@ -96,6 +96,8 @@
   "Affect Only": "仅影响",
   "Subdivide": "细分",
   "Example Elements and Layout": "元素与布局示例",
+  "Element and Layout Example": "元素与布局示例",
+  "Covers every element type plus layout alignment, tight spacing, scaling, offsets, and a main action": "涵盖全部元素类型，以及布局对齐、紧密间距、缩放、偏移和主操作",
   "Example Essentials": "基础功能示例",
   "Example Property Controls": "属性控制示例",
   "Example: gesture types, menu styles, radial directions, bottom extension, and practical modal control": "示例：手势类型、菜单样式、径向方向、底部扩展与实用模态控制",
