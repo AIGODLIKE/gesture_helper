@@ -34,8 +34,10 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_open_path', [])
         operator_setattr(self, '_menu_hovered_row', None)
         operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_hovered_close', False)
         operator_setattr(self, '_menu_pressed_row', None)
         operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_pressed_close', False)
         operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
@@ -360,6 +362,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             self._ensure_layout()
             if self._menu_close_hit(event):
+                self._press_menu_close()
                 self._begin_menu_close()
                 return {'RUNNING_MODAL'}
             if self._menu_header_hit(event):
@@ -394,7 +397,11 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 self._execute_menu_row(row)
                 # Numeric body clicks may start a second modal that owns the
                 # release event. Do not leave its visual press latched behind.
-                if self._clear_menu_press():
+                if (
+                        row.kind == 'PROPERTY'
+                        and getattr(self, '_menu_pressed_part', None) == 'VALUE'
+                        and self._clear_menu_press()
+                ):
                     self._tag_menu_redraw()
                 if not self._menu_keep_open():
                     self._begin_menu_close()

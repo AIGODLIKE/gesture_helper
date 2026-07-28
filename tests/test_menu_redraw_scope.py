@@ -129,6 +129,8 @@ class MenuRedrawScopeTests(unittest.TestCase):
             separator=(0.2, 0.2, 0.2, 1.0),
             error=(0.72, 0.08, 0.06, 0.9),
             warning=(0.92, 0.48, 0.06, 0.95),
+            row=(0.12, 0.12, 0.12, 0.96),
+            pressed=(0.04, 0.16, 0.38, 1.0),
         )
 
     def test_error_row_uses_red_background_and_white_text(self):
@@ -253,6 +255,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime._menu_close_start_reveal = 1.0
         runtime._menu_tooltip_state = None
         runtime._menu_hovered_row = object()
+        runtime._menu_pressed_close = True
         runtime._menu_drag_mouse = (1.0, 2.0)
         runtime._menu_drag_button = "LEFTMOUSE"
         runtime._schedule_menu_animation = Mock()
@@ -264,6 +267,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertEqual(runtime._menu_close_start_reveal, 1.0)
         self.assertEqual(runtime._menu_closing_at, 20.0)
         self.assertIsNone(runtime._menu_hovered_row)
+        self.assertTrue(runtime._menu_pressed_close)
         self.assertIsNone(runtime._menu_drag_mouse)
         runtime._schedule_menu_animation.assert_called_once_with()
         runtime._tag_menu_redraw.assert_called_once_with()
@@ -324,7 +328,11 @@ class MenuRedrawScopeTests(unittest.TestCase):
             rect=(0.0, 0.0, 200.0, 24.0),
         )
         runtime._draw_row(boolean_row, self._metrics(), colors)
-        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 0)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 1)
+        self.assertEqual(
+            runtime.draw_rounded_rectangle_area.call_args.kwargs["color"],
+            colors.row,
+        )
         runtime.draw_image.assert_not_called()
         self.assertIsNone(boolean_row.decrement_rect)
         self.assertIsNone(boolean_row.increment_rect)
@@ -352,8 +360,66 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertEqual(numeric_row.value_rect[2], numeric_row.increment_rect[0])
         self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2] - 2.0)
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
-        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 0)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 1)
         self.assertEqual(runtime.draw_rectangle.call_count, 4)
+
+    def test_menu_row_has_distinct_normal_hover_and_pressed_surfaces(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_hovered_row = None
+        runtime._menu_pressed_row = None
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        colors = self._colors()
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(is_draw_icon=False),
+            "Action",
+            "OPERATOR",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+
+        runtime._draw_row(row, self._metrics(), colors)
+        normal = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
+        runtime._menu_hovered_row = row
+        runtime._draw_row(row, self._metrics(), colors)
+        hovered = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
+        runtime._menu_pressed_row = row
+        runtime._draw_row(row, self._metrics(), colors)
+        pressed = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
+
+        self.assertEqual(normal, colors.row)
+        self.assertEqual(hovered, colors.hover)
+        self.assertEqual(pressed, colors.pressed)
+        self.assertEqual(len({normal, hovered, pressed}), 3)
+
+    def test_menu_close_button_has_distinct_hover_and_pressed_surfaces(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        panel = menu_module.MenuPanel(
+            depth=0,
+            rows=[],
+            title="Menu",
+            header_rect=(0.0, 0.0, 200.0, 24.0),
+            close_rect=(176.0, 0.0, 200.0, 24.0),
+        )
+        colors = self._colors()
+
+        runtime._menu_hovered_close = True
+        runtime._menu_pressed_close = False
+        runtime._draw_header(panel, self._metrics(), colors)
+        hover = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
+        runtime._menu_pressed_close = True
+        runtime._draw_header(panel, self._metrics(), colors)
+        pressed = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
+
+        self.assertEqual(hover, colors.hover)
+        self.assertEqual(pressed, colors.pressed)
+        self.assertNotEqual(hover, pressed)
 
     def test_enum_property_opens_blender_style_choices_and_sets_one(self):
         items = (

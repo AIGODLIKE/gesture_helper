@@ -128,6 +128,8 @@ class MenuColors:
     separator: tuple
     error: tuple
     warning: tuple
+    row: tuple = (0.12, 0.12, 0.12, 0.96)
+    pressed: tuple = (0.04, 0.16, 0.38, 1.0)
 
 
 @dataclass
@@ -394,6 +396,7 @@ class GestureMenuRuntime(PublicGpu):
         self._menu_hovered_part = None
         self._menu_pressed_row = None
         self._menu_pressed_part = None
+        self._menu_hovered_close = False
         self._menu_enum_dropdown = None
         self._menu_drag_mouse = None
         self._menu_drag_button = None
@@ -543,17 +546,43 @@ class GestureMenuRuntime(PublicGpu):
         text = _rgba(getattr(menu, 'text', None), (0.82, 0.82, 0.82, 1.0))
         text_hover = _rgba(getattr(item, 'text_sel', None), (1.0, 1.0, 1.0, 1.0))
         outline = _rgba(getattr(menu, 'outline', None), (0.22, 0.22, 0.22, 1.0))
+        row = _rgba(getattr(regular, 'inner', None), header)
+        pressed = blend_layout_hover_color(hover, background, 0.46)
+        text_disabled = (*text[:3], 0.42)
+        separator = (*outline[:3], 0.7)
+        error = (0.72, 0.08, 0.06, 0.9)
+        warning = (0.92, 0.48, 0.06, 0.95)
+        try:
+            from ..utils.public import get_pref
+
+            draw = get_pref().draw_property
+            background = _rgba(draw.overlay_background_color, background)
+            header = _rgba(draw.overlay_header_color, header)
+            row = _rgba(draw.background_operator_color, row)
+            hover = _rgba(draw.interaction_hover_color, hover)
+            pressed = _rgba(draw.interaction_pressed_color, pressed)
+            text = _rgba(draw.text_default_color, text)
+            text_hover = _rgba(draw.text_active_color, text_hover)
+            text_disabled = _rgba(draw.text_disabled_color, text_disabled)
+            outline = _rgba(draw.outline_color, outline)
+            separator = _rgba(draw.dividing_line_color, separator)
+            error = _rgba(draw.status_error_color, error)
+            warning = _rgba(draw.status_warning_color, warning)
+        except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
+            pass
         return MenuColors(
             background=background,
             header=header,
             hover=hover,
             text=text,
             text_hover=text_hover,
-            text_disabled=(*text[:3], 0.42),
+            text_disabled=text_disabled,
             outline=outline,
-            separator=(*outline[:3], 0.7),
-            error=(0.72, 0.08, 0.06, 0.9),
-            warning=(0.92, 0.48, 0.06, 0.95),
+            separator=separator,
+            error=error,
+            warning=warning,
+            row=row,
+            pressed=pressed,
         )
 
     @staticmethod
@@ -919,15 +948,28 @@ class GestureMenuRuntime(PublicGpu):
         )
         if panel.close_rect is not None:
             cx1, cy1, cx2, cy2 = panel.close_rect
+            close_pressed = bool(getattr(self, '_menu_pressed_close', False))
+            close_hovered = bool(getattr(self, '_menu_hovered_close', False))
+            if close_pressed or close_hovered:
+                close_color = colors.pressed if close_pressed else colors.hover
+                self.draw_rounded_rectangle_area(
+                    ((cx1 + cx2) * 0.5, (cy1 + cy2) * 0.5),
+                    color=close_color,
+                    radius=metrics.radius,
+                    width=cx2 - cx1,
+                    height=cy2 - cy1,
+                    corner_mask=(False, True, False, False),
+                )
             inset = height * 0.34
+            close_text = colors.text_hover if close_pressed or close_hovered else colors.text
             self.draw_2d_line(
                 ((cx1 + inset, cy1 + inset), (cx2 - inset, cy2 - inset)),
-                color=colors.text,
+                color=close_text,
                 line_width=max(1.0, 1.2 * metrics.scale),
             )
             self.draw_2d_line(
                 ((cx1 + inset, cy2 - inset), (cx2 - inset, cy1 + inset)),
-                color=colors.text,
+                color=close_text,
                 line_width=max(1.0, 1.2 * metrics.scale),
             )
 
@@ -1116,8 +1158,10 @@ class GestureMenuRuntime(PublicGpu):
                 rx1, ry1, rx2, ry2 = rect
                 if part == pressed_part:
                     amount = NUMBER_PRESSED_BLEND
+                    target = colors.pressed
                 elif part == hovered_part:
                     amount = NUMBER_HOVER_BLEND
+                    target = colors.hover
                 elif part == NUMBER_PART_VALUE:
                     continue
                 else:
@@ -1130,7 +1174,7 @@ class GestureMenuRuntime(PublicGpu):
                         state_color,
                     )
                     continue
-                state_color = blend_layout_hover_color(base, active, amount)
+                state_color = blend_layout_hover_color(base, target, amount)
                 self.draw_rectangle(
                     rx1,
                     ry1,
@@ -1271,7 +1315,6 @@ class GestureMenuRuntime(PublicGpu):
             property_visual is not None
             and self._numeric_arrows_visible(row, property_visual[0])
         )
-        whole_row_active = (hovered or pressed) and not has_number_field
         has_boolean_icon = (
             property_visual is not None
             and property_visual[0] == 'BOOLEAN'
@@ -1281,24 +1324,30 @@ class GestureMenuRuntime(PublicGpu):
             property_visual is not None
             and (property_visual[0] != 'BOOLEAN' or has_boolean_icon)
         )
-        if status.is_error or has_property_background or (whole_row_active and row.enabled):
+        is_surface = row.kind in {'OPERATOR', 'PROPERTY', 'CHILD', 'ENUM_ITEM'}
+        if status.is_error or has_property_background or is_surface:
             inset = 0.0 if has_number_field else 2.0 * metrics.scale
             if status.is_error:
                 row_color = colors.error
             elif property_visual is not None:
-                row_color = property_visual[3]
-                if whole_row_active and row.enabled:
-                    row_color = blend_layout_hover_color(
-                        row_color,
-                        colors.hover,
-                        0.72 if pressed else 0.35,
-                    )
-            else:
                 row_color = (
-                    blend_layout_hover_color(colors.hover, colors.text_hover, 0.12)
-                    if pressed
-                    else colors.hover
+                    property_visual[3]
+                    if has_property_background
+                    else colors.row
                 )
+                if pressed and row.enabled:
+                    row_color = blend_layout_hover_color(row_color, colors.pressed, 0.90)
+                elif hovered and row.enabled:
+                    row_color = blend_layout_hover_color(row_color, colors.hover, 0.72)
+            else:
+                if pressed and row.enabled:
+                    row_color = colors.pressed
+                elif hovered and row.enabled:
+                    row_color = colors.hover
+                elif row.enabled:
+                    row_color = colors.row
+                else:
+                    row_color = (*colors.row[:3], colors.row[3] * 0.42)
             if has_number_field:
                 fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
                 self.draw_rectangle(
@@ -1321,12 +1370,10 @@ class GestureMenuRuntime(PublicGpu):
                 if fraction is not None and fraction > 0.0:
                     fill_w = max(2.0, (width - inset * 2.0) * fraction)
                     fill_color = property_visual[4]
-                    if whole_row_active and row.enabled:
-                        fill_color = blend_layout_hover_color(
-                            fill_color,
-                            colors.hover,
-                            0.72 if pressed else 0.35,
-                        )
+                    if pressed and row.enabled:
+                        fill_color = blend_layout_hover_color(fill_color, colors.pressed, 0.90)
+                    elif hovered and row.enabled:
+                        fill_color = blend_layout_hover_color(fill_color, colors.hover, 0.72)
                     if has_number_field:
                         fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
                         fill_w = max(2.0, (fx2 - fx1) * fraction)
@@ -1658,10 +1705,12 @@ class GestureMenuRuntime(PublicGpu):
         if (
                 getattr(self, '_menu_pressed_row', None) is None
                 and getattr(self, '_menu_pressed_part', None) is None
+                and not getattr(self, '_menu_pressed_close', False)
         ):
             return False
         self._menu_pressed_row = None
         self._menu_pressed_part = None
+        self._menu_pressed_close = False
         return True
 
     def _update_menu_hover(self, event) -> bool:
@@ -1669,19 +1718,26 @@ class GestureMenuRuntime(PublicGpu):
         point = self._menu_mouse(event)
         old_row = self._menu_hovered_row
         old_part = getattr(self, '_menu_hovered_part', None)
+        old_close = bool(getattr(self, '_menu_hovered_close', False))
         hovered = None
         hovered_panel = None
-        for panel in reversed(self._menu_panels):
-            for row in panel.rows:
-                if _point_in_rect(point, row.rect):
-                    hovered = row
-                    hovered_panel = panel
+        hovered_close = bool(
+            self._menu_panels
+            and _point_in_rect(point, self._menu_panels[0].close_rect)
+        )
+        if not hovered_close:
+            for panel in reversed(self._menu_panels):
+                for row in panel.rows:
+                    if _point_in_rect(point, row.rect):
+                        hovered = row
+                        hovered_panel = panel
+                        break
+                if hovered is not None:
                     break
-            if hovered is not None:
-                break
 
         self._menu_hovered_row = hovered
         self._menu_hovered_part = self._menu_number_part(hovered, point)
+        self._menu_hovered_close = hovered_close
         tooltip_changed = self._sync_menu_tooltip(
             getattr(hovered, 'element', None) if hovered is not None else None
         )
@@ -1698,6 +1754,7 @@ class GestureMenuRuntime(PublicGpu):
         return (
             old_row is not hovered
             or old_part != self._menu_hovered_part
+            or old_close != hovered_close
             or path_changed
             or tooltip_changed
         )
@@ -1748,6 +1805,12 @@ class GestureMenuRuntime(PublicGpu):
         if not self._menu_panels:
             return False
         return _point_in_rect(self._menu_mouse(event), self._menu_panels[0].close_rect)
+
+    def _press_menu_close(self) -> bool:
+        if getattr(self, '_menu_pressed_close', False):
+            return False
+        self._menu_pressed_close = True
+        return True
 
     def _menu_clicked_row(self, event):
         self._update_menu_hover(event)

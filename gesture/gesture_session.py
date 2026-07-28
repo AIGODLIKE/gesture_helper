@@ -144,6 +144,9 @@ class GestureSession:
         # layout token on the element.
         self._numeric_pressed_element = None
         self._numeric_pressed_part = None
+        # Generic press ownership for nonnumeric GPU surfaces. Drawing reads
+        # this separately from hover and semantic selection/active state.
+        self._ui_pressed_element = None
         # Per-event modal consumption marker. False only means that the event
         # may continue into the normal execute/exit checks.
         self._event_consumed = False

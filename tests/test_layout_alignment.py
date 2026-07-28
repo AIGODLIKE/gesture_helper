@@ -26,6 +26,22 @@ class LayoutAlignmentTests(unittest.TestCase):
             (8.0, 5.0),
         )
 
+    def test_single_extension_action_fills_the_complete_outer_surface(self):
+        self.assertEqual(
+            layout_alignment.resolve_extension_row_bounds(
+                100, 20, 8, 6, fill_outer_surface=True,
+            ),
+            (-8.0, -26.0, 108.0, 6.0),
+        )
+
+    def test_multi_row_extension_action_keeps_shared_panel_inset(self):
+        self.assertEqual(
+            layout_alignment.resolve_extension_row_bounds(
+                100, 20, 8, 6,
+            ),
+            (-2.0, -20.0, 102.0, 0.0),
+        )
+
     def test_expand_uses_native_proportional_widths(self):
         result = layout_alignment.resolve_layout_line(
             (10, 30), available=62, gap=2, alignment='EXPAND',

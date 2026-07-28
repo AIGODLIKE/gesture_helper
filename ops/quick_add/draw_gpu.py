@@ -69,8 +69,12 @@ class DrawGpu:
                 self.gesture_bpu.sync_input(offset, mouse)
 
             drag_revision = self.gesture_bpu.drag_revision
+            interaction_revision = self.gesture_bpu.interaction_revision
             if self.gesture_bpu.check_event(event):
-                if self.gesture_bpu.drag_revision != drag_revision:
+                if (
+                        self.gesture_bpu.drag_revision != drag_revision
+                        or self.gesture_bpu.interaction_revision != interaction_revision
+                ):
                     if getattr(ops, '_preview_renderer', '') == 'MENU':
                         ops._tag_menu_redraw()
                     else:

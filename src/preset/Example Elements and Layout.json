@@ -107,9 +107,10 @@
           ],
           "element": {
             "0": {
-              "name": "Actions",
+              "name": "Expand Alignment",
               "element_type": "ROW",
               "layout_alignment": "EXPAND",
+              "layout_align": true,
               "element": {
                 "0": {
                   "name": "Frame Selected",
@@ -130,9 +131,10 @@
               "element_type": "DIVIDING_LINE"
             },
             "2": {
-              "name": "View Actions",
+              "name": "Right Alignment",
               "element_type": "COLUMN",
               "layout_alignment": "RIGHT",
+              "layout_align": true,
               "element": {
                 "0": {
                   "name": "View All",
@@ -147,14 +149,38 @@
               }
             },
             "3": {
-              "name": "View Modes",
+              "name": "Left Alignment",
               "element_type": "ROW",
               "layout_alignment": "LEFT",
+              "layout_align": true,
               "element": {
                 "0": {
                   "name": "Perspective / Orthographic",
                   "element_type": "OPERATOR",
                   "operator_bl_idname": "view3d.view_persportho"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            },
+            "4": {
+              "name": "Center Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "CENTER",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
                 }
               }
             }

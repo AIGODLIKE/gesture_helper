@@ -230,6 +230,44 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertTrue(changed)
         sync.assert_called_once_with(session, ops)
 
+    def test_generic_surface_press_is_independent_from_hover_and_clears_on_release(self):
+        element = object()
+        session = types.SimpleNamespace(_ui_pressed_element=None)
+        with patch.object(
+                gesture_input,
+                "get_runtime_action_element",
+                return_value=element,
+        ):
+            self.assertTrue(
+                self.processor._update_ui_press(
+                    session,
+                    self.ops,
+                    _event("LEFTMOUSE", "PRESS"),
+                )
+            )
+        self.assertIs(session._ui_pressed_element, element)
+        self.assertTrue(
+            self.processor._update_ui_press(
+                session,
+                self.ops,
+                _event("LEFTMOUSE", "RELEASE"),
+            )
+        )
+        self.assertIsNone(session._ui_pressed_element)
+
+    def test_generic_surface_press_clears_on_cancel(self):
+        element = object()
+        session = types.SimpleNamespace(_ui_pressed_element=element)
+
+        self.assertTrue(
+            self.processor._update_ui_press(
+                session,
+                self.ops,
+                _event("ESC", "PRESS"),
+            )
+        )
+        self.assertIsNone(session._ui_pressed_element)
+
     def test_unchanged_mousemove_is_consumed_without_refresh(self):
         element = FakeElement(changed=False)
         session = _session(element)

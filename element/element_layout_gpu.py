@@ -18,7 +18,6 @@ from ..utils.gpu import get_current_2d_rect
 from ..utils.layout_alignment import (
     ROUND_CORNERS_ALL,
     aligned_surface_corner_masks,
-    blend_layout_hover_color,
     normalize_layout_alignment,
     resolve_box_inset,
     resolve_layout_cross_axis,
@@ -35,7 +34,6 @@ class ElementLayoutGpu:
     _LAYOUT_GAP_FRAC = 0.35
     _LAYOUT_CHEVRON_FRAC = 0.78
     _LAYOUT_SEP_FRAC = 0.4
-    _LAYOUT_HOVER_BLEND = 0.35
 
     @staticmethod
     def _layout_scale_for(node) -> tuple[float, float]:
@@ -49,14 +47,6 @@ class ElementLayoutGpu:
     @staticmethod
     def _layout_align_for(node) -> bool:
         return bool(getattr(node, 'layout_align', True))
-
-    def _layout_hover_color(self, color):
-        """Blend a fill toward the active theme color without adding a border."""
-        return blend_layout_hover_color(
-            color,
-            self.draw_property.background_child_active_color,
-            self._LAYOUT_HOVER_BLEND,
-        )
 
     def _layout_gap_for(self, node, metrics) -> float:
         # Blender's Layout::row/column sets space_ to zero for align=True.
@@ -556,8 +546,13 @@ class ElementLayoutGpu:
         has_number_field = bool(
             is_property_display and item.numeric_arrows_visible
         )
-        if hovered and not has_number_field:
-            base_color = self._layout_hover_color(base_color)
+        pressed = item.ui_is_pressed
+        if not has_number_field:
+            base_color = item.ui_surface_color(
+                base_color,
+                hovered=hovered,
+                pressed=pressed,
+            )
         self.draw_rounded_rectangle_area(
             (avail_w * 0.5, -row_h * 0.5),
             color=base_color,
@@ -572,10 +567,14 @@ class ElementLayoutGpu:
         if fraction is not None and fraction > 0.0:
             fill_w = max(2.0, avail_w * fraction)
             slider_color = item._property_slider_color()
-            if hovered and not has_number_field:
+            if (hovered or pressed) and not has_number_field:
                 # Apply the same affine blend to both field and slider so the
                 # value fraction stays visible while the whole row highlights.
-                slider_color = self._layout_hover_color(slider_color)
+                slider_color = item.ui_surface_color(
+                    slider_color,
+                    hovered=hovered,
+                    pressed=pressed,
+                )
             self.draw_rounded_rectangle_area(
                 (fill_w * 0.5, -row_h * 0.5),
                 color=slider_color,

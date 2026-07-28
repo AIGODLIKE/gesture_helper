@@ -52,7 +52,15 @@ with bundled JSON presets, translations, and PNG icon assets.
    wrappers; `element/element_property.py` resolves and edits live RNA.
 4. `gesture/gesture_draw_gpu.py`, `element/*draw*.py`, and `src/lib` calculate
    GPU geometry and hit boxes. `gesture/menu.py` renders persistent menus;
-   the radial direction cue begins halfway between its center and inner ring,
+   `utils/ui_theme.py` owns five coordinated overlay presets (Blender Dark,
+   Deep Grey, Minimal Dark, Blender Light, and Maya) plus the user-edited Custom
+   state. The same palette drives radial/layout elements, persistent menus,
+   preview selectors, and instruction overlays. Pointer interaction is kept
+   separate from semantic selection/value state: actionable surfaces have
+   distinct normal, hover, pressed, and disabled treatments, selector actions
+   activate on release over the original row, and a release after leaving the
+   row cancels activation.
+   The radial direction cue begins halfway between its center and inner ring,
    then eases its radius, sweep, opacity, and stroke weight into confirmation.
    `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
    nested menus. Layout containers keep Blender's two alignment concepts
@@ -114,7 +122,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    no longer introduce hidden vertical spacing. Ordinary bottom-extension rows
    also publish their current-token hit geometry
    before evaluating draw-time hover, so highlight and delayed tooltip state do
-   not disappear when each GPU frame rotates the layout token.
+   not disappear when each GPU frame rotates the layout token. A flyout with
+   one nonnumeric action uses that row as the complete outer surface, so its
+   normal, hover, pressed, outline, and hit bounds do not leave a dark inset
+   wrapper around the button.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
@@ -155,7 +166,9 @@ with bundled JSON presets, translations, and PNG icon assets.
   with divider rows between the three child sections. The essentials fixture
   combines the basic radial interaction into the complete direction-slots
   example. The elements/layout fixture
-  exposes boolean state icons through its `Viewport States` child gesture and
+  explicitly demonstrates aligned `EXPAND`, `LEFT`, `CENTER`, and `RIGHT`
+  layouts with populated child groups, exposes boolean state icons through its
+  `Viewport States` child gesture, and
   includes the practical Subdivide modal control in its bottom extension.
   Property modal modes, quick-add actions, and editable displays share one flat
   menu separated by dividers. Coverage tests derive enum contracts from source and also require
@@ -180,6 +193,8 @@ flowchart TD
     Exec --> Elements[element recursive model]
     Elements --> Blender[bpy operators and live RNA]
     Session --> Draw[GPU overlay / menu hit boxes]
+    Theme[utils/ui_theme presets] --> Draw
+    Theme --> UI
     Session --> Tooltip[delayed translated runtime tooltips]
     Elements --> Tooltip
     Cache[cache_state + public_cache + ui_draw_sync] --> Session
@@ -195,10 +210,12 @@ flowchart TD
 - Pure tests: `python -m unittest discover -s tests -p 'test_*.py' -v`.
 - Syntax: `python -m compileall -q element gesture ops preferences ui utils tests`.
 - Lint: `python -m ruff check .`.
-- Blender smoke scripts cover preset coverage, property data paths, import
+- Blender smoke scripts cover preset coverage, UI-theme RNA application,
+  selector press/release cancellation, property data paths, import
   rollback/keymaps, lifecycle/reload, preview (including menu draw routing,
-  translation, the visible exit action, enum flyouts, three-part numeric-field
-  state/hit boxes, selector/title dragging, alignment RNA, and Space-drag), and
+  translation, the visible exit action, single-action flyout surface geometry,
+  enum flyouts, three-part numeric-field state/hit boxes, selector/title
+  dragging, alignment RNA, and Space-drag), and
   panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
@@ -221,10 +238,11 @@ flowchart TD
    at `utils/__init__.py:2` because `import bpy` follows `public_color`.
    This is low-risk behaviorally but blocks a clean lint gate.
 3. **Blender-only behavior remains higher risk than unit coverage:** the current
-   preview smoke passes in Blender 4.2.1 and 5.2.0, including menu animation,
-   pinned-menu RNA defaults, enum flyouts, selector exit/title dragging, and
-   cleanup. Foreground visual placement, multi-window behavior, and file-load
-   restoration still require targeted manual checks.
+   preview smoke passes in Blender 4.2.1 and 5.2.0, including theme preset
+   application/custom detection, normal-hover-pressed selector behavior, menu
+   animation, pinned-menu RNA defaults, enum flyouts, selector exit/title
+   dragging, and cleanup. Foreground visual placement, multi-window behavior,
+   and file-load restoration still require targeted manual checks.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,

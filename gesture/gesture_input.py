@@ -728,6 +728,28 @@ class GestureInputProcessor:
     """Process modal events into GestureSession updates. Returns visual_dirty."""
 
     @staticmethod
+    def _update_ui_press(session: GestureSession, ops, event) -> bool:
+        """Track left-button feedback without changing gesture execution."""
+        current = getattr(session, '_ui_pressed_element', None)
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if current is None:
+                return False
+            session._ui_pressed_element = None
+            return True
+        if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
+            if current is None:
+                return False
+            session._ui_pressed_element = None
+            return True
+        if event.type != 'LEFTMOUSE' or event.value != 'PRESS':
+            return False
+        element = get_runtime_action_element(session, ops)
+        if element is current:
+            return False
+        session._ui_pressed_element = element
+        return current is not element
+
+    @staticmethod
     def _hovered_property_row(session: GestureSession, ops):
         """Property leaf currently hovered (panel row or radial direction), or None."""
         if not session.phase.shows_radial_ui:
@@ -1012,6 +1034,7 @@ class GestureInputProcessor:
         session.event = event
         session._input_event_serial = getattr(session, '_input_event_serial', 0) + 1
         session._event_consumed = False
+        press_dirty = self._update_ui_press(session, ops, event)
         # Poll context can change without a meaningful mouse move (for
         # example, an object/mode switch while a gesture is held). Capture it
         # before the sub-pixel fast path so the next draw invalidates only the
@@ -1021,7 +1044,7 @@ class GestureInputProcessor:
             return finish(True)
         drag_result = self._handle_property_drag(session, ops, event)
         if drag_result is not None:
-            return finish(drag_result)
+            return finish(bool(drag_result or press_dirty))
         visual_dirty = False
         moved = False
         if event.type == "MOUSEMOVE":
@@ -1063,7 +1086,7 @@ class GestureInputProcessor:
                 if session.extension_hover != before:
                     visual_dirty = True
                     refresh_snapshot(session, ops)
-            return finish(visual_dirty)
+            return finish(bool(visual_dirty or press_dirty))
 
         # Significant mouse move: trail / child enter / hover updates.
         visual_dirty = True
@@ -1105,4 +1128,4 @@ class GestureInputProcessor:
             if session.extension_hover != before_hover:
                 refresh_snapshot(session, ops)
 
-        return finish(visual_dirty)
+        return finish(bool(visual_dirty or press_dirty))

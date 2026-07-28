@@ -214,15 +214,21 @@ class OverlayLayout:
         self.row_color = (0.22, 0.22, 0.22, 0.9)
         self.header_color = (0.16, 0.17, 0.19, 0.96)
         self.hover_color = (0.28, 0.45, 0.75, 0.95)
+        self.pressed_color = (0.10, 0.24, 0.52, 0.98)
         self.active_color = (0.20, 0.38, 0.65, 0.95)
         self.alert_color = (0.48, 0.12, 0.12, 0.95)
         self.text_color = (0.92, 0.92, 0.92, 1.0)
+        self.text_hover_color = (1.0, 1.0, 1.0, 1.0)
+        self.alert_text_color = (1.0, 0.45, 0.45, 1.0)
         self.separator_color = (1.0, 1.0, 1.0, 0.15)
         self._hover = None
+        self._pressed = None
         self._laid_out = False
         self._content_gen = 0
         self._cached_rects: _RectBatch | None = None
         self._cached_batch_sig = None
+        self._theme_signature = None
+        self.interaction_revision = 0
         self.drag_offset = Vector((0.0, 0.0))
         self._base_offset_position = Vector((0.0, 0.0))
         self._drag_mouse = None
@@ -231,6 +237,9 @@ class OverlayLayout:
     # ---- build API (with-statement rebuilds content) ----
 
     def __enter__(self):
+        if self._pressed is not None:
+            self._pressed = None
+            self.interaction_revision += 1
         self.root.children.clear()
         self._stack[:] = [self.root]
         self._laid_out = False
@@ -400,7 +409,59 @@ class OverlayLayout:
 
     # ---- draw ----
 
+    def _sync_theme(self) -> None:
+        """Resolve the add-on palette once per actual preference change."""
+        try:
+            from ...utils.public import get_pref
+
+            draw = get_pref().draw_property
+            raw = (
+                tuple(draw.overlay_background_color),
+                tuple(draw.background_operator_color),
+                tuple(draw.overlay_header_color),
+                tuple(draw.interaction_hover_color),
+                tuple(draw.interaction_pressed_color),
+                tuple(draw.background_operator_active_color),
+                tuple(draw.status_error_color),
+                tuple(draw.text_default_color),
+                tuple(draw.text_active_color),
+                tuple(draw.dividing_line_color),
+            )
+        except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
+            return
+        if raw == self._theme_signature:
+            return
+        from ...utils.color import color_to_gpu, color_to_srgb
+
+        (
+            panel,
+            row,
+            header,
+            hover,
+            pressed,
+            active,
+            alert,
+            text,
+            text_hover,
+            separator,
+        ) = raw
+        self.background = color_to_gpu(panel)
+        self.row_color = color_to_gpu(row)
+        self.header_color = color_to_gpu(header)
+        self.hover_color = color_to_gpu(hover)
+        self.pressed_color = color_to_gpu(pressed)
+        self.active_color = color_to_gpu(active)
+        self.alert_color = color_to_gpu(alert)
+        self.text_color = color_to_srgb(text)
+        self.text_hover_color = color_to_srgb(text_hover)
+        self.alert_text_color = color_to_srgb(alert)
+        self.separator_color = color_to_gpu(separator)
+        self._theme_signature = raw
+        self._cached_batch_sig = None
+
     def _node_fill(self, node):
+        if node is self._pressed and node is self._hover:
+            return self.pressed_color
         if node is self._hover:
             return self.hover_color
         if node.draggable:
@@ -440,17 +501,20 @@ class OverlayLayout:
 
     def _batch_signature(self, ox, oy):
         hover_key = id(self._hover) if self._hover is not None else 0
+        pressed_key = id(self._pressed) if self._pressed is not None else 0
         root_rect = self.root.rect
         return (
             self._content_gen,
             root_rect,
             hover_key,
+            pressed_key,
             ox,
             oy,
             self.background,
             self.row_color,
             self.header_color,
             self.hover_color,
+            self.pressed_color,
             self.active_color,
             self.alert_color,
             self.separator_color,
@@ -461,6 +525,7 @@ class OverlayLayout:
     def __gpu_draw__(self):
         if not self.root.children:
             return
+        self._sync_theme()
         self._ensure_layout()
         region = bpy.context.region
         ox = region.x if region is not None else 0
@@ -481,7 +546,9 @@ class OverlayLayout:
                 if node.kind not in {"LABEL", "OPERATOR", "PROPERTY"} or node.rect is None:
                     continue
                 if node.alert and node.kind == "LABEL":
-                    blf.color(0, 1.0, 0.45, 0.45, 1.0)
+                    blf.color(0, *self.alert_text_color)
+                elif node is self._hover or node.active:
+                    blf.color(0, *self.text_hover_color)
                 else:
                     blf.color(0, *self.text_color)
                 # Center the metric line box in the row, baseline = top - ascent.
@@ -517,6 +584,34 @@ class OverlayLayout:
                 return True
             return event.type == 'LEFTMOUSE'
 
+        if self._pressed is not None:
+            if event.type == 'MOUSEMOVE':
+                return True
+            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+                node = self._pressed
+                activate = node is self._hover
+                self._pressed = None
+                self._cached_batch_sig = None
+                self.interaction_revision += 1
+                if not activate:
+                    return True
+                if node.kind == "PROPERTY":
+                    value = getattr(node.data, node.prop)
+                    if isinstance(value, bool):
+                        setattr(node.data, node.prop, not value)
+                    return True
+                if node.kind == "OPERATOR" and '.' in node.operator:
+                    module, name = node.operator.split('.', 1)
+                    func = getattr(getattr(bpy.ops, module, None), name, None)
+                    if func is not None:
+                        func('INVOKE_DEFAULT', **vars(node.properties))
+                return True
+            if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
+                self._pressed = None
+                self._cached_batch_sig = None
+                self.interaction_revision += 1
+            return event.type == 'LEFTMOUSE'
+
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
             header = next(
                 (
@@ -538,19 +633,12 @@ class OverlayLayout:
         # sequence that activates a row.
         if event.type != 'LEFTMOUSE':
             return False
-        if event.value != 'RELEASE':
+        if event.value == 'PRESS':
+            self._pressed = node
+            self._cached_batch_sig = None
+            self.interaction_revision += 1
             return True
-        if node.kind == "PROPERTY":
-            value = getattr(node.data, node.prop)
-            if isinstance(value, bool):
-                setattr(node.data, node.prop, not value)
-            return True
-        if node.kind == "OPERATOR" and '.' in node.operator:
-            module, name = node.operator.split('.', 1)
-            func = getattr(getattr(bpy.ops, module, None), name, None)
-            if func is not None:
-                func('INVOKE_DEFAULT', **vars(node.properties))
-        return True
+        return event.value != 'RELEASE'
 
 
 class _LayoutScope:

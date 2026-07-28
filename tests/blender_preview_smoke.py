@@ -40,8 +40,12 @@ from gesture_helper.utils.number_arrows import (  # noqa: E402
     NUMBER_PART_VALUE,
     show_number_arrows,
 )
+from gesture_helper.utils.layout_alignment import (  # noqa: E402
+    resolve_extension_row_bounds,
+)
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
+from gesture_helper.utils.ui_theme import THEME_PRESETS  # noqa: E402
 
 
 # Background Blender has no current wmEvent, so INVOKE_DEFAULT never calls a
@@ -176,6 +180,23 @@ assert store is not None
 gesture_preferences = get_pref().gesture_property
 assert gesture_preferences.bl_rna.properties['hover_tooltip_delay'].default == 300
 gesture_preferences.hover_tooltip_delay = 300
+draw_preferences = get_pref().draw_property
+theme_rna = draw_preferences.bl_rna.properties['theme_preset']
+assert theme_rna.default == 'BLENDER_DARK'
+assert {
+    item.identifier for item in theme_rna.enum_items
+} == {*THEME_PRESETS, 'CUSTOM'}
+draw_preferences.theme_preset = 'MINIMAL_DARK'
+assert all(
+    abs(actual - expected) < 1e-6
+    for actual, expected in zip(
+        draw_preferences.overlay_background_color,
+        THEME_PRESETS['MINIMAL_DARK']['overlay_background_color'],
+    )
+)
+draw_preferences.interaction_hover_color = (0.31, 0.19, 0.47, 1.0)
+assert draw_preferences.theme_preset == 'CUSTOM'
+draw_preferences.theme_preset = 'BLENDER_DARK'
 view_preferences = bpy.context.preferences.view
 if view_preferences.bl_rna.properties.get('show_number_arrows') is not None:
     view_preferences.show_number_arrows = True
@@ -218,6 +239,35 @@ with suppress_gesture_disk_save():
     assert tuple(empty_layout.layout_panel_content_size) == (0.0, 0.0)
     empty_layout.draw_gpu_layout_panel(SimpleNamespace(session=None))
     assert empty_layout.extension_draw_area is None
+    gesture.element.remove(len(gesture.element) - 1)
+
+    single_flyout = gesture.element.add()
+    single_flyout.element_type = 'CHILD_GESTURE'
+    single_flyout.__init_element__()
+    single_flyout.name = 'Single Surface'
+    single_action = single_flyout.element.add()
+    single_action.element_type = 'OPERATOR'
+    single_action.__init_element__()
+    single_action.name = 'Single Action'
+    single_action.operator_bl_idname = 'view3d.view_all'
+    flyout_ops = SimpleNamespace(session=None)
+    single_flyout.ops = flyout_ops
+    assert single_flyout._uses_single_extension_surface()
+    flyout_layout = single_flyout._compute_extension_layout()
+    panel_rect = (
+        -flyout_layout.margin_x,
+        -flyout_layout.content_h - flyout_layout.margin_y,
+        flyout_layout.content_w + flyout_layout.margin_x,
+        flyout_layout.margin_y,
+    )
+    action_rect = resolve_extension_row_bounds(
+        flyout_layout.content_w,
+        flyout_layout.row_h,
+        flyout_layout.margin_x,
+        flyout_layout.margin_y,
+        fill_outer_surface=True,
+    )
+    assert panel_rect == action_rect, (panel_rect, action_rect)
     gesture.element.remove(len(gesture.element) - 1)
 
     view = bpy.context.preferences.view
@@ -500,6 +550,28 @@ with suppress_gesture_disk_save():
 
     selector = menu_preview.gpu.gesture_bpu
     selector._ensure_layout()
+    selector_action = next(
+        node
+        for node in selector._walk()
+        if node.operator == 'wm.context_set_int'
+    )
+    ax1, ay1, ax2, ay2 = selector_action.rect
+    action_press = preview_event(region, 'LEFTMOUSE')
+    action_press.mouse_x = int((ax1 + ax2) * 0.5)
+    action_press.mouse_y = int((ay1 + ay2) * 0.5)
+    action_press.value = 'PRESS'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, action_press) == {'RUNNING_MODAL'}
+    assert selector._pressed is selector_action
+    assert selector._node_fill(selector_action) == selector.pressed_color
+    action_release = preview_event(region, 'LEFTMOUSE')
+    action_release.mouse_x = int(ax2 + 50.0)
+    action_release.mouse_y = int(ay2 + 50.0)
+    action_release.value = 'RELEASE'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, action_release) == {'RUNNING_MODAL'}
+    assert selector._pressed is None
+
     selector_header = next(node for node in selector._walk() if node.draggable)
     sx1, sy1, sx2, sy2 = selector_header.rect
     selector_press = preview_event(region, 'LEFTMOUSE')

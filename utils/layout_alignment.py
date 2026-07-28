@@ -93,6 +93,32 @@ def resolve_box_inset(aligned, has_children, pad_x, pad_y):
     return max(0.0, float(pad_x)), max(0.0, float(pad_y))
 
 
+def resolve_extension_row_bounds(
+        content_width, row_height, margin_x, margin_y, *, fill_outer_surface=False,
+):
+    """Return local bounds for an ordinary bottom-extension row.
+
+    A single action is itself the complete flyout surface, so its draw and hit
+    bounds include the flyout margins. Multi-row flyouts retain an inset
+    between each row and the shared outer panel.
+    """
+    width = max(0.0, float(content_width))
+    height = max(0.0, float(row_height))
+    margin_x = max(0.0, float(margin_x))
+    margin_y = max(0.0, float(margin_y))
+    if fill_outer_surface:
+        return (
+            -margin_x,
+            -height - margin_y,
+            width + margin_x,
+            margin_y,
+        )
+
+    surface_width = max(1.0, width + margin_x * 2.0 - margin_y * 2.0)
+    left = (width - surface_width) * 0.5
+    return left, -height, left + surface_width, 0.0
+
+
 def aligned_child_corner_masks(count, *, horizontal, outer=ROUND_CORNERS_ALL):
     """Return Blender-style outer-corner masks for one aligned child run.
 

@@ -1,8 +1,60 @@
 import bpy
-from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty, StringProperty, IntVectorProperty
+from bpy.props import (
+    BoolProperty,
+    EnumProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    IntProperty,
+    IntVectorProperty,
+    StringProperty,
+)
 
 from ..utils import theme_defaults
 from ..utils.public import get_pref
+from ..utils.ui_theme import THEME_PRESET_ITEMS
+
+
+_theme_apply_depth = 0
+
+
+def _redraw_theme(_context=None) -> None:
+    try:
+        from ..utils.public import tag_redraw
+
+        tag_redraw()
+    except (AttributeError, ImportError, ReferenceError, RuntimeError):
+        pass
+
+
+def _on_theme_preset_update(self, context) -> None:
+    global _theme_apply_depth
+    if _theme_apply_depth:
+        return
+    if self.theme_preset == 'CUSTOM':
+        _redraw_theme(context)
+        return
+    from ..utils.ui_theme import apply_theme_preset
+
+    _theme_apply_depth += 1
+    try:
+        apply_theme_preset(self, self.theme_preset)
+    finally:
+        _theme_apply_depth -= 1
+    _redraw_theme(context)
+
+
+def _on_theme_color_update(self, context) -> None:
+    """Mark hand-edited colors custom without fighting preset assignment."""
+    global _theme_apply_depth
+    if _theme_apply_depth:
+        return
+    if self.theme_preset != 'CUSTOM':
+        _theme_apply_depth += 1
+        try:
+            self.theme_preset = 'CUSTOM'
+        finally:
+            _theme_apply_depth -= 1
+    _redraw_theme(context)
 
 
 class DrawProperty(bpy.types.PropertyGroup):
@@ -132,50 +184,104 @@ class DrawProperty(bpy.types.PropertyGroup):
         default=2, min=1, max=10,
     )
 
+    theme_preset: EnumProperty(
+        name='Overlay Theme',
+        description='Coordinated colors for gesture overlays and persistent menus',
+        items=THEME_PRESET_ITEMS,
+        default='BLENDER_DARK',
+        update=_on_theme_preset_update,
+    )
+
     # Scene-linear defaults (shared with BPU via theme_defaults); GPU draw converts to sRGB.
+    overlay_background_color: FloatVectorProperty(
+        name='Panel Background', **public_color,
+        default=theme_defaults.PANEL_BACKGROUND,
+        update=_on_theme_color_update,
+    )
+    overlay_header_color: FloatVectorProperty(
+        name='Header', **public_color,
+        default=theme_defaults.HEADER,
+        update=_on_theme_color_update,
+    )
     background_operator_color: FloatVectorProperty(name='Operator Color', **public_color,
-                                                   default=theme_defaults.BACKGROUND)
+                                                   default=theme_defaults.BACKGROUND,
+                                                   update=_on_theme_color_update)
     background_operator_active_color: FloatVectorProperty(name='Operator Active Color', **public_color,
-                                                          default=theme_defaults.OPERATOR_ACTIVE)
+                                                          default=theme_defaults.OPERATOR_ACTIVE,
+                                                          update=_on_theme_color_update)
     background_child_color: FloatVectorProperty(name='Child Color', **public_color,
-                                                default=theme_defaults.BACKGROUND)
+                                                default=theme_defaults.BACKGROUND,
+                                                update=_on_theme_color_update)
     background_child_active_color: FloatVectorProperty(name='Child Active Color', **public_color,
-                                                       default=theme_defaults.CHILD_ACTIVE)
+                                                       default=theme_defaults.CHILD_ACTIVE,
+                                                       update=_on_theme_color_update)
     background_bool_true: FloatVectorProperty(name='Bool True Color', **public_color,
-                                              default=theme_defaults.BOOL_TRUE)
+                                              default=theme_defaults.BOOL_TRUE,
+                                              update=_on_theme_color_update)
     background_bool_false: FloatVectorProperty(name='Bool False Color', **public_color,
-                                               default=theme_defaults.BOOL_FALSE)
+                                               default=theme_defaults.BOOL_FALSE,
+                                               update=_on_theme_color_update)
     background_int_color: FloatVectorProperty(name='Int Color', **public_color,
-                                              default=theme_defaults.INT)
+                                              default=theme_defaults.INT,
+                                              update=_on_theme_color_update)
     background_int_active_color: FloatVectorProperty(name='Int Active Color', **public_color,
-                                                     default=theme_defaults.INT_ACTIVE)
+                                                     default=theme_defaults.INT_ACTIVE,
+                                                     update=_on_theme_color_update)
     background_float_color: FloatVectorProperty(name='Float Color', **public_color,
-                                                default=theme_defaults.FLOAT)
+                                                default=theme_defaults.FLOAT,
+                                                update=_on_theme_color_update)
     background_float_active_color: FloatVectorProperty(name='Float Active Color', **public_color,
-                                                       default=theme_defaults.FLOAT_ACTIVE)
+                                                       default=theme_defaults.FLOAT_ACTIVE,
+                                                       update=_on_theme_color_update)
+
+    interaction_hover_color: FloatVectorProperty(
+        name='Hover', **public_color,
+        default=theme_defaults.HOVER,
+        update=_on_theme_color_update,
+    )
+    interaction_pressed_color: FloatVectorProperty(
+        name='Pressed', **public_color,
+        default=theme_defaults.PRESSED,
+        update=_on_theme_color_update,
+    )
 
     text_default_color: FloatVectorProperty(name='Text Default Color', **public_color,
-                                            default=theme_defaults.TEXT_DEFAULT)
+                                            default=theme_defaults.TEXT_DEFAULT,
+                                            update=_on_theme_color_update)
     text_active_color: FloatVectorProperty(name='Text Active Color', **public_color,
-                                           default=theme_defaults.TEXT_ACTIVE)
+                                           default=theme_defaults.TEXT_ACTIVE,
+                                           update=_on_theme_color_update)
+    text_disabled_color: FloatVectorProperty(
+        name='Text Disabled Color', **public_color,
+        default=theme_defaults.TEXT_DISABLED,
+        update=_on_theme_color_update,
+    )
 
     trajectory_mouse_color: FloatVectorProperty(name='Mouse Track Color', **public_color,
-                                                default=theme_defaults.TRAJECTORY_MOUSE)
+                                                default=theme_defaults.TRAJECTORY_MOUSE,
+                                                update=_on_theme_color_update)
     trajectory_gesture_color: FloatVectorProperty(name='Gesture Track Color', **public_color,
-                                                  default=theme_defaults.TRAJECTORY_GESTURE)
+                                                  default=theme_defaults.TRAJECTORY_GESTURE,
+                                                  update=_on_theme_color_update)
 
     dividing_line_color: FloatVectorProperty(name='Dividing Line Color', **public_color,
-                                             default=theme_defaults.DIVIDING_LINE)
+                                             default=theme_defaults.DIVIDING_LINE,
+                                             update=_on_theme_color_update)
     outline_color: FloatVectorProperty(name='Outline Color', **public_color,
-                                       default=theme_defaults.OUTLINE)
+                                       default=theme_defaults.OUTLINE,
+                                       update=_on_theme_color_update)
     outline_active_color: FloatVectorProperty(name='Outline Active Color', **public_color,
-                                              default=theme_defaults.OUTLINE_ACTIVE)
+                                              default=theme_defaults.OUTLINE_ACTIVE,
+                                              update=_on_theme_color_update)
     status_disabled_color: FloatVectorProperty(name='Disabled Status', **public_color,
-                                               default=theme_defaults.STATUS_DISABLED)
+                                               default=theme_defaults.STATUS_DISABLED,
+                                               update=_on_theme_color_update)
     status_warning_color: FloatVectorProperty(name='Unavailable Status', **public_color,
-                                              default=theme_defaults.STATUS_WARNING)
+                                              default=theme_defaults.STATUS_WARNING,
+                                              update=_on_theme_color_update)
     status_error_color: FloatVectorProperty(name='Invalid Status', **public_color,
-                                            default=theme_defaults.STATUS_ERROR)
+                                            default=theme_defaults.STATUS_ERROR,
+                                            update=_on_theme_color_update)
 
     def __update_panel_name__(self, context):
         from ..ui.panel import update_panel
@@ -247,6 +353,18 @@ class DrawProperty(bpy.types.PropertyGroup):
         draw = pref.draw_property
         box = layout.box()
 
+        preset = box.column(align=True)
+        preset.label(text='Overlay Theme')
+        preset.prop(draw, 'theme_preset', text='')
+        if draw.theme_preset == 'CUSTOM':
+            preset.label(text='Custom colors are stored with preferences')
+        box.separator()
+
+        bb = box.column(align=True)
+        bb.label(text='Surfaces')
+        bb.prop(draw, 'overlay_background_color')
+        bb.prop(draw, 'overlay_header_color')
+
         bb = box.column(align=True)
         bb.prop(draw, 'background_operator_color')
         bb.prop(draw, 'background_operator_active_color')
@@ -268,8 +386,14 @@ class DrawProperty(bpy.types.PropertyGroup):
         bb.prop(draw, 'background_float_active_color')
 
         bb = box.column(align=True)
+        bb.label(text='Interaction')
+        bb.prop(draw, 'interaction_hover_color')
+        bb.prop(draw, 'interaction_pressed_color')
+
+        bb = box.column(align=True)
         bb.prop(draw, 'text_default_color')
         bb.prop(draw, 'text_active_color')
+        bb.prop(draw, 'text_disabled_color')
 
         bb = box.column(align=True)
         bb.prop(draw, 'trajectory_mouse_color')

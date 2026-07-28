@@ -1,9 +1,15 @@
 """Shared Blender-like neutral theme defaults (scene-linear RGBA)."""
 
 # Panels / buttons
+PANEL_BACKGROUND = (0.022, 0.024, 0.028, 0.98)
+HEADER = (0.070, 0.076, 0.086, 1.0)
 BACKGROUND = (0.045, 0.048, 0.052, 0.97)
 OPERATOR_ACTIVE = (0.035, 0.23, 0.52, 1.0)
 CHILD_ACTIVE = (0.035, 0.23, 0.52, 1.0)
+
+# Pointer interaction is independent from semantic active/value colors.
+HOVER = (0.075, 0.30, 0.68, 1.0)
+PRESSED = (0.020, 0.13, 0.36, 1.0)
 
 # Bool: Blender option blue when on, neutral when off.
 BOOL_TRUE = (0.035, 0.23, 0.52, 1.0)
@@ -17,6 +23,7 @@ FLOAT_ACTIVE = (0.045, 0.24, 0.42, 0.92)
 
 TEXT_DEFAULT = (0.78, 0.80, 0.83, 1.0)
 TEXT_ACTIVE = (1.0, 1.0, 1.0, 1.0)
+TEXT_DISABLED = (0.42, 0.44, 0.48, 1.0)
 
 TRAJECTORY_MOUSE = (0.12, 0.38, 0.72, 0.72)
 TRAJECTORY_GESTURE = (0.08, 0.48, 0.88, 1.0)

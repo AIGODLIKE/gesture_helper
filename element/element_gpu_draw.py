@@ -12,7 +12,11 @@ from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
 from ..utils.color import color_to_srgb
-from ..utils.layout_alignment import blend_layout_hover_color
+from ..utils.layout_alignment import (
+    blend_layout_hover_color,
+    resolve_extension_row_bounds,
+)
+from ..utils.ui_theme import interaction_color
 from ..utils.public_gpu import PublicGpu
 from ..utils.number_arrows import (
     NUMBER_HOVER_BLEND,
@@ -207,10 +211,40 @@ class ElementGpuProperty:
             return (*color[:3], max(0.92, color[3]))
         color = tuple(draw.text_active_color if self.is_active_direction else draw.text_default_color)
         if status is ElementStatus.DISABLED:
-            return (*color[:3], color[3] * 0.38)
+            return tuple(getattr(
+                draw,
+                'text_disabled_color',
+                (*color[:3], color[3] * 0.38),
+            ))
         if status in {ElementStatus.POLL_BLOCKED, ElementStatus.READ_ONLY_PROPERTY}:
-            return (*color[:3], color[3] * 0.72)
+            disabled = tuple(getattr(
+                draw,
+                'text_disabled_color',
+                (*color[:3], color[3] * 0.72),
+            ))
+            return (*disabled[:3], max(0.72, disabled[3]))
         return color
+
+    @property
+    def ui_is_pressed(self) -> bool:
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        pressed = getattr(session, '_ui_pressed_element', None) if session is not None else None
+        if pressed is self:
+            return True
+        try:
+            return bool(pressed is not None and pressed == self)
+        except (ReferenceError, RuntimeError, TypeError):
+            return False
+
+    def ui_surface_color(self, base, *, hovered=False, pressed=None):
+        if pressed is None:
+            pressed = self.ui_is_pressed
+        return interaction_color(
+            self.draw_property,
+            base,
+            hovered=bool(hovered),
+            pressed=bool(pressed),
+        )
 
     def _in_extension_ui(self) -> bool:
         ctx = self._draw_frame_ctx()
@@ -230,28 +264,38 @@ class ElementGpuProperty:
         draw = self.draw_property
         if self.element_status_info.status.is_error:
             return draw.status_error_color
-        # Full active fill only in CONFIRM — BEYOND keeps outline via is_active_direction.
-        if self.is_confirm_direction and not self._in_extension_ui():
-            if self.is_property_display:
-                return self._property_background_color(active=True)
-            if self.is_operator:
-                return draw.background_operator_active_color
-            elif self.is_child_gesture or self.is_layout_container:
-                return draw.background_child_active_color
+        # Direction selection maps onto the same interaction vocabulary used
+        # by menus: BEYOND is hover-like, CONFIRM is press-like.
         if self.is_operator:
             if self.operator_type == "OPERATOR":
                 if self.is_draw_context_toggle_operator_bool:
                     if self.get_operator_wm_context_toggle_property_bool:
-                        return draw.background_bool_true
+                        base = draw.background_bool_true
                     else:
-                        return draw.background_bool_false
-            return draw.background_operator_color
-        if self.is_property_display:
-            return self._property_background_color(active=False)
-        if self.is_child_gesture or self.is_layout_container:
-            return draw.background_child_color
-        # Unknown element type: fully transparent (never paint a debug/error solid).
-        return (0.0, 0.0, 0.0, 0.0)
+                        base = draw.background_bool_false
+                else:
+                    base = draw.background_operator_color
+            else:
+                base = draw.background_operator_color
+            active = draw.background_operator_active_color
+        elif self.is_property_display:
+            base = self._property_background_color(active=False)
+            active = self._property_background_color(active=True)
+        elif self.is_child_gesture or self.is_layout_container:
+            base = draw.background_child_color
+            active = draw.background_child_active_color
+        else:
+            return (0.0, 0.0, 0.0, 0.0)
+
+        if self._in_extension_ui():
+            return base
+        if self.ui_is_pressed:
+            return self.ui_surface_color(base, pressed=True)
+        if self.is_confirm_direction:
+            return self.ui_surface_color(active, pressed=True)
+        if self.is_active_direction:
+            return self.ui_surface_color(base, hovered=True, pressed=False)
+        return base
 
     def _property_background_color(self, *, active: bool):
         """Idle / active fill for PROPERTY rows by RNA type."""
@@ -445,9 +489,17 @@ class ElementGpuProperty:
         draw = self.draw_property
         if self.element_status_info.status.is_error:
             return draw.status_error_color
-        if self.extension_by_child_is_hover or self in self.ops.extension_hover:
-            return draw.background_child_active_color
-        return draw.background_child_color
+        if self.is_operator:
+            base = draw.background_operator_color
+        elif self.is_property_display:
+            base = self._property_background_color(active=False)
+        else:
+            base = draw.background_child_color
+        hovered = bool(
+            self.extension_by_child_is_hover
+            or self in getattr(self.ops, 'extension_hover', ())
+        )
+        return self.ui_surface_color(base, hovered=hovered)
 
 
 class ElementGpuDraw(PublicGpu, ElementGpuProperty):
@@ -851,7 +903,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             gpu.matrix.translate((w / 2, -h / 2))
             draw_debug_point()
 
-            # BEYOND: active outline only; CONFIRM: outline + filled background.
+            # BEYOND: hover fill + softer active outline; CONFIRM: pressed fill.
             stroke, line_width = self._outline_colors(
                 active=self.is_active_direction and not self._in_extension_ui(),
             )
@@ -1108,13 +1160,23 @@ class ElementGpuExtensionItem:
         lay = self._compute_extension_layout()
         return Vector((lay.content_w, lay.content_h))
 
+    def _uses_single_extension_surface(self) -> bool:
+        items = self.extension_items
+        return bool(
+            len(items) == 1
+            and not items[0].is_layout_container
+            and not items[0].is_dividing_line
+            and not items[0].numeric_arrows_visible
+        )
+
     def draw_gpu_extension_item(self, ops):
         lay = self._compute_extension_layout()
         w = lay.content_w
+        single_surface_item = self._uses_single_extension_surface()
         with gpu.matrix.push_pop():
             self.ops = ops
             draw_debug_point()
-            self.draw_gpu_extension_margin()
+            self.draw_gpu_extension_margin(paint_surface=not single_surface_item)
 
             # Origin = top-left of content box; outer margin is only on background/hit box.
             for item in self.extension_items:
@@ -1149,17 +1211,20 @@ class ElementGpuExtensionItem:
 
                 row_h = lay.row_h
                 mx, my = lay.margin_x, lay.margin_y
-                # Panel chrome is content + (mx, my). Top gap above the first row
-                # is ``my``; keep the same inset on left/right so hover padding
-                # matches on X and Y.
-                hover_w = max(1.0, w + mx * 2.0 - my * 2.0)
-                row_left = (w - hover_w) * 0.5
-                row_rect = get_current_2d_rect((
-                    row_left,
-                    -row_h,
-                    row_left + hover_w,
-                    0.0,
-                ))
+                row_left, row_bottom, row_right, row_top = (
+                    resolve_extension_row_bounds(
+                        w,
+                        row_h,
+                        mx,
+                        my,
+                        fill_outer_surface=single_surface_item,
+                    )
+                )
+                surface_w = row_right - row_left
+                surface_h = row_top - row_bottom
+                row_rect = get_current_2d_rect(
+                    (row_left, row_bottom, row_right, row_top),
+                )
                 draw_ctx = getattr(getattr(ops, 'session', None), 'draw_ctx', None)
                 mouse = getattr(draw_ctx, 'mouse_region', None) if draw_ctx is not None else None
                 from .extension_hit import publish_child_row_hit
@@ -1173,14 +1238,14 @@ class ElementGpuExtensionItem:
                         (w * 0.5, -row_h * 0.5),
                         color=item._property_background_color(active=False),
                         radius=min(self.text_radius, row_h * 0.5),
-                        width=hover_w,
+                        width=surface_w,
                         height=row_h,
                     )
                 # Numeric property rows paint a slider fill over the soft range.
                 fraction = item.display_property_fraction if item.is_property_display else None
                 if fraction is not None and fraction > 0.0:
-                    fill_w = max(2.0, hover_w * fraction)
-                    left = w * 0.5 - hover_w * 0.5
+                    fill_w = max(2.0, surface_w * fraction)
+                    left = w * 0.5 - surface_w * 0.5
                     self.draw_rounded_rectangle_area(
                         (left + fill_w * 0.5, -row_h * 0.5),
                         color=item._property_slider_color(),
@@ -1189,25 +1254,29 @@ class ElementGpuExtensionItem:
                         height=row_h,
                     )
                 is_error = item.element_status_info.status.is_error
-                if is_error or (hovered and not item.numeric_arrows_visible):
+                if (
+                    single_surface_item
+                    or is_error
+                    or (hovered and not item.numeric_arrows_visible)
+                ):
                     stroke, line_width = self._outline_colors(active=hovered)
                     self.draw_rounded_rectangle_outlined(
                         (w * 0.5, -row_h * 0.5),
                         fill=item.extension_background_color,
                         stroke=stroke,
-                        radius=min(self.text_radius, row_h * 0.5),
-                        width=hover_w,
-                        height=row_h,
+                        radius=min(self.text_radius, surface_h * 0.5),
+                        width=surface_w,
+                        height=surface_h,
                         line_width=line_width,
                     )
                 item.gpu_draw_status_accent(
-                    (w * 0.5, -row_h * 0.5), hover_w, row_h,
+                    (w * 0.5, -row_h * 0.5), surface_w, surface_h,
                 )
                 item.gpu_draw_numeric_arrows(
                     w,
                     row_h,
                     field_left=row_left,
-                    field_right=row_left + hover_w,
+                    field_right=row_right,
                     draw_value=False,
                 )
 
@@ -1280,7 +1349,7 @@ class ElementGpuExtensionItem:
                     size=self.text_size,
                     position=[0, 0])
 
-    def draw_gpu_extension_margin(self):
+    def draw_gpu_extension_margin(self, *, paint_surface=True):
         draw = self.draw_property
         lay = getattr(self, "_extension_layout_cache", None) or self._compute_extension_layout()
         w, h = lay.content_w, lay.content_h
@@ -1292,7 +1361,7 @@ class ElementGpuExtensionItem:
         if session is not None:
             self._gesture_layout_token = session.layout_token
 
-        if len(self.extension_items) == 0:
+        if len(self.extension_items) == 0 or not paint_surface:
             return
         stroke, line_width = self._outline_colors(active=False)
         self.draw_rounded_rectangle_outlined(
