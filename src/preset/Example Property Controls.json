@@ -14,7 +14,7 @@
   "description": "Example: editable property displays, every quick-add property action, and all modal control modes",
   "gesture": {
     "0": {
-      "name": "Modal Modes Example",
+      "name": "Property Controls Example",
       "enabled": false,
       "gesture_type": "MENU",
       "menu_style": "COMPACT",
@@ -355,19 +355,12 @@
               }
             }
           }
-        }
-      },
-      "description": "Each child menu groups one complete family of modal control modes"
-    },
-    "1": {
-      "name": "Property Actions Example",
-      "enabled": false,
-      "gesture_type": "MENU",
-      "menu_style": "COMPACT",
-      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"3D View\"]",
-      "element": {
-        "0": {
+        },
+        "4": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "5": {
           "name": "Boolean Actions",
           "element_type": "CHILD_GESTURE",
           "element": {
@@ -391,7 +384,7 @@
             }
           }
         },
-        "1": {
+        "6": {
           "name": "Integer Actions",
           "element_type": "CHILD_GESTURE",
           "element": {
@@ -421,7 +414,7 @@
             }
           }
         },
-        "2": {
+        "7": {
           "name": "Float Actions",
           "element_type": "CHILD_GESTURE",
           "element": {
@@ -451,7 +444,7 @@
             }
           }
         },
-        "3": {
+        "8": {
           "name": "String Actions",
           "element_type": "CHILD_GESTURE",
           "element": {
@@ -463,7 +456,7 @@
             }
           }
         },
-        "4": {
+        "9": {
           "name": "Enum Actions",
           "element_type": "CHILD_GESTURE",
           "element": {
@@ -498,18 +491,12 @@
               "operator_properties": "{'data_path': 'space_data.shading.type'}"
             }
           }
-        }
-      },
-      "description": "Five child menus cover all quick-add property action branches"
-    },
-    "2": {
-      "name": "Property Display Example",
-      "enabled": false,
-      "gesture_type": "RADIAL",
-      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"3D View\"]",
-      "element": {
-        "0": {
+        },
+        "10": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "11": {
           "name": "Focal Length",
           "element_type": "PROPERTY",
           "direction": "1",
@@ -518,7 +505,7 @@
           "property_value_precision": 1,
           "property_value_format": "{name}: {value} mm"
         },
-        "1": {
+        "12": {
           "name": "Resolution Scale",
           "element_type": "PROPERTY",
           "direction": "3",
@@ -527,7 +514,7 @@
           "property_drag_invert": true,
           "property_value_format": "{name}: {value}%"
         },
-        "2": {
+        "13": {
           "name": "Clip End",
           "element_type": "PROPERTY",
           "direction": "4",
@@ -541,13 +528,13 @@
             8
           ]
         },
-        "3": {
+        "14": {
           "name": "Viewport Shading",
           "element_type": "PROPERTY",
           "direction": "5",
           "property_data_path": "space_data.shading.type"
         },
-        "4": {
+        "15": {
           "name": "Overlays",
           "element_type": "PROPERTY",
           "direction": "7",
@@ -556,7 +543,7 @@
           "property_false_text": "Hidden",
           "property_bool_icons_enabled": false
         },
-        "5": {
+        "16": {
           "name": "Gizmo (Name Only)",
           "element_type": "PROPERTY",
           "direction": "2",
@@ -564,7 +551,7 @@
           "property_show_value": false
         }
       },
-      "description": "Drag numeric values and click enum or boolean values to change them"
+      "description": "One menu groups modal controls, quick-add property actions, and editable property displays"
     }
   }
 }

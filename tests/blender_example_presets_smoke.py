@@ -77,16 +77,10 @@ assert Import.gesture_import(mx_import), mx_import.reports
 PublicCacheFunc.cache_clear()
 
 assert {gesture.name for gesture in store.gesture} >= {
-    "Radial Gesture Example",
-    "Panel Menu Example",
-    "Compact Menu Example",
-    "Borderless Menu Example",
+    "Menu Examples",
     "Element and Layout Example",
-    "Modal Modes Example",
+    "Property Controls Example",
     "Direction Slots Example",
-    "Operator Contexts Example",
-    "Property Actions Example",
-    "Practical Viewport Menu",
     "Validation States Example",
 }
 
@@ -351,11 +345,45 @@ with bpy.context.temp_override(**_view3d_override()):
     assert set(direction_map) == {"1", "2", "3", "4", "5", "6", "7", "8", "9"}, direction_map
     assert direction_map["9"].is_child_gesture
 
+    # The state-icon controls live in the element/layout example's child
+    # gesture so closely related examples do not create separate presets.
+    element_layout = gestures_by_name["Element and Layout Example"]
+    viewport_states = next(
+        element for element in _all_elements(element_layout)
+        if element.name == "Viewport States"
+    )
+    state_items = get_gesture_direction_items(viewport_states.element)
+    assert set(state_items) == {"1", "3", "5"}
+    assert all(item.property_bool_icons_enabled for item in state_items.values())
+
+    # Property examples share one flat menu. Only the type-specific groups are
+    # child menus; the three example families are separated by divider rows.
+    property_controls = gestures_by_name["Property Controls Example"]
+    property_root = list(property_controls.element)
+    assert [item.name for item in property_root if item.is_dividing_line] == [
+        "Dividing_Line",
+        "Dividing_Line",
+    ]
+    assert {item.name for item in property_root} >= {
+        "Integer Controls",
+        "Boolean Actions",
+        "Focal Length",
+    }
+
     # Exercise the mutually exclusive IF / ELIF / ELSE example in all three
     # contexts. This prevents an overly broad IF from making ELIF unreachable.
     conditional = gestures_by_name["Element and Layout Example"]
-    panel_menu = gestures_by_name["Panel Menu Example"]
-    practical_menu = gestures_by_name["Practical Viewport Menu"]
+    menu_examples = gestures_by_name["Menu Examples"]
+    menu_example_root = list(menu_examples.element)
+    assert [item.name for item in menu_example_root] == [
+        "Menu Styles",
+        "Dividing_Line",
+        "Operator Contexts",
+        "Dividing_Line",
+        "Practical Viewport Menu",
+    ]
+    panel_menu = menu_example_root[0]
+    practical_menu = menu_example_root[4]
 
     def visible_conditional_names():
         return {
@@ -383,6 +411,8 @@ with bpy.context.temp_override(**_view3d_override()):
         "Shade Smooth",
         "Wireframe",
         "Layout Containers",
+        "Viewport States",
+        "Modal Control Example",
     }
     assert visible_panel_names() == [
         "Frame Selected",
@@ -414,6 +444,8 @@ with bpy.context.temp_override(**_view3d_override()):
             "Show Name",
             "Curve Display",
             "Layout Containers",
+            "Viewport States",
+            "Modal Control Example",
         }
         assert visible_practical_names() == [
             "Frame Selected",
@@ -431,6 +463,8 @@ with bpy.context.temp_override(**_view3d_override()):
         assert visible_conditional_names() == {
             "View All",
             "Layout Containers",
+            "Viewport States",
+            "Modal Control Example",
         }
         assert visible_panel_names() == [
             "View All",

@@ -783,19 +783,6 @@ class GestureInputProcessor:
         session._event_consumed = True
         return True
 
-    @staticmethod
-    def _is_radial_numeric_confirm(session: GestureSession, item) -> bool:
-        """True when *item* is the radial INT/FLOAT direction in the confirm zone."""
-        if session.extension_hover:
-            return False
-        snap = session.snapshot
-        return (
-            snap.direction_element == item
-            and snap.threshold_zone.is_confirm
-            and item.display_property_type in {'INT', 'FLOAT'}
-            and item.display_property_is_editable
-        )
-
     def _handle_property_wheel(self, session: GestureSession, ops, event) -> bool | None:
         """Adjust a hovered scalar property by one mouse-wheel notch."""
         if event.value != 'PRESS' or event.type not in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
@@ -849,7 +836,7 @@ class GestureInputProcessor:
         return changed
 
     def _handle_property_drag(self, session: GestureSession, ops, event) -> bool | None:
-        """LMB / radial confirm drag on INT/FLOAT; click toggle for bool/enum.
+        """LMB drag on INT/FLOAT; click toggle for bool/enum.
 
         Returns None when the event is not handled here.
         """
@@ -992,28 +979,6 @@ class GestureInputProcessor:
 
         return None
 
-    def _arm_radial_property_drag(self, session: GestureSession, ops, event) -> None:
-        """Start numeric scrubbing after the current event snapshot is ready."""
-        if session.property_drag is not None:
-            return
-        if event.type not in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
-            return
-        item = self._hovered_property_row(session, ops)
-        if item is None or not self._is_radial_numeric_confirm(session, item):
-            return
-        start_value = item.display_property_value
-        if start_value is None:
-            return
-        session.property_drag = (
-            item,
-            Vector((event.mouse_x, event.mouse_y)),
-            start_value,
-        )
-        session._property_drag_moved = False
-        # The event that arms a radial scrub is consumed as well; otherwise
-        # the modal wrapper could immediately execute the same property.
-        session._event_consumed = True
-
     def _handle_child_navigation(
             self, session: GestureSession, ops, snap, mouse, in_extension_ui: bool,
     ) -> None:
@@ -1081,12 +1046,6 @@ class GestureInputProcessor:
         prev_phase = session.phase
         refresh_snapshot(session, ops)
         snap = session.snapshot
-
-        # Arm radial numeric scrubbing only after this event's snapshot is
-        # current.  The old implementation inspected the previous snapshot
-        # before refresh, so changing direction could lock the next move to a
-        # property that was no longer under the cursor.
-        self._arm_radial_property_drag(session, ops, event)
 
         snap_changed = (
             snap.direction != prev_direction

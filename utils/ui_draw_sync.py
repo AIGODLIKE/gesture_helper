@@ -667,24 +667,29 @@ def _is_force_show_panels() -> bool:
         return False
 
 
-def _is_preview_modal_operator(operator) -> bool:
-    """Whether *operator* is the read-only gesture or element preview.
+def _is_non_blocking_modal_operator(operator) -> bool:
+    """Whether *operator* intentionally leaves Gesture Helper panels live.
 
-    Both preview modes use ``wm.gesture_preview`` and stay modal only to
-    maintain their draw lifecycle. They must not freeze the editor panels.
+    Preview and persistent-menu operators stay modal only to maintain overlay
+    lifecycle and input routing. They must not freeze the editor panels.
     """
     try:
         identifier = str(getattr(operator, 'bl_idname', '')).casefold()
     except (AttributeError, ReferenceError, RuntimeError, TypeError):
         return False
-    return identifier in {'wm.gesture_preview', 'wm_ot_gesture_preview'}
+    return identifier in {
+        'wm.gesture_preview',
+        'wm_ot_gesture_preview',
+        'wm.gesture_menu',
+        'wm_ot_gesture_menu',
+    }
 
 
 def _is_blocking_modal(_context=None) -> bool:
     try:
         modal_operators = bpy.context.window.modal_operators[:]
         return any(
-            not _is_preview_modal_operator(operator)
+            not _is_non_blocking_modal_operator(operator)
             for operator in modal_operators
         )
     except (AttributeError, ReferenceError, RuntimeError, TypeError):

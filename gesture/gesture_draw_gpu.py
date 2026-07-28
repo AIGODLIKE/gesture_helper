@@ -577,6 +577,13 @@ class GestureGpuDraw(DrawDebug):
                     self.gpu_draw_trajectory_mouse_move()
                 self.gpu_draw_trajectory_gesture_point()
                 self.gpu_draw_last_item_name()
+            elif len(self.trajectory_tree.points_list) > 1:
+                # A read-only preview must not show the live mouse trail, but
+                # entered child gestures are stable navigation history.  Draw
+                # that history so nested previews retain their visual path.
+                self.gpu_draw_trajectory_gesture_line()
+                self.gpu_draw_trajectory_gesture_point()
+                self.gpu_draw_last_item_name()
         if self.session.phase.shows_radial_ui:
             center = self.__circle_center_region_position__
             if center is None:

@@ -28,8 +28,10 @@ from gesture_helper.element.extension_hit import (  # noqa: E402
     numeric_property_arrow_part,
 )
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
+from gesture_helper.ops.export_import import Export  # noqa: E402
 from gesture_helper.ui import ui_list  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
+from gesture_helper.utils import gesture_persistence  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
 from gesture_helper.utils.number_arrows import (  # noqa: E402
@@ -183,6 +185,8 @@ with suppress_gesture_disk_save():
     gesture = store.gesture.add()
     gesture.name = 'Preview Smoke'
     gesture.gesture_type = 'RADIAL'
+    assert gesture.menu_keep_open is True
+    assert gesture.bl_rna.properties['menu_keep_open'].default is True
     first = gesture.element.add()
     first.element_type = 'OPERATOR'
     first.__init_element__()
@@ -395,11 +399,24 @@ with suppress_gesture_disk_save():
     close_preview(radial_preview)
 
     gesture.gesture_type = 'MENU'
+    enum_property = gesture.element.add()
+    enum_property.element_type = 'PROPERTY'
+    enum_property.__init_element__()
+    enum_property.name = 'Shading'
+    enum_property.property_data_path = 'space_data.shading.type'
+    with bpy.context.temp_override(**override):
+        assert enum_property.display_property_type == 'ENUM'
     menu_preview = start_preview('GESTURE', 'MENU')
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
     assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview
     assert menu_preview.gpu.gesture_bpu.root.children
+    selector_nodes = tuple(menu_preview.gpu.gesture_bpu._walk())
+    assert any(
+        node.kind == 'OPERATOR'
+        and node.operator == 'wm.gesture_preview_close'
+        for node in selector_nodes
+    )
     assert menu_preview.gpu.tips.root.children
     assert 0.0 <= menu_preview._menu_animation_reveal() < 1.0
     assert menu_preview._menu_animation_timer is not None
@@ -411,12 +428,29 @@ with suppress_gesture_disk_save():
         x1, y1, x2, y2 = overlay.root.rect
         assert x2 > region.x and x1 < region.x + region.width, overlay.root.rect
         assert y2 > region.y and y1 < region.y + region.height, overlay.root.rect
-    menu_preview._ensure_layout(force=True)
-    assert menu_preview._menu_panels
-    assert {row.label for row in menu_preview._menu_panels[0].rows} >= {
-        'First',
-        'Nested',
-    }
+    with bpy.context.temp_override(**override):
+        menu_preview._ensure_layout(force=True)
+        assert menu_preview._menu_panels
+        assert {row.label for row in menu_preview._menu_panels[0].rows} >= {
+            'First',
+            'Nested',
+        }
+        assert any(
+            row.element == enum_property
+            for row in menu_preview._menu_panels[0].rows
+        )
+        enum_row = next(
+            row
+            for row in menu_preview._menu_panels[0].rows
+            if row.element == enum_property
+        )
+        assert menu_preview._toggle_menu_enum_dropdown(enum_row)
+        assert len(menu_preview._menu_panels) >= 2
+        assert any(
+            row.kind == 'ENUM_ITEM' and row.enum_active
+            for row in menu_preview._menu_panels[-1].rows
+        )
+        assert menu_preview._close_menu_enum_dropdown()
     numeric_row = next(
         row
         for row in menu_preview._menu_panels[0].rows
@@ -566,6 +600,11 @@ with suppress_gesture_disk_save():
     close_preview(element_preview)
 
 shutdown_preview = start_preview('GESTURE', 'RADIAL')
+# The preview smoke owns synthetic gesture data and must not persist it while
+# verifying unregister cleanup. This also keeps the smoke independent of user
+# folder permissions.
+gesture_persistence.save_gestures_to_disk = lambda **_kwargs: None
+Export.backups = lambda *_args, **_kwargs: None
 assert bpy.ops.preferences.addon_disable(module='gesture_helper') == {'FINISHED'}
 assert_preview_globals_clean()
 print('BLENDER_PREVIEW_SMOKE_OK')

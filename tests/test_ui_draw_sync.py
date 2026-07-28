@@ -94,7 +94,7 @@ class GestureModalStateTests(unittest.TestCase):
 
         self.assertFalse(ui_draw_sync.is_gesture_modal_active())
 
-    def test_gesture_and_element_preview_modals_do_not_block_panels(self):
+    def test_overlay_lifecycle_modals_do_not_block_panels(self):
         old_window = ui_draw_sync.bpy.context.window
         try:
             ui_draw_sync.bpy.context.window = types.SimpleNamespace(
@@ -105,6 +105,11 @@ class GestureModalStateTests(unittest.TestCase):
                 FakeOperator("WM_OT_gesture_preview"),
             ]
             self.assertFalse(ui_draw_sync._is_blocking_modal())
+            for identifier in ("wm.gesture_menu", "WM_OT_gesture_menu"):
+                ui_draw_sync.bpy.context.window.modal_operators[:] = [
+                    FakeOperator(identifier),
+                ]
+                self.assertFalse(ui_draw_sync._is_blocking_modal())
         finally:
             ui_draw_sync.bpy.context.window = old_window
 

@@ -51,7 +51,6 @@ class PresetVisibilityTests(unittest.TestCase):
         for name in (
             "Example Elements and Layout.json",
             "Example Essentials.json",
-            "Example Operator Contexts.json",
             "Example Practical Menu.json",
             "Example Property Controls.json",
             "Maya.json",
@@ -84,7 +83,6 @@ class PresetVisibilityTests(unittest.TestCase):
             [
                 "Example Elements and Layout",
                 "Example Essentials",
-                "Example Operator Contexts",
                 "Example Practical Menu",
                 "Example Property Controls",
                 "Example Validation States",
@@ -103,7 +101,6 @@ class PresetVisibilityTests(unittest.TestCase):
             [
                 "Example Elements and Layout",
                 "Example Essentials",
-                "Example Operator Contexts",
                 "Example Practical Menu",
                 "Example Property Controls",
                 "Example Validation States",

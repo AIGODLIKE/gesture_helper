@@ -80,6 +80,14 @@ class FakeOperator:
         return self._pointer
 
 
+class UnreadableRnaOperator:
+    bl_rna = object()
+    bl_idname = "WM_OT_unreadable"
+
+    def as_pointer(self):
+        raise ReferenceError("removed")
+
+
 class FakeWindow:
     def __init__(self, operators=()):
         self.modal_operators = list(operators)
@@ -140,6 +148,71 @@ class MenuModalBaselineTests(unittest.TestCase):
 
         self.assertEqual(menu._window_modal_operators(window), ())
         self.assertFalse(menu._has_external_modal(FakeContext(window)))
+
+    def test_unreadable_rna_operator_is_not_misclassified_by_wrapper_id(self):
+        menu = self.make_menu()
+        window = FakeWindow([UnreadableRnaOperator()])
+
+        self.assertEqual(menu._window_modal_operators(window), ())
+        self.assertFalse(menu._has_external_modal(FakeContext(window)))
+
+    def test_pinned_menu_passes_outside_click_without_closing(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._ensure_layout = lambda **_kwargs: None
+        menu._menu_close_hit = lambda _event: False
+        menu._menu_header_hit = lambda _event: False
+        menu._menu_clicked_row = lambda _event: None
+        menu._menu_mouse = lambda event: event.point
+        menu._menu_contains = lambda _point: False
+        menu._close_menu_enum_dropdown = lambda: False
+        menu._menu_keep_open = lambda: True
+        closes = []
+        menu._begin_menu_close = lambda: closes.append(True)
+        event = types.SimpleNamespace(
+            type="LEFTMOUSE",
+            value="PRESS",
+            point=(500.0, 500.0),
+        )
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertEqual(closes, [])
+
+    def test_unpinned_menu_closes_after_outside_click(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._ensure_layout = lambda **_kwargs: None
+        menu._menu_close_hit = lambda _event: False
+        menu._menu_header_hit = lambda _event: False
+        menu._menu_clicked_row = lambda _event: None
+        menu._menu_mouse = lambda event: event.point
+        menu._menu_contains = lambda _point: False
+        menu._close_menu_enum_dropdown = lambda: False
+        menu._menu_keep_open = lambda: False
+        closes = []
+        menu._begin_menu_close = lambda: closes.append(True)
+        event = types.SimpleNamespace(
+            type="LEFTMOUSE",
+            value="PRESS",
+            point=(500.0, 500.0),
+        )
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertEqual(closes, [True])
 
     def test_wheel_over_numeric_row_changes_value_without_zooming_editor(self):
         menu = self.make_menu()

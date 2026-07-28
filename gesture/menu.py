@@ -22,7 +22,6 @@ from ..utils.number_arrows import (
     NUMBER_PART_VALUE,
     NUMBER_PRESSED_BLEND,
     number_arrow_chevron,
-    number_field_corner_masks,
     number_field_part,
     number_field_rects,
     number_part_direction,
@@ -56,6 +55,39 @@ def _point_in_rect(point, rect) -> bool:
     x, y = point
     x1, y1, x2, y2 = rect
     return x1 <= x <= x2 and y1 <= y <= y2
+
+
+def _element_identity(value) -> int:
+    if value is None:
+        return 0
+    try:
+        pointer = int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        pointer = 0
+    if pointer:
+        return pointer
+    try:
+        if getattr(value, 'bl_rna', None) is not None:
+            return 0
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        return 0
+    return id(value)
+
+
+def _same_element(first, second) -> bool:
+    if first is second:
+        return True
+    first_key = _element_identity(first)
+    second_key = _element_identity(second)
+    return bool(first_key and first_key == second_key)
+
+
+def _property_field_rect(rect, scale: float):
+    """Inset a numeric field like the other menu rows and keep it square."""
+    x1, y1, x2, y2 = rect
+    inset = min(2.0 * max(0.5, float(scale)), max(0.0, (x2 - x1) * 0.2))
+    vertical = inset * 0.5
+    return (x1 + inset, y1 + vertical, x2 - inset, y2 - vertical)
 
 
 def _smoothstep(progress: float) -> float:
@@ -94,7 +126,6 @@ class MenuColors:
     text_disabled: tuple
     outline: tuple
     separator: tuple
-    shadow: tuple
     error: tuple
     warning: tuple
 
@@ -110,6 +141,8 @@ class MenuRow:
     decrement_rect: tuple[float, float, float, float] | None = None
     value_rect: tuple[float, float, float, float] | None = None
     increment_rect: tuple[float, float, float, float] | None = None
+    enum_identifier: str = ''
+    enum_active: bool = False
 
 
 @dataclass
@@ -361,6 +394,7 @@ class GestureMenuRuntime(PublicGpu):
         self._menu_hovered_part = None
         self._menu_pressed_row = None
         self._menu_pressed_part = None
+        self._menu_enum_dropdown = None
         self._menu_drag_mouse = None
         self._menu_drag_button = None
         ensure_event_timer = getattr(self, '_ensure_menu_animation_event_timer', None)
@@ -457,6 +491,14 @@ class GestureMenuRuntime(PublicGpu):
         except (AttributeError, ReferenceError):
             return 'PANEL'
 
+    def _menu_keep_open(self) -> bool:
+        gesture = self.operator_gesture
+        try:
+            return bool(gesture is not None and gesture.menu_keep_open)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            # Old data and test doubles follow the new default.
+            return True
+
     def _metrics(self) -> MenuMetrics:
         scale = max(0.5, float(bpy.context.preferences.view.ui_scale))
         style = self._menu_style()
@@ -510,7 +552,6 @@ class GestureMenuRuntime(PublicGpu):
             text_disabled=(*text[:3], 0.42),
             outline=outline,
             separator=(*outline[:3], 0.7),
-            shadow=(0.0, 0.0, 0.0, 0.28),
             error=(0.72, 0.08, 0.06, 0.9),
             warning=(0.92, 0.48, 0.06, 0.95),
         )
@@ -535,9 +576,15 @@ class GestureMenuRuntime(PublicGpu):
             return MenuRow(element, '', 'SEPARATOR', enabled=False)
         if element.is_property_display:
             info = get_element_status_info(element, ops=self)
+            label = element.display_property_text
+            try:
+                if element.display_property_type == 'ENUM':
+                    label = element.name_translate
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                ...
             return MenuRow(
                 element,
-                element.display_property_text,
+                label,
                 'PROPERTY',
                 enabled=info.status is ElementStatus.VALID,
                 status_info=info,
@@ -568,6 +615,64 @@ class GestureMenuRuntime(PublicGpu):
             rows.append(MenuRow(None, 'No available items', 'EMPTY', enabled=False))
         return rows
 
+    @staticmethod
+    def _enum_items(element):
+        try:
+            resolved = element.resolve_property()
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            resolved = None
+        if resolved is None:
+            return ()
+        _owner, rna_prop = resolved
+        if getattr(rna_prop, 'type', None) != 'ENUM':
+            return ()
+        try:
+            from bpy.app.translations import pgettext_iface
+        except ImportError:
+            # Lightweight unit-test hosts may expose RNA doubles without the
+            # complete translations module. Blender always provides it.
+            def pgettext_iface(text):
+                return text
+        try:
+            return tuple(
+                (
+                    str(getattr(item, 'identifier', '') or ''),
+                    pgettext_iface(str(getattr(item, 'name', '') or '')),
+                )
+                for item in rna_prop.enum_items
+            )
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return ()
+
+    def _enum_choice_rows(self, element) -> list[MenuRow]:
+        try:
+            current = element.display_property_value
+            editable = bool(element.display_property_is_editable)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            current = None
+            editable = False
+        rows = []
+        for identifier, label in self._enum_items(element):
+            if not identifier:
+                rows.append(MenuRow(
+                    element,
+                    label,
+                    'LABEL' if label else 'SEPARATOR',
+                    enabled=False,
+                ))
+                continue
+            rows.append(MenuRow(
+                element,
+                label or identifier,
+                'ENUM_ITEM',
+                enabled=editable,
+                enum_identifier=identifier,
+                enum_active=identifier == current,
+            ))
+        if not rows:
+            rows.append(MenuRow(element, 'No available items', 'EMPTY', enabled=False))
+        return rows
+
     def _layout_key(self):
         from ..utils.public_cache import PublicCache
 
@@ -588,6 +693,7 @@ class GestureMenuRuntime(PublicGpu):
             PublicCache.__derived_generation__,
             poll_context_fingerprint(),
             self._menu_style(),
+            _element_identity(getattr(self, '_menu_enum_dropdown', None)),
             bool(getattr(self, '_menu_centered', False)),
             tuple(getattr(self, '_menu_anchor', (0.0, 0.0))),
             region_size,
@@ -610,6 +716,18 @@ class GestureMenuRuntime(PublicGpu):
                 height += metrics.separator_height
                 continue
             width, _line = measure_text(row.label, metrics.font_size)
+            if row.kind == 'ENUM_ITEM':
+                width += metrics.line_height + metrics.gap
+            if row.kind == 'PROPERTY':
+                try:
+                    prop_type = row.element.display_property_type or 'PROPERTY'
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    prop_type = 'PROPERTY'
+                control_width = self._property_control_width(prop_type, metrics, row)
+                if self._numeric_arrows_visible(row, prop_type):
+                    width += control_width * 2.0
+                elif control_width:
+                    width += control_width + metrics.gap
             badge = getattr(row.status_info, 'badge', '') if row.status_info is not None else ''
             if badge:
                 badge_w, _line = measure_text(badge, metrics.font_size * 0.72)
@@ -622,8 +740,6 @@ class GestureMenuRuntime(PublicGpu):
         width = widest + metrics.pad_x * 2.0
         if any(row.kind == 'CHILD' for row in panel.rows):
             width += metrics.row_height * 0.65
-        if any(row.kind == 'PROPERTY' for row in panel.rows):
-            width += metrics.row_height * 1.35
         if any(row.element is not None and getattr(row.element, 'is_draw_icon', False) for row in panel.rows):
             width += metrics.line_height + metrics.gap
         return min(metrics.max_width, max(metrics.min_width, width)), height
@@ -699,6 +815,40 @@ class GestureMenuRuntime(PublicGpu):
             valid_path.append(child)
             parent_panel = panel
         self._menu_open_path = valid_path
+
+        dropdown = getattr(self, '_menu_enum_dropdown', None)
+        if dropdown is not None:
+            owner_panel = None
+            owner_row = None
+            for candidate_panel in panels:
+                candidate_row = next(
+                    (
+                        row for row in candidate_panel.rows
+                        if row.kind == 'PROPERTY'
+                        and _same_element(row.element, dropdown)
+                    ),
+                    None,
+                )
+                if candidate_row is not None:
+                    owner_panel = candidate_panel
+                    owner_row = candidate_row
+                    break
+            if owner_panel is None or owner_row is None or owner_row.rect is None:
+                self._menu_enum_dropdown = None
+            else:
+                panel = MenuPanel(
+                    owner_panel.depth + 1,
+                    self._enum_choice_rows(dropdown),
+                    parent_row=owner_row,
+                )
+                panel_w, _panel_h = self._panel_size(panel, metrics)
+                px1, _py1, px2, _py2 = owner_panel.rect
+                _rx1, _ry1, _rx2, ry2 = owner_row.rect
+                x = px2 + metrics.flyout_gap
+                if x + panel_w > region.width - 8.0 * metrics.scale:
+                    x = px1 - metrics.flyout_gap - panel_w
+                self._place_panel(panel, x, ry2, region, metrics)
+                panels.append(panel)
         self._menu_panels = panels
         rows = tuple(row for panel in panels for row in panel.rows)
         if hovered_element is not None:
@@ -722,14 +872,6 @@ class GestureMenuRuntime(PublicGpu):
         height = y2 - y1
         center = (x1 + width * 0.5, y1 + height * 0.5)
         style = self._menu_style()
-        if style == 'PANEL':
-            self.draw_rounded_rectangle_area(
-                (center[0] + 3.0 * metrics.scale, center[1] - 3.0 * metrics.scale),
-                color=colors.shadow,
-                radius=metrics.radius,
-                width=width,
-                height=height,
-            )
         if style == 'BORDERLESS':
             self.draw_rounded_rectangle_area(
                 center,
@@ -860,6 +1002,13 @@ class GestureMenuRuntime(PublicGpu):
             return number_arrow_slot_width(metrics.row_height)
         if prop_type == 'BOOLEAN':
             return 0.0
+        if prop_type == 'ENUM':
+            label_width = measure_text(cls._enum_value_label(row), metrics.font_size)[0]
+            arrow_width = max(8.0 * metrics.scale, metrics.gap * 1.25)
+            return min(
+                metrics.max_width * 0.52,
+                label_width + arrow_width + metrics.gap * 2.0,
+            )
         badge = {
             'INT': 'INT',
             'FLOAT': 'FLOAT',
@@ -867,6 +1016,19 @@ class GestureMenuRuntime(PublicGpu):
             'STRING': 'TEXT',
         }.get(prop_type, 'PROP')
         return measure_text(badge, metrics.font_size * 0.62)[0] + metrics.gap * 1.5
+
+    @classmethod
+    def _enum_value_label(cls, row) -> str:
+        if row is None or row.element is None:
+            return ''
+        try:
+            current = row.element.display_property_value
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return '?'
+        for identifier, label in cls._enum_items(row.element):
+            if identifier == current:
+                return label or identifier
+        return str(current) if current is not None else '?'
 
     @staticmethod
     def _show_boolean_state_icon(row) -> bool:
@@ -912,11 +1074,9 @@ class GestureMenuRuntime(PublicGpu):
         height = y2 - y1
         if self._numeric_arrows_visible(row, prop_type):
             slot = number_arrow_slot_width(height)
-            field_rect = (
-                x1,
-                y1,
-                x2,
-                y2,
+            field_rect = _property_field_rect(
+                (x1, y1, x2, y2),
+                metrics.scale,
             )
             (
                 row.decrement_rect,
@@ -936,28 +1096,24 @@ class GestureMenuRuntime(PublicGpu):
                 if row is getattr(self, '_menu_pressed_row', None)
                 else None
             )
-            decrement_mask, value_mask, increment_mask = number_field_corner_masks()
             part_rects = (
                 (
                     NUMBER_PART_DECREMENT,
                     row.decrement_rect,
-                    decrement_mask,
                 ),
                 (
                     NUMBER_PART_VALUE,
                     row.value_rect,
-                    value_mask,
                 ),
                 (
                     NUMBER_PART_INCREMENT,
                     row.increment_rect,
-                    increment_mask,
                 ),
             )
-            for part, rect, corner_mask in part_rects:
+            for part, rect in part_rects:
                 if rect is None:
                     continue
-                rx1, _ry1, rx2, _ry2 = rect
+                rx1, ry1, rx2, ry2 = rect
                 if part == pressed_part:
                     amount = NUMBER_PRESSED_BLEND
                 elif part == hovered_part:
@@ -966,23 +1122,21 @@ class GestureMenuRuntime(PublicGpu):
                     continue
                 else:
                     state_color = number_edge_color(base)
-                    self.draw_rounded_rectangle_area(
-                        ((rx1 + rx2) * 0.5, (y1 + y2) * 0.5),
-                        color=state_color,
-                        radius=min(metrics.radius, height * 0.32),
-                        width=max(1.0, rx2 - rx1),
-                        height=max(1.0, height),
-                        corner_mask=corner_mask,
+                    self.draw_rectangle(
+                        rx1,
+                        ry1,
+                        max(1.0, rx2 - rx1),
+                        max(1.0, ry2 - ry1),
+                        state_color,
                     )
                     continue
                 state_color = blend_layout_hover_color(base, active, amount)
-                self.draw_rounded_rectangle_area(
-                    ((rx1 + rx2) * 0.5, (y1 + y2) * 0.5),
-                    color=state_color,
-                    radius=min(metrics.radius, height * 0.32),
-                    width=max(1.0, rx2 - rx1),
-                    height=max(1.0, height),
-                    corner_mask=corner_mask,
+                self.draw_rectangle(
+                    rx1,
+                    ry1,
+                    max(1.0, rx2 - rx1),
+                    max(1.0, ry2 - ry1),
+                    state_color,
                 )
 
             center_y = (y1 + y2) * 0.5
@@ -1021,6 +1175,53 @@ class GestureMenuRuntime(PublicGpu):
         row.value_rect = None
         row.increment_rect = None
         if prop_type == 'BOOLEAN':
+            return
+
+        if prop_type == 'ENUM':
+            label = self._enum_value_label(row)
+            control_width = self._property_control_width(prop_type, metrics, row)
+            right = x2 - 2.0 * metrics.scale
+            left = max(x1 + metrics.pad_x, right - control_width)
+            is_open = _same_element(
+                row.element,
+                getattr(self, '_menu_enum_dropdown', None),
+            )
+            control_color = blend_layout_hover_color(
+                base,
+                active,
+                0.58 if is_open else 0.22,
+            )
+            self.draw_rounded_rectangle_area(
+                ((left + right) * 0.5, (y1 + y2) * 0.5),
+                color=control_color,
+                radius=min(2.0 * metrics.scale, height * 0.18),
+                width=max(1.0, right - left),
+                height=max(1.0, height - 2.0 * metrics.scale),
+            )
+            arrow_span = max(3.0 * metrics.scale, metrics.gap * 0.45)
+            arrow_x = right - metrics.gap
+            arrow_y = (y1 + y2) * 0.5
+            self.draw_2d_line(
+                (
+                    (arrow_x - arrow_span, arrow_y + arrow_span * 0.45),
+                    (arrow_x, arrow_y - arrow_span * 0.45),
+                    (arrow_x + arrow_span, arrow_y + arrow_span * 0.45),
+                ),
+                color=colors.text_hover if is_open else colors.text,
+                line_width=max(1.0, metrics.scale),
+            )
+            text_right = arrow_x - arrow_span - metrics.gap * 0.5
+            fitted = self._fit_text(
+                label,
+                max(1.0, text_right - left - metrics.gap),
+                metrics.font_size,
+            )
+            self.draw_text(
+                fitted,
+                position=(left + metrics.gap, y2 - (height - metrics.line_height) * 0.5),
+                size=metrics.font_size,
+                color=color_to_srgb(colors.text_hover if is_open else colors.text),
+            )
             return
 
         badge = {
@@ -1098,13 +1299,23 @@ class GestureMenuRuntime(PublicGpu):
                     if pressed
                     else colors.hover
                 )
-            self.draw_rounded_rectangle_area(
-                (x1 + width * 0.5, y1 + height * 0.5),
-                color=row_color,
-                radius=max(1.0, metrics.radius - inset),
-                width=max(1.0, width - inset * 2.0),
-                height=max(1.0, height - inset),
-            )
+            if has_number_field:
+                fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
+                self.draw_rectangle(
+                    fx1,
+                    fy1,
+                    max(1.0, fx2 - fx1),
+                    max(1.0, fy2 - fy1),
+                    row_color,
+                )
+            else:
+                self.draw_rounded_rectangle_area(
+                    (x1 + width * 0.5, y1 + height * 0.5),
+                    color=row_color,
+                    radius=max(1.0, metrics.radius - inset),
+                    width=max(1.0, width - inset * 2.0),
+                    height=max(1.0, height - inset),
+                )
             if property_visual is not None and not status.is_error:
                 fraction = property_visual[2]
                 if fraction is not None and fraction > 0.0:
@@ -1116,13 +1327,24 @@ class GestureMenuRuntime(PublicGpu):
                             colors.hover,
                             0.72 if pressed else 0.35,
                         )
-                    self.draw_rounded_rectangle_area(
-                        (x1 + inset + fill_w * 0.5, y1 + height * 0.5),
-                        color=fill_color,
-                        radius=max(1.0, metrics.radius - inset),
-                        width=fill_w,
-                        height=max(1.0, height - inset),
-                    )
+                    if has_number_field:
+                        fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
+                        fill_w = max(2.0, (fx2 - fx1) * fraction)
+                        self.draw_rectangle(
+                            fx1,
+                            fy1,
+                            fill_w,
+                            max(1.0, fy2 - fy1),
+                            fill_color,
+                        )
+                    else:
+                        self.draw_rounded_rectangle_area(
+                            (x1 + inset + fill_w * 0.5, y1 + height * 0.5),
+                            color=fill_color,
+                            radius=max(1.0, metrics.radius - inset),
+                            width=fill_w,
+                            height=max(1.0, height - inset),
+                        )
         if status is not ElementStatus.VALID:
             marker_color = colors.text_hover if status.is_error else colors.warning
             marker_w = max(2.0, 2.0 * metrics.scale)
@@ -1141,6 +1363,25 @@ class GestureMenuRuntime(PublicGpu):
         else:
             text_color = colors.text if row.enabled else colors.text_disabled
         cursor_x = x1 + metrics.pad_x
+        if row.kind == 'ENUM_ITEM':
+            circle_radius = max(3.0 * metrics.scale, metrics.line_height * 0.24)
+            center = (cursor_x + circle_radius, y1 + height * 0.5)
+            self.draw_circle(
+                center,
+                circle_radius,
+                color=text_color,
+                line_width=max(1.0, metrics.scale),
+            )
+            if row.enum_active:
+                inner_radius = circle_radius * 0.48
+                self.draw_rounded_rectangle_area(
+                    center,
+                    color=text_color,
+                    radius=inner_radius,
+                    width=inner_radius * 2.0,
+                    height=inner_radius * 2.0,
+                )
+            cursor_x += circle_radius * 2.0 + metrics.gap
         if has_boolean_icon:
             cursor_x += self._draw_boolean_state_icon(
                 row,
@@ -1323,6 +1564,52 @@ class GestureMenuRuntime(PublicGpu):
     def _menu_contains(self, point) -> bool:
         return any(_point_in_rect(point, panel.rect) for panel in self._menu_panels)
 
+    @staticmethod
+    def _is_enum_property_row(row) -> bool:
+        if row is None or row.kind != 'PROPERTY' or not row.enabled:
+            return False
+        try:
+            return row.element.display_property_type == 'ENUM'
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return False
+
+    def _toggle_menu_enum_dropdown(self, row) -> bool:
+        if not self._is_enum_property_row(row):
+            return False
+        current = getattr(self, '_menu_enum_dropdown', None)
+        self._menu_enum_dropdown = (
+            None if _same_element(current, row.element) else row.element
+        )
+        self._menu_layout_dirty = True
+        self._ensure_layout(force=True)
+        self._tag_menu_redraw()
+        return True
+
+    def _close_menu_enum_dropdown(self) -> bool:
+        if getattr(self, '_menu_enum_dropdown', None) is None:
+            return False
+        self._menu_enum_dropdown = None
+        self._menu_layout_dirty = True
+        self._ensure_layout(force=True)
+        self._tag_menu_redraw()
+        return True
+
+    def _set_menu_enum_choice(self, row) -> bool:
+        if row is None or row.kind != 'ENUM_ITEM' or not row.enabled:
+            return False
+        try:
+            changed = row.element.set_display_property_value(row.enum_identifier)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+            changed = False
+        self._menu_enum_dropdown = None
+        self._menu_layout_dirty = True
+        self._ensure_layout(force=True)
+        if changed:
+            self._menu_mark_context_changed()
+        else:
+            self._tag_menu_redraw()
+        return True
+
     def _menu_number_part(self, row, point):
         if row is None or row.kind != 'PROPERTY' or not show_number_arrows():
             return None
@@ -1338,11 +1625,9 @@ class GestureMenuRuntime(PublicGpu):
                 or row.value_rect is None
                 or row.increment_rect is None
         ):
-            field_rect = (
-                row.rect[0],
-                row.rect[1],
-                row.rect[2],
-                row.rect[3],
+            field_rect = _property_field_rect(
+                row.rect,
+                self._metrics().scale,
             )
             (
                 row.decrement_rect,
@@ -1467,7 +1752,7 @@ class GestureMenuRuntime(PublicGpu):
     def _menu_clicked_row(self, event):
         self._update_menu_hover(event)
         row = self._menu_hovered_row
-        if row is None or row.kind not in {'OPERATOR', 'PROPERTY'}:
+        if row is None or row.kind not in {'OPERATOR', 'PROPERTY', 'ENUM_ITEM'}:
             return None
         if row.enabled:
             return row

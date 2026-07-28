@@ -228,3 +228,37 @@ def tooltip_draw_data(
     if state.tooltip is not None and current_reveal > 0.0:
         return state.target, state.tooltip, current_reveal
     return None, None, 0.0
+
+
+def tooltip_plain_text(tooltip) -> str:
+    """Return the complete displayed tooltip content in clipboard-friendly text."""
+    if tooltip is None:
+        return ""
+    lines = [str(getattr(tooltip, "title", "") or "")]
+    description = str(getattr(tooltip, "description", "") or "")
+    if description:
+        lines.append(description)
+    for detail in getattr(tooltip, "details", ()):
+        label = str(getattr(detail, "label", "") or "")
+        value = str(getattr(detail, "value", "") or "")
+        lines.append(f"{label}: {value}" if label else value)
+    for issue in getattr(tooltip, "issues", ()):
+        issue = str(issue or "")
+        if issue:
+            lines.append(f"! {issue}")
+    return "\n".join(line for line in lines if line)
+
+
+def copy_displayed_tooltip(state: HoverTooltipState | None, window_manager) -> bool:
+    """Copy a currently visible hover tooltip without changing hover state."""
+    _target, tooltip, reveal = tooltip_draw_data(state)
+    if tooltip is None or reveal <= 0.0 or window_manager is None:
+        return False
+    text = tooltip_plain_text(tooltip)
+    if not text:
+        return False
+    try:
+        window_manager.clipboard = text
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return False
+    return True

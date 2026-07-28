@@ -113,6 +113,13 @@ class GestureDraw:
             )
             if ag.gesture_type == 'MENU':
                 type_row.prop(ag, 'menu_style', text='')
+                type_row.prop(
+                    ag,
+                    'menu_keep_open',
+                    text='',
+                    toggle=True,
+                    icon=ui_icon('PINNED' if ag.menu_keep_open else 'UNPINNED'),
+                )
         GestureDraw.draw_gesture_key(column, active_gesture=active)
 
     @staticmethod

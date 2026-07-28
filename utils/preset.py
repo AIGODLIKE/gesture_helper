@@ -4,7 +4,6 @@ from ..utils.debug_util import debug_print
 DEBUG_ONLY_PRESET_NAMES = frozenset({
     "Example Elements and Layout",
     "Example Essentials",
-    "Example Operator Contexts",
     "Example Property Controls",
     "Example Practical Menu",
     "Example Validation States",

@@ -207,6 +207,7 @@ class OverlayLayout:
         self.anchor = 'TOP_LEFT'
         self.font_size = 14
         self.padding = 7
+        self.min_row_height = 24
         self.gap = 3
         self.corner_radius = 6
         self.background = (0.10, 0.10, 0.10, 0.92)
@@ -290,7 +291,10 @@ class OverlayLayout:
         if node.kind in {"LABEL", "OPERATOR", "PROPERTY"}:
             from ...utils.blf_text import measure_text
             w, line_h = measure_text(self._node_text(node), self.font_size)
-            node.size = Vector((w + self.padding * 2, max(line_h + self.padding * 2, 24)))
+            node.size = Vector((
+                w + self.padding * 2,
+                max(line_h + self.padding * 2, self.min_row_height),
+            ))
         elif node.kind == "SEPARATOR":
             node.size = Vector((16, 7))
         else:

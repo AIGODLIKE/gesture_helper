@@ -153,6 +153,20 @@ class GestureOperator(
         except BaseException:
             pass
 
+    def _copy_hover_tooltip(self, context, event) -> bool:
+        """Consume Ctrl+C only while a hover tooltip is actually visible."""
+        if event.type != 'C' or event.value != 'PRESS' or not event.ctrl:
+            return False
+        from ..gesture.runtime_tooltip import copy_displayed_tooltip
+
+        if not copy_displayed_tooltip(
+                getattr(self.session, 'tooltip_state', None),
+                getattr(context, 'window_manager', None),
+        ):
+            return False
+        self.report({'INFO'}, pgettext_iface('Hover information copied'))
+        return True
+
     def modal(self, context, event):
         """
         Modal state machine (keep this small — focus heuristics belong elsewhere):
@@ -175,6 +189,9 @@ class GestureOperator(
         if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
             self._cancel_modal()
             return {'CANCELLED'}
+
+        if self._copy_hover_tooltip(context, event):
+            return {'RUNNING_MODAL'}
 
         try:
             self.init_modal(event)

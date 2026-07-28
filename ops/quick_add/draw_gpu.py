@@ -10,8 +10,9 @@ class DrawGpu:
         self.gesture_bpu.anchor = 'RIGHT_CENTER'
         # Keep the selector compact so the viewport remains usable while
         # previewing the gesture.
-        self.gesture_bpu.font_size = 14
-        self.gesture_bpu.padding = 5
+        self.gesture_bpu.font_size = 12
+        self.gesture_bpu.padding = 3
+        self.gesture_bpu.min_row_height = 20
         self.gesture_bpu.gap = 2
         self.gesture_bpu.corner_radius = 4
         self.tips = GestureShowTips()
@@ -44,7 +45,16 @@ class DrawGpu:
             if content_key != self._bpu_content_key or not self.gesture_bpu.root.children:
                 with self.gesture_bpu as bpu:
                     bpu.sync_input(offset, mouse)
-                    bpu.label(__name_translate__("Select Gesture"), draggable=True)
+                    # Keep the exit action beside the selector title.  It is a
+                    # compact utility action, rather than a full-width row.
+                    with bpu.row() as title_row:
+                        title_row.label(
+                            __name_translate__("Select Gesture"), draggable=True,
+                        )
+                        title_row.operator(
+                            "wm.gesture_preview_close",
+                            __name_translate__("Exit Preview"),
+                        )
                     bpu.separator()
                     if gesture_list:
                         for g in gesture_list:

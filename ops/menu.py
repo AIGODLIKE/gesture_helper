@@ -36,6 +36,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_hovered_part', None)
         operator_setattr(self, '_menu_pressed_row', None)
         operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -95,6 +96,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_gesture_ref', gesture)
         operator_setattr(self, '_menu_anchor', (mouse[0] + 6.0, mouse[1] + 6.0))
         operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_runtime_cleaned', False)
         operator_setattr(self, 'event', event)
         operator_setattr(
@@ -159,6 +161,11 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             pointer = 0
         if pointer:
             return ('RNA', pointer)
+        try:
+            if getattr(operator, 'bl_rna', None) is not None:
+                return None
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return None
         return ('PYTHON', id(operator))
 
     @classmethod
@@ -172,7 +179,9 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         result = []
         for operator in operators:
             try:
-                result.append((operator, cls._modal_operator_key(operator)))
+                key = cls._modal_operator_key(operator)
+                if key is not None:
+                    result.append((operator, key))
             except ReferenceError:
                 continue
         return tuple(result)
@@ -250,12 +259,36 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             result.add('INTERFACE')
         return result
 
+    def _copy_hover_tooltip(self, context, event) -> bool:
+        """Consume Ctrl+C only while a hover tooltip is actually visible."""
+        if event.type != 'C' or event.value != 'PRESS' or not event.ctrl:
+            return False
+        from ..gesture.runtime_tooltip import copy_displayed_tooltip
+
+        if not copy_displayed_tooltip(
+                getattr(self, '_menu_tooltip_state', None),
+                getattr(context, 'window_manager', None),
+        ):
+            return False
+        self.report({'INFO'}, pgettext('Hover information copied'))
+        return True
+
     def modal(self, context, event):
         operator_setattr(self, 'event', event)
         if self._menu_close_requested:
             return self._finish_menu(pass_through=True)
-        if not self._area_is_live() or event.type == 'WINDOW_DEACTIVATE':
+        if not self._area_is_live():
             return self._finish_menu(cancelled=True)
+        if event.type == 'WINDOW_DEACTIVATE':
+            if not self._menu_keep_open():
+                return self._finish_menu(cancelled=True)
+            drag_button = getattr(self, '_menu_drag_button', None)
+            if drag_button is not None:
+                self._finish_menu_drag(button=drag_button)
+            self._clear_menu_press()
+            operator_setattr(self, '_menu_enum_dropdown', None)
+            operator_setattr(self, '_menu_layout_dirty', True)
+            return {'PASS_THROUGH'}
         if self._menu_closing_at:
             return {'RUNNING_MODAL'}
 
@@ -264,13 +297,19 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             operator_setattr(self, '_menu_external_modal_active', True)
             if self._clear_menu_press():
                 self._tag_menu_redraw()
+            self._close_menu_enum_dropdown()
             return {'PASS_THROUGH'}
         if self._menu_external_modal_active:
             operator_setattr(self, '_menu_external_modal_active', False)
             self._menu_mark_context_changed()
 
         if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
+            if self._close_menu_enum_dropdown():
+                return {'RUNNING_MODAL'}
             self._begin_menu_close()
+            return {'RUNNING_MODAL'}
+
+        if self._copy_hover_tooltip(context, event):
             return {'RUNNING_MODAL'}
 
         if event.type == 'MOUSEMOVE':
@@ -331,6 +370,14 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 status = getattr(row.status_info, 'status', None)
                 if status is not None and status.is_error:
                     return self._repair_menu_row(row)
+                if row.kind == 'ENUM_ITEM':
+                    self._set_menu_enum_choice(row)
+                    if not self._menu_keep_open():
+                        self._begin_menu_close()
+                    return {'RUNNING_MODAL'}
+                if self._is_enum_property_row(row):
+                    self._toggle_menu_enum_dropdown(row)
+                    return {'RUNNING_MODAL'}
                 if self._press_menu_row(row, event):
                     self._tag_menu_redraw()
                 arrow_direction = self._menu_property_arrow_direction(row, event)
@@ -341,15 +388,22 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                     )
                     if changed:
                         self._menu_mark_context_changed()
+                    if not self._menu_keep_open():
+                        self._begin_menu_close()
                     return {'RUNNING_MODAL'}
                 self._execute_menu_row(row)
                 # Numeric body clicks may start a second modal that owns the
                 # release event. Do not leave its visual press latched behind.
                 if self._clear_menu_press():
                     self._tag_menu_redraw()
+                if not self._menu_keep_open():
+                    self._begin_menu_close()
                 return {'RUNNING_MODAL'}
             if not self._menu_contains(self._menu_mouse(event)):
-                self._begin_menu_close()
+                if self._close_menu_enum_dropdown():
+                    return {'PASS_THROUGH'}
+                if not self._menu_keep_open():
+                    self._begin_menu_close()
                 return {'PASS_THROUGH'}
             return {'RUNNING_MODAL'}
 

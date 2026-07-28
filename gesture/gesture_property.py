@@ -55,6 +55,11 @@ class GestureProperty(PrefAccess, ActiveSelection, StructureCacheOps):
         default='PANEL',
         update=_update_menu_style,
     )
+    menu_keep_open: BoolProperty(
+        name='Keep Open',
+        description='Keep the menu visible while using the editor; close it with the title-bar X',
+        default=True,
+    )
 
     @cache_update_lock
     def copy(self) -> None:

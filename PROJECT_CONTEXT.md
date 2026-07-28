@@ -70,6 +70,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip
    timers are cancelled on target changes, modal reset/exit, and unregister.
+   While a runtime tooltip is visibly displayed, Ctrl+C copies its complete
+   content to Blender's clipboard and reports the result. Radial numeric
+   directions select only; numeric changes require a wheel event or explicit
+   left-mouse drag.
    Read-only radial previews enter `UI_VISIBLE` immediately (without the
    gesture timeout or trajectory overlay); menu previews use the dedicated
    `GestureMenuRuntime` draw handler and a menu-specific area lookup so the
@@ -79,7 +83,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    bar with an independent persisted-in-session offset.
    Radial and menu gesture previews share the compact translated selector and
    viewport instruction HUD; the menu backend initializes, draws, and routes
-   selector input through its own handler before menu hit testing. Selector
+   selector input through its own handler before menu hit testing. Its compact
+   selector keeps the translated Exit Preview action beside Select Gesture in
+   the top title row; radial previews retain the static point/line history when
+   entering child gestures while still suppressing the live mouse trail. Selector
    hover events do not consume Space-drag navigation.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
@@ -90,12 +97,16 @@ with bundled JSON presets, translations, and PNG icon assets.
    independent normal, hover, and pressed feedback: edge clicks step, the
    value region scrubs or invokes property editing, and wheel input steps
    hovered values without leaking through a persistent menu to the editor.
-   Edge regions span the complete field surface,
-   inherit only the field's exposed round corners, and scale their chevrons
-   with row height. A radial numeric root uses its complete item bounds,
+   Persistent-menu numeric fields use the same horizontal and vertical inset
+   as other row surfaces, but their background, slider fill, and three arrow
+   regions are square rather than rounded. Edge chevrons scale with row height.
+   A radial numeric root still uses its complete item bounds,
    including the configured text margin, as that three-part field; it has no
    separate wrapper or inset numeric surface. Read-only numeric rows suppress
    the arrows.
+   Persistent-menu enum rows show the translated current value in a dropdown
+   control; clicking it opens a Blender-style flyout with radio-marked choices,
+   and selecting a choice updates the live RNA value and collapses the flyout.
    Persistent menu boolean rows use Blender-style left checkboxes when their
    per-property State Icons option is enabled, or hover-only feedback when it
    is disabled; nonnumeric rows use type badges.
@@ -108,8 +119,8 @@ with bundled JSON presets, translations, and PNG icon assets.
    `utils/ui_draw_sync.py` batch invalidation and freeze panel snapshots during
    modal input/playback. Any entry in `bpy.context.window.modal_operators[:]`
    pauses both the N-panel and Preferences with their full layouts disabled;
-   the read-only `wm.gesture_preview` modal is excluded for both gesture and
-   element preview scopes so those panels remain editable.
+   the read-only `wm.gesture_preview` and persistent `wm.gesture_menu` lifecycle
+   modals are excluded so those panels remain editable.
    Their headers expose a non-persistent, default-off update override for the
    duration of the modal. Registration resets it to false, and preference
    backup/restore explicitly excludes it. `utils/session_state.py` arbitrates
@@ -123,6 +134,9 @@ with bundled JSON presets, translations, and PNG icon assets.
   sub-panels; `ui/` defines lists, menus, context-menu integration, and the
   main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
   and modal pause status is the first header item after that title.
+  Menu gestures expose a default-on Keep Open toggle beside Menu Style; pinned
+  menus pass unrelated editor input through, remain visible after their own
+  actions, and close explicitly from the title-bar X (or cancel input).
   Expanded element trees with more than 48 visible descendants use a cached,
   area/root-scoped 32-row page; selection changes reveal their page, while
   explicit page changes are preserved. Layout Gesture Action choices are built
@@ -134,11 +148,17 @@ with bundled JSON presets, translations, and PNG icon assets.
   stably groups only the new entries as example `RADIAL`, example `MENU`,
   normal `RADIAL`, and normal `MENU`; the final reordered list is scheduled
   for persistence.
-- `utils/preset.py` discovers `src/preset/*.json`; the six files beginning
+- `utils/preset.py` discovers `src/preset/*.json`; the five files beginning
   `Example ` are opt-in debug fixtures grouped as essentials, elements/layout,
-  property controls, operator contexts, a practical menu, and validation
-  states. Element types and layout behavior share one combined gesture rather
-  than duplicating similar layout trees. Coverage tests derive enum contracts from source and also require
+  property controls, combined menu examples, and validation states. Menu style,
+  operator-context, and practical viewport examples share one menu gesture,
+  with divider rows between the three child sections. The essentials fixture
+  combines the basic radial interaction into the complete direction-slots
+  example. The elements/layout fixture
+  exposes boolean state icons through its `Viewport States` child gesture and
+  includes the practical Subdivide modal control in its bottom extension.
+  Property modal modes, quick-add actions, and editable displays share one flat
+  menu separated by dividers. Coverage tests derive enum contracts from source and also require
   both states of layout alignment, property drag inversion, property value
   visibility, and boolean state icons. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.
@@ -177,8 +197,9 @@ flowchart TD
 - Lint: `python -m ruff check .`.
 - Blender smoke scripts cover preset coverage, property data paths, import
   rollback/keymaps, lifecycle/reload, preview (including menu draw routing,
-  translation, three-part numeric-field state/hit boxes, selector/title dragging,
-  alignment RNA, and Space-drag), and panel behavior. Run them
+  translation, the visible exit action, enum flyouts, three-part numeric-field
+  state/hit boxes, selector/title dragging, alignment RNA, and Space-drag), and
+  panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
@@ -200,10 +221,9 @@ flowchart TD
    at `utils/__init__.py:2` because `import bpy` follows `public_color`.
    This is low-risk behaviorally but blocks a clean lint gate.
 3. **Blender-only behavior remains higher risk than unit coverage:** the current
-   preview smoke passes in Blender 4.2.1, including menu animation lifecycle,
-   selector/title dragging, and cleanup. Blender 5.2.0 currently exits with a
-   native `EXCEPTION_ACCESS_VIOLATION` before this smoke can provide Python
-   assertions. Foreground visual placement, multi-window behavior, and file-load
+   preview smoke passes in Blender 4.2.1 and 5.2.0, including menu animation,
+   pinned-menu RNA defaults, enum flyouts, selector exit/title dragging, and
+   cleanup. Foreground visual placement, multi-window behavior, and file-load
    restoration still require targeted manual checks.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
@@ -213,12 +233,6 @@ flowchart TD
 5. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
    after Blender's flat build; changes to manifest exclusions or workflow
    layout should be checked by inspecting ZIP entries.
-6. **Blender 5.2 smoke crash:** the full lifecycle script and the current
-   preview smoke both exit with a native `EXCEPTION_ACCESS_VIOLATION` and no
-   Python backtrace. Treat 5.2 smoke coverage as unresolved until the allocator
-   crash is isolated; extension validation/package build were not rerun for the
-   current UI interaction changes.
-
 ## Constraints
 
 - Support Blender 4.2+ and current 5.x; use version-safe Blender UI icons.

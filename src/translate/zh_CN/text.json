@@ -1,5 +1,6 @@
 {
   "Gesture preview": "手势预览",
+  "Hover information copied": "已复制悬停信息",
   "Child element": "子级元素",
   "Index": "索引",
   "Move element": "移动元素",
@@ -329,6 +330,7 @@
   "Direction label size": "方向标签大小",
   "Font size for direction labels on the gesture ring": "手势环上方向标签的字号",
   "Select Gesture": "选择手势",
+  "Exit Preview": "退出预览",
   "Create Operator Element": "创建操作符元素",
   "Use bpy.ops.wm.context_set_enum operator": "使用 bpy.ops.wm.context_set_enum 操作符",
   "Cycle to the next value; if already at the target, switch to the previous value": "循环到下一个值；若已是目标值则切换到上一个值",
@@ -709,6 +711,8 @@
   "This property is read-only": "此属性为只读",
   "This property is not editable in the current context": "此属性在当前上下文中不可编辑",
   "Menu Style": "菜单样式",
+  "Keep Open": "保持打开",
+  "Keep the menu visible while using the editor; close it with the title-bar X": "使用编辑器时保持菜单可见；可点击标题栏的 X 关闭",
   "Compact": "紧凑",
   "Borderless": "无边框",
   "Gesture Menu": "手势菜单",

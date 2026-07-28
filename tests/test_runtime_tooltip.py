@@ -148,6 +148,38 @@ class RuntimeTooltipStateTests(unittest.TestCase):
             self.assertIsNone(state.closing_target)
             self.assertTrue(redraws)
 
+    def test_copy_visible_tooltip_writes_complete_displayed_text(self):
+        state = tooltip_module.HoverTooltipState()
+        target = FakeTarget(5)
+        tooltip = types.SimpleNamespace(
+            title="Example",
+            description="Description",
+            details=(types.SimpleNamespace(label="Python", value="bpy.ops.test()"),),
+            issues=("Needs context",),
+        )
+        window_manager = types.SimpleNamespace(clipboard="")
+        with patch.object(tooltip_module.time, "monotonic", return_value=10.2):
+            state.target = target
+            state.target_key = ("RNA", 5)
+            state.tooltip = tooltip
+            state.show_started_at = 10.0
+            self.assertTrue(
+                tooltip_module.copy_displayed_tooltip(state, window_manager)
+            )
+        self.assertEqual(
+            window_manager.clipboard,
+            "Example\nDescription\nPython: bpy.ops.test()\n! Needs context",
+        )
+
+    def test_copy_ignores_hidden_tooltip(self):
+        state = tooltip_module.HoverTooltipState()
+        state.tooltip = types.SimpleNamespace(title="Example", details=(), issues=())
+        self.assertFalse(
+            tooltip_module.copy_displayed_tooltip(
+                state, types.SimpleNamespace(clipboard="unchanged")
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

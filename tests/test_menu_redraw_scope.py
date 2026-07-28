@@ -33,6 +33,8 @@ def _load_menu_module():
 
     bpy = _module("bpy")
     bpy.context = types.SimpleNamespace()
+    bpy.app = _module("bpy.app")
+    _module("bpy.app.translations", pgettext_iface=lambda text: text)
 
     _module(
         f"{PACKAGE}.utils.blf_text",
@@ -125,7 +127,6 @@ class MenuRedrawScopeTests(unittest.TestCase):
             text_disabled=(0.4, 0.4, 0.4, 1.0),
             outline=(0.2, 0.2, 0.2, 1.0),
             separator=(0.2, 0.2, 0.2, 1.0),
-            shadow=(0.0, 0.0, 0.0, 0.3),
             error=(0.72, 0.08, 0.06, 0.9),
             warning=(0.92, 0.48, 0.06, 0.95),
         )
@@ -346,12 +347,47 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertIsNotNone(numeric_row.decrement_rect)
         self.assertIsNotNone(numeric_row.value_rect)
         self.assertIsNotNone(numeric_row.increment_rect)
-        self.assertEqual(numeric_row.decrement_rect[0], numeric_row.rect[0])
+        self.assertEqual(numeric_row.decrement_rect[0], numeric_row.rect[0] + 2.0)
         self.assertEqual(numeric_row.decrement_rect[2], numeric_row.value_rect[0])
         self.assertEqual(numeric_row.value_rect[2], numeric_row.increment_rect[0])
-        self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2])
+        self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2] - 2.0)
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
-        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 4)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 0)
+        self.assertEqual(runtime.draw_rectangle.call_count, 4)
+
+    def test_enum_property_opens_blender_style_choices_and_sets_one(self):
+        items = (
+            types.SimpleNamespace(identifier="SOLID", name="Solid"),
+            types.SimpleNamespace(identifier="MATERIAL", name="Material Preview"),
+        )
+        rna_prop = types.SimpleNamespace(type="ENUM", enum_items=items)
+        changes = []
+        element = types.SimpleNamespace(
+            display_property_type="ENUM",
+            display_property_value="SOLID",
+            display_property_is_editable=True,
+            resolve_property=lambda: (object(), rna_prop),
+            set_display_property_value=lambda value: changes.append(value) or True,
+        )
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_enum_dropdown = None
+        runtime._menu_layout_dirty = False
+        runtime._ensure_layout = Mock()
+        runtime._tag_menu_redraw = Mock()
+        runtime._menu_mark_context_changed = Mock()
+        row = menu_module.MenuRow(element, "Shading", "PROPERTY")
+
+        self.assertTrue(runtime._toggle_menu_enum_dropdown(row))
+        self.assertIs(runtime._menu_enum_dropdown, element)
+        choices = runtime._enum_choice_rows(element)
+        self.assertEqual([choice.label for choice in choices], ["Solid", "Material Preview"])
+        self.assertTrue(choices[0].enum_active)
+        self.assertFalse(choices[1].enum_active)
+
+        self.assertTrue(runtime._set_menu_enum_choice(choices[1]))
+        self.assertEqual(changes, ["MATERIAL"])
+        self.assertIsNone(runtime._menu_enum_dropdown)
+        runtime._menu_mark_context_changed.assert_called_once_with()
 
     def test_numeric_property_tracks_three_hover_regions_and_press_release(self):
         runtime = menu_module.GestureMenuRuntime()

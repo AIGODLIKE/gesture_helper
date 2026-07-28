@@ -104,6 +104,7 @@ class GesturePreview(
         operator_setattr(self, '_menu_hovered_part', None)
         operator_setattr(self, '_menu_pressed_row', None)
         operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -275,6 +276,7 @@ class GesturePreview(
         operator_setattr(self, '_menu_hovered_part', None)
         operator_setattr(self, '_menu_pressed_row', None)
         operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -342,6 +344,7 @@ class GesturePreview(
             operator_setattr(self, '_menu_runtime_cleaned', True)
             self._unregister_menu_runtime()
         operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_enum_dropdown', None)
         operator_setattr(self, '_menu_drag_mouse', None)
         operator_setattr(self, '_menu_drag_button', None)
         operator_setattr(self, '_preview_renderer', '')
@@ -617,11 +620,18 @@ class GesturePreview(
                 return {'RUNNING_MODAL'}
             self._update_menu_hover(event)
             row = getattr(self, '_menu_hovered_row', None)
+            if row is not None and row.kind == 'ENUM_ITEM':
+                self._close_menu_enum_dropdown()
+                return {'RUNNING_MODAL'}
+            if self._is_enum_property_row(row):
+                self._toggle_menu_enum_dropdown(row)
+                return {'RUNNING_MODAL'}
             if row is not None and row.enabled:
                 if self._press_menu_row(row, event):
                     self._tag_menu_redraw()
             if self._menu_contains(self._menu_mouse(event)):
                 return {'RUNNING_MODAL'}
+            self._close_menu_enum_dropdown()
         if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             if self._clear_menu_press():
                 self._tag_menu_redraw()
