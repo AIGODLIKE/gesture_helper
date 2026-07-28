@@ -553,7 +553,10 @@ class ElementLayoutGpu:
             base_color = draw.background_child_color
         else:
             base_color = draw.background_child_color
-        if hovered:
+        has_number_field = bool(
+            is_property_display and item.numeric_arrows_visible
+        )
+        if hovered and not has_number_field:
             base_color = self._layout_hover_color(base_color)
         self.draw_rounded_rectangle_area(
             (avail_w * 0.5, -row_h * 0.5),
@@ -569,7 +572,7 @@ class ElementLayoutGpu:
         if fraction is not None and fraction > 0.0:
             fill_w = max(2.0, avail_w * fraction)
             slider_color = item._property_slider_color()
-            if hovered:
+            if hovered and not has_number_field:
                 # Apply the same affine blend to both field and slider so the
                 # value fraction stays visible while the whole row highlights.
                 slider_color = self._layout_hover_color(slider_color)
@@ -586,7 +589,11 @@ class ElementLayoutGpu:
             info=status_info,
         )
         arrow_slot = item.publish_numeric_arrow_areas(draw_rect, row_h)
-        item.gpu_draw_numeric_arrows(avail_w, row_h)
+        item.gpu_draw_numeric_arrows(
+            avail_w,
+            row_h,
+            field_corner_mask=corner_mask,
+        )
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate((metrics.pad_x, -((row_h - metrics.label_h) * 0.5)))

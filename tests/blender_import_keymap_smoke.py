@@ -17,6 +17,7 @@ addon = addon_utils.enable("gesture_helper", default_set=True, persistent=False)
 assert addon is not None
 
 from gesture_helper.gesture.gesture_keymap import GestureKeymap  # noqa: E402
+from gesture_helper.ops.gesture_cure import _sort_imported_presets  # noqa: E402
 from gesture_helper.ops.export_import import Import  # noqa: E402
 from gesture_helper.utils.cache_state import CacheState  # noqa: E402
 from gesture_helper.utils.gesture_persistence import _apply_gesture_data  # noqa: E402
@@ -70,6 +71,31 @@ before_data = get_pref().get_gesture_data(True)
 before_kmis = gesture_kmis()
 assert [gesture.name for gesture in store.gesture] == ["Existing"]
 assert before_kmis, "Expected the original gesture shortcut to be registered"
+
+# The Ctrl+Alt+Shift bulk-preset path keeps existing gestures intact, then
+# groups its new example gestures/menus before their normal-preset counterparts.
+bulk_radial = store.gesture.add()
+bulk_radial.name = "Bulk Radial"
+bulk_radial.gesture_type = "RADIAL"
+bulk_menu_a = store.gesture.add()
+bulk_menu_a.name = "Bulk Menu A"
+bulk_menu_a.gesture_type = "MENU"
+bulk_menu_b = store.gesture.add()
+bulk_menu_b.name = "Bulk Menu B"
+bulk_menu_b.gesture_type = "MENU"
+bulk_radial_b = store.gesture.add()
+bulk_radial_b.name = "Bulk Radial B"
+bulk_radial_b.gesture_type = "RADIAL"
+assert _sort_imported_presets(
+    store.gesture,
+    1,
+    [(True, False), (False, True), (True, True), (False, False)],
+)
+assert [gesture.name for gesture in store.gesture] == [
+    "Existing", "Bulk Radial B", "Bulk Menu A", "Bulk Radial", "Bulk Menu B",
+]
+while len(store.gesture) > 1:
+    store.gesture.remove(len(store.gesture) - 1)
 
 # Snapshot/disk replacement is also transactional. Inject a post-assignment
 # failure and verify the old live collection, index, cache, and KMIs return.

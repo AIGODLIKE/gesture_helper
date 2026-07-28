@@ -141,6 +141,44 @@ class MenuModalBaselineTests(unittest.TestCase):
         self.assertEqual(menu._window_modal_operators(window), ())
         self.assertFalse(menu._has_external_modal(FakeContext(window)))
 
+    def test_wheel_over_numeric_row_changes_value_without_zooming_editor(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._ensure_layout = lambda **_kwargs: None
+        menu._update_menu_hover = lambda _event: False
+        menu._menu_mouse = lambda event: event.point
+        menu._menu_contains = lambda _point: True
+        calls = []
+        row = type("Row", (), {
+            "enabled": True,
+            "kind": "PROPERTY",
+            "element": type("Element", (), {
+                "display_property_is_editable": True,
+                "display_property_type": "FLOAT",
+                "apply_property_wheel": lambda _self, direction, precise=False: (
+                    calls.append((direction, precise)) or True
+                ),
+            })(),
+        })()
+        menu._menu_hovered_row = row
+        menu._menu_mark_context_changed = lambda: calls.append("redraw")
+        event = type("Event", (), {
+            "type": "WHEELUPMOUSE",
+            "value": "PRESS",
+            "shift": True,
+            "point": (10.0, 10.0),
+        })()
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'RUNNING_MODAL'})
+        self.assertEqual(calls, [(1, True), "redraw"])
+
 
 if __name__ == "__main__":
     unittest.main()

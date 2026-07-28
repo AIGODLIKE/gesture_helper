@@ -298,7 +298,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime._tag_menu_redraw.assert_called_once_with()
         self.assertTrue(runtime._finish_menu_drag(button="LEFTMOUSE"))
 
-    def test_boolean_property_draws_a_switch_and_numeric_property_draws_arrows(self):
+    def test_boolean_property_uses_optional_checkbox_and_numeric_property_draws_arrows(self):
         runtime = menu_module.GestureMenuRuntime()
         runtime._menu_hovered_row = None
         runtime._menu_current_reveal = 1.0
@@ -306,6 +306,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime.draw_rectangle = Mock()
         runtime.draw_text = Mock()
         runtime.draw_2d_line = Mock()
+        runtime.draw_image = Mock()
         runtime._fit_text = lambda text, _width, _size: text
         colors = self._colors()
 
@@ -315,13 +316,15 @@ class MenuRedrawScopeTests(unittest.TestCase):
                 display_property_value=True,
                 display_property_fraction=None,
                 is_draw_icon=False,
+                property_bool_icons_enabled=False,
             ),
             "Enabled",
             "PROPERTY",
             rect=(0.0, 0.0, 200.0, 24.0),
         )
         runtime._draw_row(boolean_row, self._metrics(), colors)
-        self.assertGreaterEqual(runtime.draw_rounded_rectangle_area.call_count, 3)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 0)
+        runtime.draw_image.assert_not_called()
         self.assertIsNone(boolean_row.decrement_rect)
         self.assertIsNone(boolean_row.increment_rect)
 
@@ -331,6 +334,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
                 display_property_type="FLOAT",
                 display_property_value=0.2,
                 display_property_fraction=0.2,
+                display_property_is_editable=True,
                 is_draw_icon=False,
             ),
             "Amount  0.20",
@@ -342,6 +346,125 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertIsNotNone(numeric_row.decrement_rect)
         self.assertIsNotNone(numeric_row.increment_rect)
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
+
+    def test_numeric_property_tracks_three_hover_regions_and_press_release(self):
+        runtime = menu_module.GestureMenuRuntime()
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="FLOAT",
+                display_property_is_editable=True,
+            ),
+            "Amount  0.20",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        runtime._menu_panels = [menu_module.MenuPanel(0, [row])]
+        runtime._menu_open_path = []
+        runtime._menu_hovered_row = None
+        runtime._menu_hovered_part = None
+        runtime._menu_pressed_row = None
+        runtime._menu_pressed_part = None
+        runtime._ensure_layout = lambda **_kwargs: None
+        runtime._metrics = self._metrics
+        runtime._menu_mouse = lambda event: event.point
+        runtime._sync_menu_tooltip = lambda _element: False
+
+        with patch.object(menu_module, "show_number_arrows", return_value=True):
+            for point, expected in (
+                ((3.0, 12.0), menu_module.NUMBER_PART_DECREMENT),
+                ((100.0, 12.0), menu_module.NUMBER_PART_VALUE),
+                ((197.0, 12.0), menu_module.NUMBER_PART_INCREMENT),
+            ):
+                event = types.SimpleNamespace(point=point)
+                self.assertTrue(runtime._update_menu_hover(event))
+                self.assertEqual(runtime._menu_hovered_part, expected)
+
+            press = types.SimpleNamespace(point=(197.0, 12.0))
+            self.assertTrue(runtime._press_menu_row(row, press))
+            self.assertIs(runtime._menu_pressed_row, row)
+            self.assertEqual(runtime._menu_pressed_part, menu_module.NUMBER_PART_INCREMENT)
+            self.assertTrue(runtime._clear_menu_press())
+            self.assertIsNone(runtime._menu_pressed_row)
+            self.assertIsNone(runtime._menu_pressed_part)
+
+    def test_read_only_numeric_property_does_not_advertise_arrow_controls(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_hovered_row = None
+        runtime._menu_pressed_row = None
+        runtime._menu_current_reveal = 1.0
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime.draw_image = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="FLOAT",
+                display_property_value=0.2,
+                display_property_fraction=0.2,
+                display_property_is_editable=False,
+                is_draw_icon=False,
+            ),
+            "Amount  0.20",
+            "PROPERTY",
+            enabled=False,
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+
+        with patch.object(menu_module, "show_number_arrows", return_value=True):
+            runtime._draw_row(row, self._metrics(), self._colors())
+
+        self.assertIsNone(row.decrement_rect)
+        self.assertIsNone(row.value_rect)
+        self.assertIsNone(row.increment_rect)
+        runtime.draw_2d_line.assert_not_called()
+
+    def test_boolean_property_draws_native_checkbox_when_state_icons_are_enabled(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime.draw_image = Mock()
+        texture = object()
+        _module(
+            f"{PACKAGE}.utils.texture",
+            Texture=types.SimpleNamespace(get_texture=lambda icon: texture),
+        )
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_value=True,
+                property_bool_icons_enabled=True,
+            ),
+            "Enabled",
+            "PROPERTY",
+        )
+
+        occupied = runtime._draw_boolean_state_icon(
+            row,
+            x=10.0,
+            y1=0.0,
+            height=24.0,
+            metrics=self._metrics(),
+        )
+
+        self.assertGreater(occupied, 0.0)
+        runtime.draw_image.assert_called_once_with((10.0, 5.0), 14.0, 14.0, texture=texture)
+
+    def test_header_has_square_lower_corners(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        panel = menu_module.MenuPanel(
+            depth=0,
+            rows=[],
+            title="Menu",
+            header_rect=(0.0, 20.0, 200.0, 44.0),
+        )
+
+        runtime._draw_header(panel, self._metrics(), self._colors())
+
+        runtime.draw_rectangle.assert_called_once_with(0.0, 20.0, 200.0, 4.0, self._colors().header)
 
 
 if __name__ == "__main__":

@@ -63,6 +63,12 @@ for name in example_names:
     fake = FakeImport(presets[name])
     assert Import.gesture_import(fake), (name, fake.reports)
 
+# MX uses the same 3D-view Gizmo toggle as a normal bundled preset. Keep it
+# as a PROPERTY element so its RNA path is resolved by the property runtime.
+mx_preset = REPOSITORY / "src" / "preset" / "MX Preset.json"
+mx_import = FakeImport(mx_preset)
+assert Import.gesture_import(mx_import), mx_import.reports
+
 # ``gesture_import`` is the low-level transactional loader. The real operator
 # clears derived structure caches in ``execute`` after this method returns.
 PublicCacheFunc.cache_clear()
@@ -175,6 +181,21 @@ def _all_elements(gesture):
 
 with bpy.context.temp_override(**_view3d_override()):
     gestures_by_name = {gesture.name: gesture for gesture in store.gesture}
+
+    mx_gizmo_elements = [
+        element
+        for gesture in store.gesture
+        for element in _all_elements(gesture)
+        if (
+            element.parent_gesture.name == "View"
+            and element.name == "Show Gizmo"
+            and element.property_data_path == "space_data.show_gizmo"
+        )
+    ]
+    assert len(mx_gizmo_elements) == 1, mx_gizmo_elements
+    mx_gizmo = mx_gizmo_elements[0]
+    assert mx_gizmo.is_property_display
+    assert mx_gizmo.resolve_property() is not None
 
     # Validate every non-fixture operator against the real Blender RNA. This
     # catches stale operator ids and malformed context_* arguments in examples.

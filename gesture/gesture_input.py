@@ -836,6 +836,8 @@ class GestureInputProcessor:
             return False
         element, _start_mouse, start_value = drag
         session.property_drag = None
+        session._numeric_pressed_element = None
+        session._numeric_pressed_part = None
         session._property_drag_moved = False
         changed = element.set_display_property_value(start_value)
         if changed:
@@ -851,6 +853,19 @@ class GestureInputProcessor:
 
         Returns None when the event is not handled here.
         """
+        if (
+                session.property_drag is None
+                and getattr(session, '_numeric_pressed_element', None) is not None
+        ):
+            if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+                session._numeric_pressed_element = None
+                session._numeric_pressed_part = None
+                session._event_consumed = True
+                return False
+            if event.value == 'PRESS' and event.type in {'RIGHTMOUSE', 'ESC'}:
+                session._numeric_pressed_element = None
+                session._numeric_pressed_part = None
+
         drag = session.property_drag
         if drag is not None:
             element, start_mouse, start_value = drag
@@ -882,6 +897,8 @@ class GestureInputProcessor:
                 # receives the event instead of leaving a zombie gesture.
                 # Keep the dragged value and suppress a second property execute.
                 session.property_drag = None
+                session._numeric_pressed_element = None
+                session._numeric_pressed_part = None
                 if getattr(session, '_property_drag_moved', False):
                     session._suppress_property_execute = True
                 session._property_drag_moved = False
@@ -889,6 +906,8 @@ class GestureInputProcessor:
             if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
                 session._event_consumed = True
                 session.property_drag = None
+                session._numeric_pressed_element = None
+                session._numeric_pressed_part = None
                 if getattr(session, '_property_drag_moved', False):
                     session._suppress_property_execute = True
                 session._property_drag_moved = False
@@ -921,8 +940,19 @@ class GestureInputProcessor:
 
                 arrow_direction = numeric_property_arrow_direction(item, ops)
                 if arrow_direction:
+                    from ..utils.number_arrows import (
+                        NUMBER_PART_DECREMENT,
+                        NUMBER_PART_INCREMENT,
+                    )
+
                     session._event_consumed = True
                     session._suppress_property_execute = True
+                    session._numeric_pressed_element = item
+                    session._numeric_pressed_part = (
+                        NUMBER_PART_INCREMENT
+                        if arrow_direction > 0
+                        else NUMBER_PART_DECREMENT
+                    )
                     changed = item.apply_property_wheel(
                         arrow_direction,
                         precise=getattr(event, 'shift', False),
@@ -932,7 +962,9 @@ class GestureInputProcessor:
                             getattr(session, '_poll_context_revision', 0) + 1
                         )
                         refresh_snapshot(session, ops)
-                    return changed
+                    # Pressed feedback is a visual change even when the RNA
+                    # value is already clamped at its hard bound.
+                    return True
                 start_value = item.display_property_value
                 if start_value is None:
                     return None
@@ -942,8 +974,12 @@ class GestureInputProcessor:
                     Vector((event.mouse_x, event.mouse_y)),
                     start_value,
                 )
+                from ..utils.number_arrows import NUMBER_PART_VALUE
+
+                session._numeric_pressed_element = item
+                session._numeric_pressed_part = NUMBER_PART_VALUE
                 session._property_drag_moved = False
-                return False
+                return True
             if prop_type in {'BOOLEAN', 'ENUM'}:
                 session._event_consumed = True
                 changed = item.toggle_display_property()

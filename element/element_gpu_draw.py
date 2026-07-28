@@ -12,9 +12,19 @@ from ..utils.gesture_items import get_gesture_extension_items
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache
 from ..utils.color import color_to_srgb
+from ..utils.layout_alignment import blend_layout_hover_color
 from ..utils.public_gpu import PublicGpu
 from ..utils.number_arrows import (
-    number_arrow_rects,
+    NUMBER_EDGE_BLEND,
+    NUMBER_HOVER_BLEND,
+    NUMBER_PART_DECREMENT,
+    NUMBER_PART_INCREMENT,
+    NUMBER_PART_VALUE,
+    NUMBER_PRESSED_BLEND,
+    number_arrow_chevron,
+    number_field_corner_masks,
+    number_field_part,
+    number_field_rects,
     number_arrow_slot_width,
     show_number_arrows,
 )
@@ -285,43 +295,129 @@ class ElementGpuProperty:
 
     def publish_numeric_arrow_areas(self, rect, row_height: float) -> float:
         slot = self.numeric_arrow_slot(row_height)
-        decrement, increment = number_arrow_rects(rect, slot)
+        decrement, value, increment = number_field_rects(rect, slot)
         self.property_decrement_draw_area = decrement
+        self.property_value_draw_area = value
         self.property_increment_draw_area = increment
         return slot
 
-    def gpu_draw_numeric_arrows(self, width: float, row_height: float) -> float:
-        """Draw local-space chevrons and return the reserved edge slot width."""
+    def _numeric_field_states(self):
+        ctx = self._draw_frame_ctx()
+        mouse = getattr(ctx, 'mouse_region', None) if ctx is not None else None
+        hovered = number_field_part(
+            mouse,
+            getattr(self, 'property_decrement_draw_area', None),
+            getattr(self, 'property_value_draw_area', None),
+            getattr(self, 'property_increment_draw_area', None),
+        )
+        session = getattr(getattr(self, 'ops', None), 'session', None)
+        if (
+                session is not None
+                and getattr(session, '_numeric_pressed_element', None) == self
+        ):
+            pressed = getattr(session, '_numeric_pressed_part', None)
+        else:
+            pressed = None
+        return hovered, pressed
+
+    def gpu_draw_numeric_arrows(
+            self,
+            width: float,
+            row_height: float,
+            *,
+            field_left: float = 0.0,
+            field_right: float | None = None,
+            field_corner_mask=None,
+    ) -> float:
+        """Draw a native three-part number field in local screen space."""
         slot = self.numeric_arrow_slot(row_height)
         if slot <= 0.0:
             return 0.0
+        field_left = float(field_left)
+        field_right = float(width if field_right is None else field_right)
+        if field_right <= field_left:
+            return 0.0
+        slot = min(slot, (field_right - field_left) * 0.5)
+        hovered, pressed = self._numeric_field_states()
+        base = self._property_background_color(active=False)
+        active = self._property_background_color(active=True)
+        decrement_mask, value_mask, increment_mask = number_field_corner_masks(
+            field_corner_mask,
+        )
+        part_rects = (
+            (
+                NUMBER_PART_DECREMENT,
+                field_left,
+                field_left + slot,
+                decrement_mask,
+            ),
+            (
+                NUMBER_PART_VALUE,
+                field_left + slot,
+                field_right - slot,
+                value_mask,
+            ),
+            (
+                NUMBER_PART_INCREMENT,
+                field_right - slot,
+                field_right,
+                increment_mask,
+            ),
+        )
+        for part, left, right, corner_mask in part_rects:
+            if right <= left:
+                continue
+            if part == pressed:
+                amount = NUMBER_PRESSED_BLEND
+            elif part == hovered:
+                amount = NUMBER_HOVER_BLEND
+            elif part == NUMBER_PART_VALUE:
+                # The value block is already painted by the property surface
+                # and slider; only edge blocks need a normal-state fill.
+                continue
+            else:
+                amount = NUMBER_EDGE_BLEND
+            color = blend_layout_hover_color(base, active, amount)
+            self.draw_rounded_rectangle_area(
+                ((left + right) * 0.5, -row_height * 0.5),
+                color=color,
+                radius=min(self.text_radius, row_height * 0.32),
+                width=right - left,
+                height=row_height,
+                corner_mask=corner_mask,
+            )
+
         center_y = -row_height * 0.5
-        half_h = max(2.5, min(row_height * 0.18, slot * 0.22))
-        half_w = max(1.8, half_h * 0.62)
-        line_width = max(1.0, row_height * 0.055)
-        color = self.text_color
-        left_x = slot * 0.5
-        right_x = width - slot * 0.5
-        self.draw_2d_line(
-            ((left_x + half_w, center_y + half_h), (left_x - half_w, center_y)),
-            color=color,
-            line_width=line_width,
-        )
-        self.draw_2d_line(
-            ((left_x - half_w, center_y), (left_x + half_w, center_y - half_h)),
-            color=color,
-            line_width=line_width,
-        )
-        self.draw_2d_line(
-            ((right_x - half_w, center_y + half_h), (right_x + half_w, center_y)),
-            color=color,
-            line_width=line_width,
-        )
-        self.draw_2d_line(
-            ((right_x + half_w, center_y), (right_x - half_w, center_y - half_h)),
-            color=color,
-            line_width=line_width,
-        )
+        half_w, half_h, line_width = number_arrow_chevron(row_height, slot)
+        for part, center_x, direction in (
+            (
+                NUMBER_PART_DECREMENT,
+                field_left + slot * 0.5,
+                -1,
+            ),
+            (
+                NUMBER_PART_INCREMENT,
+                field_right - slot * 0.5,
+                1,
+            ),
+        ):
+            tip_x = center_x + direction * half_w
+            back_x = center_x - direction * half_w
+            color = (
+                self.draw_property.text_active_color
+                if part in {hovered, pressed}
+                else self.text_color
+            )
+            self.draw_2d_line(
+                ((back_x, center_y + half_h), (tip_x, center_y)),
+                color=color,
+                line_width=line_width,
+            )
+            self.draw_2d_line(
+                ((tip_x, center_y), (back_x, center_y - half_h)),
+                color=color,
+                line_width=line_width,
+            )
         return slot
 
     @property
@@ -1001,7 +1097,7 @@ class ElementGpuExtensionItem:
                         height=row_h,
                     )
                 is_error = item.element_status_info.status.is_error
-                if is_error or hovered:
+                if is_error or (hovered and not item.numeric_arrows_visible):
                     stroke, line_width = self._outline_colors(active=hovered)
                     self.draw_rounded_rectangle_outlined(
                         (w * 0.5, -row_h * 0.5),

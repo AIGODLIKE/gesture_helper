@@ -101,6 +101,9 @@ class GesturePreview(
         operator_setattr(self, '_menu_panels', [])
         operator_setattr(self, '_menu_open_path', [])
         operator_setattr(self, '_menu_hovered_row', None)
+        operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_pressed_row', None)
+        operator_setattr(self, '_menu_pressed_part', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -269,6 +272,9 @@ class GesturePreview(
         operator_setattr(self, '_menu_gesture_ref', gesture)
         operator_setattr(self, '_menu_open_path', [])
         operator_setattr(self, '_menu_hovered_row', None)
+        operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_pressed_row', None)
+        operator_setattr(self, '_menu_pressed_part', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -398,6 +404,9 @@ class GesturePreview(
         if previous is None or previous[:3] != identity:
             operator_setattr(self, '_menu_open_path', [])
             operator_setattr(self, '_menu_hovered_row', None)
+            operator_setattr(self, '_menu_hovered_part', None)
+            operator_setattr(self, '_menu_pressed_row', None)
+            operator_setattr(self, '_menu_pressed_part', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         self._ensure_layout()
         operator_setattr(self, '_preview_target_key', key)
@@ -607,7 +616,15 @@ class GesturePreview(
                 self._begin_menu_close()
                 return {'RUNNING_MODAL'}
             self._update_menu_hover(event)
+            row = getattr(self, '_menu_hovered_row', None)
+            if row is not None and row.enabled:
+                if self._press_menu_row(row, event):
+                    self._tag_menu_redraw()
             if self._menu_contains(self._menu_mouse(event)):
+                return {'RUNNING_MODAL'}
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if self._clear_menu_press():
+                self._tag_menu_redraw()
                 return {'RUNNING_MODAL'}
         if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             self._ensure_layout()

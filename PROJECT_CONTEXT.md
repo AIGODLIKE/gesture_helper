@@ -52,6 +52,8 @@ with bundled JSON presets, translations, and PNG icon assets.
    wrappers; `element/element_property.py` resolves and edits live RNA.
 4. `gesture/gesture_draw_gpu.py`, `element/*draw*.py`, and `src/lib` calculate
    GPU geometry and hit boxes. `gesture/menu.py` renders persistent menus;
+   the radial direction cue begins halfway between its center and inner ring,
+   then eases its radius, sweep, opacity, and stroke weight into confirmation.
    `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
    nested menus. Layout containers keep Blender's two alignment concepts
    separate: `layout_align` defaults on, removes inter-item spacing, makes a
@@ -64,7 +66,7 @@ with bundled JSON presets, translations, and PNG icon assets.
    draw or hit area. Layout-row hover changes only the background fill (no
    hover outline); property backgrounds and slider fills receive the same
    color blend so their value fraction remains visible.
-   `gesture/runtime_tooltip.py` owns delayed hover/fade state and
+   `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip
    timers are cancelled on target changes, modal reset/exit, and unregister.
@@ -72,7 +74,9 @@ with bundled JSON presets, translations, and PNG icon assets.
    gesture timeout or trajectory overlay); menu previews use the dedicated
    `GestureMenuRuntime` draw handler and a menu-specific area lookup so the
    unified preview's radial GPU base cannot shadow its draw routing. Plain
-   Space-drag converts a centered menu preview to a movable anchored preview.
+   Space-drag or left-dragging a menu title converts a centered menu preview
+   to a movable anchored preview. The preview selector has a draggable title
+   bar with an independent persisted-in-session offset.
    Radial and menu gesture previews share the compact translated selector and
    viewport instruction HUD; the menu backend initializes, draws, and routes
    selector input through its own handler before menu hit testing. Selector
@@ -80,7 +84,20 @@ with bundled JSON presets, translations, and PNG icon assets.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
    status, label, icon, and display metrics once per draw.
-   Ordinary bottom-extension rows also publish their current-token hit geometry
+   Numeric `INT`/`FLOAT` property rows share Blender-style decrement, value,
+   and increment geometry when Blender's global Numeric Input Arrows preference
+   is enabled. The three regions have independent normal, hover, and pressed
+   feedback: edge clicks step, the value region scrubs or invokes property
+   editing, and wheel input steps hovered values without leaking through a
+   persistent menu to the editor. Edge regions span the complete field surface,
+   inherit only the field's exposed round corners, and scale their chevrons
+   with row height. Read-only numeric rows suppress the arrows.
+   Persistent menu boolean rows use Blender-style left checkboxes when their
+   per-property State Icons option is enabled, or hover-only feedback when it
+   is disabled; nonnumeric rows use type badges.
+   Aligned layout separators consume only their visible line height, so they
+   no longer introduce hidden vertical spacing. Ordinary bottom-extension rows
+   also publish their current-token hit geometry
    before evaluating draw-time hover, so highlight and delayed tooltip state do
    not disappear when each GPU frame rotates the layout token.
 5. `utils/public_cache.py`, `cache_state.py`, `structure_cache_ops.py`, and
@@ -106,9 +123,13 @@ with bundled JSON presets, translations, and PNG icon assets.
   area/root-scoped 32-row page; selection changes reveal their page, while
   explicit page changes are preserved. Layout Gesture Action choices are built
   lazily in a menu instead of as hundreds of controls on every panel draw.
-  Gesture preferences include the hover-tooltip delay in milliseconds (100 ms
-  by default); runtime tooltip fade-in is fixed and does not persist state.
+  Gesture preferences include the hover-tooltip delay in milliseconds (300 ms
+  by default); runtime tooltip fade timing is fixed and does not persist state.
   `ops/quick_add/` implements context-sensitive creation helpers and previews.
+- Ctrl+Alt+Shift on `wm.gesture_add` imports every bundled preset, then
+  stably groups only the new entries as example `RADIAL`, example `MENU`,
+  normal `RADIAL`, and normal `MENU`; the final reordered list is scheduled
+  for persistence.
 - `utils/preset.py` discovers `src/preset/*.json`; files beginning `Example `
   are opt-in debug fixtures. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.
@@ -147,6 +168,7 @@ flowchart TD
 - Lint: `python -m ruff check .`.
 - Blender smoke scripts cover preset coverage, property data paths, import
   rollback/keymaps, lifecycle/reload, preview (including menu draw routing,
+  translation, three-part numeric-field state/hit boxes, selector/title dragging,
   alignment RNA, and Space-drag), and panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
@@ -168,10 +190,12 @@ flowchart TD
 2. **Lint failure (reproducible):** `python -m ruff check .` reports `E402`
    at `utils/__init__.py:2` because `import bpy` follows `public_color`.
    This is low-risk behaviorally but blocks a clean lint gate.
-3. **Blender-only behavior remains higher risk than unit coverage:** real RNA
-   status checks and preview lifecycle pass in Blender 4.2.1 and 5.2.0, and the
-   4.2.1 full lifecycle smoke passes. Foreground visual placement, multi-window
-   behavior, and file-load restoration still require targeted manual checks.
+3. **Blender-only behavior remains higher risk than unit coverage:** the current
+   preview smoke passes in Blender 4.2.1, including menu animation lifecycle,
+   selector/title dragging, and cleanup. Blender 5.2.0 currently exits with a
+   native `EXCEPTION_ACCESS_VIOLATION` before this smoke can provide Python
+   assertions. Foreground visual placement, multi-window behavior, and file-load
+   restoration still require targeted manual checks.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
@@ -180,12 +204,11 @@ flowchart TD
 5. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
    after Blender's flat build; changes to manifest exclusions or workflow
    layout should be checked by inspecting ZIP entries.
-6. **Blender 5.2 lifecycle smoke crash:** the full lifecycle script exits with
-   a native `tbbmalloc.dll` access violation and no Python backtrace, while the
-   same 5.2 install passes element-status and preview smoke and Blender 4.2.1
-   passes all three. Treat 5.2 full-lifecycle coverage as unresolved until the
-   allocator crash is isolated; Extension validation/package build were not
-   rerun for the tooltip-only change.
+6. **Blender 5.2 smoke crash:** the full lifecycle script and the current
+   preview smoke both exit with a native `EXCEPTION_ACCESS_VIOLATION` and no
+   Python backtrace. Treat 5.2 smoke coverage as unresolved until the allocator
+   crash is isolated; extension validation/package build were not rerun for the
+   current UI interaction changes.
 
 ## Constraints
 

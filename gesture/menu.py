@@ -15,8 +15,16 @@ from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 from ..utils.region_mouse import find_window_region, mouse_in_window_region
 from ..utils.layout_alignment import blend_layout_hover_color
 from ..utils.number_arrows import (
-    number_arrow_direction,
-    number_arrow_rects,
+    NUMBER_HOVER_BLEND,
+    NUMBER_PART_DECREMENT,
+    NUMBER_PART_INCREMENT,
+    NUMBER_PART_VALUE,
+    NUMBER_PRESSED_BLEND,
+    number_arrow_chevron,
+    number_field_corner_masks,
+    number_field_part,
+    number_field_rects,
+    number_part_direction,
     number_arrow_slot_width,
     show_number_arrows,
 )
@@ -99,6 +107,7 @@ class MenuRow:
     status_info: Any = None
     rect: tuple[float, float, float, float] | None = None
     decrement_rect: tuple[float, float, float, float] | None = None
+    value_rect: tuple[float, float, float, float] | None = None
     increment_rect: tuple[float, float, float, float] | None = None
 
 
@@ -348,6 +357,9 @@ class GestureMenuRuntime(PublicGpu):
 
         cancel_hover_tooltip(getattr(self, '_menu_tooltip_state', None))
         self._menu_hovered_row = None
+        self._menu_hovered_part = None
+        self._menu_pressed_row = None
+        self._menu_pressed_part = None
         self._menu_drag_mouse = None
         self._menu_drag_button = None
         ensure_event_timer = getattr(self, '_ensure_menu_animation_event_timer', None)
@@ -636,6 +648,16 @@ class GestureMenuRuntime(PublicGpu):
             cursor -= height_row
 
     def _build_panels(self) -> None:
+        hovered_element = getattr(
+            getattr(self, '_menu_hovered_row', None),
+            'element',
+            None,
+        )
+        pressed_element = getattr(
+            getattr(self, '_menu_pressed_row', None),
+            'element',
+            None,
+        )
         gesture = self.operator_gesture
         area = getattr(self, '_menu_area', None)
         region = find_window_region(area)
@@ -677,6 +699,21 @@ class GestureMenuRuntime(PublicGpu):
             parent_panel = panel
         self._menu_open_path = valid_path
         self._menu_panels = panels
+        rows = tuple(row for panel in panels for row in panel.rows)
+        if hovered_element is not None:
+            self._menu_hovered_row = next(
+                (row for row in rows if row.element == hovered_element),
+                None,
+            )
+            if self._menu_hovered_row is None:
+                self._menu_hovered_part = None
+        if pressed_element is not None:
+            self._menu_pressed_row = next(
+                (row for row in rows if row.element == pressed_element),
+                None,
+            )
+            if self._menu_pressed_row is None:
+                self._menu_pressed_part = None
 
     def _draw_panel_background(self, panel, metrics, colors) -> None:
         x1, y1, x2, y2 = panel.rect
@@ -724,6 +761,8 @@ class GestureMenuRuntime(PublicGpu):
             width=width,
             height=height,
         )
+        # Retain only the title bar's top corners; its lower edge joins the body.
+        self.draw_rectangle(x1, y1, width, min(metrics.radius, height * 0.5), colors.header)
         title = self._fit_text(
             panel.title,
             max(1.0, width - metrics.pad_x * 2.0 - height),
@@ -804,11 +843,22 @@ class GestureMenuRuntime(PublicGpu):
         )
 
     @staticmethod
-    def _property_control_width(prop_type, metrics) -> float:
-        if prop_type in {'INT', 'FLOAT'} and show_number_arrows():
+    def _numeric_arrows_visible(row, prop_type) -> bool:
+        if prop_type not in {'INT', 'FLOAT'} or not show_number_arrows():
+            return False
+        if row is None or not row.enabled:
+            return False
+        try:
+            return bool(row.element.display_property_is_editable)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return False
+
+    @classmethod
+    def _property_control_width(cls, prop_type, metrics, row=None) -> float:
+        if cls._numeric_arrows_visible(row, prop_type):
             return number_arrow_slot_width(metrics.row_height)
         if prop_type == 'BOOLEAN':
-            return metrics.row_height * 1.45
+            return 0.0
         badge = {
             'INT': 'INT',
             'FLOAT': 'FLOAT',
@@ -816,6 +866,34 @@ class GestureMenuRuntime(PublicGpu):
             'STRING': 'TEXT',
         }.get(prop_type, 'PROP')
         return measure_text(badge, metrics.font_size * 0.62)[0] + metrics.gap * 1.5
+
+    @staticmethod
+    def _show_boolean_state_icon(row) -> bool:
+        """Respect the per-property icon choice for persistent menu rows."""
+        try:
+            return bool(row.element.property_bool_icons_enabled)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return False
+
+    def _draw_boolean_state_icon(self, row, *, x, y1, height, metrics) -> float:
+        """Draw Blender's checkbox treatment and return its occupied width."""
+        try:
+            from ..utils.texture import Texture
+
+            icon = 'CHECKBOX_HLT' if row.element.display_property_value else 'CHECKBOX_DEHLT'
+            texture = Texture.get_texture(icon)
+        except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError, TypeError):
+            texture = None
+        if texture is None:
+            return 0.0
+        icon_size = min(metrics.line_height, height - 4.0 * metrics.scale)
+        self.draw_image(
+            (x, y1 + (height - icon_size) * 0.5),
+            icon_size,
+            icon_size,
+            texture=texture,
+        )
+        return icon_size + metrics.gap
 
     def _draw_property_control(
             self,
@@ -831,57 +909,106 @@ class GestureMenuRuntime(PublicGpu):
     ) -> None:
         prop_type, value, _fraction, base, active = visual
         height = y2 - y1
-        if prop_type in {'INT', 'FLOAT'} and show_number_arrows():
+        if self._numeric_arrows_visible(row, prop_type):
             slot = number_arrow_slot_width(height)
-            row.decrement_rect, row.increment_rect = number_arrow_rects(
-                (x1, y1, x2, y2),
+            surface_inset = max(1.0, 2.0 * metrics.scale)
+            field_rect = (
+                x1 + surface_inset,
+                y1,
+                x2 - surface_inset,
+                y2,
+            )
+            (
+                row.decrement_rect,
+                row.value_rect,
+                row.increment_rect,
+            ) = number_field_rects(
+                field_rect,
                 slot,
             )
+            hovered_part = (
+                getattr(self, '_menu_hovered_part', None)
+                if row is getattr(self, '_menu_hovered_row', None)
+                else None
+            )
+            pressed_part = (
+                getattr(self, '_menu_pressed_part', None)
+                if row is getattr(self, '_menu_pressed_row', None)
+                else None
+            )
+            decrement_mask, value_mask, increment_mask = number_field_corner_masks()
+            part_rects = (
+                (
+                    NUMBER_PART_DECREMENT,
+                    row.decrement_rect,
+                    decrement_mask,
+                ),
+                (
+                    NUMBER_PART_VALUE,
+                    row.value_rect,
+                    value_mask,
+                ),
+                (
+                    NUMBER_PART_INCREMENT,
+                    row.increment_rect,
+                    increment_mask,
+                ),
+            )
+            for part, rect, corner_mask in part_rects:
+                if rect is None or part not in {hovered_part, pressed_part}:
+                    continue
+                rx1, _ry1, rx2, _ry2 = rect
+                amount = (
+                    NUMBER_PRESSED_BLEND
+                    if part == pressed_part
+                    else NUMBER_HOVER_BLEND
+                )
+                state_color = blend_layout_hover_color(base, active, amount)
+                self.draw_rounded_rectangle_area(
+                    ((rx1 + rx2) * 0.5, (y1 + y2) * 0.5),
+                    color=state_color,
+                    radius=min(metrics.radius, height * 0.32),
+                    width=max(1.0, rx2 - rx1),
+                    height=max(1.0, height - surface_inset),
+                    corner_mask=corner_mask,
+                )
+
             center_y = (y1 + y2) * 0.5
-            half_h = max(2.5, min(height * 0.18, slot * 0.22))
-            half_w = max(1.8, half_h * 0.62)
-            line_width = max(1.0, height * 0.055)
-            for center_x, direction in (
-                (x1 + slot * 0.5, -1),
-                (x2 - slot * 0.5, 1),
+            half_w, half_h, line_width = number_arrow_chevron(height, slot)
+            for part, center_x, direction in (
+                (
+                    NUMBER_PART_DECREMENT,
+                    field_rect[0] + slot * 0.5,
+                    -1,
+                ),
+                (
+                    NUMBER_PART_INCREMENT,
+                    field_rect[2] - slot * 0.5,
+                    1,
+                ),
             ):
                 tip_x = center_x + direction * half_w
                 back_x = center_x - direction * half_w
+                arrow_color = (
+                    colors.text_hover
+                    if part in {hovered_part, pressed_part}
+                    else colors.text
+                )
                 self.draw_2d_line(
                     ((back_x, center_y + half_h), (tip_x, center_y)),
-                    color=colors.text,
+                    color=arrow_color,
                     line_width=line_width,
                 )
                 self.draw_2d_line(
                     ((tip_x, center_y), (back_x, center_y - half_h)),
-                    color=colors.text,
+                    color=arrow_color,
                     line_width=line_width,
                 )
             return
         row.decrement_rect = None
+        row.value_rect = None
         row.increment_rect = None
         if prop_type == 'BOOLEAN':
-            track_w = metrics.row_height * 1.08
-            track_h = max(8.0 * metrics.scale, metrics.row_height * 0.46)
-            right = x2 - metrics.pad_x
-            left = right - track_w
-            track = active if value else base
-            self.draw_rounded_rectangle_area(
-                ((left + right) * 0.5, (y1 + y2) * 0.5),
-                color=track,
-                radius=track_h * 0.5,
-                width=track_w,
-                height=track_h,
-            )
-            knob = max(5.0 * metrics.scale, track_h - 4.0 * metrics.scale)
-            knob_x = right - track_h * 0.5 if value else left + track_h * 0.5
-            self.draw_rounded_rectangle_area(
-                (knob_x, (y1 + y2) * 0.5),
-                color=colors.text_hover if value else colors.text_disabled,
-                radius=knob * 0.5,
-                width=knob,
-                height=knob,
-            )
             return
 
         badge = {
@@ -923,19 +1050,42 @@ class GestureMenuRuntime(PublicGpu):
             )
             return
 
-        hovered = row is self._menu_hovered_row
+        hovered = row is getattr(self, '_menu_hovered_row', None)
+        pressed = row is getattr(self, '_menu_pressed_row', None)
         status = getattr(row.status_info, 'status', ElementStatus.VALID)
         property_visual = self._property_visual(row, colors) if row.kind == 'PROPERTY' else None
-        if status.is_error or property_visual is not None or (hovered and row.enabled):
+        has_number_field = bool(
+            property_visual is not None
+            and self._numeric_arrows_visible(row, property_visual[0])
+        )
+        whole_row_active = (hovered or pressed) and not has_number_field
+        has_boolean_icon = (
+            property_visual is not None
+            and property_visual[0] == 'BOOLEAN'
+            and self._show_boolean_state_icon(row)
+        )
+        has_property_background = (
+            property_visual is not None
+            and (property_visual[0] != 'BOOLEAN' or has_boolean_icon)
+        )
+        if status.is_error or has_property_background or (whole_row_active and row.enabled):
             inset = 2.0 * metrics.scale
             if status.is_error:
                 row_color = colors.error
             elif property_visual is not None:
                 row_color = property_visual[3]
-                if hovered and row.enabled:
-                    row_color = blend_layout_hover_color(row_color, colors.hover)
+                if whole_row_active and row.enabled:
+                    row_color = blend_layout_hover_color(
+                        row_color,
+                        colors.hover,
+                        0.72 if pressed else 0.35,
+                    )
             else:
-                row_color = colors.hover
+                row_color = (
+                    blend_layout_hover_color(colors.hover, colors.text_hover, 0.12)
+                    if pressed
+                    else colors.hover
+                )
             self.draw_rounded_rectangle_area(
                 (x1 + width * 0.5, y1 + height * 0.5),
                 color=row_color,
@@ -948,8 +1098,12 @@ class GestureMenuRuntime(PublicGpu):
                 if fraction is not None and fraction > 0.0:
                     fill_w = max(2.0, (width - inset * 2.0) * fraction)
                     fill_color = property_visual[4]
-                    if hovered and row.enabled:
-                        fill_color = blend_layout_hover_color(fill_color, colors.hover)
+                    if whole_row_active and row.enabled:
+                        fill_color = blend_layout_hover_color(
+                            fill_color,
+                            colors.hover,
+                            0.72 if pressed else 0.35,
+                        )
                     self.draw_rounded_rectangle_area(
                         (x1 + inset + fill_w * 0.5, y1 + height * 0.5),
                         color=fill_color,
@@ -970,15 +1124,22 @@ class GestureMenuRuntime(PublicGpu):
 
         if status.is_error:
             text_color = colors.text_hover
-        elif hovered and row.enabled:
+        elif (hovered or pressed) and row.enabled:
             text_color = colors.text_hover
         else:
             text_color = colors.text if row.enabled else colors.text_disabled
         cursor_x = x1 + metrics.pad_x
+        if has_boolean_icon:
+            cursor_x += self._draw_boolean_state_icon(
+                row,
+                x=cursor_x,
+                y1=y1,
+                height=height,
+                metrics=metrics,
+            )
         if (
                 property_visual is not None
-                and property_visual[0] in {'INT', 'FLOAT'}
-                and show_number_arrows()
+                and self._numeric_arrows_visible(row, property_visual[0])
         ):
             cursor_x += number_arrow_slot_width(height)
         element = row.element
@@ -1000,7 +1161,11 @@ class GestureMenuRuntime(PublicGpu):
                 ...
         right_reserve = metrics.pad_x
         if property_visual is not None:
-            right_reserve += self._property_control_width(property_visual[0], metrics)
+            right_reserve += self._property_control_width(
+                property_visual[0],
+                metrics,
+                row,
+            )
         badge = getattr(row.status_info, 'badge', '') if row.status_info is not None else ''
         if row.kind == 'CHILD':
             right_reserve += metrics.row_height * 0.65
@@ -1146,10 +1311,69 @@ class GestureMenuRuntime(PublicGpu):
     def _menu_contains(self, point) -> bool:
         return any(_point_in_rect(point, panel.rect) for panel in self._menu_panels)
 
+    def _menu_number_part(self, row, point):
+        if row is None or row.kind != 'PROPERTY' or not show_number_arrows():
+            return None
+        try:
+            if row.element.display_property_type not in {'INT', 'FLOAT'}:
+                return None
+            if not row.element.display_property_is_editable:
+                return None
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return None
+        if (
+                row.decrement_rect is None
+                or row.value_rect is None
+                or row.increment_rect is None
+        ):
+            metrics = self._metrics()
+            inset = max(1.0, 2.0 * metrics.scale)
+            field_rect = (
+                row.rect[0] + inset,
+                row.rect[1],
+                row.rect[2] - inset,
+                row.rect[3],
+            )
+            (
+                row.decrement_rect,
+                row.value_rect,
+                row.increment_rect,
+            ) = number_field_rects(
+                field_rect,
+                number_arrow_slot_width(row.rect[3] - row.rect[1]),
+            )
+        return number_field_part(
+            point,
+            row.decrement_rect,
+            row.value_rect,
+            row.increment_rect,
+        )
+
+    def _press_menu_row(self, row, event) -> bool:
+        part = self._menu_number_part(row, self._menu_mouse(event))
+        changed = (
+            getattr(self, '_menu_pressed_row', None) is not row
+            or getattr(self, '_menu_pressed_part', None) != part
+        )
+        self._menu_pressed_row = row
+        self._menu_pressed_part = part
+        return changed
+
+    def _clear_menu_press(self) -> bool:
+        if (
+                getattr(self, '_menu_pressed_row', None) is None
+                and getattr(self, '_menu_pressed_part', None) is None
+        ):
+            return False
+        self._menu_pressed_row = None
+        self._menu_pressed_part = None
+        return True
+
     def _update_menu_hover(self, event) -> bool:
         self._ensure_layout()
         point = self._menu_mouse(event)
         old_row = self._menu_hovered_row
+        old_part = getattr(self, '_menu_hovered_part', None)
         hovered = None
         hovered_panel = None
         for panel in reversed(self._menu_panels):
@@ -1162,6 +1386,7 @@ class GestureMenuRuntime(PublicGpu):
                 break
 
         self._menu_hovered_row = hovered
+        self._menu_hovered_part = self._menu_number_part(hovered, point)
         tooltip_changed = self._sync_menu_tooltip(
             getattr(hovered, 'element', None) if hovered is not None else None
         )
@@ -1175,7 +1400,12 @@ class GestureMenuRuntime(PublicGpu):
                 self._menu_layout_dirty = True
                 self._ensure_layout(force=True)
                 path_changed = True
-        return old_row is not hovered or path_changed or tooltip_changed
+        return (
+            old_row is not hovered
+            or old_part != self._menu_hovered_part
+            or path_changed
+            or tooltip_changed
+        )
 
     def _sync_menu_tooltip(self, element) -> bool:
         from .runtime_tooltip import HoverTooltipState, sync_hover_tooltip
@@ -1235,16 +1465,9 @@ class GestureMenuRuntime(PublicGpu):
         return row if status.is_error else None
 
     def _menu_property_arrow_direction(self, row, event) -> int:
-        if row is None or row.kind != 'PROPERTY' or not show_number_arrows():
-            return 0
-        try:
-            if row.element.display_property_type not in {'INT', 'FLOAT'}:
-                return 0
-        except (AttributeError, ReferenceError, RuntimeError):
-            return 0
-        slot = number_arrow_slot_width(self._metrics().row_height)
-        decrement, increment = number_arrow_rects(row.rect, slot)
-        return number_arrow_direction(self._menu_mouse(event), decrement, increment)
+        return number_part_direction(
+            self._menu_number_part(row, self._menu_mouse(event)),
+        )
 
     def _menu_mark_context_changed(self) -> None:
         self._menu_layout_dirty = True

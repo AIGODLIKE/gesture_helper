@@ -109,6 +109,34 @@ class FakeSpaceType:
         return object()
 
 
+class DirectionTipTransitionTests(unittest.TestCase):
+    def test_transition_starts_halfway_and_finishes_at_inner_ring(self):
+        transition = gesture_draw_gpu._direction_tip_transition
+
+        start = transition(20.0, 20.0, 70.0)
+        middle = transition(45.0, 20.0, 70.0)
+        end = transition(70.0, 20.0, 70.0)
+
+        self.assertEqual(start, (10.0, 24.0, 0.28, 0.0))
+        self.assertAlmostEqual(middle[0], 15.0)
+        self.assertAlmostEqual(middle[1], 34.5)
+        self.assertAlmostEqual(middle[2], 0.64)
+        self.assertAlmostEqual(middle[3], 0.5)
+        self.assertEqual(end, (20.0, 45.0, 1.0, 1.0))
+
+    def test_transition_eases_and_clamps_progress(self):
+        transition = gesture_draw_gpu._direction_tip_transition
+
+        before = transition(0.0, 20.0, 70.0)
+        quarter = transition(32.5, 20.0, 70.0)
+        after = transition(100.0, 20.0, 70.0)
+
+        self.assertEqual(before[0], 10.0)
+        self.assertAlmostEqual(quarter[3], 0.15625)
+        self.assertLess(quarter[0], 12.5)
+        self.assertEqual(after, (20.0, 45.0, 1.0, 1.0))
+
+
 class GestureDrawLifecycleTests(unittest.TestCase):
     def setUp(self):
         cls = gesture_draw_gpu.GestureGpuDraw

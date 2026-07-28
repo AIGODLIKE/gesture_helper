@@ -16,10 +16,7 @@ sys.path.insert(0, str(REPOSITORY.parent))
 assert bpy.ops.preferences.addon_enable(module='gesture_helper') == {'FINISHED'}
 
 from gesture_helper.gesture.gesture_draw_gpu import GestureGpuDraw  # noqa: E402
-from gesture_helper.gesture.menu import (  # noqa: E402
-    MENU_TRANSITION_SECONDS,
-    GestureMenuRuntime,
-)
+from gesture_helper.gesture.menu import GestureMenuRuntime  # noqa: E402
 from gesture_helper.gesture.runtime_tooltip import (  # noqa: E402
     sync_hover_tooltip,
 )
@@ -28,13 +25,19 @@ from gesture_helper.element.element_tooltip import (  # noqa: E402
 )
 from gesture_helper.element.extension_hit import (  # noqa: E402
     numeric_property_arrow_direction,
+    numeric_property_arrow_part,
 )
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
 from gesture_helper.ui import ui_list  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
-from gesture_helper.utils.number_arrows import show_number_arrows  # noqa: E402
+from gesture_helper.utils.number_arrows import (  # noqa: E402
+    NUMBER_PART_DECREMENT,
+    NUMBER_PART_INCREMENT,
+    NUMBER_PART_VALUE,
+    show_number_arrows,
+)
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
 
@@ -270,6 +273,21 @@ with suppress_gesture_disk_save():
         numeric_ops,
         mouse=(108.0, 32.0),
     ) == 1
+    assert numeric_property_arrow_part(
+        numeric,
+        numeric_ops,
+        mouse=(12.0, 32.0),
+    ) == NUMBER_PART_DECREMENT
+    assert numeric_property_arrow_part(
+        numeric,
+        numeric_ops,
+        mouse=(50.0, 32.0),
+    ) == NUMBER_PART_VALUE
+    assert numeric_property_arrow_part(
+        numeric,
+        numeric_ops,
+        mouse=(108.0, 32.0),
+    ) == NUMBER_PART_INCREMENT
 
     exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
     exported_box = next(
@@ -399,6 +417,25 @@ with suppress_gesture_disk_save():
         'First',
         'Nested',
     }
+    numeric_row = next(
+        row
+        for row in menu_preview._menu_panels[0].rows
+        if row.kind == 'PROPERTY'
+    )
+    nx1, ny1, nx2, ny2 = numeric_row.rect
+    center_y = (ny1 + ny2) * 0.5
+    assert menu_preview._menu_number_part(
+        numeric_row,
+        (nx1 + 3.0, center_y),
+    ) == NUMBER_PART_DECREMENT
+    assert menu_preview._menu_number_part(
+        numeric_row,
+        ((nx1 + nx2) * 0.5, center_y),
+    ) == NUMBER_PART_VALUE
+    assert menu_preview._menu_number_part(
+        numeric_row,
+        (nx2 - 3.0, center_y),
+    ) == NUMBER_PART_INCREMENT
     root_rect = menu_preview._menu_panels[0].rect
     root_center = (
         (root_rect[0] + root_rect[2]) * 0.5,

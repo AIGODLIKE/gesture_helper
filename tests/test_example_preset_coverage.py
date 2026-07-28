@@ -361,6 +361,25 @@ class ExamplePresetCoverageTests(unittest.TestCase):
             with path.open(encoding="utf-8") as handle:
                 json.load(handle, object_pairs_hook=_reject_duplicate_keys)
 
+    def test_mx_gizmo_toggle_uses_a_property_element(self):
+        path = PRESET_DIR / "MX Preset.json"
+        with path.open(encoding="utf-8") as handle:
+            preset = json.load(handle, object_pairs_hook=_reject_duplicate_keys)
+
+        matches = [
+            element
+            for gesture in preset["gesture"].values()
+            for root in gesture.get("element", {}).values()
+            for element in _element_values(root)
+            if (
+                element.get("name") == "Show Gizmo"
+                and element.get("property_data_path") == "space_data.show_gizmo"
+            )
+        ]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].get("element_type"), "PROPERTY")
+        self.assertNotIn("operator_bl_idname", matches[0])
+
     def test_gesture_and_menu_types_are_all_demonstrated(self):
         self.assertEqual(self.observed_gesture_types, self.expected_gesture_types)
         self.assertEqual(self.observed_menu_styles, self.expected_menu_styles)

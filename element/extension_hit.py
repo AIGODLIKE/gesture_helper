@@ -198,13 +198,33 @@ def numeric_property_arrow_direction(item, ops=None, *, mouse=None) -> int:
         return 0
     if mouse is None:
         mouse = _mouse_for(item, ops)
-    from ..utils.number_arrows import number_arrow_direction
+    return numeric_property_arrow_part(item, ops, mouse=mouse, direction=True)
 
-    return number_arrow_direction(
+
+def numeric_property_arrow_part(item, ops=None, *, mouse=None, direction=False):
+    """Return the current numeric field part, or its +/- direction.
+
+    ``direction=True`` preserves the old arrow API for callers that only need
+    to step a value.  The part itself is also consumed by the renderer to
+    display independent hover and pressed states.
+    """
+    ops = ops or getattr(item, 'ops', None)
+    if not layout_is_current(item, ops):
+        return 0 if direction else None
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    from ..utils.number_arrows import (
+        number_field_part,
+        number_part_direction,
+    )
+
+    part = number_field_part(
         mouse,
         getattr(item, 'property_decrement_draw_area', None),
+        getattr(item, 'property_value_draw_area', None),
         getattr(item, 'property_increment_draw_area', None),
     )
+    return number_part_direction(part) if direction else part
 
 
 def publish_child_row_hit(item, ops, rect, *, mouse=None) -> bool:

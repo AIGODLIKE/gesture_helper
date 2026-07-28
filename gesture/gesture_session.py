@@ -139,6 +139,11 @@ class GestureSession:
         self._suppress_property_execute = False
         # True once the active drag moved far enough to count as a scrub.
         self._property_drag_moved = False
+        # LMB-down state for the decrement/value/increment regions.  The draw
+        # pass consumes this state; mouse geometry remains owned by the current
+        # layout token on the element.
+        self._numeric_pressed_element = None
+        self._numeric_pressed_part = None
         # Per-event modal consumption marker. False only means that the event
         # may continue into the normal execute/exit checks.
         self._event_consumed = False

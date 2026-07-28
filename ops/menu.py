@@ -33,6 +33,9 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         operator_setattr(self, '_menu_panels', [])
         operator_setattr(self, '_menu_open_path', [])
         operator_setattr(self, '_menu_hovered_row', None)
+        operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_pressed_row', None)
+        operator_setattr(self, '_menu_pressed_part', None)
         operator_setattr(self, '_menu_layout_key', None)
         operator_setattr(self, '_menu_layout_dirty', True)
         operator_setattr(self, '_menu_close_requested', False)
@@ -259,6 +262,8 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         external_modal = self._has_external_modal(context)
         if external_modal:
             operator_setattr(self, '_menu_external_modal_active', True)
+            if self._clear_menu_press():
+                self._tag_menu_redraw()
             return {'PASS_THROUGH'}
         if self._menu_external_modal_active:
             operator_setattr(self, '_menu_external_modal_active', False)
@@ -275,8 +280,42 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 self._tag_menu_redraw()
             return {'PASS_THROUGH'}
 
+        if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            self._ensure_layout()
+            hover_changed = self._update_menu_hover(event)
+            point = self._menu_mouse(event)
+            if not self._menu_contains(point):
+                return {'PASS_THROUGH'}
+            row = getattr(self, '_menu_hovered_row', None)
+            try:
+                is_numeric = bool(
+                    row is not None
+                    and row.enabled
+                    and row.kind == 'PROPERTY'
+                    and row.element.display_property_is_editable
+                    and row.element.display_property_type in {'INT', 'FLOAT'}
+                )
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                is_numeric = False
+            if is_numeric:
+                direction = 1 if event.type == 'WHEELUPMOUSE' else -1
+                changed = row.element.apply_property_wheel(
+                    direction,
+                    precise=getattr(event, 'shift', False),
+                )
+                if changed:
+                    self._menu_mark_context_changed()
+                    hover_changed = False
+            if hover_changed:
+                self._tag_menu_redraw()
+            # Menu-owned wheel input must never zoom the editor underneath it.
+            return {'RUNNING_MODAL'}
+
         if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
             if self._finish_menu_drag(button='LEFTMOUSE'):
+                return {'RUNNING_MODAL'}
+            if self._clear_menu_press():
+                self._tag_menu_redraw()
                 return {'RUNNING_MODAL'}
 
         if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
@@ -292,6 +331,8 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 status = getattr(row.status_info, 'status', None)
                 if status is not None and status.is_error:
                     return self._repair_menu_row(row)
+                if self._press_menu_row(row, event):
+                    self._tag_menu_redraw()
                 arrow_direction = self._menu_property_arrow_direction(row, event)
                 if arrow_direction:
                     changed = row.element.apply_property_wheel(
@@ -302,6 +343,10 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                         self._menu_mark_context_changed()
                     return {'RUNNING_MODAL'}
                 self._execute_menu_row(row)
+                # Numeric body clicks may start a second modal that owns the
+                # release event. Do not leave its visual press latched behind.
+                if self._clear_menu_press():
+                    self._tag_menu_redraw()
                 return {'RUNNING_MODAL'}
             if not self._menu_contains(self._menu_mouse(event)):
                 self._begin_menu_close()

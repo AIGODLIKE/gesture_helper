@@ -8,6 +8,30 @@ from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 from ..utils.color import color_to_srgb
 
 
+_DIRECTION_TIP_START_RADIUS_RATIO = 0.5
+_DIRECTION_TIP_START_ARC = 24.0
+_DIRECTION_TIP_START_ALPHA = 0.28
+_DIRECTION_TIP_END_ARC = 45.0
+
+
+def _direction_tip_transition(distance: float, threshold: float, confirm_r: float):
+    """Return eased radius, sweep, alpha, and progress for the direction cue."""
+    span = max(1e-6, float(confirm_r) - float(threshold))
+    progress = min(1.0, max(0.0, (float(distance) - float(threshold)) / span))
+    eased = progress * progress * (3.0 - 2.0 * progress)
+    tip_r = float(threshold) * (
+        _DIRECTION_TIP_START_RADIUS_RATIO
+        + (1.0 - _DIRECTION_TIP_START_RADIUS_RATIO) * eased
+    )
+    tip_arc = _DIRECTION_TIP_START_ARC + (
+        _DIRECTION_TIP_END_ARC - _DIRECTION_TIP_START_ARC
+    ) * eased
+    tip_alpha = _DIRECTION_TIP_START_ALPHA + (
+        1.0 - _DIRECTION_TIP_START_ALPHA
+    ) * eased
+    return tip_r, tip_arc, tip_alpha, eased
+
+
 class DrawDebug(PublicGpu):
     def gpu_draw_debug(self):
         try:
@@ -586,24 +610,30 @@ class GestureGpuDraw(DrawDebug):
                     angle = self.angle_unsigned
                     zone = self.session.snapshot.threshold_zone
                     if zone.is_beyond and angle is not None:
-                        # Direction tip grows inside the start (inner) ring only —
-                        # BEYOND maps progress → 0..threshold; CONFIRM sits on threshold.
+                        # Begin halfway out, then ease position, sweep, opacity,
+                        # and weight into the confirmed direction cue.
                         tip_color = draw.trajectory_gesture_color
                         if zone.is_confirm:
                             tip_width = max(5.0, 5.5 * scale)
                             tip_r = threshold
+                            tip_arc = _DIRECTION_TIP_END_ARC
                         else:
-                            tip_width = max(2.5, 3.0 * scale)
+                            dist = float(self.session.snapshot.distance)
+                            tip_r, tip_arc, tip_alpha, eased = _direction_tip_transition(
+                                dist,
+                                threshold,
+                                confirm_r,
+                            )
+                            start_width = max(2.5, 3.0 * scale)
+                            end_width = max(5.0, 5.5 * scale)
+                            tip_width = start_width + (end_width - start_width) * eased
+                            base_alpha = tip_color[3] if len(tip_color) > 3 else 1.0
                             tip_color = (
                                 *tip_color[:3],
-                                tip_color[3] * 0.55 if len(tip_color) > 3 else 0.55,
+                                base_alpha * tip_alpha,
                             )
-                            dist = float(self.session.snapshot.distance)
-                            span = max(1e-6, confirm_r - threshold)
-                            t = (dist - threshold) / span
-                            tip_r = max(1.0, threshold * min(1.0, max(0.0, t)))
                         self.draw_arc(
-                            (0, 0), tip_r, angle, 45,
+                            (0, 0), tip_r, angle, tip_arc,
                             color=tip_color,
                             line_width=tip_width,
                             segments=48,
