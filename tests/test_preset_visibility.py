@@ -49,17 +49,12 @@ class PresetVisibilityTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         folder = Path(self.temp.name)
         for name in (
-            "Example Directions.json",
-            "Example Element Types.json",
-            "Example Gesture Types.json",
-            "Example Layout.json",
-            "Example Modal Modes.json",
+            "Example Elements and Layout.json",
+            "Example Essentials.json",
             "Example Operator Contexts.json",
+            "Example Practical Menu.json",
+            "Example Property Controls.json",
             "Maya.json",
-            "Example Preset.json",
-            "Example Property Actions.json",
-            "Example Property Display.json",
-            "Example State Icons.json",
             "Example Validation States.json",
         ):
             (folder / name).write_text("{}", encoding="utf-8")
@@ -87,16 +82,11 @@ class PresetVisibilityTests(unittest.TestCase):
         self.assertEqual(
             list(self.module.get_preset_gesture_list()),
             [
-                "Example Directions",
-                "Example Element Types",
-                "Example Gesture Types",
-                "Example Layout",
-                "Example Modal Modes",
+                "Example Elements and Layout",
+                "Example Essentials",
                 "Example Operator Contexts",
-                "Example Preset",
-                "Example Property Actions",
-                "Example Property Display",
-                "Example State Icons",
+                "Example Practical Menu",
+                "Example Property Controls",
                 "Example Validation States",
                 "Maya",
             ],
@@ -111,16 +101,11 @@ class PresetVisibilityTests(unittest.TestCase):
         self.assertEqual(
             list(self.module.get_preset_gesture_list(include_debug_only=True)),
             [
-                "Example Directions",
-                "Example Element Types",
-                "Example Gesture Types",
-                "Example Layout",
-                "Example Modal Modes",
+                "Example Elements and Layout",
+                "Example Essentials",
                 "Example Operator Contexts",
-                "Example Preset",
-                "Example Property Actions",
-                "Example Property Display",
-                "Example State Icons",
+                "Example Practical Menu",
+                "Example Property Controls",
                 "Example Validation States",
                 "Maya",
             ],

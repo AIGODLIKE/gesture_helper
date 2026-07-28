@@ -1,0 +1,284 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: gesture types, menu styles, radial directions, bottom extension, and practical modal control",
+  "gesture": {
+    "0": {
+      "name": "Direction Slots Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Right View",
+          "element_type": "OPERATOR",
+          "direction": "1",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'RIGHT', 'align_active': False, 'relative': False}"
+        },
+        "1": {
+          "name": "Front View",
+          "element_type": "OPERATOR",
+          "direction": "2",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'FRONT', 'align_active': False, 'relative': False}"
+        },
+        "2": {
+          "name": "Top View",
+          "element_type": "OPERATOR",
+          "direction": "3",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'TOP', 'align_active': False, 'relative': False}"
+        },
+        "3": {
+          "name": "Back View",
+          "element_type": "OPERATOR",
+          "direction": "4",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'BACK', 'align_active': False, 'relative': False}"
+        },
+        "4": {
+          "name": "Left View",
+          "element_type": "OPERATOR",
+          "direction": "5",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'LEFT', 'align_active': False, 'relative': False}"
+        },
+        "5": {
+          "name": "View All",
+          "element_type": "OPERATOR",
+          "direction": "6",
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "6": {
+          "name": "Bottom View",
+          "element_type": "OPERATOR",
+          "direction": "7",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'BOTTOM', 'align_active': False, 'relative': False}"
+        },
+        "7": {
+          "name": "Perspective Toggle",
+          "element_type": "OPERATOR",
+          "direction": "8",
+          "operator_bl_idname": "view3d.view_persportho"
+        },
+        "8": {
+          "name": "Bottom Extension",
+          "element_type": "CHILD_GESTURE",
+          "direction": "9",
+          "icon": "MENU_PANEL",
+          "enabled_icon": true,
+          "element": {
+            "0": {
+              "name": "Frame Selected",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_bl_idname": "view3d.view_selected"
+            },
+            "1": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "2": {
+              "name": "Toggle Overlays",
+              "element_type": "PROPERTY",
+              "direction": "3",
+              "property_data_path": "space_data.overlay.show_overlays"
+            }
+          }
+        }
+      },
+      "description": "Directions 1 through 8 are real root radial slots; direction 9 is a root child gesture that opens the bottom extension"
+    },
+    "1": {
+      "name": "Radial Gesture Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Frame Selected",
+          "element_type": "OPERATOR",
+          "direction": "1",
+          "operator_bl_idname": "view3d.view_selected"
+        },
+        "1": {
+          "name": "View All",
+          "element_type": "OPERATOR",
+          "direction": "3",
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "2": {
+          "name": "Toggle Overlays",
+          "element_type": "PROPERTY",
+          "direction": "5",
+          "property_data_path": "space_data.overlay.show_overlays"
+        }
+      },
+      "description": "Draw a direction to run an action or change a viewport property"
+    },
+    "2": {
+      "name": "Panel Menu Example",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "PANEL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Object Available",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.object",
+          "element": {
+            "0": {
+              "name": "Frame Selected",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_selected"
+            },
+            "1": {
+              "name": "Show Overlays",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.overlay.show_overlays"
+            }
+          }
+        },
+        "1": {
+          "name": "No Active Object",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "ELSE",
+          "element": {
+            "0": {
+              "name": "View All",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_all"
+            }
+          }
+        },
+        "2": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "3": {
+          "name": "Viewport Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Show Gizmo",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.show_gizmo"
+            },
+            "1": {
+              "name": "Camera View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_camera"
+            }
+          }
+        }
+      },
+      "description": "A framed menu with a title bar and standard row spacing"
+    },
+    "3": {
+      "name": "Compact Menu Example",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "COMPACT",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "View All",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "1": {
+          "name": "Show Gizmo",
+          "element_type": "PROPERTY",
+          "property_data_path": "space_data.show_gizmo"
+        }
+      },
+      "description": "A dense menu for frequently used actions"
+    },
+    "4": {
+      "name": "Borderless Menu Example",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "BORDERLESS",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\"]",
+      "element": {
+        "0": {
+          "name": "Frame Selected",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "view3d.view_selected"
+        },
+        "1": {
+          "name": "View All",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "view3d.view_all"
+        }
+      },
+      "description": "A minimal menu surface without an outer outline"
+    },
+    "5": {
+      "name": "Modal Control Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Mesh\"]",
+      "element": {
+        "0": {
+          "name": "Subdivide",
+          "element_type": "OPERATOR",
+          "direction": "1",
+          "operator_type": "MODAL",
+          "operator_bl_idname": "mesh.subdivide",
+          "modal_events": {
+            "0": {
+              "event_type": "WHEELUPMOUSE",
+              "number_value_mode": "ADD",
+              "int_incremental_value": 1,
+              "control_property": "number_cuts"
+            },
+            "1": {
+              "event_type": "WHEELDOWNMOUSE",
+              "number_value_mode": "SUBTRACT",
+              "int_incremental_value": 1,
+              "control_property": "number_cuts"
+            },
+            "2": {
+              "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+              "float_incremental_value": 0.02,
+              "control_property": "smoothness"
+            },
+            "3": {
+              "event_type": "N",
+              "bool_value_mode": "SWITCH",
+              "control_property": "ngon"
+            },
+            "4": {
+              "event_type": "Q",
+              "enum_value_mode": "CYCLE",
+              "enum_wrap": true,
+              "control_property": "quadcorner"
+            }
+          }
+        }
+      },
+      "description": "Use the wheel, horizontal mouse movement, N, and Q to adjust Subdivide"
+    }
+  }
+}

@@ -2,17 +2,11 @@ import os
 from ..utils.debug_util import debug_print
 
 DEBUG_ONLY_PRESET_NAMES = frozenset({
-    "Example Element Types",
-    "Example Directions",
-    "Example Gesture Types",
-    "Example Layout",
-    "Example Modal Modes",
+    "Example Elements and Layout",
+    "Example Essentials",
     "Example Operator Contexts",
-    "Example Preset",
-    "Example Property Actions",
-    "Example Property Display",
+    "Example Property Controls",
     "Example Practical Menu",
-    "Example State Icons",
     "Example Validation States",
 })
 

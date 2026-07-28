@@ -134,8 +134,12 @@ with bundled JSON presets, translations, and PNG icon assets.
   stably groups only the new entries as example `RADIAL`, example `MENU`,
   normal `RADIAL`, and normal `MENU`; the final reordered list is scheduled
   for persistence.
-- `utils/preset.py` discovers `src/preset/*.json`; files beginning `Example `
-  are opt-in debug fixtures. `src/translate/` holds locale JSON and translation
+- `utils/preset.py` discovers `src/preset/*.json`; the six files beginning
+  `Example ` are opt-in debug fixtures grouped as essentials, elements/layout,
+  property controls, operator contexts, a practical menu, and validation
+  states. Coverage tests derive enum contracts from source and also require
+  both states of layout alignment, property drag inversion, property value
+  visibility, and boolean state icons. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.
 
 ## Module graph

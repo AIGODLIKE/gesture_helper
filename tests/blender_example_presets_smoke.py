@@ -20,7 +20,10 @@ assert addon_utils.enable("gesture_helper", default_set=True, persistent=False)
 from gesture_helper.ops.export_import import Import  # noqa: E402
 from gesture_helper.utils.public_cache import PublicCacheFunc  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
-from gesture_helper.utils.preset import get_preset_gesture_list  # noqa: E402
+from gesture_helper.utils.preset import (  # noqa: E402
+    DEBUG_ONLY_PRESET_NAMES,
+    get_preset_gesture_list,
+)
 from gesture_helper.utils.public import get_pref  # noqa: E402
 from gesture_helper.utils.selection import focus_element_settings  # noqa: E402
 from gesture_helper.gesture.gesture_keymap import GestureKeymap  # noqa: E402
@@ -57,7 +60,7 @@ store.gesture.clear()
 
 presets = get_preset_gesture_list(include_debug_only=True)
 example_names = sorted(name for name in presets if name.startswith("Example "))
-assert len(example_names) >= 12, example_names
+assert example_names == sorted(DEBUG_ONLY_PRESET_NAMES), example_names
 
 for name in example_names:
     fake = FakeImport(presets[name])

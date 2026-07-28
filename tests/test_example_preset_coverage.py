@@ -260,7 +260,11 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         cls.observed_operator_types = set()
         cls.observed_operator_contexts = set()
         cls.observed_layout_alignments = set()
+        cls.observed_layout_align_modes = set()
         cls.observed_property_drag_modes = set()
+        cls.observed_property_drag_invert_modes = set()
+        cls.observed_property_show_value_modes = set()
+        cls.observed_property_bool_icon_modes = set()
         cls.observed_number_modes = set()
         cls.observed_bool_modes = set()
         cls.observed_enum_modes = set()
@@ -293,9 +297,21 @@ class ExamplePresetCoverageTests(unittest.TestCase):
                             cls.observed_layout_alignments.add(
                                 element.get("layout_alignment", cls.default_layout_alignment)
                             )
+                            cls.observed_layout_align_modes.add(
+                                element.get("layout_align", True)
+                            )
                         if element_type == "PROPERTY":
                             cls.observed_property_drag_modes.add(
                                 element.get("property_drag_mode", cls.default_property_drag_mode)
+                            )
+                            cls.observed_property_drag_invert_modes.add(
+                                element.get("property_drag_invert", False)
+                            )
+                            cls.observed_property_show_value_modes.add(
+                                element.get("property_show_value", True)
+                            )
+                            cls.observed_property_bool_icon_modes.add(
+                                element.get("property_bool_icons_enabled", False)
                             )
                         if element_type == "OPERATOR":
                             cls.observed_operator_types.add(element.get("operator_type", "OPERATOR"))
@@ -401,6 +417,10 @@ class ExamplePresetCoverageTests(unittest.TestCase):
     def test_layout_and_property_drag_modes_are_all_demonstrated(self):
         self.assertEqual(self.observed_layout_alignments, self.expected_layout_alignments)
         self.assertEqual(self.observed_property_drag_modes, self.expected_property_drag_modes)
+        self.assertEqual(self.observed_layout_align_modes, {False, True})
+        self.assertEqual(self.observed_property_drag_invert_modes, {False, True})
+        self.assertEqual(self.observed_property_show_value_modes, {False, True})
+        self.assertEqual(self.observed_property_bool_icon_modes, {False, True})
 
     def test_modal_control_modes_are_all_demonstrated(self):
         self.assertEqual(self.observed_number_modes, self.expected_number_modes)
