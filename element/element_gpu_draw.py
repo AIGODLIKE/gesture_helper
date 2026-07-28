@@ -15,13 +15,13 @@ from ..utils.color import color_to_srgb
 from ..utils.layout_alignment import blend_layout_hover_color
 from ..utils.public_gpu import PublicGpu
 from ..utils.number_arrows import (
-    NUMBER_EDGE_BLEND,
     NUMBER_HOVER_BLEND,
     NUMBER_PART_DECREMENT,
     NUMBER_PART_INCREMENT,
     NUMBER_PART_VALUE,
     NUMBER_PRESSED_BLEND,
     number_arrow_chevron,
+    number_edge_color,
     number_field_corner_masks,
     number_field_part,
     number_field_rects,
@@ -327,20 +327,36 @@ class ElementGpuProperty:
             *,
             field_left: float = 0.0,
             field_right: float | None = None,
+            field_top: float = 0.0,
+            field_bottom: float | None = None,
+            slot_width: float | None = None,
+            draw_value: bool = True,
             field_corner_mask=None,
     ) -> float:
         """Draw a native three-part number field in local screen space."""
-        slot = self.numeric_arrow_slot(row_height)
+        slot = (
+            self.numeric_arrow_slot(row_height)
+            if slot_width is None
+            else max(0.0, float(slot_width))
+        )
         if slot <= 0.0:
             return 0.0
         field_left = float(field_left)
         field_right = float(width if field_right is None else field_right)
+        field_top = float(field_top)
+        field_bottom = float(
+            -row_height if field_bottom is None else field_bottom
+        )
+        field_height = max(0.0, field_top - field_bottom)
         if field_right <= field_left:
             return 0.0
         slot = min(slot, (field_right - field_left) * 0.5)
+        if field_height <= 0.0:
+            return 0.0
         hovered, pressed = self._numeric_field_states()
         base = self._property_background_color(active=False)
         active = self._property_background_color(active=True)
+        center_y = (field_top + field_bottom) * 0.5
         decrement_mask, value_mask, increment_mask = number_field_corner_masks(
             field_corner_mask,
         )
@@ -368,27 +384,31 @@ class ElementGpuProperty:
             if right <= left:
                 continue
             if part == pressed:
-                amount = NUMBER_PRESSED_BLEND
+                color = blend_layout_hover_color(
+                    base, active, NUMBER_PRESSED_BLEND,
+                )
             elif part == hovered:
-                amount = NUMBER_HOVER_BLEND
-            elif part == NUMBER_PART_VALUE:
-                # The value block is already painted by the property surface
-                # and slider; only edge blocks need a normal-state fill.
+                color = blend_layout_hover_color(
+                    base, active, NUMBER_HOVER_BLEND,
+                )
+            elif part == NUMBER_PART_VALUE and not draw_value:
+                # Layout/menu rows paint the value surface and slider before
+                # the edge controls; keep that value fill visible at rest.
                 continue
+            elif part == NUMBER_PART_VALUE:
+                color = base
             else:
-                amount = NUMBER_EDGE_BLEND
-            color = blend_layout_hover_color(base, active, amount)
+                color = number_edge_color(base)
             self.draw_rounded_rectangle_area(
-                ((left + right) * 0.5, -row_height * 0.5),
+                ((left + right) * 0.5, center_y),
                 color=color,
-                radius=min(self.text_radius, row_height * 0.32),
+                radius=min(self.text_radius, field_height * 0.32),
                 width=right - left,
-                height=row_height,
+                height=field_height,
                 corner_mask=corner_mask,
             )
 
-        center_y = -row_height * 0.5
-        half_w, half_h, line_width = number_arrow_chevron(row_height, slot)
+        half_w, half_h, line_width = number_arrow_chevron(field_height, slot)
         for part, center_x, direction in (
             (
                 NUMBER_PART_DECREMENT,
@@ -638,17 +658,52 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             w, h = self.draw_dimensions
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(self.draw_direction_offset)
-                self.gpu_draw_margin()
-                self.item_draw_area = get_current_2d_rect(
-                    (-margin_x, -h - margin_y, w + margin_x, margin_y),
+                numeric_field = self.numeric_arrows_visible
+                field_left = -margin_x if numeric_field else 0.0
+                field_right = w + margin_x if numeric_field else w
+                field_top = margin_y if numeric_field else 0.0
+                field_bottom = -h - margin_y if numeric_field else -h
+                field_rect = get_current_2d_rect(
+                    (field_left, field_bottom, field_right, field_top),
                 )
-                arrow_slot = self.publish_numeric_arrow_areas(
-                    get_current_2d_rect((0.0, -h, w, 0.0)),
-                    h,
+                self.item_draw_area = (
+                    field_rect
+                    if numeric_field
+                    else get_current_2d_rect(
+                        (-margin_x, -h - margin_y, w + margin_x, margin_y),
+                    )
                 )
-                self.gpu_draw_numeric_arrows(w, h)
+                if numeric_field:
+                    arrow_slot = self.publish_numeric_arrow_areas(field_rect, h)
+                    self.gpu_draw_numeric_arrows(
+                        w,
+                        h,
+                        field_left=field_left,
+                        field_right=field_right,
+                        field_top=field_top,
+                        field_bottom=field_bottom,
+                        slot_width=arrow_slot,
+                    )
+                    self.gpu_draw_status_accent(
+                        ((field_left + field_right) * 0.5,
+                         (field_top + field_bottom) * 0.5),
+                        field_right - field_left,
+                        field_top - field_bottom,
+                    )
+                    self.gpu_draw_numeric_field_frame(
+                        field_left=field_left,
+                        field_right=field_right,
+                        field_top=field_top,
+                        field_bottom=field_bottom,
+                    )
+                else:
+                    self.gpu_draw_margin()
+                    arrow_slot = 0.0
+                    self.property_decrement_draw_area = None
+                    self.property_value_draw_area = None
+                    self.property_increment_draw_area = None
                 if arrow_slot:
-                    gpu.matrix.translate((arrow_slot, 0.0))
+                    gpu.matrix.translate((field_left + arrow_slot, 0.0))
                 self.gpu_draw_status_badge()
                 self.gpu_draw_icon()
                 self.gpu_draw_label()
@@ -815,6 +870,35 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
             self.gpu_draw_status_accent(
                 (0.0, 0.0), w + wm * 2.0, h + hm * 2.0,
             )
+
+    def gpu_draw_numeric_field_frame(
+            self,
+            *,
+            field_left: float,
+            field_right: float,
+            field_top: float,
+            field_bottom: float,
+            corner_mask=None,
+    ):
+        """Restore only the outer frame after the three numeric surfaces."""
+        width = float(field_right) - float(field_left)
+        height = float(field_top) - float(field_bottom)
+        if width <= 0.0 or height <= 0.0:
+            return
+        stroke, line_width = self._outline_colors(
+            active=self.is_active_direction and not self._in_extension_ui(),
+        )
+        self.draw_rounded_rectangle_outlined(
+            ((field_left + field_right) * 0.5,
+             (field_top + field_bottom) * 0.5),
+            fill=(0.0, 0.0, 0.0, 0.0),
+            stroke=stroke,
+            radius=self.text_radius,
+            width=width,
+            height=height,
+            line_width=line_width,
+            corner_mask=corner_mask or (True, True, True, True),
+        )
 
     # Gap between icon / label / chevron as a fraction of icon size (menu-style).
     _CONTENT_GAP_FRAC = 0.35
@@ -1081,9 +1165,17 @@ class ElementGpuExtensionItem:
                 from .extension_hit import publish_child_row_hit
                 hovered = publish_child_row_hit(item, ops, row_rect, mouse=mouse)
                 item.publish_numeric_arrow_areas(
-                    get_current_2d_rect((0.0, -row_h, w, 0.0)),
+                    row_rect,
                     row_h,
                 )
+                if item.numeric_arrows_visible:
+                    self.draw_rounded_rectangle_area(
+                        (w * 0.5, -row_h * 0.5),
+                        color=item._property_background_color(active=False),
+                        radius=min(self.text_radius, row_h * 0.5),
+                        width=hover_w,
+                        height=row_h,
+                    )
                 # Numeric property rows paint a slider fill over the soft range.
                 fraction = item.display_property_fraction if item.is_property_display else None
                 if fraction is not None and fraction > 0.0:
@@ -1111,13 +1203,22 @@ class ElementGpuExtensionItem:
                 item.gpu_draw_status_accent(
                     (w * 0.5, -row_h * 0.5), hover_w, row_h,
                 )
-                item.gpu_draw_numeric_arrows(w, row_h)
+                item.gpu_draw_numeric_arrows(
+                    w,
+                    row_h,
+                    field_left=row_left,
+                    field_right=row_left + hover_w,
+                    draw_value=False,
+                )
 
                 with gpu.matrix.push_pop():
                     # Vertically center the icon/text band inside the row.
                     gpu.matrix.translate((0, -((row_h - lay.icon_size) * 0.5)))
 
-                    cursor_x = lay.number_arrow_slot if lay.has_number_arrows else 0.0
+                    if item.numeric_arrows_visible:
+                        cursor_x = row_left + lay.number_arrow_slot
+                    else:
+                        cursor_x = lay.number_arrow_slot if lay.has_number_arrows else 0.0
                     if lay.status_col_w:
                         with gpu.matrix.push_pop():
                             gpu.matrix.translate((cursor_x, 0))

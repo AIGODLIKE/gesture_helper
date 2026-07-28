@@ -84,14 +84,18 @@ with bundled JSON presets, translations, and PNG icon assets.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
    status, label, icon, and display metrics once per draw.
-   Numeric `INT`/`FLOAT` property rows share Blender-style decrement, value,
-   and increment geometry when Blender's global Numeric Input Arrows preference
-   is enabled. The three regions have independent normal, hover, and pressed
-   feedback: edge clicks step, the value region scrubs or invokes property
-   editing, and wheel input steps hovered values without leaking through a
-   persistent menu to the editor. Edge regions span the complete field surface,
+   Numeric `INT`/`FLOAT` property rows are always painted as three contiguous
+   Blender-style blocks: decrement, value, and increment, when Blender's global
+   Numeric Input Arrows preference is enabled. The three blocks have
+   independent normal, hover, and pressed feedback: edge clicks step, the
+   value region scrubs or invokes property editing, and wheel input steps
+   hovered values without leaking through a persistent menu to the editor.
+   Edge regions span the complete field surface,
    inherit only the field's exposed round corners, and scale their chevrons
-   with row height. Read-only numeric rows suppress the arrows.
+   with row height. A radial numeric root uses its complete item bounds,
+   including the configured text margin, as that three-part field; it has no
+   separate wrapper or inset numeric surface. Read-only numeric rows suppress
+   the arrows.
    Persistent menu boolean rows use Blender-style left checkboxes when their
    per-property State Icons option is enabled, or hover-only feedback when it
    is disabled; nonnumeric rows use type badges.

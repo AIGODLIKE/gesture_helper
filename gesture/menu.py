@@ -15,6 +15,7 @@ from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 from ..utils.region_mouse import find_window_region, mouse_in_window_region
 from ..utils.layout_alignment import blend_layout_hover_color
 from ..utils.number_arrows import (
+    number_edge_color,
     NUMBER_HOVER_BLEND,
     NUMBER_PART_DECREMENT,
     NUMBER_PART_INCREMENT,
@@ -911,11 +912,10 @@ class GestureMenuRuntime(PublicGpu):
         height = y2 - y1
         if self._numeric_arrows_visible(row, prop_type):
             slot = number_arrow_slot_width(height)
-            surface_inset = max(1.0, 2.0 * metrics.scale)
             field_rect = (
-                x1 + surface_inset,
+                x1,
                 y1,
-                x2 - surface_inset,
+                x2,
                 y2,
             )
             (
@@ -955,21 +955,33 @@ class GestureMenuRuntime(PublicGpu):
                 ),
             )
             for part, rect, corner_mask in part_rects:
-                if rect is None or part not in {hovered_part, pressed_part}:
+                if rect is None:
                     continue
                 rx1, _ry1, rx2, _ry2 = rect
-                amount = (
-                    NUMBER_PRESSED_BLEND
-                    if part == pressed_part
-                    else NUMBER_HOVER_BLEND
-                )
+                if part == pressed_part:
+                    amount = NUMBER_PRESSED_BLEND
+                elif part == hovered_part:
+                    amount = NUMBER_HOVER_BLEND
+                elif part == NUMBER_PART_VALUE:
+                    continue
+                else:
+                    state_color = number_edge_color(base)
+                    self.draw_rounded_rectangle_area(
+                        ((rx1 + rx2) * 0.5, (y1 + y2) * 0.5),
+                        color=state_color,
+                        radius=min(metrics.radius, height * 0.32),
+                        width=max(1.0, rx2 - rx1),
+                        height=max(1.0, height),
+                        corner_mask=corner_mask,
+                    )
+                    continue
                 state_color = blend_layout_hover_color(base, active, amount)
                 self.draw_rounded_rectangle_area(
                     ((rx1 + rx2) * 0.5, (y1 + y2) * 0.5),
                     color=state_color,
                     radius=min(metrics.radius, height * 0.32),
                     width=max(1.0, rx2 - rx1),
-                    height=max(1.0, height - surface_inset),
+                    height=max(1.0, height),
                     corner_mask=corner_mask,
                 )
 
@@ -1069,7 +1081,7 @@ class GestureMenuRuntime(PublicGpu):
             and (property_visual[0] != 'BOOLEAN' or has_boolean_icon)
         )
         if status.is_error or has_property_background or (whole_row_active and row.enabled):
-            inset = 2.0 * metrics.scale
+            inset = 0.0 if has_number_field else 2.0 * metrics.scale
             if status.is_error:
                 row_color = colors.error
             elif property_visual is not None:
@@ -1326,12 +1338,10 @@ class GestureMenuRuntime(PublicGpu):
                 or row.value_rect is None
                 or row.increment_rect is None
         ):
-            metrics = self._metrics()
-            inset = max(1.0, 2.0 * metrics.scale)
             field_rect = (
-                row.rect[0] + inset,
+                row.rect[0],
                 row.rect[1],
-                row.rect[2] - inset,
+                row.rect[2],
                 row.rect[3],
             )
             (

@@ -11,9 +11,17 @@ from __future__ import annotations
 NUMBER_PART_DECREMENT = 'DECREMENT'
 NUMBER_PART_VALUE = 'VALUE'
 NUMBER_PART_INCREMENT = 'INCREMENT'
-NUMBER_EDGE_BLEND = 0.28
+NUMBER_EDGE_DARKEN = 0.84
 NUMBER_HOVER_BLEND = 0.78
 NUMBER_PRESSED_BLEND = 1.0
+
+
+def number_edge_color(color):
+    """Darken a normal side-button surface while preserving its alpha."""
+    values = tuple(float(value) for value in color)
+    factor = NUMBER_EDGE_DARKEN
+    alpha = values[3] if len(values) > 3 else 1.0
+    return tuple(value * factor for value in values[:3]) + (alpha,)
 
 
 def show_number_arrows(context=None) -> bool:

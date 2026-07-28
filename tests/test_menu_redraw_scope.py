@@ -344,8 +344,14 @@ class MenuRedrawScopeTests(unittest.TestCase):
         with patch.object(menu_module, "show_number_arrows", return_value=True):
             runtime._draw_row(numeric_row, self._metrics(), colors)
         self.assertIsNotNone(numeric_row.decrement_rect)
+        self.assertIsNotNone(numeric_row.value_rect)
         self.assertIsNotNone(numeric_row.increment_rect)
+        self.assertEqual(numeric_row.decrement_rect[0], numeric_row.rect[0])
+        self.assertEqual(numeric_row.decrement_rect[2], numeric_row.value_rect[0])
+        self.assertEqual(numeric_row.value_rect[2], numeric_row.increment_rect[0])
+        self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2])
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 4)
 
     def test_numeric_property_tracks_three_hover_regions_and_press_release(self):
         runtime = menu_module.GestureMenuRuntime()
