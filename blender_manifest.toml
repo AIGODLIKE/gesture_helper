@@ -28,6 +28,7 @@ paths_exclude_pattern = [
     "/.agents/",
     "/AGENTS.md",
     "/PROJECT_CONTEXT.md",
+    "/release-notes/",
     "/.ruff_cache/",
     "/.tmp/",
     "/.smoke_blender_userdata/",
@@ -51,4 +52,4 @@ paths_exclude_pattern = [
 
 [permissions]
 files = "Read/write gestures, backups, custom icons, and preference files"
-clipboard = "Copy selected icon names to the clipboard"
+clipboard = "Copy icon names, property paths, and visible tooltip text"

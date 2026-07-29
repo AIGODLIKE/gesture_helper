@@ -83,7 +83,13 @@ class DrawElement:
             column.separator()
             icon = ui_icon(icon_two(draw_property.element_show_left_side, style='ALIGN'))
             column.alert = draw_property.element_show_left_side
-            column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
+            column.prop(
+                draw_property,
+                'element_show_left_side',
+                icon=ui_icon(icon),
+                text='',
+                emboss=False,
+            )
 
     @staticmethod
     def draw_property(

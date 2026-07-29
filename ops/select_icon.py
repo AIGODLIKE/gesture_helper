@@ -11,7 +11,11 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..utils.public import get_pref, poll_message_active_element, poll_addon_preferences
-from ..utils.icons import icon_layout_kwargs, CUSTOM_ICONS_EXPORT_FILENAME
+from ..utils.icons import (
+    CUSTOM_ICONS_EXPORT_FILENAME,
+    icon_layout_kwargs,
+    ui_icon,
+)
 
 DPI = 72
 POPUP_PADDING = 10
@@ -154,7 +158,7 @@ class SelectIcon(bpy.types.Operator):
             hi.alignment = 'CENTER'
             hi.label(text='History')
             self.draw_icons(hi.column(align=True), num_cols, icons=history)
-            hi.operator(ClearHistory.bl_idname, icon='PANEL_CLOSE')
+            hi.operator(ClearHistory.bl_idname, icon=ui_icon('PANEL_CLOSE'))
 
         row = col.box().row()
         row.alignment = 'CENTER'
@@ -169,9 +173,9 @@ class SelectIcon(bpy.types.Operator):
 
         row = box.row()
         row.separator()
-        row.operator(RefreshIcons.bl_idname, icon='FILE_REFRESH')
+        row.operator(RefreshIcons.bl_idname, icon=ui_icon('FILE_REFRESH'))
         row.separator()
-        row.operator(OpenCustomIconFolder.bl_idname, icon='FILE_FOLDER')
+        row.operator(OpenCustomIconFolder.bl_idname, icon=ui_icon('FILE_FOLDER'))
         row.separator()
 
         box = col.box()
@@ -182,15 +186,15 @@ class SelectIcon(bpy.types.Operator):
         header = layout.box()
         header = header.row()
         row = header.row(align=True)
-        row.prop(self, 'show_event_icons', text='', icon='HAND')
+        row.prop(self, 'show_event_icons', text='', icon=ui_icon('HAND'))
         row.separator()
 
         row.prop(
             self, 'copy_on_select', text='',
-            icon='COPYDOWN', toggle=True)
+            icon=ui_icon('COPYDOWN'), toggle=True)
         row.separator()
 
-        row.prop(self, 'filter', text='', icon='VIEWZOOM')
+        row.prop(self, 'filter', text='', icon=ui_icon('VIEWZOOM'))
 
     def draw_icons(self, layout, num_cols=0, icons=None):
         if icons is not None:
@@ -233,7 +237,7 @@ class SelectIcon(bpy.types.Operator):
 
         if col_idx != 0 and not icons and i >= num_cols:
             for _ in range(num_cols - col_idx):
-                row.label(text="", icon='BLANK1')
+                row.label(text="", icon=ui_icon('BLANK1'))
 
         if not filtered_icons:
             row.label(text="No icons were found")

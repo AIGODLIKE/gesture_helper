@@ -5,6 +5,7 @@ from ..utils.poll_data import PollData
 from ..utils.public import PublicOperator, poll_message_active_element
 from ..utils.active_selection import ActiveSelection
 from ..src.translate import __name_translate__
+from ..utils.icons import ui_icon
 
 
 class SetPollExpression(ActiveSelection, PublicOperator, PollData):
@@ -85,7 +86,7 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
         col = layout.column()
         element = self.element
         if element is None:
-            col.label(text='No active element', icon='ERROR')
+            col.label(text='No active element', icon=ui_icon('ERROR'))
             return
         is_alert = element.is_alert
         cc = col.column(align=True)
@@ -94,7 +95,7 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
         sp.label(text='Prerequisite:')
         sp.prop(self.element, 'poll_string', text='')
         if is_alert:
-            cc.label(text='Invalid expression', icon='ERROR')
+            cc.label(text='Invalid expression', icon=ui_icon('ERROR'))
             cc.operator_context = "EXEC_DEFAULT"
             cc.operator(self.bl_idname, text=__name_translate__("Clear")).clear = True
         self.draw_logical_operator(col)

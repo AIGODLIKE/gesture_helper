@@ -4,6 +4,7 @@ import bpy
 from bpy.app.translations import pgettext_iface
 
 from ..ops.set_direction import SetDirection
+from ..utils.icons import ui_icon
 from ..utils.public import get_pref
 from ..utils.public_ui import icon_two
 
@@ -20,7 +21,11 @@ class ElementDraw:
         row.prop(self, 'name')
         if self.can_sync_name:
             row.context_pointer_set('gesture_name_element', self)
-            row.operator(SyncElementName.bl_idname, text='', icon='FILE_REFRESH')
+            row.operator(
+                SyncElementName.bl_idname,
+                text='',
+                icon=ui_icon('FILE_REFRESH'),
+            )
 
     def draw_overlay_offset(self, layout: 'bpy.types.UILayout') -> None:
         # Offsets are a radial root-placement setting.  Keep the persisted RNA
@@ -90,27 +95,36 @@ class ElementDraw:
             r = controls.row(align=True)
             r.ui_units_x = 1.0
             r.active = r.enabled = self.is_movable
-            r.operator(ElementCURE.MOVE.bl_idname, text="", icon="UV_SYNC_SELECT", emboss=False)
+            r.operator(
+                ElementCURE.MOVE.bl_idname,
+                text="",
+                icon=ui_icon("UV_SYNC_SELECT"),
+                emboss=False,
+            )
         elif pref.__is_cut_element__:
             from .element_cure import ElementCURE
             r = controls.row(align=True)
             r.ui_units_x = 1.0
             r.active = r.enabled = self.is_can_be_cut
-            r.operator(ElementCURE.CUT.bl_idname, text="", icon="PASTEFLIPDOWN", emboss=False)
+            r.operator(
+                ElementCURE.CUT.bl_idname,
+                text="",
+                icon=ui_icon("PASTEFLIPDOWN"),
+                emboss=False,
+            )
         if _draw_children:
             self.draw_item_child(column, active, frozen=_frozen)
 
     def draw_item_left(self, layout: 'bpy.types.UILayout', pref=None):
-        from ..utils.icons import ui_icon
         if pref is None:
             pref = get_pref()
         row = layout.row()
         if pref.draw_property.element_show_enabled_button:
             row.prop(self, 'enabled', text='')
         if self.is_operator:
-            row.label(text='', icon='GEOMETRY_NODES')
+            row.label(text='', icon=ui_icon('GEOMETRY_NODES'))
         elif self.is_child_gesture:
-            row.label(text='', icon='CON_CHILDOF')
+            row.label(text='', icon=ui_icon('CON_CHILDOF'))
         elif self.is_selected_structure:
             row.label(text='', icon_value=pref.__get_icon__(self.selected_type))
         elif self.is_dividing_line:
@@ -128,21 +142,21 @@ class ElementDraw:
         elif self.is_split:
             row.label(text='', icon=ui_icon('SPLIT_HORIZONTAL'))
         else:
-            row.label(text='', icon='BLANK1')
+            row.label(text='', icon=ui_icon('BLANK1'))
 
         in_panel = self.parent_is_extension or self.parent_is_layout
         if in_panel:  # Panel children: hide direction icon
             if self.is_child_gesture:
                 row.label(text='', icon_value=pref.__get_icon__("MENU_PANEL"))
             else:
-                row.label(text='', icon='BLANK1')
+                row.label(text='', icon=ui_icon('BLANK1'))
         elif (
                 self.is_child_gesture or self.is_operator
                 or self.is_property_display or self.is_layout_container
         ):
             row.label(text='', icon_value=pref.__get_icon__(self.direction))
         else:
-            row.label(text='', icon='BLANK1')
+            row.label(text='', icon=ui_icon('BLANK1'))
 
     def draw_item_right(
             self,
@@ -164,7 +178,7 @@ class ElementDraw:
                 'READ_ONLY_PROPERTY': 'LOCKED',
                 'DISABLED': 'HIDE_OFF',
             }.get(status_info.status.name, 'ERROR')
-            status_row.label(text=status_info.badge, icon=status_icon)
+            status_row.label(text=status_info.badge, icon=ui_icon(status_icon))
         else:
             status_row.label(text='')
 
@@ -175,11 +189,11 @@ class ElementDraw:
                 self,
                 'show_child',
                 text='',
-                icon=icon_two(self.show_child, 'TRI'),
+                icon=ui_icon(icon_two(self.show_child, 'TRI')),
                 emboss=False,
             )
         else:
-            child_row.label(text='', icon='BLANK1')
+            child_row.label(text='', icon=ui_icon('BLANK1'))
 
         if show_icon:
             icon_row = controls.row(align=True)
@@ -192,7 +206,7 @@ class ElementDraw:
             self,
             'radio',
             text='',
-            icon=icon_two(self.radio, 'RESTRICT_SELECT'),
+            icon=ui_icon(icon_two(self.radio, 'RESTRICT_SELECT')),
             emboss=False,
         )
 
@@ -218,7 +232,7 @@ class ElementDraw:
             row = layout.row()
             row.label(text='Structure element', icon_value=icon)
             row.operator_context = "INVOKE_DEFAULT"
-            row.operator(SetPollExpression.bl_idname, icon='FILTER')
+            row.operator(SetPollExpression.bl_idname, icon=ui_icon('FILTER'))
             layout.prop(self, 'poll_string')
             row = layout.row(align=True)
             row.prop(self, 'selected_type', expand=True)
@@ -264,7 +278,7 @@ class ElementDraw:
         else:
             alert = column.column(align=True)
             alert.alert = True
-            alert.label(text='Property path not found', icon='ERROR')
+            alert.label(text='Property path not found', icon=ui_icon('ERROR'))
         if not (self.parent_is_extension or self.parent_is_layout):
             SetDirection.draw_direction(row.column())
 
@@ -273,7 +287,9 @@ class ElementDraw:
             self,
             'show_property_advanced',
             text='Property Settings',
-            icon='TRIA_DOWN' if self.show_property_advanced else 'TRIA_RIGHT',
+            icon=ui_icon(
+                'TRIA_DOWN' if self.show_property_advanced else 'TRIA_RIGHT'
+            ),
             emboss=False,
         )
         if self.show_property_advanced:
@@ -286,7 +302,12 @@ class ElementDraw:
             if prop_type in {'INT', 'FLOAT'}:
                 drag = advanced.row(align=True)
                 drag.prop(self, 'property_drag_mode', text='')
-                drag.prop(self, 'property_drag_invert', text='', icon='ARROW_LEFTRIGHT')
+                drag.prop(
+                    self,
+                    'property_drag_invert',
+                    text='',
+                    icon=ui_icon('ARROW_LEFTRIGHT'),
+                )
                 advanced.prop(self, 'property_wheel_step')
                 if prop_type == 'FLOAT' and self.property_show_value:
                     advanced.prop(self, 'property_value_precision')
@@ -313,13 +334,16 @@ class ElementDraw:
             icon = getattr(self, prop_name)
             cell = row.row(align=True)
             cell.prop(self, prop_name, text=label, **icon_layout_kwargs(icon))
-            operator = cell.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
+            operator = cell.operator(
+                SelectIcon.bl_idname,
+                text='',
+                icon=ui_icon('RESTRICT_SELECT_OFF'),
+            )
             operator.target = target
 
     def draw_layout_container(self, layout: 'bpy.types.UILayout') -> None:
         from ..element.element_cure import ElementCURE
         from ..utils.enum import ENUM_LAYOUT_TYPE
-        from ..utils.icons import ui_icon
         row = layout.row(align=True)
         column = row.column(align=True)
         self.draw_name(column)
@@ -422,7 +446,9 @@ class ElementDraw:
             self,
             'main_item',
             text='Gesture Action',
-            icon='RADIOBUT_ON' if owner.main_element == self else 'RADIOBUT_OFF',
+            icon=ui_icon(
+                'RADIOBUT_ON' if owner.main_element == self else 'RADIOBUT_OFF'
+            ),
             toggle=True,
         )
 
@@ -497,7 +523,10 @@ class ElementDraw:
             col = layout.box().column(align=True)
             status = get_element_status_info(self, include_poll=True).status
             col.alert = status.is_error
-            col.label(text='Warning', icon='ERROR' if status.is_error else 'INFO')
+            col.label(
+                text='Warning',
+                icon=ui_icon('ERROR' if status.is_error else 'INFO'),
+            )
             for alert in alert_list:
                 col.label(text=alert)
 
@@ -508,7 +537,7 @@ class ElementDraw:
         if not self.is_draw_context_toggle_operator_bool and self.is_draw_icon:
             layout.label(text='', **icon_layout_kwargs(self.icon))
         elif reserve_space:
-            layout.label(text='', icon='BLANK1')
+            layout.label(text='', icon=ui_icon('BLANK1'))
 
     def draw_edit_icon(self, layout):
         from ..ops.select_icon import SelectIcon
@@ -522,8 +551,12 @@ class ElementDraw:
                 row.prop(self, 'icon', text='', **icon_layout_kwargs(self.icon))
             else:
                 row.alert = True
-                row.prop(self, 'icon', text='', icon='ERROR')
-            row.operator(SelectIcon.bl_idname, text='', icon='RESTRICT_SELECT_OFF')
+                row.prop(self, 'icon', text='', icon=ui_icon('ERROR'))
+            row.operator(
+                SelectIcon.bl_idname,
+                text='',
+                icon=ui_icon('RESTRICT_SELECT_OFF'),
+            )
 
     def draw_operator(self, layout):
         from .element_status import ElementStatus, get_element_status_info
@@ -572,9 +605,22 @@ class ElementDraw:
             row = layout.row(align=True)
             row.prop(self, 'operator_context')
             row.alert = is_change
-            row.prop(self.other_property, 'auto_update_element_operator_properties', icon='FILE_REFRESH', text='')
-            row.prop(self, 'operator_properties_sync_from_temp_properties', icon='SORT_DESC')
-            row.prop(self, 'operator_properties_sync_to_properties', icon='SORT_ASC')
+            row.prop(
+                self.other_property,
+                'auto_update_element_operator_properties',
+                icon=ui_icon('FILE_REFRESH'),
+                text='',
+            )
+            row.prop(
+                self,
+                'operator_properties_sync_from_temp_properties',
+                icon=ui_icon('SORT_DESC'),
+            )
+            row.prop(
+                self,
+                'operator_properties_sync_to_properties',
+                icon=ui_icon('SORT_ASC'),
+            )
 
             if is_modal:
                 layout.prop(get_pref().gesture_property, "modal_pass_view_rotation")
@@ -583,13 +629,16 @@ class ElementDraw:
             if is_change:
                 layout.alert = True
                 layout.label(text='Properties have changed. Sync them or enable auto-update.',
-                             icon='ERROR')
+                             icon=ui_icon('ERROR'))
                 layout.alert = False
             if is_modal:
                 if self.is_not_recommended_as_modal:
                     column = layout.column(align=True)
                     column.alert = True
-                    column.label(text='Not recommended as a modal operator', icon='ERROR')
+                    column.label(
+                        text='Not recommended as a modal operator',
+                        icon=ui_icon('ERROR'),
+                    )
                     column.label(text='This operator has array properties and cannot be mapped to modal events')
 
         self.draw_main_action(layout)
@@ -616,7 +665,19 @@ class ElementDraw:
         col = row.column(align=True)
         # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
         col.operator_context = "INVOKE_DEFAULT"
-        col.operator(ElementModalOperatorEventCRUE.ADD.bl_idname, text="", icon="ADD")
-        col.operator(ElementModalOperatorEventCRUE.COPY.bl_idname, text="", icon="COPYDOWN")
-        col.operator(ElementModalOperatorEventCRUE.REMOVE.bl_idname, text="", icon="REMOVE")
+        col.operator(
+            ElementModalOperatorEventCRUE.ADD.bl_idname,
+            text="",
+            icon=ui_icon("ADD"),
+        )
+        col.operator(
+            ElementModalOperatorEventCRUE.COPY.bl_idname,
+            text="",
+            icon=ui_icon("COPYDOWN"),
+        )
+        col.operator(
+            ElementModalOperatorEventCRUE.REMOVE.bl_idname,
+            text="",
+            icon=ui_icon("REMOVE"),
+        )
         self.draw_modal_property(column)

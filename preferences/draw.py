@@ -1,6 +1,7 @@
 import bpy
 
 from .draw_gesture import GestureDraw
+from ..utils.icons import ui_icon
 from ..utils.public import get_pref
 from ..utils.ui_draw_sync import (
     get_frozen_active_element,
@@ -86,13 +87,17 @@ class PreferencesDraw(GestureDraw):
         rr.enabled = not message
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
-        rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
+        rr.operator(
+            "wm.gesture_save_userpref",
+            text="",
+            icon=ui_icon("FILE_TICK"),
+        )
 
         row.prop(pref, 'show_page', expand=True)
         if message:
             status = row.row(align=True)
             status.enabled = False
-            status.label(text=message, icon="PAUSE")
+            status.label(text=message, icon=ui_icon("PAUSE"))
         if is_panel_pause_source_active(bpy.context):
             toggle = row.row(align=True)
             toggle.enabled = True
@@ -135,10 +140,26 @@ class PreferencesDraw(GestureDraw):
         icon_row.label(text="Custom Icons")
         icon_ops = icon_row.row(align=True)
         icon_ops.operator_context = "INVOKE_DEFAULT"
-        icon_ops.operator(OpenCustomIconFolder.bl_idname, text="", icon="FILE_FOLDER")
-        icon_ops.operator(RefreshIcons.bl_idname, text="", icon="FILE_REFRESH")
-        icon_ops.operator(ExportCustomIcons.bl_idname, text="", icon="EXPORT")
-        icon_ops.operator(ImportCustomIcons.bl_idname, text="", icon="IMPORT")
+        icon_ops.operator(
+            OpenCustomIconFolder.bl_idname,
+            text="",
+            icon=ui_icon("FILE_FOLDER"),
+        )
+        icon_ops.operator(
+            RefreshIcons.bl_idname,
+            text="",
+            icon=ui_icon("FILE_REFRESH"),
+        )
+        icon_ops.operator(
+            ExportCustomIcons.bl_idname,
+            text="",
+            icon=ui_icon("EXPORT"),
+        )
+        icon_ops.operator(
+            ImportCustomIcons.bl_idname,
+            text="",
+            icon=ui_icon("IMPORT"),
+        )
         icon_box.label(
             text="Put PNG files in the custom icons folder to use them as gesture element icons"
         )

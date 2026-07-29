@@ -12,6 +12,7 @@ from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.structure_cache_ops import StructureCacheOps
 from ..utils.strict_json import load_json_strict
+from ..utils.icons import ui_icon
 
 
 def _preset_sort_key(gesture: dict, is_example: bool) -> tuple[bool, bool]:
@@ -124,7 +125,10 @@ class GestureCURE:
             gesture_info.label(text='Gesture: drag in a direction to choose an action.')
             menu_info = column.box()
             menu_info.label(text='Menu: open a persistent menu at the cursor and click an item.')
-            column.label(text='The type is fixed after creation.', icon='INFO')
+            column.label(
+                text='The type is fixed after creation.',
+                icon=ui_icon('INFO'),
+            )
 
         def execute(self, _):
             from ..utils.gesture_store import get_gesture_store, get_gestures

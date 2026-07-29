@@ -24,8 +24,8 @@ with bundled JSON presets, translations, and PNG icon assets.
   declaration and fails immediately instead of importing presets into a stale
   schema.
 - `utils/rna_register.py` provides reload-tolerant class registration. The
-  package build excludes tests, documentation, VCS files, caches, and agent
-  files via `[build].paths_exclude_pattern`.
+  package build excludes tests, release notes, documentation, VCS files,
+  caches, and agent files via `[build].paths_exclude_pattern`.
 
 ### Runtime data and persistence
 
@@ -297,6 +297,10 @@ with bundled JSON presets, translations, and PNG icon assets.
   both states of layout alignment, property drag inversion, property value
   visibility, and boolean state icons. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.
+  Every explicit Blender `UILayout` `icon=` argument passes through
+  `utils/icons.py:ui_icon()`, which validates the identifier against the live
+  Blender enum and falls back to `ERROR`; `tests/test_ui_icons.py` guards this
+  contract across UI source modules.
 - The normal `Common Menu` preset is enabled on `BUTTON4MOUSE` in 19 relevant
   3D View/mode keymaps. Its compact, keep-open menu filters mode and object-type
   sections at runtime and groups viewport display, mode switching, object and
@@ -355,8 +359,10 @@ flowchart TD
   panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`,
   `BLENDER_USER_SCRIPTS`, and `BLENDER_USER_EXTENSIONS`, plus `--background
-  --python-exit-code 1`. Treat traceback/Python-error text as failure evidence
-  even when Blender exits zero.
+  --python-exit-code 1`. Create all four target directories before launching
+  Blender; nonexistent override paths are ignored and silently fall back to
+  the normal user profile. Treat traceback/Python-error text as failure
+  evidence even when Blender exits zero.
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.
@@ -377,41 +383,38 @@ flowchart TD
   requests/second.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
-- Previous release-candidate verification on 2026-07-29: 173 Python files compiled in
-  memory, 272 unit tests passed, Ruff and `git diff --check` passed, and all 16
-  source JSON files passed duplicate-key validation. Nine isolated background
-  smoke scripts passed in both Blender 4.3.2 and 5.2.0 LTS with zero
-  tracebacks/Python errors. Both CLIs validated source and the 5.2-built ZIP;
-  its 344 entries had no duplicates, unsafe paths, forbidden agent/test/cache
-  files, `eval`/`exec` calls, or corruption. SHA-256 is
-  `5098A577F44CCC3F0F2001620FC7B64D34364E3CBF54BA4B4AB1E389456161D6`.
+- Release-candidate verification on 2026-07-30: all 184 repository Python files
+  compiled in memory, 328 unit tests passed, Ruff and `git diff --check` passed,
+  and all 17 JSON files passed duplicate-key validation. Eleven isolated source
+  smoke scripts passed in Blender 4.3.2. Ten non-file-load source smokes passed
+  in Blender 5.2.0 LTS; its lifecycle smoke is blocked because that Blender
+  binary reproducibly crashes inside `bpy.ops.wm.read_homefile(use_empty=True)`
+  even in a minimal factory-startup process with no add-on enabled. Both CLIs
+  validated the source and the 5.2-built flat ZIP. The archive has 348 entries,
+  no duplicates, unsafe paths, forbidden agent/test/cache files,
+  `svg_2_png.py`, `eval`/`exec` calls, or corruption; SHA-256 is
+  `FAE3EEE1BC1518C321CA8AE36B8ECFB6F7516BA61D5FF42FA4D292837A5E663A`.
   The ZIP installed into isolated local Extension repositories, started
-  enabled, imported all 11 bundled presets, exposed the current `SPLIT` RNA,
-  and disabled cleanly in Blender 4.3 and 5.2.
-- Current-tree focused verification for `Common Menu` passed its four structural
-  tests and the source duplicate-key check. Its dedicated smoke and the complete
-  12-preset transactional import/keymap smoke passed in isolated Blender 4.3.2
-  and 5.2.0 LTS profiles. The complete release/build/package suite has not been
-  rerun since the previous baseline.
+  enabled, imported all 12 bundled presets, exposed the current `SPLIT` RNA,
+  and disabled cleanly in Blender 4.3.2 and 5.2.0 LTS.
 
 ## Current risks and observed issues
 
-1. **Submission asset-license decision remains open:** the bundled
-   `CHECKBOX_HLT`/`CHECKBOX_DEHLT` images are declared as Blender-derived GPL
-   assets, while the Nick review guidance expects submitted artwork to meet its
-   CC0 threshold. Do not change their provenance or license without an explicit
-   release decision.
+1. **Bundled asset provenance must stay explicit:** the Blender-derived icon
+   files are covered by `src/icons/blender/NOTICE.txt`, the GPL-compatible
+   extension license, and the Blender Foundation manifest credit. Preserve that
+   provenance if the images are regenerated or replaced.
 2. **Blender-exit detection depends on Python stack internals:**
    `utils/__init__.py:is_blender_close()` uses `sys._getframe()` and searches for
    an `addon_utils.disable_all` caller. It currently passes lifecycle smoke but
    depends on implementation details that may change in later Blender/Python.
-3. **Blender-only behavior remains higher risk than unit coverage:** focused
-   example-preset and unified-preview verification, including layout RNA and
-   drawing, passes in Blender 4.3.2 and 5.2.0 LTS. The installed 5.2 build has
-   previously aborted with a native access violation before Python assertions,
-   so native instability may be intermittent. Foreground visual placement,
-   multi-window behavior, and file-load restoration still require targeted
-   manual checks.
+3. **Current Blender 5.2 binary cannot exercise file reload:** its
+   `bpy.ops.wm.read_homefile(use_empty=True)` path deterministically aborts in
+   `tbbmalloc.dll`, including without Gesture Helper. The full lifecycle/reload
+   smoke passes in Blender 4.3.2, and the other ten 5.2 source smokes plus the
+   installed-package smoke pass. Re-run the lifecycle smoke when a newer 5.2
+   build is available. Foreground visual placement and multi-window behavior
+   still require targeted manual checks.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,

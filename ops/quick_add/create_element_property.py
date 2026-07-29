@@ -15,6 +15,7 @@ from ...utils.property_data import (
 from ...utils.public import get_pref, PublicOperator, debug_print
 from ...utils.pref_access import PrefAccess
 from ...utils.structure_cache_ops import StructureCacheOps
+from ...utils.icons import ui_icon
 
 
 def gesture_control_property_error(pointer, rna_prop) -> str | None:
@@ -308,7 +309,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         box.label(text="Gesture-Controlled Property")
         control_error = gesture_control_property_error(self.button_pointer, prop)
         if control_error:
-            box.label(text=control_error, icon='LOCKED')
+            box.label(text=control_error, icon=ui_icon('LOCKED'))
             box.enabled = False
         else:
             box.label(text="Shows the live value and changes it directly from the gesture")

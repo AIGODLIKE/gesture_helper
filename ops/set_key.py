@@ -10,6 +10,7 @@ from ..utils.public import (
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.public_ui import icon_two
+from ..utils.icons import ui_icon
 
 # Matches default gesture keymaps and other frequent editor contexts.
 COMMON_GESTURE_KEYMAPS = frozenset({
@@ -156,14 +157,31 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
         searching = bool(self.keymap_search.strip())
         box = layout.box()
         header = box.row(align=True)
-        header.label(text="Keymap list", icon='KEYINGSET')
+        header.label(text="Keymap list", icon=ui_icon('KEYINGSET'))
         row = box.row(align=True)
         row.scale_y = 1.1
         row.enabled = not searching
-        row.prop_enum(self, "keymap_filter", 'COMMON', text="Frequently Used", icon='SOLO_ON')
-        row.prop_enum(self, "keymap_filter", 'ALL', text="All", icon='PRESET')
+        row.prop_enum(
+            self,
+            "keymap_filter",
+            'COMMON',
+            text="Frequently Used",
+            icon=ui_icon('SOLO_ON'),
+        )
+        row.prop_enum(
+            self,
+            "keymap_filter",
+            'ALL',
+            text="All",
+            icon=ui_icon('PRESET'),
+        )
         search_row = box.row(align=True)
-        search_row.prop(self, "keymap_search", text="", icon='VIEWZOOM')
+        search_row.prop(
+            self,
+            "keymap_search",
+            text="",
+            icon=ui_icon('VIEWZOOM'),
+        )
 
     def draw(self, _):
         OperatorSetKeyMaps.__session_keymap_filter__ = self.keymap_filter
@@ -204,14 +222,14 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
         if not selected:
             row = layout.row()
             row.enabled = False
-            row.label(text="—", icon='BLANK1')
+            row.label(text="—", icon=ui_icon('BLANK1'))
             return
         for name in selected:
             text = __keymap_translate__(name)
             # Already translated; disable UI auto-translate (e.g. Screen → 滤色).
             layout.operator(
                 self.bl_idname,
-                icon='RESTRICT_SELECT_OFF',
+                icon=ui_icon('RESTRICT_SELECT_OFF'),
                 text=text,
                 translate=False,
             ).add_keymap = name
@@ -221,7 +239,11 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
         row = layout.row(align=True)
         row.label(text=__keymap_translate__(name), translate=False)
         select_icon = icon_two(name in OperatorSetKeyMaps.__temp_selected_keymaps__, 'RESTRICT_SELECT')
-        row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = name
+        row.operator(
+            OperatorSetKeyMaps.bl_idname,
+            text='',
+            icon=ui_icon(select_icon),
+        ).add_keymap = name
 
     def draw_keymaps_flat(self, layout, items, query: str):
         """Flat search results: match English or translated names, no folding."""
@@ -231,7 +253,7 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
         if not matched:
             row = layout.row()
             row.enabled = False
-            row.label(text="No matching keymaps", icon='INFO')
+            row.label(text="No matching keymaps", icon=ui_icon('INFO'))
             return
         for name in matched:
             self._draw_keymap_row(layout, name)
@@ -251,7 +273,11 @@ class OperatorSetKeyMaps(PublicOperator, PrefAccess, ActiveSelection):
                 if child:
                     row.prop(keymap, 'show_expanded_items', text='')
                 select_icon = icon_two(name in OperatorSetKeyMaps.__temp_selected_keymaps__, 'RESTRICT_SELECT')
-                row.operator(OperatorSetKeyMaps.bl_idname, text='', icon=select_icon).add_keymap = keymap.name
+                row.operator(
+                    OperatorSetKeyMaps.bl_idname,
+                    text='',
+                    icon=ui_icon(select_icon),
+                ).add_keymap = keymap.name
                 if show_child and child:
                     child_box = column.box()
                     self.draw_keymaps(child_box.column(align=True), child)

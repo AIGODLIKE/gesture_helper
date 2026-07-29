@@ -8,6 +8,7 @@ from ...utils.panel import iter_menu_classes, iter_panel_classes
 from ...utils.public import PublicOperator, get_pref, poll_message_active_gesture
 from ...utils.structure_cache_ops import StructureCacheOps
 from ...utils.session_state import SessionState
+from ...utils.icons import ui_icon
 
 
 class CreatePanelMenu(PublicOperator, StructureCacheOps):
@@ -83,7 +84,11 @@ def draw_add(self, context):
     ops.create_id_name = self.bl_idname
     rr = row.row(align=True)
     rr.operator_context = "INVOKE_DEFAULT"
-    rr.operator(CreatePanelMenu.bl_idname, text="", icon="PANEL_CLOSE")
+    rr.operator(
+        CreatePanelMenu.bl_idname,
+        text="",
+        icon=ui_icon("PANEL_CLOSE"),
+    )
 
 
 exclude_panel = ["PROPERTIES_PT_navigation_bar"]
