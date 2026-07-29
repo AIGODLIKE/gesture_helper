@@ -42,6 +42,25 @@ class TranslationCatalogTests(unittest.TestCase):
             "偏好设置备份",
         )
 
+    def test_long_gesture_action_tooltips_break_before_modifier_help(self):
+        self.assertEqual(
+            self.translations[
+                "Add a new gesture. Hold Ctrl+Alt+Shift while clicking to "
+                "import every bundled preset, including examples"
+            ],
+            "添加新手势\n"
+            "按住 Ctrl+Alt+Shift 点击可导入全部内置预设（包括示例）",
+        )
+        self.assertEqual(
+            self.translations[
+                "Remove the active gesture. Hold Ctrl+Alt+Shift while "
+                "clicking to remove all gestures (confirmation required; "
+                "cannot be undone)"
+            ],
+            "删除当前手势\n"
+            "按住 Ctrl+Alt+Shift 点击可删除全部手势（需确认；不可撤销）",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
