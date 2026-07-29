@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import bpy
 
@@ -16,6 +17,7 @@ sys.path.insert(0, str(REPOSITORY.parent))
 assert bpy.ops.preferences.addon_enable(module='gesture_helper') == {'FINISHED'}
 
 from gesture_helper.gesture.gesture_draw_gpu import GestureGpuDraw  # noqa: E402
+from gesture_helper.gesture.gesture_session import GestureSession  # noqa: E402
 from gesture_helper.gesture.menu import GestureMenuRuntime  # noqa: E402
 from gesture_helper.gesture.runtime_tooltip import (  # noqa: E402
     sync_hover_tooltip,
@@ -382,9 +384,46 @@ with suppress_gesture_disk_save():
         split_slots[0][1] - (split_size.x - split_gap) * 0.35
     ) < 0.001
 
+    render_session = GestureSession()
+    render_ops = SimpleNamespace(session=render_session)
+    second.ops = render_ops
+    assert second._layout_node_is_stable(second)
+    # Blender 4.3 disables GPU matrix queries in background mode. The visual
+    # matrix is an independent cache-key input, so pin only that boundary while
+    # exercising the real registered RNA/style/hover signature.
+    with patch.object(
+            type(second),
+            '_layout_matrix_signature',
+            return_value=(1.0,) * 16,
+    ):
+        first_render_key = second._layout_render_signature(
+            layout_metrics,
+            render_session,
+        )
+        render_session.extension_hover = [nested]
+        hover_render_key = second._layout_render_signature(
+            layout_metrics,
+            render_session,
+        )
+    assert hover_render_key != first_render_key
+    render_session.layout_token = object()
+    second._restore_retained_layout_hits(render_session, (nested, split_action))
+    assert second._layout_visible_token is render_session.layout_token
+    assert nested._gesture_layout_token is render_session.layout_token
+    assert split_action._gesture_layout_token is render_session.layout_token
+    render_session._layout_render_cache[
+        second._layout_node_cache_key(second)
+    ] = (first_render_key, object(), ())
+    render_session.release_element_proxies(owner=render_ops)
+    assert not render_session._layout_render_cache
+    second.ops = None
+
     numeric = gesture.element.add()
     numeric.element_type = 'PROPERTY'
     numeric.__init_element__()
+    numeric.ops = render_ops
+    assert not numeric._layout_node_is_stable(numeric)
+    numeric.ops = None
     assert numeric.display_property_type in {'INT', 'FLOAT'}
     assert numeric.numeric_arrows_visible
     token = object()

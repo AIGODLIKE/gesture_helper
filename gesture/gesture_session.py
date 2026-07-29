@@ -205,6 +205,9 @@ class GestureSession:
         self._layout_measure_cache_key = None
         self._layout_measure_stability = {}
         self._layout_frame_measure_cache = None
+        # Retained static GPU layout commands, keyed per root adapter/element.
+        # Dynamic property layouts deliberately do not enter this cache.
+        self._layout_render_cache = {}
         self.layout_token = object()
 
     def reset(self, event, area, screen, gesture_name: str = ""):
@@ -237,6 +240,7 @@ class GestureSession:
 
     def release_element_proxies(self, owner=None) -> None:
         """Detach transient modal owners before Blender removes their RNA."""
+        self._layout_render_cache.clear()
         for element in tuple(self._element_proxy_pool.values()):
             try:
                 current = getattr(element, 'ops', None)

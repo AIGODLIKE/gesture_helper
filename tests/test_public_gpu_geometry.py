@@ -22,6 +22,10 @@ class FakeMatrixApi:
     def translate(_position):
         return None
 
+    @staticmethod
+    def get_model_view_matrix():
+        return "model-view"
+
 
 class PublicGpuGeometryTests(unittest.TestCase):
     @classmethod
@@ -34,6 +38,7 @@ class PublicGpuGeometryTests(unittest.TestCase):
             PACKAGE,
             f"{PACKAGE}.utils",
             f"{PACKAGE}.utils.color",
+            f"{PACKAGE}.utils.gpu_layout_batch",
         )
         cls.old_modules = {name: sys.modules.get(name) for name in names}
 
@@ -46,6 +51,37 @@ class PublicGpuGeometryTests(unittest.TestCase):
         color.color_to_gpu = tuple
         color.color_to_srgb = tuple
         color.linear_to_srgb_tuple = tuple
+
+        layout_batch = types.ModuleType(f"{PACKAGE}.utils.gpu_layout_batch")
+
+        class FakeLayoutBatch:
+            instances = []
+
+            def __init__(self):
+                self.events = []
+                self.flush_count = 0
+                self.flush_error = None
+                self.__class__.instances.append(self)
+
+            def add_fill(self, *args):
+                self.events.append(("fill", args))
+
+            def add_stroke(self, *args):
+                self.events.append(("stroke", args))
+
+            def add_image(self, *args):
+                self.events.append(("image", args))
+
+            def add_text(self, *args):
+                self.events.append(("text", args))
+
+            def flush(self):
+                self.flush_count += 1
+                if self.flush_error is not None:
+                    raise self.flush_error
+
+        layout_batch.GpuLayoutBatch = FakeLayoutBatch
+        cls.fake_layout_batch = FakeLayoutBatch
 
         gpu = types.ModuleType("gpu")
         gpu.matrix = FakeMatrixApi()
@@ -61,6 +97,7 @@ class PublicGpuGeometryTests(unittest.TestCase):
             PACKAGE: package,
             f"{PACKAGE}.utils": utils,
             color.__name__: color,
+            layout_batch.__name__: layout_batch,
         })
 
         spec = importlib.util.spec_from_file_location(
@@ -93,6 +130,59 @@ class PublicGpuGeometryTests(unittest.TestCase):
                 (0, 0), radius=-5, width=100, height=20,
             )
         self.assertEqual(draw_fill.call_args.args[2], 0.0)
+
+    def test_layout_batch_collects_primitives_and_reuses_nested_owner(self):
+        self.fake_layout_batch.instances.clear()
+        texture = object()
+
+        with self.module.layout_gpu_batch() as outer:
+            with self.module.layout_gpu_batch() as inner:
+                self.assertIs(inner, outer)
+                self.module.PublicGpu.draw_rounded_rectangle_area(
+                    (5, 6),
+                    color=(0.1, 0.2, 0.3, 0.4),
+                    radius=9,
+                    width=20,
+                    height=10,
+                )
+                self.module.draw_line(
+                    ((0, 0), (1, 1)),
+                    (1, 1, 1, 1),
+                    2,
+                )
+                self.module.PublicGpu.draw_image((2, 3), 8, 9, texture)
+                self.module.PublicGpu.draw_text("Label", position=(4, 5))
+
+        self.assertEqual(len(self.fake_layout_batch.instances), 1)
+        batch = self.fake_layout_batch.instances[0]
+        self.assertEqual(
+            [event[0] for event in batch.events],
+            ["fill", "stroke", "image", "text"],
+        )
+        self.assertEqual(batch.flush_count, 1)
+        self.assertEqual(batch.events[0][1][-1], "model-view")
+        self.assertEqual(batch.events[1][1][-1], "model-view")
+        self.assertEqual(batch.events[2][1][-1], "model-view")
+        self.assertEqual(batch.events[3][1][-1], "model-view")
+
+    def test_explicit_layout_flush_preserves_batch_owner(self):
+        self.fake_layout_batch.instances.clear()
+        with self.module.layout_gpu_batch() as batch:
+            self.module.flush_layout_gpu_batch()
+            self.assertIs(self.module._LAYOUT_GPU_BATCH, batch)
+
+        self.assertEqual(batch.flush_count, 2)
+
+    def test_layout_batch_preserves_primary_draw_exception(self):
+        self.fake_layout_batch.instances.clear()
+
+        with self.assertRaisesRegex(ValueError, "primary"):
+            with self.module.layout_gpu_batch() as batch:
+                batch.flush_error = RuntimeError("secondary")
+                raise ValueError("primary")
+
+        self.assertEqual(batch.flush_count, 1)
+        self.assertIsNone(self.module._LAYOUT_GPU_BATCH)
 
     def test_outlined_rectangle_uses_the_same_dimension_clamp(self):
         with (

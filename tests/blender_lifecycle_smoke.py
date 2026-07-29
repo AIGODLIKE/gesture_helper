@@ -102,6 +102,12 @@ assert bpy.types.Operator.bl_rna_get_subclass_py(
 assert bpy.types.Operator.bl_rna_get_subclass_py(
     "WM_OT_gesture_layout_preset_add"
 ) is not None
+preset_property = (
+    bpy.ops.wm.gesture_layout_preset_add.get_rna_type().properties["preset"]
+)
+assert tuple(
+    item.identifier for item in preset_property.enum_items
+) == ("PANEL", "TOOLBAR", "SPLIT")
 store.index_gesture = 0
 assert bpy.ops.wm.gesture_element_add.poll()
 assert bpy.ops.wm.gesture_layout_preset_add.poll()

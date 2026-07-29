@@ -1,5 +1,7 @@
 import bpy
 
+from ..utils.icons import ui_icon
+
 
 class GESTURE_MT_add_element_menu(bpy.types.Menu):
     bl_label = "Other Elements"
@@ -30,12 +32,11 @@ class GESTURE_MT_layout_preset_menu(bpy.types.Menu):
             ('PANEL', 'Panel Column', 'MENU_PANEL'),
             ('TOOLBAR', 'Toolbar Row', 'ALIGN_JUSTIFY'),
             ('SPLIT', 'Two Columns', 'SPLIT_HORIZONTAL'),
-            ('SAMPLING', 'Sampling Panel', 'RENDER_STILL'),
         ):
             operator = layout.operator(
                 ElementCURE.AddLayoutPreset.bl_idname,
                 text=text,
-                icon=icon,
+                icon=ui_icon(icon),
             )
             operator.preset = identifier
 
@@ -56,6 +57,8 @@ class GESTURE_MT_main_action_menu(bpy.types.Menu):
                 item,
                 'main_item',
                 text=item.name_translate,
-                icon='RADIOBUT_ON' if item == effective else 'RADIOBUT_OFF',
+                icon=ui_icon(
+                    'RADIOBUT_ON' if item == effective else 'RADIOBUT_OFF'
+                ),
                 toggle=True,
             )

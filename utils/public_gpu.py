@@ -1,4 +1,5 @@
 import math
+from contextlib import contextmanager
 from functools import cache
 
 import blf
@@ -18,6 +19,7 @@ _IMAGE_BATCH_CACHE: dict[tuple[float, float], tuple] = {}
 _GPU_DRAW_DEPTH = 0
 _SAVED_BLEND = None
 _SAVED_DEPTH_TEST = None
+_LAYOUT_GPU_BATCH = None
 
 
 def _get_shader(name: str):
@@ -37,7 +39,7 @@ def _point_shader():
 
 def clear_gpu_caches() -> None:
     """Drop module-level GPU batches/shaders and geometry caches (reload-safe)."""
-    global _GPU_DRAW_DEPTH, _SAVED_BLEND, _SAVED_DEPTH_TEST
+    global _GPU_DRAW_DEPTH, _SAVED_BLEND, _SAVED_DEPTH_TEST, _LAYOUT_GPU_BATCH
     _SHADER_CACHE.clear()
     _ROUNDED_FILL_BATCH.clear()
     _IMAGE_BATCH_CACHE.clear()
@@ -56,6 +58,7 @@ def clear_gpu_caches() -> None:
     _GPU_DRAW_DEPTH = 0
     _SAVED_BLEND = None
     _SAVED_DEPTH_TEST = None
+    _LAYOUT_GPU_BATCH = None
     try:
         from .gpu_stroke import clear_stroke_shader_cache
         clear_stroke_shader_cache()
@@ -98,6 +101,52 @@ def _ensure_alpha_blend():
     gpu.state.blend_set('ALPHA')
 
 
+@contextmanager
+def layout_gpu_batch():
+    """Batch one recursive layout render while preserving nested ownership."""
+    global _LAYOUT_GPU_BATCH
+    if _LAYOUT_GPU_BATCH is not None:
+        yield _LAYOUT_GPU_BATCH
+        return
+
+    from .gpu_layout_batch import GpuLayoutBatch
+
+    batch = GpuLayoutBatch()
+    _LAYOUT_GPU_BATCH = batch
+    try:
+        yield batch
+    except BaseException:
+        _LAYOUT_GPU_BATCH = None
+        try:
+            batch.flush()
+        except BaseException:
+            # Preserve the draw/layout exception; a secondary partial-frame
+            # submission failure must not replace the actionable traceback.
+            pass
+        raise
+    else:
+        _LAYOUT_GPU_BATCH = None
+        batch.flush()
+
+
+def flush_layout_gpu_batch() -> None:
+    """Submit queued commands at an explicit visual stacking boundary."""
+    global _LAYOUT_GPU_BATCH
+    batch = _LAYOUT_GPU_BATCH
+    if batch is None:
+        return
+    _LAYOUT_GPU_BATCH = None
+    try:
+        batch.flush()
+    finally:
+        _LAYOUT_GPU_BATCH = batch
+
+
+def layout_gpu_batch_active() -> bool:
+    """Whether a parent layout currently owns the frame command collector."""
+    return _LAYOUT_GPU_BATCH is not None
+
+
 @cache
 def from_segments_generator_circle_vertex(segments) -> tuple:
     from math import sin, cos, pi
@@ -134,6 +183,16 @@ def _as_rgba(color):
 def draw_line(vertex, color, line_width, is_cycle=True) -> None:
     """Draw a gap-less AA polyline (round joins + SDF fringe)."""
     if not vertex or len(vertex) < 2:
+        return
+
+    if _LAYOUT_GPU_BATCH is not None:
+        _LAYOUT_GPU_BATCH.add_stroke(
+            vertex,
+            color,
+            line_width,
+            is_cycle,
+            gpu.matrix.get_model_view_matrix(),
+        )
         return
 
     from .gpu_stroke import draw_blender_polyline, draw_smooth_stroke
@@ -274,6 +333,18 @@ def _draw_rounded_fill(position, color, radius, width, height, segments, corner_
     if width <= 0 or height <= 0:
         return
     r = _clamp_rounded_radius(radius, width, height)
+    if _LAYOUT_GPU_BATCH is not None:
+        _LAYOUT_GPU_BATCH.add_fill(
+            position,
+            color,
+            r,
+            width,
+            height,
+            segments,
+            corner_mask,
+            gpu.matrix.get_model_view_matrix(),
+        )
+        return
     _ensure_alpha_blend()
     shader = _get_shader('UNIFORM_COLOR')
     batch = _get_rounded_fill_batch(r, width, height, segments, corner_mask)
@@ -292,8 +363,11 @@ __all__ = [
     'linear_to_srgb_tuple',
     'clear_gpu_caches',
     'draw_line',
+    'flush_layout_gpu_batch',
     'gpu_draw_begin',
     'gpu_draw_end',
+    'layout_gpu_batch',
+    'layout_gpu_batch_active',
 ]
 
 
@@ -301,6 +375,15 @@ class PublicGpu:
     @staticmethod
     def draw_image(position, height, width, texture):
         if texture is None:
+            return
+        if _LAYOUT_GPU_BATCH is not None:
+            _LAYOUT_GPU_BATCH.add_image(
+                position,
+                height,
+                width,
+                texture,
+                gpu.matrix.get_model_view_matrix(),
+            )
             return
         # Always force ALPHA — icon textures rely on straight alpha; never inherit
         # a dirty blend state from prior stroke/fill draws.
@@ -341,6 +424,18 @@ class PublicGpu:
         font size), so any label — CJK, capitals, descenders — occupies the
         same stable line box instead of jumping with its ink extents.
         """
+        if _LAYOUT_GPU_BATCH is not None:
+            _LAYOUT_GPU_BATCH.add_text(
+                text,
+                position,
+                size,
+                color,
+                font_id,
+                column,
+                z,
+                gpu.matrix.get_model_view_matrix(),
+            )
+            return
         from .blf_text import line_metrics
         x, y = position
         ascent, _descent, line_h = line_metrics(size, font_id)

@@ -204,7 +204,6 @@ class ElementCURE:
                 ('PANEL', 'Panel Column', 'A boxed vertical content group'),
                 ('TOOLBAR', 'Toolbar Row', 'A boxed horizontal action group'),
                 ('SPLIT', 'Two Columns', 'Two vertical groups arranged side by side'),
-                ('SAMPLING', 'Sampling Panel', 'Cycles adaptive sampling controls'),
             ),
             default='PANEL',
             options={'HIDDEN', 'SKIP_SAVE'},
@@ -225,14 +224,6 @@ class ElementCURE:
                 'ROW', 'Two Columns', (
                     ('COLUMN', 'Left', ()),
                     ('COLUMN', 'Right', ()),
-                ),
-            ),
-            'SAMPLING': (
-                'BOX', 'Sampling', (
-                    ('COLUMN', 'Sampling', (
-                        ('PROPERTY', 'Max Samples', (), 'scene.cycles.samples'),
-                        ('PROPERTY', 'Adaptive Threshold', (), 'scene.cycles.adaptive_threshold'),
-                    )),
                 ),
             ),
         }

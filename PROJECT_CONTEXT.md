@@ -137,7 +137,16 @@ with bundled JSON presets, translations, and PNG icon assets.
    live mouse trail. Selector hover events do not consume Space-drag navigation.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
-   status, label, icon, and display metrics once per draw.
+   status, label, icon, and display metrics once per draw. Stable top-level
+   layouts without live property displays additionally retain one frame of GPU
+   commands: rounded fills are precompiled into one colored batch, matching
+   polyline styles are grouped, and unchanged frames replay the commands while
+   restamping visible rows with the new layout token. The complete cache key
+   covers structure/content and poll generations, locale, style, hover/press
+   state, owner-region size, and the model-view matrix. Blender element identity
+   uses `as_pointer()` so rebuilt RNA wrappers cannot reuse stale Python-id cache
+   entries. Dynamic property layouts keep the immediate renderer, and flyouts
+   flush at explicit stacking boundaries.
    Numeric `INT`/`FLOAT` property rows are always painted as three contiguous
    Blender-style blocks: decrement, value, and increment, when Blender's global
    Numeric Input Arrows preference is enabled. The three blocks have
@@ -206,7 +215,14 @@ with bundled JSON presets, translations, and PNG icon assets.
   Expanded element trees with more than 48 visible descendants use a cached,
   area/root-scoped 32-row page; selection changes reveal their page, while
   explicit page changes are preserved. Layout Gesture Action choices are built
-  lazily in a menu instead of as hundreds of controls on every panel draw.
+  lazily in a menu instead of as hundreds of controls on every panel draw. The
+  Add Element block keeps layout containers (Row/Column/Box) on one row and
+  Div/Label/Split plus the two compact menus on a fixed second row; unavailable
+  Div/Label cells are disabled in place so relationship changes never reflow
+  the controls. The two Layout rows stay tightly aligned as one group, with a
+  small vertical gap separating that group from Add item above. Its
+  layout-preset menu contains only the general-purpose Panel Column, Toolbar
+  Row, and Two Columns templates.
   Gesture preferences include the hover-tooltip delay in milliseconds (300 ms
   by default); runtime tooltip fade timing is fixed and does not persist state.
   `ops/quick_add/` implements context-sensitive creation helpers and previews.
@@ -260,6 +276,7 @@ flowchart TD
     Exec --> Elements[element recursive model]
     Elements --> Blender[bpy operators and live RNA]
     Session --> Draw[GPU overlay / menu hit boxes]
+    Draw --> Batch[retained layout GPU command batches]
     Theme[utils/ui_theme presets] --> Draw
     Theme --> UI
     Session --> Tooltip[delayed translated runtime tooltips]
@@ -299,9 +316,13 @@ flowchart TD
   restores Blender's numeric-arrow preference instead of assuming its default.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
   `GH_PANEL_AB_MODE=ELEMENT_PREVIEW`, and `GH_PANEL_AB_ELEMENT_COUNT=300`, then
-  run `tests/blender_panel_profile_ab.py` in foreground Blender. The 300-leaf,
-  426-node Blender 5.2 fixture measures about 6.25 ms per Element N-panel draw;
-  its centered GPU preview measures about 32.3 ms per draw.
+  run `tests/blender_panel_profile_ab.py` in foreground Blender. In the
+  2026-07-29 Blender 5.2 run, the 300-leaf/426-node fixture measured about
+  4.40 ms per Element N-panel draw and 2.77 ms per centered GPU-preview callback;
+  268 preview draws completed in 5.003 seconds (about 53.6 draws/second) while
+  both the `UI` and `WINDOW` regions were requested at 60 Hz. The previous
+  non-retained preview baseline was about 32.3 ms per callback and 20.4 redraw
+  requests/second.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
 - Release-candidate verification on 2026-07-29: 173 Python files compiled in

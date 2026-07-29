@@ -88,6 +88,7 @@ def _load_draw_element_module():
         get_pref=_get_pref,
         get_debug=lambda: False,
     )
+    _module(f"{PACKAGE}.utils.icons", ui_icon=lambda name: name)
     _module(f"{PACKAGE}.utils.public_ui", icon_two=lambda *_args, **_kwargs: "NONE")
     _module(
         f"{PACKAGE}.utils.enum",
@@ -249,6 +250,56 @@ class _LayoutRecorder:
         return button
 
 
+class _TreeLayoutRecorder:
+    def __init__(self, kind="root"):
+        self.kind = kind
+        self.children = []
+        self.operations = []
+        self.enabled = True
+
+    def _container(self, kind, **kwargs):
+        child = _TreeLayoutRecorder(kind)
+        child.operations.append(("container_options", kwargs))
+        self.children.append(child)
+        return child
+
+    def box(self):
+        return self._container("box")
+
+    def column(self, **kwargs):
+        return self._container("column", **kwargs)
+
+    def row(self, **kwargs):
+        return self._container("row", **kwargs)
+
+    def split(self, **kwargs):
+        return self._container("split", **kwargs)
+
+    def label(self, **kwargs):
+        self.operations.append(("label", kwargs))
+
+    def prop(self, _data, property_name, **kwargs):
+        self.operations.append(("prop", property_name, kwargs))
+
+    def menu(self, menu_name, **kwargs):
+        self.operations.append(("menu", menu_name, kwargs))
+
+    def separator(self, **kwargs):
+        self.operations.append(("separator", kwargs))
+
+    def operator(self, identifier, *, text="", **kwargs):
+        self.operations.append(("operator", identifier, text, kwargs))
+        return _OperatorProperties(identifier, text)
+
+
+def _tree_shape(node):
+    return (
+        node.kind,
+        tuple(operation[0] for operation in node.operations),
+        tuple(_tree_shape(child) for child in node.children),
+    )
+
+
 def _layout_shape(events):
     return [
         (event[0], "<add-operator>", *event[2:])
@@ -305,6 +356,78 @@ class FrozenElementAddDrawTests(unittest.TestCase):
         ))
         self.assertTrue(all(button.values for button in normal.buttons))
         self.assertTrue(all(not button.values for button in frozen.buttons))
+
+    def test_layout_add_controls_use_two_fixed_rows(self):
+        layout = _TreeLayoutRecorder()
+
+        draw_element.DrawElement.draw_element_add_property(layout)
+
+        main_column = layout.children[0].children[0]
+        self.assertEqual(
+            [
+                operation
+                for operation in main_column.operations
+                if operation[0] == "separator"
+            ],
+            [("separator", {"factor": 0.5})],
+        )
+        layout_column = main_column.children[-1]
+        self.assertEqual(len(layout_column.children), 2)
+        container_row, item_row = layout_column.children
+        self.assertEqual(
+            [
+                operation[2]
+                for operation in container_row.operations
+                if operation[0] == "operator"
+            ],
+            ["Row", "Column", "Box"],
+        )
+        self.assertEqual(
+            [
+                operation[2]
+                for child in item_row.children
+                for operation in child.operations
+                if operation[0] == "operator"
+            ],
+            ["Div", "Label"],
+        )
+        self.assertEqual(
+            [
+                operation[2]
+                for operation in item_row.operations
+                if operation[0] == "operator"
+            ],
+            ["Split"],
+        )
+        self.assertEqual(
+            [operation[0] for operation in item_row.operations[-2:]],
+            ["menu", "menu"],
+        )
+
+    def test_unavailable_layout_items_do_not_change_row_shape(self):
+        unavailable = _TreeLayoutRecorder()
+        draw_element.DrawElement.draw_element_add_property(unavailable)
+
+        _PREF.add_element_property.relationship = "CHILD"
+        _PREF.active_element = types.SimpleNamespace(
+            is_child_gesture=False,
+            is_selected_structure=True,
+            is_layout_container=False,
+        )
+        available = _TreeLayoutRecorder()
+        draw_element.DrawElement.draw_element_add_property(available)
+
+        self.assertEqual(_tree_shape(unavailable), _tree_shape(available))
+        unavailable_items = unavailable.children[0].children[0].children[-1].children[1]
+        available_items = available.children[0].children[0].children[-1].children[1]
+        self.assertEqual(
+            [child.enabled for child in unavailable_items.children],
+            [False, False],
+        )
+        self.assertEqual(
+            [child.enabled for child in available_items.children],
+            [True, True],
+        )
 
     def test_frozen_operator_is_property_free_and_registered(self):
         tree = ast.parse(ELEMENT_CURE_PATH.read_text(encoding="utf-8"))

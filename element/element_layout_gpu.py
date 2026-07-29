@@ -30,6 +30,11 @@ from ..utils.layout_alignment import (
     separator_line_width,
 )
 from ..utils.layout_scale import layout_scale_pair
+from ..utils.public_gpu import (
+    flush_layout_gpu_batch,
+    layout_gpu_batch,
+    layout_gpu_batch_active,
+)
 from ..utils.texture import Texture
 
 
@@ -139,11 +144,22 @@ class ElementLayoutGpu:
         session._layout_measure_cache = {}
         session._layout_measure_stability = {}
 
+    @staticmethod
+    def _layout_node_cache_key(node) -> tuple[str, int]:
+        """Use Blender RNA identity; reserve ``id`` for pure-Python adapters."""
+        try:
+            pointer = int(node.as_pointer())
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+            pointer = 0
+        if pointer:
+            return 'RNA', pointer
+        return 'PY', id(node)
+
     def _layout_node_is_stable(self, node) -> bool:
         """Whether a node's size is independent of live displayed values."""
         session = getattr(getattr(self, 'ops', None), 'session', None)
         stability = getattr(session, '_layout_measure_stability', None)
-        cache_key = id(node)
+        cache_key = self._layout_node_cache_key(node)
         if stability is not None and cache_key in stability:
             return stability[cache_key]
         if node.is_layout_container:
@@ -174,7 +190,7 @@ class ElementLayoutGpu:
         session = getattr(getattr(self, 'ops', None), 'session', None)
         frame_cache = getattr(session, '_layout_frame_measure_cache', None)
         stable_cache = getattr(session, '_layout_measure_cache', None)
-        cache_key = id(node)
+        cache_key = self._layout_node_cache_key(node)
         if frame_cache is not None:
             cached = frame_cache.get(cache_key)
             if cached is not None:
@@ -192,6 +208,77 @@ class ElementLayoutGpu:
         if stable_cache is not None and self._layout_node_is_stable(node):
             stable_cache[cache_key] = size
         return size
+
+    @staticmethod
+    def _layout_matrix_signature() -> tuple[float, ...]:
+        matrix = gpu.matrix.get_model_view_matrix()
+        return tuple(
+            round(float(value), 5)
+            for row in matrix
+            for value in row
+        )
+
+    def _layout_render_signature(self, metrics, session) -> tuple:
+        """Complete visual key for a static retained layout command frame."""
+        draw = self.draw_property
+
+        def color(name):
+            return tuple(float(value) for value in getattr(draw, name, ()))
+
+        region = getattr(bpy.context, 'region', None)
+        hover = tuple(
+            self._layout_node_cache_key(item)
+            for item in getattr(session, 'extension_hover', ())
+        )
+        pressed = getattr(session, '_ui_pressed_element', None)
+        snapshot = getattr(session, 'snapshot', None)
+        active_direction = getattr(snapshot, 'direction_element', None)
+        threshold_zone = getattr(snapshot, 'threshold_zone', None)
+        return (
+            self._layout_measure_signature(metrics),
+            self._layout_matrix_signature(),
+            int(getattr(region, 'width', 0)),
+            int(getattr(region, 'height', 0)),
+            hover,
+            (
+                self._layout_node_cache_key(pressed)
+                if pressed is not None
+                else None
+            ),
+            (
+                self._layout_node_cache_key(active_direction)
+                if active_direction is not None
+                else None
+            ),
+            getattr(threshold_zone, 'name', None),
+            float(self.text_radius),
+            float(getattr(draw, 'outline_width', 0.0)),
+            color('background_child_color'),
+            color('background_operator_color'),
+            color('text_default_color'),
+            color('text_active_color'),
+            color('text_disabled_color'),
+            color('outline_color'),
+            color('outline_active_color'),
+            color('status_error_color'),
+            color('status_warning_color'),
+            color('status_disabled_color'),
+            color('dividing_line_color'),
+            color('interaction_hover_color'),
+            color('interaction_pressed_color'),
+        )
+
+    def _restore_retained_layout_hits(self, session, items) -> None:
+        """Restamp unchanged visible geometry for the draw's fresh token."""
+        token = session.layout_token
+        self._gesture_layout_token = token
+        self._layout_visible_token = token
+        self._layout_visible_leaf_items = list(items)
+        for item in items:
+            try:
+                item._gesture_layout_token = token
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
 
     @staticmethod
     def _layout_child_entries(node, metrics):
@@ -326,17 +413,58 @@ class ElementLayoutGpu:
         self.extension_draw_area = get_current_2d_rect(
             (-mx, -h - my, w + mx, my),
         )
-        self._draw_layout_node(
-            self,
-            ops,
-            metrics,
-            w,
-            corner_mask=(
-                ROUND_CORNERS_ALL
-                if self._layout_round_corners_for(self)
-                else ROUND_CORNERS_NONE
-            ),
-        )
+        nested_batch = layout_gpu_batch_active()
+        render_key = None
+        root_key = self._layout_node_cache_key(self)
+        if (
+                session is not None
+                and not nested_batch
+                and self._layout_node_is_stable(self)
+        ):
+            render_key = self._layout_render_signature(metrics, session)
+            cached = session._layout_render_cache.get(root_key)
+            if cached is not None and cached[0] == render_key:
+                _key, retained, visible_items = cached
+                self._restore_retained_layout_hits(session, visible_items)
+                retained.replay()
+                return
+
+        if render_key is None:
+            if session is not None and not nested_batch:
+                session._layout_render_cache.pop(root_key, None)
+            self._draw_layout_node(
+                self,
+                ops,
+                metrics,
+                w,
+                corner_mask=(
+                    ROUND_CORNERS_ALL
+                    if self._layout_round_corners_for(self)
+                    else ROUND_CORNERS_NONE
+                ),
+            )
+            return
+
+        retained = None
+        with layout_gpu_batch() as batch:
+            self._draw_layout_node(
+                self,
+                ops,
+                metrics,
+                w,
+                corner_mask=(
+                    ROUND_CORNERS_ALL
+                    if self._layout_round_corners_for(self)
+                    else ROUND_CORNERS_NONE
+                ),
+            )
+            retained = batch.snapshot()
+        if retained is not None:
+            session._layout_render_cache[root_key] = (
+                render_key,
+                retained,
+                tuple(self._layout_visible_leaf_items),
+            )
 
     def draw_gpu_layout_inline(self, ops, width: float) -> None:
         """Draw a layout inside an existing flyout without outer panel margins."""
@@ -800,6 +928,11 @@ class ElementLayoutGpu:
                     s, s, texture=texture,
                 )
             if hovered or item in getattr(ops, 'extension_hover', []):
+                # A flyout is a new stacking layer. Submit the parent rows
+                # before and the flyout itself after this boundary so batching
+                # cannot reorder text across an overlapping child panel.
+                flush_layout_gpu_batch()
                 with gpu.matrix.push_pop():
                     gpu.matrix.translate((avail_w + max(metrics.gap, metrics.margin_x), 0))
                     item.draw_gpu_extension_item(ops)
+                flush_layout_gpu_batch()

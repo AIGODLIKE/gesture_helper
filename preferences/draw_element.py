@@ -1,6 +1,7 @@
 import bpy
 from bpy.app.translations import pgettext
 
+from ..utils.icons import ui_icon
 from ..utils.public import get_pref, get_debug
 from ..utils.public_ui import icon_two
 
@@ -59,20 +60,28 @@ class DrawElement:
         cut = cr.column(align=True)
         cut.active = cut.enabled = not pref.__is_cut_element__
         cut.operator(ElementCURE.CUT.bl_idname, icon_value=pref.__get_icon__("CUT"), text='')
-        cr.operator(ElementCURE.COPY.bl_idname, icon='COPYDOWN', text='')
+        cr.operator(ElementCURE.COPY.bl_idname, icon=ui_icon('COPYDOWN'), text='')
         rm = column.column(align=True)
-        rm.operator(ElementCURE.REMOVE.bl_idname, icon='REMOVE', text='')
+        rm.operator(ElementCURE.REMOVE.bl_idname, icon=ui_icon('REMOVE'), text='')
 
         column.separator()
 
         sc = column.column(align=True)
-        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_DESC').is_next = False
-        sc.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='')
-        sc.operator(ElementCURE.SORT.bl_idname, text='', icon='SORT_ASC').is_next = True
+        sc.operator(
+            ElementCURE.SORT.bl_idname,
+            text='',
+            icon=ui_icon('SORT_DESC'),
+        ).is_next = False
+        sc.operator(ElementCURE.MOVE.bl_idname, icon=ui_icon('GRIP'), text='')
+        sc.operator(
+            ElementCURE.SORT.bl_idname,
+            text='',
+            icon=ui_icon('SORT_ASC'),
+        ).is_next = True
 
         if getattr(bpy.context.area, 'type', None) == 'PREFERENCES':
             column.separator()
-            icon = icon_two(draw_property.element_show_left_side, style='ALIGN')
+            icon = ui_icon(icon_two(draw_property.element_show_left_side, style='ALIGN'))
             column.alert = draw_property.element_show_left_side
             column.prop(draw_property, 'element_show_left_side', icon=icon, text='', emboss=False)
 
@@ -120,8 +129,16 @@ class DrawElement:
         row = column.row(align=True)
         mr = row.row(align=True)
         mr.enabled = not mi.is_root  # Not root level
-        mr.operator(ElementCURE.MOVE.bl_idname, icon="GRIP", text='Move to root level').cancel_move = False
-        row.operator(ElementCURE.MOVE.bl_idname, icon='CANCEL', text='Cancel move').cancel_move = True
+        mr.operator(
+            ElementCURE.MOVE.bl_idname,
+            icon=ui_icon('GRIP'),
+            text='Move to root level',
+        ).cancel_move = False
+        row.operator(
+            ElementCURE.MOVE.bl_idname,
+            icon=ui_icon('CANCEL'),
+            text='Cancel move',
+        ).cancel_move = True
 
     @staticmethod
     def draw_cut_element(layout: 'bpy.types.UILayout'):
@@ -139,7 +156,11 @@ class DrawElement:
             icon_value=pref.__get_icon__("CUT"),
             text='Paste to root level'
         ).cancel_cut = False
-        row.operator(ElementCURE.CUT.bl_idname, icon='CANCEL', text='Cancel cut').cancel_cut = True
+        row.operator(
+            ElementCURE.CUT.bl_idname,
+            icon=ui_icon('CANCEL'),
+            text='Cancel cut',
+        ).cancel_cut = True
 
     @classmethod
     def draw_element_add_property(
@@ -169,9 +190,14 @@ class DrawElement:
         relation = column.column(align=True)
         row = draw_label(relation, 'Element relationship:')
         row.prop(add, 'relationship', expand=True)
-        row.prop(add, "add_active_radio", icon="LAYER_ACTIVE", icon_only=True)
+        row.prop(
+            add,
+            "add_active_radio",
+            icon=ui_icon("LAYER_ACTIVE"),
+            icon_only=True,
+        )
 
-        # Keep the same three control rows for every relationship. When the
+        # Keep the same control rows for every relationship. When the
         # active element is a leaf and CHILD is selected, disable the controls
         # instead of replacing them with warning rows that change panel height.
         controls_enabled = bool(add_child)
@@ -194,38 +220,62 @@ class DrawElement:
         for i, n, d in ENUM_ELEMENT_TYPE:
             if i in (
                     'SELECTED_STRUCTURE',
+                    'DIVIDING_LINE',
                     'ROW', 'COLUMN', 'BOX', 'LABEL', 'SPLIT',
             ):
                 continue
-            if i == "DIVIDING_LINE":
-                cls.draw_element_add_div_property(row, frozen=frozen)
-            else:
-                cls._draw_add_operator(
-                    row,
-                    n,
-                    frozen=frozen,
-                    element_type=i,
-                )
+            cls._draw_add_operator(
+                row,
+                n,
+                frozen=frozen,
+                element_type=i,
+            )
 
+        # Separate the complete two-row Layout group from Add item while
+        # keeping the two Layout rows internally aligned with each other.
+        column.separator(factor=0.5)
         layout_column = column.column(align=True)
-        row = draw_label(layout_column, 'Layout:')
-        row.enabled = controls_enabled
+        layout_containers = draw_label(layout_column, 'Layout:')
+        layout_containers.enabled = controls_enabled
         for i, n, d in ENUM_LAYOUT_ELEMENT_TYPE:
-            if i == 'LABEL':
-                cls.draw_element_add_label_property(row, frozen=frozen)
-            else:
-                cls._draw_add_operator(
-                    row,
-                    n,
-                    frozen=frozen,
-                    element_type=i,
-                )
-        row.menu(
+            if i not in {'ROW', 'COLUMN', 'BOX'}:
+                continue
+            cls._draw_add_operator(
+                layout_containers,
+                n,
+                frozen=frozen,
+                element_type=i,
+            )
+
+        # Keep a fixed second row for the narrower/special layout controls.
+        # Div and Label always reserve their cells even when the relationship
+        # makes them unavailable, so changing relationship cannot reflow the
+        # row or move the trailing menu buttons.
+        layout_items = draw_label(layout_column, '')
+        layout_items.enabled = controls_enabled
+        cls.draw_element_add_div_property(layout_items, frozen=frozen)
+        cls.draw_element_add_label_property(layout_items, frozen=frozen)
+        split_name = next(
+            name
+            for identifier, name, _description in ENUM_LAYOUT_ELEMENT_TYPE
+            if identifier == 'SPLIT'
+        )
+        cls._draw_add_operator(
+            layout_items,
+            split_name,
+            frozen=frozen,
+            element_type='SPLIT',
+        )
+        layout_items.menu(
             GESTURE_MT_layout_preset_menu.__name__,
-            icon='PRESET',
+            icon=ui_icon('PRESET'),
             text='',
         )
-        row.menu(GESTURE_MT_add_element_menu.__name__, icon='COLLAPSEMENU', text="")
+        layout_items.menu(
+            GESTURE_MT_add_element_menu.__name__,
+            icon=ui_icon('COLLAPSEMENU'),
+            text='',
+        )
 
     @classmethod
     def draw_element_add_div_property(
@@ -294,9 +344,10 @@ class DrawElement:
             else:
                 is_alert = True
 
-        if is_alert:
-            layout = layout.row(align=True)
-            layout.enabled = False
+        # Always create the same cell. Only its enabled state changes, keeping
+        # the containing row stable as ROOT/SAME/CHILD availability changes.
+        layout = layout.row(align=True)
+        layout.enabled = not is_alert
 
         cls._draw_add_operator(
             layout,
