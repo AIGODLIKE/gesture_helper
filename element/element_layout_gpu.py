@@ -30,6 +30,7 @@ from ..utils.layout_alignment import (
     separator_line_width,
 )
 from ..utils.layout_scale import layout_scale_pair
+from ..utils.number_arrows import number_field_rects, number_slider_fill_rect
 from ..utils.public_gpu import (
     flush_layout_gpu_batch,
     layout_gpu_batch,
@@ -834,10 +835,20 @@ class ElementLayoutGpu:
             corner_mask=corner_mask,
         )
 
-        # Slider fill for numeric properties (soft range -> row width).
+        # Keep the slider inside the value part of a three-part numeric field.
         fraction = item.display_property_fraction if is_property_display else None
         if fraction is not None and fraction > 0.0:
-            fill_w = max(2.0, avail_w * fraction)
+            slider_bounds = (0.0, -row_h, avail_w, 0.0)
+            if has_number_field:
+                _decrement, slider_bounds, _increment = number_field_rects(
+                    slider_bounds,
+                    item.numeric_arrow_slot(row_h),
+                )
+            fill_rect = number_slider_fill_rect(slider_bounds, fraction)
+            if fill_rect is None:
+                fill_rect = (0.0, -row_h, 0.0, 0.0)
+            fill_left, fill_bottom, fill_right, fill_top = fill_rect
+            fill_w = fill_right - fill_left
             slider_color = item._property_slider_color()
             if (hovered or pressed) and not has_number_field:
                 # Apply the same affine blend to both field and slider so the
@@ -848,12 +859,14 @@ class ElementLayoutGpu:
                     pressed=pressed,
                 )
             self.draw_rounded_rectangle_area(
-                (fill_w * 0.5, -row_h * 0.5),
+                ((fill_left + fill_right) * 0.5,
+                 (fill_bottom + fill_top) * 0.5),
                 color=slider_color,
-                radius=radius,
+                radius=0.0 if has_number_field else radius,
                 width=fill_w,
-                height=row_h,
-                corner_mask=corner_mask,
+                height=fill_top - fill_bottom,
+                corner_mask=(False, False, False, False)
+                if has_number_field else corner_mask,
             )
         item.gpu_draw_status_accent(
             (avail_w * 0.5, -row_h * 0.5), avail_w, row_h,

@@ -34,6 +34,8 @@
   "Split": "拆分",
   "Show a property in the gesture; click or drag to change it": "在手势中显示一个属性；点击或拖动即可修改",
   "Show a property in the gesture; click, drag, or scroll to change it": "在手势中显示一个属性；点击、拖动或滚动即可修改",
+  "Show a property in the gesture; click, drag, scroll, or press Backspace to reset it": "在手势中显示一个属性；点击、拖动或滚动可修改，按 Backspace 可还原默认值",
+  "Reset to Default": "还原到默认值",
   "Horizontal layout container": "水平布局容器",
   "Vertical layout container": "垂直布局容器",
   "Boxed vertical layout container": "带边框的垂直布局容器",

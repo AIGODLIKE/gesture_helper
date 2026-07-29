@@ -135,6 +135,12 @@ class GestureSession:
         self.last_mouse_mouse_time = time.time() if stamp_time else 0.0
         # Active LMB value drag on a property row: (element, start_mouse, start_value).
         self.property_drag: tuple | None = None
+        # Native-style numeric scrub ownership. The pointer is hidden with the
+        # window's modal cursor API, while hit testing remains locked to the
+        # pressed value surface so motion cannot activate neighboring rows.
+        self._property_drag_cursor_window = None
+        self._property_drag_cursor_hidden = False
+        self._property_drag_hover_mouse = None
         # Set when a drag ended on the same event that exits the gesture.
         self._suppress_property_execute = False
         # True once the active drag moved far enough to count as a scrub.

@@ -67,6 +67,8 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     _modal_area = None
     _modal_window = None
     _panel_freeze_active = False
+    _cursor_modal_active = False
+    _confirm_on_lmb_release = False
 
     @classmethod
     def poll(cls, context):
@@ -210,6 +212,10 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
 
         self._modal_area = context.area
         self._modal_window = context.window
+        self._cursor_modal_active = False
+        self._confirm_on_lmb_release = bool(
+            event.type == 'LEFTMOUSE' and event.value == 'PRESS'
+        )
         from ..utils.ui_draw_sync import (
             begin_panel_layout_freeze,
             cancel_all,
@@ -223,6 +229,8 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         tag_gesture_ui_regions()
 
         try:
+            context.window.cursor_modal_set('NONE')
+            self._cursor_modal_active = True
             self.start_mouse(event)
             self._overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
             initial_value = resolve_context_path(context, self.data_path)
@@ -270,7 +278,6 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
 
         try:
             vm = self.value_mode
-            self.set_cursor(context, vm)
             overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
 
             if et == 'MOUSEMOVE':
@@ -294,9 +301,23 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             self._cleanup_modal_after_error()
             raise
 
-        if et == 'LEFTMOUSE' and event.value == 'PRESS':
-            # Confirm only on LMB — never on arbitrary key RELEASE. Gesture key
-            # RELEASE used to finish this modal immediately after invoke.
+        if (
+                et == 'LEFTMOUSE'
+                and event.value == 'RELEASE'
+                and self._confirm_on_lmb_release
+        ):
+            # A native-style field drag started by LMB press commits on the
+            # matching release. Handoff modals keep ignoring stale releases.
+            self.exit()
+            return operator_value_undo_return(self.___value___)
+
+        if (
+                et == 'LEFTMOUSE'
+                and event.value == 'PRESS'
+                and not self._confirm_on_lmb_release
+        ):
+            # Gesture handoff starts without an owned LMB press, so retain the
+            # existing click-to-confirm boundary for that path.
             self.exit()
             return operator_value_undo_return(self.___value___)
 
@@ -311,6 +332,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     def exit(self):
         area = self._modal_area
         window = self._modal_window
+        cursor_modal_active = self._cursor_modal_active
+        self._cursor_modal_active = False
+        self._confirm_on_lmb_release = False
         try:
             self.unregister_draw()
         finally:
@@ -340,7 +364,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
                 except (AttributeError, ReferenceError, RuntimeError, TypeError):
                     pass
                 try:
-                    if window is not None:
-                        window.cursor_set("DEFAULT")
+                    if cursor_modal_active and window is not None:
+                        window.cursor_modal_restore()
                 except (AttributeError, ReferenceError, RuntimeError, TypeError):
                     pass

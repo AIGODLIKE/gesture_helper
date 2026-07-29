@@ -7,6 +7,8 @@ cannot drift apart as row padding or UI scale changes.
 
 from __future__ import annotations
 
+import math
+
 
 NUMBER_PART_DECREMENT = 'DECREMENT'
 NUMBER_PART_VALUE = 'VALUE'
@@ -14,6 +16,7 @@ NUMBER_PART_INCREMENT = 'INCREMENT'
 NUMBER_EDGE_DARKEN = 0.84
 NUMBER_HOVER_BLEND = 0.78
 NUMBER_PRESSED_BLEND = 1.0
+NUMBER_FLOAT_STEP_SCALE = 0.01
 
 
 def number_edge_color(color):
@@ -61,6 +64,224 @@ def number_field_rects(rect, slot_width: float):
         return None, None, None
     value = (decrement[2], decrement[1], increment[0], increment[3])
     return decrement, value, increment
+
+
+def number_slider_fill_rect(value_rect, fraction, *, min_width: float = 2.0):
+    """Return a slider fill contained entirely by the middle value region."""
+    if value_rect is None:
+        return None
+    try:
+        fraction = float(fraction)
+        min_width = max(0.0, float(min_width))
+        x1, y1, x2, y2 = (float(value) for value in value_rect)
+    except (TypeError, ValueError):
+        return None
+    width = x2 - x1
+    if not math.isfinite(fraction) or fraction <= 0.0 or width <= 0.0:
+        return None
+    fill_width = min(width, max(min_width, width * min(1.0, fraction)))
+    return x1, y1, x1 + fill_width, y2
+
+
+def number_drag_value(
+        start_value,
+        delta_px,
+        *,
+        property_type: str,
+        rna_step,
+        hard_min=None,
+        hard_max=None,
+        soft_min=None,
+        soft_max=None,
+        precise: bool = False,
+        return_applied_delta: bool = False,
+):
+    """Map a pointer delta like Blender's linear ``ButtonType::Num`` path.
+
+    When requested, also return the delta at the clamped value. Blender moves
+    ``dragstartx`` by the discarded overshoot so reversing away from a soft or
+    hard limit reacts immediately instead of crossing a dead zone first.
+    """
+    def result(value, applied_delta):
+        if return_applied_delta:
+            return value, applied_delta
+        return value
+
+    if property_type not in {'INT', 'FLOAT'}:
+        return result(start_value, delta_px)
+    try:
+        start = float(start_value)
+        delta = float(delta_px)
+        step = abs(float(rna_step))
+    except (TypeError, ValueError):
+        return result(start_value, delta_px)
+    if not all(math.isfinite(value) for value in (start, delta, step)):
+        return result(start_value, delta)
+
+    hard_range = _ordered_finite_range(hard_min, hard_max)
+    soft_range = _ordered_finite_range(soft_min, soft_max)
+    interaction_range = _expanded_soft_range(start, soft_range, hard_range)
+    if property_type == 'FLOAT':
+        # interface_handlers.cc:numedit_but_NUM uses
+        # ``fac *= 0.01f * but->step_size`` for linear float buttons.
+        factor = (step if step > 0.0 else 1.0) * NUMBER_FLOAT_STEP_SCALE
+        if precise:
+            factor *= 0.1
+    else:
+        # Blender deliberately ignores RNA step for integer drags and chooses a
+        # pixel scale from the effective soft range.
+        interaction_span = (
+            interaction_range[1] - interaction_range[0]
+            if interaction_range is not None
+            else math.inf
+        )
+        if interaction_span > 256.0:
+            factor = 1.0
+        elif interaction_span > 32.0:
+            factor = 0.5
+        else:
+            factor = 1.0 / 16.0
+
+    raw_value = start + delta * factor
+    value = _clamp_interactive_value(
+        raw_value, start, hard_range, soft_range,
+    )
+    applied_delta = delta
+    if factor and value != raw_value:
+        applied_delta = (value - start) / factor
+    if property_type == 'INT':
+        value = int(round(value))
+    else:
+        value = round(value, 12)
+    return result(value, applied_delta)
+
+
+def number_step_value(
+        current_value,
+        direction,
+        *,
+        property_type: str,
+        configured_step,
+        hard_min=None,
+        hard_max=None,
+        soft_min=None,
+        soft_max=None,
+        precise: bool = False,
+):
+    """Step a scalar value within the same soft/hard interaction bounds."""
+    if property_type not in {'INT', 'FLOAT'}:
+        return current_value
+    try:
+        current = float(current_value)
+        direction = float(direction)
+        step = abs(float(configured_step))
+    except (TypeError, ValueError):
+        return current_value
+    if not all(math.isfinite(value) for value in (current, direction, step)):
+        return current_value
+    if direction == 0.0:
+        return current_value
+    direction = 1 if direction > 0.0 else -1
+    if step <= 0.0:
+        step = 1.0 if property_type == 'INT' else 0.01
+    if property_type == 'INT':
+        step = max(1.0, float(round(step)))
+    elif precise:
+        step *= 0.1
+
+    value = current + direction * step
+    value = _clamp_interactive_value(
+        value,
+        current,
+        _ordered_finite_range(hard_min, hard_max),
+        _ordered_finite_range(soft_min, soft_max),
+    )
+    if property_type == 'INT':
+        return int(round(value))
+    return round(value, 12)
+
+
+def _clamp_interactive_value(value, start, hard_range, soft_range):
+    interaction_range = _expanded_soft_range(start, soft_range, hard_range)
+    lower = interaction_range[0] if interaction_range is not None else None
+    upper = interaction_range[1] if interaction_range is not None else None
+    if hard_range is not None:
+        lower = hard_range[0] if lower is None else max(lower, hard_range[0])
+        upper = hard_range[1] if upper is None else min(upper, hard_range[1])
+    if lower is not None:
+        value = max(value, lower)
+    if upper is not None:
+        value = min(value, upper)
+    return value
+
+
+def _expanded_soft_range(start, soft_range, hard_range):
+    """Expand RNA soft bounds to contain *start* like ``button_range_set_soft``."""
+    if soft_range is None:
+        return hard_range
+    lower, upper = soft_range
+    if start + 1e-10 < lower:
+        lower = (
+            -_soft_range_round_up(-start, -lower)
+            if start < 0.0
+            else _soft_range_round_down(start, lower)
+        )
+        if hard_range is not None:
+            lower = max(lower, hard_range[0])
+    if start - 1e-10 > upper:
+        upper = (
+            -_soft_range_round_down(-start, -upper)
+            if start < 0.0
+            else _soft_range_round_up(start, upper)
+        )
+        if hard_range is not None:
+            upper = min(upper, hard_range[1])
+    return lower, upper
+
+
+def _soft_range_round_up(value, maximum):
+    if value == 0.0:
+        new_maximum = 0.0
+    else:
+        try:
+            new_maximum = 10.0 ** math.ceil(math.log10(value))
+        except (OverflowError, ValueError):
+            return value
+    if new_maximum * 0.2 >= maximum and new_maximum * 0.2 >= value:
+        return new_maximum * 0.2
+    if new_maximum * 0.5 >= maximum and new_maximum * 0.5 >= value:
+        return new_maximum * 0.5
+    return new_maximum
+
+
+def _soft_range_round_down(value, maximum):
+    if value == 0.0:
+        new_maximum = 0.0
+    else:
+        try:
+            new_maximum = 10.0 ** math.floor(math.log10(value))
+        except (OverflowError, ValueError):
+            return value
+    if new_maximum * 5.0 <= maximum and new_maximum * 5.0 <= value:
+        return new_maximum * 5.0
+    if new_maximum * 2.0 <= maximum and new_maximum * 2.0 <= value:
+        return new_maximum * 2.0
+    return new_maximum
+
+
+def _ordered_finite_range(minimum, maximum):
+    try:
+        minimum = float(minimum)
+        maximum = float(maximum)
+    except (TypeError, ValueError):
+        return None
+    if (
+            not math.isfinite(minimum)
+            or not math.isfinite(maximum)
+            or maximum <= minimum
+    ):
+        return None
+    return minimum, maximum
 
 
 def number_arrow_chevron(row_height: float, slot_width: float):

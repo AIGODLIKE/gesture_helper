@@ -238,6 +238,10 @@ class GestureModalLifecycleTests(unittest.TestCase):
     def setUp(self):
         TRACE.clear()
 
+    def test_operator_uses_blender_continuous_cursor_grab(self):
+        self.assertIn('BLOCKING', gesture.GestureOperator.bl_options)
+        self.assertIn('GRAB_CURSOR', gesture.GestureOperator.bl_options)
+
     def _operator_with_scrub(self):
         operator = gesture.GestureOperator()
         operator.unregister_draw_calls = 0

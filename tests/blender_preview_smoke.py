@@ -426,6 +426,70 @@ with suppress_gesture_disk_save():
     numeric.ops = None
     assert numeric.display_property_type in {'INT', 'FLOAT'}
     assert numeric.numeric_arrows_visible
+
+    original_path = numeric.property_data_path
+    resolution = bpy.context.scene.render
+    original_percentage = resolution.resolution_percentage
+    numeric.property_data_path = 'scene.render.resolution_percentage'
+    percentage_default = resolution.bl_rna.properties[
+        'resolution_percentage'
+    ].default
+    resolution.resolution_percentage = max(1, percentage_default - 1)
+    assert numeric.reset_display_property_to_default()
+    assert resolution.resolution_percentage == percentage_default
+    assert not numeric.reset_display_property_to_default()
+    resolution.resolution_percentage = original_percentage
+
+    original_transparency = resolution.film_transparent
+    numeric.property_data_path = 'scene.render.film_transparent'
+    transparency_default = resolution.bl_rna.properties[
+        'film_transparent'
+    ].default
+    resolution.film_transparent = not transparency_default
+    assert numeric.reset_display_property_to_default()
+    assert resolution.film_transparent is transparency_default
+    assert not numeric.reset_display_property_to_default()
+    resolution.film_transparent = original_transparency
+
+    previous_active = bpy.context.view_layer.objects.active
+    previous_selected = tuple(bpy.context.selected_objects)
+    light_data = bpy.data.lights.new('Gesture Helper Numeric Smoke', 'POINT')
+    light_object = bpy.data.objects.new('Gesture Helper Numeric Smoke', light_data)
+    bpy.context.scene.collection.objects.link(light_object)
+    for selected_object in previous_selected:
+        selected_object.select_set(False)
+    light_object.select_set(True)
+    bpy.context.view_layer.objects.active = light_object
+    try:
+        numeric.property_data_path = 'object.data.energy'
+        numeric.property_wheel_step = 1.0
+        energy_rna = light_data.bl_rna.properties['energy']
+        assert energy_rna.hard_min < energy_rna.soft_min
+        assert energy_rna.hard_max > energy_rna.soft_max
+
+        light_data.energy = 10.0
+        assert numeric.apply_property_drag(10.0, 1.0)
+        assert abs(light_data.energy - 10.1) < 1e-4
+        assert numeric.apply_property_drag(light_data.energy, -1_000_000_000.0)
+        assert light_data.energy == energy_rna.soft_min
+        assert not numeric.apply_property_wheel(-1)
+
+        light_data.energy = energy_rna.soft_max
+        assert not numeric.apply_property_drag(energy_rna.soft_max, 1.0)
+        assert not numeric.apply_property_wheel(1)
+
+        light_data.energy = energy_rna.soft_max + 10.0
+        outside_soft_start = light_data.energy
+        assert numeric.apply_property_drag(outside_soft_start, 1.0)
+        assert outside_soft_start < light_data.energy <= outside_soft_start + 0.25
+    finally:
+        bpy.data.objects.remove(light_object, do_unlink=True)
+        bpy.data.lights.remove(light_data)
+        for selected_object in previous_selected:
+            selected_object.select_set(True)
+        bpy.context.view_layer.objects.active = previous_active
+    numeric.property_data_path = original_path
+
     token = object()
     numeric._gesture_layout_token = token
     numeric.publish_numeric_arrow_areas((10.0, 20.0, 110.0, 44.0), 24.0)

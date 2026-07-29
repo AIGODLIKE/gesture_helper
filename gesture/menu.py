@@ -29,6 +29,7 @@ from ..utils.number_arrows import (
     number_field_corner_masks,
     number_field_part,
     number_field_rects,
+    number_slider_fill_rect,
     number_part_direction,
     number_arrow_slot_width,
     show_number_arrows,
@@ -1614,20 +1615,22 @@ class GestureMenuRuntime(PublicGpu):
                             )
                     if has_number_field:
                         fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
-                        fill_w = max(2.0, (fx2 - fx1) * fraction)
-                        fill_mask = (
-                            corner_mask[0],
-                            corner_mask[1] and fill_w >= (fx2 - fx1),
-                            corner_mask[2] and fill_w >= (fx2 - fx1),
-                            corner_mask[3],
+                        _decrement, value_rect, _increment = number_field_rects(
+                            (fx1, fy1, fx2, fy2),
+                            number_arrow_slot_width(fy2 - fy1),
                         )
+                        fill_rect = number_slider_fill_rect(value_rect, fraction)
+                        if fill_rect is None:
+                            fill_rect = (fx1, fy1, fx1, fy2)
+                        fill_left, fill_bottom, fill_right, fill_top = fill_rect
                         self.draw_rounded_rectangle_area(
-                            (fx1 + fill_w * 0.5, (fy1 + fy2) * 0.5),
+                            ((fill_left + fill_right) * 0.5,
+                             (fill_bottom + fill_top) * 0.5),
                             color=fill_color,
-                            radius=metrics.radius,
-                            width=fill_w,
-                            height=max(1.0, fy2 - fy1),
-                            corner_mask=fill_mask,
+                            radius=0.0,
+                            width=fill_right - fill_left,
+                            height=max(1.0, fill_top - fill_bottom),
+                            corner_mask=(False, False, False, False),
                         )
                     else:
                         self.draw_rounded_rectangle_area(

@@ -319,6 +319,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 'LEFTMOUSE',
                 'WHEELUPMOUSE',
                 'WHEELDOWNMOUSE',
+                'BACK_SPACE',
         }:
             point = self._menu_mouse(event)
             owns_pointer_sequence = bool(
@@ -347,6 +348,32 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
 
         if self._copy_hover_tooltip(context, event):
             return {'RUNNING_MODAL'}
+
+        if event.type == 'BACK_SPACE' and event.value == 'PRESS':
+            self._ensure_layout()
+            hover_changed = self._update_menu_hover(event)
+            row = getattr(self, '_menu_hovered_row', None)
+            try:
+                can_reset = bool(
+                    row is not None
+                    and row.enabled
+                    and row.kind == 'PROPERTY'
+                    and row.element.display_property_is_editable
+                    and row.element.display_property_type
+                    in {'BOOLEAN', 'INT', 'FLOAT'}
+                )
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                can_reset = False
+            if can_reset:
+                changed = row.element.reset_display_property_to_default()
+                if changed:
+                    self._menu_mark_context_changed()
+                elif hover_changed:
+                    self._tag_menu_redraw()
+                return {'RUNNING_MODAL'}
+            if hover_changed:
+                self._tag_menu_redraw()
+            return {'PASS_THROUGH'}
 
         if event.type == 'MOUSEMOVE':
             if self._move_menu_drag(event):

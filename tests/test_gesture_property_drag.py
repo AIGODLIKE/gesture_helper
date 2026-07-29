@@ -87,13 +87,32 @@ class FakeElement:
         self.apply_calls = []
         self.wheel_calls = []
         self.restore_calls = []
+        self.reset_calls = 0
+        self.applied_delta = None
+        self.rebase_calls = []
 
     def property_drag_delta(self, start_mouse, mouse):
         return mouse.x - start_mouse.x
 
-    def apply_property_drag(self, start_value, delta, *, precise=False):
+    def apply_property_drag(
+            self,
+            start_value,
+            delta,
+            *,
+            precise=False,
+            return_applied_delta=False,
+    ):
         self.apply_calls.append((start_value, delta, precise))
+        if return_applied_delta:
+            applied_delta = (
+                delta if self.applied_delta is None else self.applied_delta
+            )
+            return self.changed, applied_delta
         return self.changed
+
+    def rebase_property_drag_start(self, start_mouse, mouse, applied_delta):
+        self.rebase_calls.append((start_mouse.x, mouse.x, applied_delta))
+        start_mouse.x = mouse.x - applied_delta
 
     def set_display_property_value(self, value):
         self.restore_calls.append(value)
@@ -101,6 +120,10 @@ class FakeElement:
 
     def apply_property_wheel(self, direction, *, precise=False):
         self.wheel_calls.append((direction, precise))
+        return self.changed
+
+    def reset_display_property_to_default(self):
+        self.reset_calls += 1
         return self.changed
 
 
@@ -121,6 +144,8 @@ def _event(event_type, value="NOTHING", *, x=8.0, y=9.0, shift=False):
         value=value,
         mouse_x=x,
         mouse_y=y,
+        mouse_region_x=x,
+        mouse_region_y=y,
         shift=shift,
     )
 
@@ -230,6 +255,40 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertTrue(changed)
         sync.assert_called_once_with(session, ops)
 
+    def test_active_numeric_drag_suppresses_tooltip_hover(self):
+        calls = []
+        runtime_tooltip = types.ModuleType(
+            f"{PACKAGE}.gesture.runtime_tooltip",
+        )
+        runtime_tooltip.sync_hover_tooltip = (
+            lambda state, target, **kwargs:
+            calls.append((state, target, kwargs)) or True
+        )
+        state = object()
+        session = types.SimpleNamespace(
+            phase=types.SimpleNamespace(shows_radial_ui=True),
+            property_drag=(object(), object(), 1.0),
+            tooltip_state=state,
+        )
+        ops = types.SimpleNamespace(
+            pref=types.SimpleNamespace(
+                gesture_property=types.SimpleNamespace(
+                    hover_tooltip_delay=300,
+                ),
+            ),
+        )
+
+        with (
+            patch.dict(sys.modules, {runtime_tooltip.__name__: runtime_tooltip}),
+            patch.object(gesture_input, "get_runtime_action_element") as resolve,
+            patch.object(gesture_input, "tag_redraw_gesture_screen"),
+        ):
+            self.assertTrue(gesture_input.sync_runtime_tooltip(session, ops))
+
+        resolve.assert_not_called()
+        self.assertEqual(calls[0][0], state)
+        self.assertIsNone(calls[0][1])
+
     def test_generic_surface_press_is_independent_from_hover_and_clears_on_release(self):
         element = object()
         session = types.SimpleNamespace(_ui_pressed_element=None)
@@ -285,7 +344,7 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertEqual(element.apply_calls, [(10, 6.0, False)])
         refresh.assert_not_called()
 
-    def test_changed_mousemove_increments_revision_and_refreshes(self):
+    def test_changed_mousemove_keeps_spatial_hover_locked(self):
         element = FakeElement(changed=True)
         session = _session(element)
 
@@ -300,7 +359,28 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertTrue(session._event_consumed)
         self.assertEqual(session._poll_context_revision, 5)
         self.assertEqual(element.apply_calls, [(10, 6.0, True)])
-        refresh.assert_called_once_with(session, self.ops)
+        refresh.assert_not_called()
+
+    def test_limit_overshoot_rebases_drag_for_immediate_reverse(self):
+        element = FakeElement(changed=False)
+        element.applied_delta = 3.0
+        session = _session(element)
+
+        self.assertFalse(self.processor._handle_property_drag(
+            session,
+            self.ops,
+            _event("MOUSEMOVE", x=8.0),
+        ))
+        self.assertEqual(element.rebase_calls, [(2.0, 8.0, 3.0)])
+        self.assertEqual(session.property_drag[1].x, 5.0)
+
+        element.applied_delta = None
+        self.processor._handle_property_drag(
+            session,
+            self.ops,
+            _event("MOUSEMOVE", x=4.0),
+        )
+        self.assertEqual(element.apply_calls[-1], (10, -1.0, False))
 
     def test_lmb_invoke_release_is_not_consumed_and_can_exit(self):
         element = FakeElement(changed=True)
@@ -394,6 +474,81 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertTrue(session._event_consumed)
         self.assertEqual(element.wheel_calls, [])
 
+    def test_backspace_resets_hovered_numeric_property_and_suppresses_release(self):
+        element = FakeElement(changed=True, property_type="FLOAT")
+        session = _session(element)
+        session.property_drag = None
+
+        with patch.object(self.processor, "_hovered_property_row", return_value=element), \
+                patch.object(gesture_input, "refresh_snapshot") as refresh:
+            result = self.processor._handle_property_drag(
+                session,
+                self.ops,
+                _event("BACK_SPACE", "PRESS"),
+            )
+
+        self.assertIs(result, True)
+        self.assertTrue(session._event_consumed)
+        self.assertTrue(session._suppress_property_execute)
+        self.assertEqual(element.reset_calls, 1)
+        self.assertEqual(session._poll_context_revision, 5)
+        refresh.assert_called_once_with(session, self.ops)
+
+    def test_backspace_noop_boolean_is_still_consumed_without_refresh(self):
+        element = FakeElement(changed=False, property_type="BOOLEAN")
+        session = _session(element)
+        session.property_drag = None
+
+        with patch.object(self.processor, "_hovered_property_row", return_value=element), \
+                patch.object(gesture_input, "refresh_snapshot") as refresh:
+            result = self.processor._handle_property_drag(
+                session,
+                self.ops,
+                _event("BACK_SPACE", "PRESS"),
+            )
+
+        self.assertIs(result, False)
+        self.assertTrue(session._event_consumed)
+        self.assertTrue(session._suppress_property_execute)
+        self.assertEqual(element.reset_calls, 1)
+        self.assertEqual(session._poll_context_revision, 4)
+        refresh.assert_not_called()
+
+    def test_backspace_finishes_active_drag_at_the_rna_default(self):
+        element = FakeElement(changed=True, property_type="INT")
+        session = _session(element, moved=True)
+
+        with patch.object(gesture_input, "refresh_snapshot") as refresh:
+            result = self.processor._handle_property_drag(
+                session,
+                self.ops,
+                _event("BACK_SPACE", "PRESS"),
+            )
+
+        self.assertIs(result, True)
+        self.assertIsNone(session.property_drag)
+        self.assertFalse(session._property_drag_moved)
+        self.assertTrue(session._suppress_property_execute)
+        self.assertEqual(element.reset_calls, 1)
+        refresh.assert_called_once_with(session, self.ops)
+
+    def test_backspace_ignores_enum_and_uneditable_properties(self):
+        for element in (
+                FakeElement(changed=True, property_type="ENUM"),
+                FakeElement(changed=True, property_type="BOOLEAN", editable=False),
+        ):
+            session = _session(element)
+            session.property_drag = None
+            with patch.object(self.processor, "_hovered_property_row", return_value=element):
+                result = self.processor._handle_property_drag(
+                    session,
+                    self.ops,
+                    _event("BACK_SPACE", "PRESS"),
+                )
+            self.assertIsNone(result)
+            self.assertFalse(session._event_consumed)
+            self.assertEqual(element.reset_calls, 0)
+
     def test_numeric_arrow_click_steps_without_starting_a_drag(self):
         element = FakeElement(changed=True, property_type="FLOAT")
         session = _session(element)
@@ -463,32 +618,44 @@ class GesturePropertyDragTests(unittest.TestCase):
             f"{PACKAGE}.element.extension_hit",
         )
         extension_hit.numeric_property_arrow_direction = lambda *_args: 0
+        window = types.SimpleNamespace(
+            cursor_modal_set=unittest.mock.Mock(),
+            cursor_modal_restore=unittest.mock.Mock(),
+        )
 
         with (
             patch.dict(sys.modules, {extension_hit.__name__: extension_hit}),
             patch.object(self.processor, "_hovered_property_row", return_value=element),
+            patch.object(gesture_input.bpy.context, "window", window, create=True),
         ):
             self.assertTrue(self.processor._handle_property_drag(
                 session,
                 self.ops,
                 _event("LEFTMOUSE", "PRESS"),
             ))
-
-        self.assertIs(session._numeric_pressed_element, element)
-        self.assertEqual(session._numeric_pressed_part, "VALUE")
-        self.assertIsNotNone(session.property_drag)
-        self.assertFalse(self.processor._handle_property_drag(
-            session,
-            self.ops,
-            _event("LEFTMOUSE", "RELEASE"),
-        ))
+            self.assertIs(session._numeric_pressed_element, element)
+            self.assertEqual(session._numeric_pressed_part, "VALUE")
+            self.assertIsNotNone(session.property_drag)
+            self.assertEqual(session._property_drag_hover_mouse, (8.0, 9.0))
+            window.cursor_modal_set.assert_called_once_with("NONE")
+            self.assertFalse(self.processor._handle_property_drag(
+                session,
+                self.ops,
+                _event("LEFTMOUSE", "RELEASE"),
+            ))
         self.assertIsNone(session.property_drag)
         self.assertIsNone(session._numeric_pressed_element)
         self.assertIsNone(session._numeric_pressed_part)
+        self.assertIsNone(session._property_drag_hover_mouse)
+        window.cursor_modal_restore.assert_called_once_with()
 
     def test_cancel_property_drag_restores_once(self):
         element = FakeElement(changed=True)
         session = _session(element, moved=True)
+        window = types.SimpleNamespace(cursor_modal_restore=unittest.mock.Mock())
+        session._property_drag_cursor_window = window
+        session._property_drag_cursor_hidden = True
+        session._property_drag_hover_mouse = (2.0, 3.0)
 
         self.assertTrue(
             self.processor.cancel_property_drag(session, self.ops),
@@ -496,11 +663,14 @@ class GesturePropertyDragTests(unittest.TestCase):
         self.assertEqual(element.restore_calls, [10])
         self.assertIsNone(session.property_drag)
         self.assertFalse(session._property_drag_moved)
+        self.assertIsNone(session._property_drag_hover_mouse)
+        window.cursor_modal_restore.assert_called_once_with()
 
         self.assertFalse(
             self.processor.cancel_property_drag(session, self.ops),
         )
         self.assertEqual(element.restore_calls, [10])
+        window.cursor_modal_restore.assert_called_once_with()
 
     def test_error_item_click_requests_repair_only_inside_visible_item(self):
         element = types.SimpleNamespace(

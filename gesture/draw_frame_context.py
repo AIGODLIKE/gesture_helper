@@ -50,6 +50,12 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
 
     from ..utils.region_mouse import ops_window_mouse
     mouse = ops_window_mouse(ops)
+    if getattr(session, "property_drag", None) is not None:
+        locked_mouse = getattr(session, "_property_drag_hover_mouse", None)
+        if locked_mouse is not None:
+            # Blender's active number button owns hover for the complete scrub.
+            # Keep the pressed field stable even though the hidden pointer moves.
+            mouse = locked_mouse
 
     threshold = float(gp.threshold) * scale
     ctx = DrawFrameContext(

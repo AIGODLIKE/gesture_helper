@@ -560,7 +560,10 @@ def sync_runtime_tooltip(session: GestureSession, ops) -> bool:
 
     target = (
         get_runtime_action_element(session, ops)
-        if session.phase.shows_radial_ui
+        if (
+            session.phase.shows_radial_ui
+            and getattr(session, 'property_drag', None) is None
+        )
         else None
     )
     state = session.tooltip_state
@@ -728,6 +731,47 @@ class GestureInputProcessor:
     """Process modal events into GestureSession updates. Returns visual_dirty."""
 
     @staticmethod
+    def _begin_property_drag_interaction(session: GestureSession, event) -> None:
+        """Hide the pointer and lock hover to the pressed numeric surface."""
+        draw_ctx = getattr(session, 'draw_ctx', None)
+        hover_mouse = getattr(draw_ctx, 'mouse_region', None)
+        if hover_mouse is None:
+            try:
+                hover_mouse = (event.mouse_region_x, event.mouse_region_y)
+            except AttributeError:
+                hover_mouse = None
+        session._property_drag_hover_mouse = hover_mouse
+
+        window = getattr(bpy.context, 'window', None)
+        session._property_drag_cursor_window = None
+        session._property_drag_cursor_hidden = False
+        if window is None:
+            return
+        try:
+            window.cursor_modal_set('NONE')
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return
+        session._property_drag_cursor_window = window
+        session._property_drag_cursor_hidden = True
+
+    @staticmethod
+    def _end_property_drag_interaction(session: GestureSession) -> None:
+        """Restore the pre-drag cursor and release the locked hover exactly once."""
+        window = getattr(session, '_property_drag_cursor_window', None)
+        cursor_hidden = bool(
+            getattr(session, '_property_drag_cursor_hidden', False)
+        )
+        session._property_drag_cursor_window = None
+        session._property_drag_cursor_hidden = False
+        session._property_drag_hover_mouse = None
+        if not cursor_hidden or window is None:
+            return
+        try:
+            window.cursor_modal_restore()
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            pass
+
+    @staticmethod
     def _update_ui_press(session: GestureSession, ops, event) -> bool:
         """Track left-button feedback without changing gesture execution."""
         current = getattr(session, '_ui_pressed_element', None)
@@ -832,6 +876,45 @@ class GestureInputProcessor:
             refresh_snapshot(session, ops)
         return changed
 
+    def _handle_property_reset(
+            self, session: GestureSession, ops, event,
+    ) -> bool | None:
+        """Reset a hovered scalar number or boolean when Backspace is pressed."""
+        if event.value != 'PRESS' or event.type != 'BACK_SPACE':
+            return None
+        drag = session.property_drag
+        item = (
+            drag[0]
+            if drag is not None
+            else self._hovered_property_row(session, ops)
+        )
+        if (
+                item is None
+                or item.display_property_type not in {'BOOLEAN', 'INT', 'FLOAT'}
+        ):
+            return None
+        if not item.display_property_is_editable:
+            return None
+
+        session._event_consumed = True
+        # The invoking gesture key may still be held. Its later release must
+        # not toggle the boolean or launch another numeric edit after reset.
+        session._suppress_property_execute = True
+        if drag is not None:
+            self._end_property_drag_interaction(session)
+            session.property_drag = None
+            session._numeric_pressed_element = None
+            session._numeric_pressed_part = None
+            session._property_drag_moved = False
+
+        changed = item.reset_display_property_to_default()
+        if changed:
+            session._poll_context_revision = (
+                getattr(session, '_poll_context_revision', 0) + 1
+            )
+            refresh_snapshot(session, ops)
+        return changed
+
     def cancel_property_drag(
             self,
             session: GestureSession,
@@ -842,8 +925,10 @@ class GestureInputProcessor:
         """Restore and clear an active property scrub exactly once."""
         drag = session.property_drag
         if drag is None:
+            self._end_property_drag_interaction(session)
             return False
         element, _start_mouse, start_value = drag
+        self._end_property_drag_interaction(session)
         session.property_drag = None
         session._numeric_pressed_element = None
         session._numeric_pressed_part = None
@@ -862,6 +947,10 @@ class GestureInputProcessor:
 
         Returns None when the event is not handled here.
         """
+        reset_result = self._handle_property_reset(session, ops, event)
+        if reset_result is not None:
+            return reset_result
+
         if (
                 session.property_drag is None
                 and getattr(session, '_numeric_pressed_element', None) is not None
@@ -882,17 +971,23 @@ class GestureInputProcessor:
                 session._event_consumed = True
                 mouse = Vector((event.mouse_x, event.mouse_y))
                 delta = element.property_drag_delta(start_mouse, mouse)
-                changed = element.apply_property_drag(
-                    start_value, delta, precise=event.shift,
+                changed, applied_delta = element.apply_property_drag(
+                    start_value,
+                    delta,
+                    precise=event.shift,
+                    return_applied_delta=True,
                 )
+                if applied_delta != delta:
+                    element.rebase_property_drag_start(
+                        start_mouse, mouse, applied_delta,
+                    )
                 if changed:
                     session._poll_context_revision = (
                         getattr(session, '_poll_context_revision', 0) + 1
                     )
-                    # A poll expression may read the value being scrubbed.
-                    # Refresh the snapshot only after a real RNA change so
-                    # those conditions cannot remain stale during the drag.
-                    refresh_snapshot(session, ops)
+                    # Do not refresh spatial selection during an active scrub.
+                    # The live property renderer sees the new RNA value, while
+                    # conditions and hover are resolved again after release.
                 # Remember that the value was actually scrubbed so release can
                 # skip launching the post-gesture modal mouse operator.
                 if abs(delta) >= 2.0:
@@ -905,6 +1000,7 @@ class GestureInputProcessor:
                 # the generic LMB drag release so the modal exit path still
                 # receives the event instead of leaving a zombie gesture.
                 # Keep the dragged value and suppress a second property execute.
+                self._end_property_drag_interaction(session)
                 session.property_drag = None
                 session._numeric_pressed_element = None
                 session._numeric_pressed_part = None
@@ -914,6 +1010,7 @@ class GestureInputProcessor:
                 return None
             if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
                 session._event_consumed = True
+                self._end_property_drag_interaction(session)
                 session.property_drag = None
                 session._numeric_pressed_element = None
                 session._numeric_pressed_part = None
@@ -988,6 +1085,7 @@ class GestureInputProcessor:
                 session._numeric_pressed_element = item
                 session._numeric_pressed_part = NUMBER_PART_VALUE
                 session._property_drag_moved = False
+                self._begin_property_drag_interaction(session, event)
                 return True
             if prop_type in {'BOOLEAN', 'ENUM'}:
                 session._event_consumed = True

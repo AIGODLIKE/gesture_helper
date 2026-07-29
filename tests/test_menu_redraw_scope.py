@@ -540,6 +540,21 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2])
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
         self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 4)
+        slider_call = runtime.draw_rounded_rectangle_area.call_args_list[1]
+        slider_center = slider_call.args[0]
+        slider_width = slider_call.kwargs["width"]
+        self.assertAlmostEqual(
+            slider_width,
+            (numeric_row.value_rect[2] - numeric_row.value_rect[0]) * 0.2,
+        )
+        self.assertAlmostEqual(
+            slider_center[0] - slider_width * 0.5,
+            numeric_row.value_rect[0],
+        )
+        self.assertLessEqual(
+            slider_center[0] + slider_width * 0.5,
+            numeric_row.value_rect[2],
+        )
         runtime.draw_rectangle.assert_not_called()
 
     def test_menu_row_has_distinct_normal_hover_and_pressed_surfaces(self):

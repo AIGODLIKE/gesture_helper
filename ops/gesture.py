@@ -30,7 +30,10 @@ class GestureOperator(
     bl_idname = 'wm.gesture_operator'
     bl_label = 'Gesture Operator'
     bl_description = 'Run the active gesture from its keymap shortcut'
-    bl_options = {'BLOCKING'}
+    # Blender's numeric handlers pair hidden-pointer scrubbing with continuous
+    # cursor grab. The flag only enables wrapping when the user's Continuous
+    # Grab preference is on; without it a hidden pointer stops at a screen edge.
+    bl_options = {'BLOCKING', 'GRAB_CURSOR'}
     # Must use annotation form — Blender reads bpy.props from __annotations__.
     gesture: StringProperty()
 

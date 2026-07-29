@@ -17,6 +17,7 @@ from ..utils.enum import (
 )
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
+from ..utils.number_arrows import number_drag_value, number_step_value
 
 
 _UI_PANEL_LEAF_ITEMS_CACHE = None
@@ -651,6 +652,25 @@ class ElementLayoutProperty:
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
 
+    def reset_display_property_to_default(self) -> bool:
+        """Restore a writable scalar number or boolean to its RNA default."""
+        if not self.display_property_is_editable:
+            return False
+        resolved = self.resolve_property()
+        if resolved is None:
+            return False
+        _owner, rna_prop = resolved
+        if (
+                rna_prop.type not in {'BOOLEAN', 'INT', 'FLOAT'}
+                or getattr(rna_prop, 'is_array', False)
+        ):
+            return False
+        try:
+            default = rna_prop.default
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+            return False
+        return self.set_display_property_value(default)
+
     @property
     def display_property_text(self) -> str:
         """Formatted live-value label used by GPU draw."""
@@ -727,6 +747,24 @@ class ElementLayoutProperty:
             delta = delta_x
         return -delta if self.property_drag_invert else delta
 
+    def rebase_property_drag_start(
+            self, start_mouse, mouse, applied_delta: float,
+    ) -> None:
+        """Discard limit overshoot like Blender updates ``dragstartx``."""
+        raw_delta = -applied_delta if self.property_drag_invert else applied_delta
+        mode = self.property_drag_mode
+        if mode == 'MOUSE_CHANGES_VERTICAL':
+            start_mouse.y = mouse.y - raw_delta
+        elif mode == 'MOUSE_CHANGES_ARBITRARY':
+            delta_x = mouse.x - start_mouse.x
+            delta_y = mouse.y - start_mouse.y
+            if abs(delta_x) >= abs(delta_y):
+                start_mouse.x = mouse.x - raw_delta
+            else:
+                start_mouse.y = mouse.y - raw_delta
+        else:
+            start_mouse.x = mouse.x - raw_delta
+
     def apply_property_wheel(self, direction: int, *, precise: bool = False) -> bool:
         """Apply one wheel notch to the displayed scalar numeric property."""
         if direction == 0 or not self.display_property_is_editable:
@@ -740,28 +778,22 @@ class ElementLayoutProperty:
 
         try:
             current = getattr(owner, rna_prop.identifier)
-            step = abs(float(getattr(self, 'property_wheel_step', 1.0)))
+            sign = 1 if direction > 0 else -1
+            if self.property_drag_invert:
+                sign = -sign
+            value = number_step_value(
+                current,
+                sign,
+                property_type=rna_prop.type,
+                configured_step=getattr(self, 'property_wheel_step', 1.0),
+                hard_min=getattr(rna_prop, 'hard_min', None),
+                hard_max=getattr(rna_prop, 'hard_max', None),
+                soft_min=getattr(rna_prop, 'soft_min', None),
+                soft_max=getattr(rna_prop, 'soft_max', None),
+                precise=precise,
+            )
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
-        if step <= 0.0:
-            step = 1.0 if rna_prop.type == 'INT' else 0.01
-        if precise and rna_prop.type == 'FLOAT':
-            step *= 0.1
-        if rna_prop.type == 'INT':
-            step = max(1, int(round(step)))
-
-        sign = 1 if direction > 0 else -1
-        if self.property_drag_invert:
-            sign = -sign
-        value = current + sign * step
-        try:
-            value = min(max(value, rna_prop.hard_min), rna_prop.hard_max)
-        except (AttributeError, TypeError, ValueError):
-            pass
-        if rna_prop.type == 'INT':
-            value = int(round(value))
-        else:
-            value = round(float(value), 12)
         return self.set_display_property_value(value)
 
     @property
@@ -784,41 +816,51 @@ class ElementLayoutProperty:
             return None
         return min(1.0, max(0.0, (value - soft_min) / span))
 
-    def apply_property_drag(self, start_value, delta_px: float, *, precise: bool = False) -> bool:
+    def apply_property_drag(
+            self,
+            start_value,
+            delta_px: float,
+            *,
+            precise: bool = False,
+            return_applied_delta: bool = False,
+    ) -> bool | tuple[bool, float]:
         """Set a scrubbed value and report whether the RNA value changed."""
+        def result(changed: bool, applied_delta=delta_px):
+            if return_applied_delta:
+                return changed, applied_delta
+            return changed
+
         if not self.display_property_is_editable:
-            return False
+            return result(False)
         resolved = self.resolve_property()
         if resolved is None:
-            return False
+            return result(False)
         owner, rna_prop = resolved
         if rna_prop.type not in {'INT', 'FLOAT'} or getattr(rna_prop, 'is_array', False):
-            return False
-        soft_min = rna_prop.soft_min
-        soft_max = rna_prop.soft_max
-        span = soft_max - soft_min
-        if not span or span <= 0 or span > 1e9:
-            # Unbounded property: 1px == step (fallback 1 int / 0.01 float).
-            if rna_prop.type == 'INT':
-                per_px = max(1, int(getattr(rna_prop, 'step', 1))) * 0.1
-            else:
-                per_px = max(getattr(rna_prop, 'step', 3) / 100.0, 0.001) * 0.5
-        else:
-            per_px = span / 200.0  # full soft range over ~200px
-        if precise:
-            per_px *= 0.1
-        value = start_value + delta_px * per_px
-        value = min(max(value, rna_prop.hard_min), rna_prop.hard_max)
-        if rna_prop.type == 'INT':
-            value = int(round(value))
+            return result(False)
+        value, applied_delta = number_drag_value(
+            start_value,
+            delta_px,
+            property_type=rna_prop.type,
+            rna_step=getattr(rna_prop, 'step', 1.0),
+            hard_min=getattr(rna_prop, 'hard_min', None),
+            hard_max=getattr(rna_prop, 'hard_max', None),
+            soft_min=getattr(rna_prop, 'soft_min', None),
+            soft_max=getattr(rna_prop, 'soft_max', None),
+            precise=precise,
+            return_applied_delta=True,
+        )
         try:
             current = getattr(owner, rna_prop.identifier)
             if current == value:
-                return False
+                return result(False, applied_delta)
             setattr(owner, rna_prop.identifier, value)
-            return getattr(owner, rna_prop.identifier) != current
+            return result(
+                getattr(owner, rna_prop.identifier) != current,
+                applied_delta,
+            )
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
-            return False
+            return result(False)
 
     def toggle_display_property(self) -> bool:
         """Cycle the value in place (bool toggle / enum cycle). Returns success."""

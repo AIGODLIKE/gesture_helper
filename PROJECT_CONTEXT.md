@@ -111,7 +111,8 @@ with bundled JSON presets, translations, and PNG icon assets.
    While a runtime tooltip is visibly displayed, Ctrl+C copies its complete
    content to Blender's clipboard and reports the result. Radial numeric
    directions select only; numeric changes require a wheel event or explicit
-   left-mouse drag.
+   left-mouse drag. Hovered scalar numeric and boolean rows reset to their RNA
+   defaults on Backspace in both radial/layout gestures and persistent menus.
    Read-only radial previews enter `UI_VISIBLE` immediately (without the
    gesture timeout or trajectory overlay); menu previews use the dedicated
    `GestureMenuRuntime` draw handler and a menu-specific area lookup so the
@@ -155,6 +156,23 @@ with bundled JSON presets, translations, and PNG icon assets.
    independent normal, hover, and pressed feedback: edge clicks step, the
    value region scrubs or invokes property editing, and wheel input steps
    hovered values without leaking through a persistent menu to the editor.
+   During a numeric scrub the pointer is hidden through Blender's modal-cursor
+   API, the pressed value surface exclusively owns hover/tooltip state, and all
+   finish, cancel, deactivation, exception, and teardown paths restore the
+   previous cursor. A menu-started LMB scrub commits and restores on release;
+   gesture handoff still ignores stale release events. The gesture operator
+   requests Blender's `GRAB_CURSOR` behavior, so Continuous Grab supplies native
+   virtual mouse coordinates instead of letting the hidden pointer stop at a
+   screen edge. At a numeric soft/hard limit, the discarded pointer overshoot
+   rebases the drag start so reversing direction responds immediately.
+   The soft RNA range owns the slider fraction and normal interaction bounds;
+   the hard range remains the absolute assignment bound. Linear float dragging
+   follows Blender's native number-button scale (`RNA step * 0.01` per pixel,
+   with Shift precision); integer dragging uses Blender's three soft-range pixel
+   bands. Values outside declared soft limits expand the live interaction range
+   to Blender's rounded 1/2/5-by-power-of-ten boundary without exceeding the
+   hard range. The slider fill is clipped to the middle value block and never
+   paints beneath the decrement/increment blocks.
    Persistent-menu rows use the panel background in their idle state and meet
    adjacent rows without an inset; internal row corners are square, while only
    the exposed panel perimeter remains rounded. Numeric fields use the complete

@@ -93,6 +93,7 @@ class FakePropertyElement:
     name_translate = "Transparent"
     source_description = "Use transparent film"
     display_property_type = "BOOLEAN"
+    display_property_is_editable = True
     property_bool_icons_enabled = False
     ops = None
 
@@ -126,6 +127,19 @@ class ElementTooltipTests(unittest.TestCase):
         self.assertEqual(
             details["Python"],
             "bpy.context.scene.render.film_transparent",
+        )
+        self.assertEqual(details["Reset to Default"], "Backspace")
+        self.assertEqual(
+            [detail.label for detail in tooltip.details].count("Reset to Default"),
+            1,
+        )
+        preview = tooltip_module.build_runtime_tooltip(
+            FakePropertyElement(),
+            preview_read_only=True,
+        )
+        self.assertNotIn(
+            "Reset to Default",
+            {detail.label for detail in preview.details},
         )
 
     def test_status_summary_detail_and_repair_hint(self):

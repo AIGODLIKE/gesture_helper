@@ -132,6 +132,16 @@ def build_runtime_tooltip(element, *, preview_read_only: bool = False) -> Runtim
             ),
             TooltipDetail(_translate("Python"), python),
         ))
+        try:
+            can_reset = bool(
+                not preview_read_only
+                and element.display_property_is_editable
+                and element.display_property_type in {'BOOLEAN', 'INT', 'FLOAT'}
+            )
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            can_reset = False
+        if can_reset:
+            details.append(TooltipDetail(_translate("Reset to Default"), "Backspace"))
 
     icon, icon_issues = _icon_diagnostics(element)
     if icon:

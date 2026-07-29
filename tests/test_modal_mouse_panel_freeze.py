@@ -262,7 +262,10 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         region = FakeRegion()
         area = FakeArea(region)
         window_manager = types.SimpleNamespace(modal_handler_add=Mock())
-        window = types.SimpleNamespace(cursor_set=Mock())
+        window = types.SimpleNamespace(
+            cursor_modal_set=Mock(),
+            cursor_modal_restore=Mock(),
+        )
         context = types.SimpleNamespace(
             area=area,
             window=window,
@@ -271,6 +274,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         operator = modal_mouse.ModalMouseOperator()
         operator.data_path = "scene.value"
         operator.header_text = "Value %d"
+        operator.value_mode = "X"
         operator.register_draw = Mock()
         operator.unregister_draw = Mock()
 
@@ -282,6 +286,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
             ["cancel_all", "begin", "tag_ui"],
         )
         window_manager.modal_handler_add.assert_called_once_with(operator)
+        window.cursor_modal_set.assert_called_once_with("NONE")
 
         operator.exit()
 
@@ -289,7 +294,37 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
             [entry[0] for entry in freeze_calls],
             ["cancel_all", "begin", "tag_ui", "end", "tag_ui"],
         )
-        window.cursor_set.assert_called_once_with("DEFAULT")
+        window.cursor_modal_restore.assert_called_once_with()
+
+    def test_lmb_started_modal_confirms_and_restores_cursor_on_release(self):
+        modal_mouse.resolve_context_path = lambda *_args: 10
+        area = FakeArea(FakeRegion())
+        window = types.SimpleNamespace(
+            cursor_modal_set=Mock(),
+            cursor_modal_restore=Mock(),
+        )
+        context = types.SimpleNamespace(
+            area=area,
+            window=window,
+            window_manager=types.SimpleNamespace(modal_handler_add=Mock()),
+        )
+        operator = modal_mouse.ModalMouseOperator()
+        operator.data_path = "scene.value"
+        operator.header_text = "Value %d"
+        operator.value_mode = "X"
+        operator.register_draw = Mock()
+        operator.unregister_draw = Mock()
+
+        self.assertEqual(
+            operator.invoke(context, _event("LEFTMOUSE", "PRESS")),
+            {"RUNNING_MODAL"},
+        )
+        self.assertEqual(
+            operator.modal(context, _event("LEFTMOUSE", "RELEASE")),
+            {"FINISHED"},
+        )
+        window.cursor_modal_set.assert_called_once_with("NONE")
+        window.cursor_modal_restore.assert_called_once_with()
 
     def test_window_deactivate_restores_and_releases_modal(self):
         operator = modal_mouse.ModalMouseOperator()
@@ -413,7 +448,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
 
     def test_mousemove_error_restores_and_releases_explicit_freeze(self):
         area = FakeArea(FakeRegion())
-        window = types.SimpleNamespace(cursor_set=Mock())
+        window = types.SimpleNamespace(cursor_modal_restore=Mock())
         operator = modal_mouse.ModalMouseOperator()
         operator.___value___ = 10
         operator.value_mode = "X"
@@ -422,6 +457,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         operator._modal_area = area
         operator._modal_window = window
         operator._panel_freeze_active = True
+        operator._cursor_modal_active = True
         operator.unregister_draw = Mock()
         write_error = RuntimeError("RNA write failed")
 
@@ -444,10 +480,11 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         self.assertFalse(operator._panel_freeze_active)
         self.assertIsNone(operator._modal_area)
         self.assertIsNone(operator._modal_window)
+        window.cursor_modal_restore.assert_called_once_with()
 
     def test_post_write_resolve_error_restores_original_value(self):
         area = FakeArea(FakeRegion())
-        window = types.SimpleNamespace(cursor_set=Mock())
+        window = types.SimpleNamespace(cursor_modal_restore=Mock())
         operator = modal_mouse.ModalMouseOperator()
         operator.___value___ = 10
         operator.value_mode = "X"
@@ -456,6 +493,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         operator._modal_area = area
         operator._modal_window = window
         operator._panel_freeze_active = True
+        operator._cursor_modal_active = True
         operator.unregister_draw = Mock()
         state = {"value": 10}
         writes = []
@@ -486,14 +524,16 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         self.assertFalse(operator._panel_freeze_active)
         self.assertIsNone(operator._modal_area)
         self.assertIsNone(operator._modal_window)
+        window.cursor_modal_restore.assert_called_once_with()
 
     def test_draw_cleanup_error_still_releases_freeze_and_owner_context(self):
         area = FakeArea(FakeRegion())
-        window = types.SimpleNamespace(cursor_set=Mock())
+        window = types.SimpleNamespace(cursor_modal_restore=Mock())
         operator = modal_mouse.ModalMouseOperator()
         operator._modal_area = area
         operator._modal_window = window
         operator._panel_freeze_active = True
+        operator._cursor_modal_active = True
         operator.unregister_draw = Mock(side_effect=RuntimeError("draw handle failed"))
 
         with self.assertRaisesRegex(RuntimeError, "draw handle failed"):
@@ -506,7 +546,7 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
         self.assertFalse(operator._panel_freeze_active)
         self.assertIsNone(operator._modal_area)
         self.assertIsNone(operator._modal_window)
-        window.cursor_set.assert_called_once_with("DEFAULT")
+        window.cursor_modal_restore.assert_called_once_with()
 
 
 if __name__ == "__main__":

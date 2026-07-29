@@ -112,6 +112,7 @@ class MenuModalBaselineTests(unittest.TestCase):
     def make_menu(self, pointer=100):
         menu = menu_module.GestureMenuOperator()
         menu.as_pointer = lambda: pointer
+        menu._menu_mouse = lambda event: getattr(event, "point", None)
         return menu
 
     def set_baseline(self, menu, window):
@@ -263,6 +264,41 @@ class MenuModalBaselineTests(unittest.TestCase):
         self.assertEqual(result, {'PASS_THROUGH'})
         self.assertEqual(changes, ['clear-hover', 'clear-press', 'redraw'])
 
+    def test_obscured_backspace_does_not_reset_an_older_menu(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._menu_mouse = lambda event: event.point
+        menu._menu_is_obscured_at = lambda _point: True
+        menu._clear_menu_hover = lambda: True
+        menu._clear_menu_press = lambda: False
+        menu._tag_menu_redraw = lambda: None
+        resets = []
+        menu._menu_hovered_row = type("Row", (), {
+            "enabled": True,
+            "kind": "PROPERTY",
+            "element": type("Element", (), {
+                "display_property_is_editable": True,
+                "display_property_type": "FLOAT",
+                "reset_display_property_to_default": lambda _self: resets.append(True),
+            })(),
+        })()
+        event = types.SimpleNamespace(
+            type="BACK_SPACE",
+            value="PRESS",
+            point=(10.0, 10.0),
+        )
+
+        self.assertEqual(
+            menu.modal(FakeContext(window), event),
+            {'PASS_THROUGH'},
+        )
+        self.assertEqual(resets, [])
+
     def test_escape_closes_only_the_topmost_menu(self):
         menu = self.make_menu()
         window = FakeWindow([menu])
@@ -327,6 +363,63 @@ class MenuModalBaselineTests(unittest.TestCase):
 
         self.assertEqual(result, {'RUNNING_MODAL'})
         self.assertEqual(calls, [(1, True), "redraw"])
+
+    def test_backspace_resets_hovered_boolean_row_without_leaking(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._ensure_layout = lambda **_kwargs: None
+        menu._update_menu_hover = lambda _event: False
+        calls = []
+        row = type("Row", (), {
+            "enabled": True,
+            "kind": "PROPERTY",
+            "element": type("Element", (), {
+                "display_property_is_editable": True,
+                "display_property_type": "BOOLEAN",
+                "reset_display_property_to_default": lambda _self: (
+                    calls.append("reset") or True
+                ),
+            })(),
+        })()
+        menu._menu_hovered_row = row
+        menu._menu_mark_context_changed = lambda: calls.append("redraw")
+        event = types.SimpleNamespace(type="BACK_SPACE", value="PRESS")
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'RUNNING_MODAL'})
+        self.assertEqual(calls, ["reset", "redraw"])
+
+    def test_backspace_ignores_hovered_enum_row(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._ensure_layout = lambda **_kwargs: None
+        menu._update_menu_hover = lambda _event: False
+        row = type("Row", (), {
+            "enabled": True,
+            "kind": "PROPERTY",
+            "element": type("Element", (), {
+                "display_property_is_editable": True,
+                "display_property_type": "ENUM",
+            })(),
+        })()
+        menu._menu_hovered_row = row
+        event = types.SimpleNamespace(type="BACK_SPACE", value="PRESS")
+
+        self.assertEqual(
+            menu.modal(FakeContext(window), event),
+            {'PASS_THROUGH'},
+        )
 
 
 if __name__ == "__main__":
