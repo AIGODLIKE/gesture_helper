@@ -243,6 +243,23 @@
                   "operator_bl_idname": "view3d.view_all"
                 }
               }
+            },
+            "8": {
+              "name": "Native Split",
+              "element_type": "SPLIT",
+              "split_factor": 0.35,
+              "layout_align": false,
+              "element": {
+                "0": {
+                  "name": "First 35%",
+                  "element_type": "LABEL"
+                },
+                "1": {
+                  "name": "Remaining 65%",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
             }
           },
           "layout_align": false,
@@ -264,8 +281,8 @@
               "property_true_text": "Visible",
               "property_false_text": "Hidden",
               "property_bool_icons_enabled": true,
-              "property_true_icon": "TICK",
-              "property_false_icon": "COLOR_CLOSE"
+              "property_true_icon": "CHECKBOX_HLT",
+              "property_false_icon": "CHECKBOX_DEHLT"
             },
             "1": {
               "name": "Gizmos",
@@ -275,8 +292,8 @@
               "property_true_text": "Shown",
               "property_false_text": "Hidden",
               "property_bool_icons_enabled": true,
-              "property_true_icon": "AUTOMERGE_ON",
-              "property_false_icon": "AUTOMERGE_OFF"
+              "property_true_icon": "CHECKBOX_HLT",
+              "property_false_icon": "CHECKBOX_DEHLT"
             },
             "2": {
               "name": "Floor Grid",
@@ -286,8 +303,8 @@
               "property_true_text": "Shown",
               "property_false_text": "Hidden",
               "property_bool_icons_enabled": true,
-              "property_true_icon": "COLOR_UP_A",
-              "property_false_icon": "COLOR_UP_B"
+              "property_true_icon": "CHECKBOX_HLT",
+              "property_false_icon": "CHECKBOX_DEHLT"
             }
           }
         },
@@ -480,6 +497,23 @@
                 },
                 "2": {
                   "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "8": {
+              "name": "Native Split",
+              "element_type": "SPLIT",
+              "split_factor": 0.35,
+              "layout_align": false,
+              "element": {
+                "0": {
+                  "name": "First 35%",
+                  "element_type": "LABEL"
+                },
+                "1": {
+                  "name": "Remaining 65%",
                   "element_type": "OPERATOR",
                   "operator_bl_idname": "view3d.view_all"
                 }

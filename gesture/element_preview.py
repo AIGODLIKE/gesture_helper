@@ -22,6 +22,8 @@ class ElementPreviewAdapter(ElementGpuDraw, ElementLayoutGpu):
     is_row = False
     is_column = True
     is_box = False
+    is_split = False
+    is_label = False
     is_dividing_line = False
     is_child_gesture = False
     is_operator = False

@@ -66,13 +66,21 @@ ENUM_ELEMENT_TYPE = [
     ('ROW', 'Row', 'Horizontal layout container'),
     ('COLUMN', 'Column', 'Vertical layout container'),
     ('BOX', 'Box', 'Boxed vertical layout container'),
+    ('LABEL', 'Label', 'Non-interactive text and optional icon inside a layout'),
+    ('SPLIT', 'Split', 'Horizontal layout split with a configurable first-column ratio'),
 ]
 
 # Layout container element types (Blender UILayout-like).
-LAYOUT_CONTAINER_TYPES = {'ROW', 'COLUMN', 'BOX'}
+LAYOUT_CONTAINER_TYPES = {'ROW', 'COLUMN', 'BOX', 'SPLIT'}
+LAYOUT_ELEMENT_TYPES = {*LAYOUT_CONTAINER_TYPES, 'LABEL'}
 # Stable, ordered subset used by the layout-type switcher.  Keep this derived
 # from ENUM_ELEMENT_TYPE so the stored element enum remains append-only.
 ENUM_LAYOUT_TYPE = [item for item in ENUM_ELEMENT_TYPE if item[0] in LAYOUT_CONTAINER_TYPES]
+# Ordered set shown by the Add Element layout row. LABEL is a layout item but
+# not a container, so it must not be offered by the container type switcher.
+ENUM_LAYOUT_ELEMENT_TYPE = [
+    item for item in ENUM_ELEMENT_TYPE if item[0] in LAYOUT_ELEMENT_TYPES
+]
 ENUM_SELECTED_TYPE = from_each_as_enum_upper(SELECT_STRUCTURE_ELEMENT)
 
 ENUM_RELATIONSHIP = [

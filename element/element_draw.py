@@ -123,6 +123,10 @@ class ElementDraw:
             row.label(text='', icon=ui_icon('ALIGN_JUSTIFY'))
         elif self.is_box:
             row.label(text='', icon=ui_icon('MENU_PANEL'))
+        elif self.is_label:
+            row.label(text='', icon=ui_icon('FONT_DATA'))
+        elif self.is_split:
+            row.label(text='', icon=ui_icon('SPLIT_HORIZONTAL'))
         else:
             row.label(text='', icon='BLANK1')
 
@@ -235,8 +239,18 @@ class ElementDraw:
             self.draw_overlay_offset(layout)
         elif self.is_property_display:
             self.draw_property_display(layout)
+        elif self.is_label:
+            self.draw_layout_label(layout)
         elif self.is_layout_container:
             self.draw_layout_container(layout)
+
+    def draw_layout_label(self, layout: 'bpy.types.UILayout') -> None:
+        """Edit a Blender-style, non-interactive layout label."""
+        row = layout.row(align=True)
+        column = row.column(align=True)
+        self.draw_name(column)
+        self.draw_edit_icon(column)
+        column.label(text='Layout label')
 
     def draw_property_display(self, layout: 'bpy.types.UILayout') -> None:
         row = layout.row(align=True)
@@ -319,6 +333,9 @@ class ElementDraw:
             )
             operator.layout_type = identifier
 
+        if self.is_split:
+            column.prop(self, 'split_factor', text='Factor')
+
         style = column.row(align=True)
         style.prop(self, 'layout_align', text='Align', toggle=True)
         style.prop(
@@ -333,19 +350,20 @@ class ElementDraw:
             text='Align Divider Corners',
             toggle=True,
         )
-        alignment = column.row(align=True)
-        alignment.label(text='Items')
-        for identifier, label in (
-                ('EXPAND', 'Expand'),
-                ('LEFT', 'Left'),
-                ('CENTER', 'Center'),
-                ('RIGHT', 'Right')):
-            alignment.prop_enum(
-                self,
-                'layout_alignment',
-                identifier,
-                text=label,
-            )
+        if not self.is_split:
+            alignment = column.row(align=True)
+            alignment.label(text='Items')
+            for identifier, label in (
+                    ('EXPAND', 'Expand'),
+                    ('LEFT', 'Left'),
+                    ('CENTER', 'Center'),
+                    ('RIGHT', 'Right')):
+                alignment.prop_enum(
+                    self,
+                    'layout_alignment',
+                    identifier,
+                    text=label,
+                )
         text_alignment = column.row(align=True)
         text_alignment.label(text='Text')
         for identifier, label in (

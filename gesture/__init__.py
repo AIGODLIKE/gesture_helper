@@ -59,6 +59,10 @@ class Gesture(
 
 
 def _on_store_index_gesture_update(self, _context):
+    from ..utils.property import property_assignment_in_progress
+
+    if property_assignment_in_progress():
+        return
     try:
         if len(self.gesture):
             self.gesture[self.index_gesture].to_temp_kmi()

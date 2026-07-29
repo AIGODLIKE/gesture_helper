@@ -113,7 +113,11 @@ def get_gesture_extension_items(iteration):
                     extension.extend(child)
                     last_selected_structure = item
             continue  # Skip non-structure handling below
-        elif _is_direction_slot_item(item) or item.is_dividing_line:
+        elif (
+                _is_direction_slot_item(item)
+                or item.is_dividing_line
+                or getattr(item, 'is_label', False)
+        ):
             if item.enabled:
                 extension.append(item)
         if item.enabled:  # Reset structure chain when enabled
@@ -122,7 +126,7 @@ def get_gesture_extension_items(iteration):
 
 
 def iter_panel_leaves(items):
-    """Yield interactive leaves, flattening row/column/box containers."""
+    """Yield panel leaves, flattening every layout container."""
     for item in items:
         if item.is_layout_container:
             yield from iter_panel_leaves(get_gesture_extension_items(item.element))

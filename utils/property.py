@@ -34,6 +34,11 @@ def strict_property_assignment():
         _strict_assignment_depth -= 1
 
 
+def property_assignment_in_progress() -> bool:
+    """True while a transactional batch is assigning interdependent RNA fields."""
+    return _strict_assignment_depth > 0
+
+
 def __set_collection_data__(prop, data):
     """Populate a CollectionProperty from an index-keyed dict of item data."""
     for i in data:

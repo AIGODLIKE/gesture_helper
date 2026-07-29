@@ -277,7 +277,7 @@ class ElementCURE:
 
         bl_label = 'Switch Layout Type'
         bl_idname = 'wm.gesture_layout_type_set'
-        bl_description = 'Switch the active layout between Row, Column and Box'
+        bl_description = 'Switch the active layout between Row, Column, Box and Split'
         bl_options = {'REGISTER', 'UNDO'}
 
         layout_type: EnumProperty(

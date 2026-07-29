@@ -662,6 +662,8 @@ class GestureMenuRuntime(PublicGpu):
                 enabled=info.status is ElementStatus.VALID,
                 status_info=info,
             )
+        if getattr(element, 'is_label', False):
+            return MenuRow(element, element.name_translate, 'LABEL', enabled=True)
         return MenuRow(element, element.name_translate, 'LABEL', enabled=False)
 
     def _make_rows(self, collection) -> list[MenuRow]:
@@ -1367,8 +1369,9 @@ class GestureMenuRuntime(PublicGpu):
             )
             return
 
-        hovered = row is getattr(self, '_menu_hovered_row', None)
-        pressed = row is getattr(self, '_menu_pressed_row', None)
+        interactive = row.kind in {'OPERATOR', 'PROPERTY', 'CHILD', 'ENUM_ITEM'}
+        hovered = interactive and row is getattr(self, '_menu_hovered_row', None)
+        pressed = interactive and row is getattr(self, '_menu_pressed_row', None)
         status = getattr(row.status_info, 'status', ElementStatus.VALID)
         property_visual = self._property_visual(row, colors) if row.kind == 'PROPERTY' else None
         has_number_field = bool(
@@ -1516,7 +1519,11 @@ class GestureMenuRuntime(PublicGpu):
         ):
             cursor_x += number_arrow_slot_width(height)
         element = row.element
-        if element is not None and getattr(element, 'is_draw_icon', False):
+        if (
+                not has_boolean_icon
+                and element is not None
+                and getattr(element, 'is_draw_icon', False)
+        ):
             try:
                 from ..utils.texture import Texture
 

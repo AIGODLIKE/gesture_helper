@@ -1,4 +1,3 @@
-import json
 import os.path
 from functools import lru_cache
 
@@ -6,6 +5,7 @@ import bpy
 from bpy.app.translations import pgettext
 
 from ...utils.debug_util import debug_print
+from ...utils.strict_json import load_json_strict
 
 __translate__ = {}
 __language_list__ = []
@@ -172,7 +172,7 @@ def __load_json__():
                 try:
                     language = os.path.basename(root)
                     with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
-                        data = json.load(f)
+                        data = load_json_strict(f)
                     if not data:
                         continue
                     bucket = __translate__.setdefault(language, {})

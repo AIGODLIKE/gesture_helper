@@ -147,6 +147,43 @@ def resolve_layout_line(sizes, available, gap, alignment):
     return tuple(result)
 
 
+def resolve_split_line(count, available, gap, factor):
+    """Resolve Blender's ``UILayout.split`` column widths.
+
+    A zero factor divides the usable width equally. A non-zero factor assigns
+    that fraction to the first item and divides the remainder equally between
+    all later items. Blender keeps ``columnspace`` between split items even
+    when ``align=True``; callers therefore pass the real, non-zero split gap.
+    """
+    count = max(0, int(count))
+    if count == 0:
+        return ()
+    available = max(0.0, float(available))
+    gap = max(0.0, float(gap))
+    try:
+        factor = float(factor)
+    except (TypeError, ValueError):
+        factor = 0.0
+    factor = min(1.0, max(0.0, factor))
+    usable = max(0.0, available - gap * (count - 1))
+    percentage = 1.0 / count if factor == 0.0 else factor
+    first_width = usable * percentage
+    if count == 1:
+        widths = (first_width,)
+    else:
+        other_width = max(0.0, usable - first_width) / (count - 1)
+        widths = (first_width, *((other_width,) * (count - 1)))
+
+    result = []
+    cursor = 0.0
+    for index, width in enumerate(widths):
+        result.append((cursor, width))
+        cursor += width
+        if index + 1 < count:
+            cursor += gap
+    return tuple(result)
+
+
 def resolve_layout_cross_axis(size, available, alignment):
     """Resolve a child width inside a vertical layout.
 

@@ -102,11 +102,21 @@ def _load_draw_element_module():
             ("ROW", "Row", ""),
             ("COLUMN", "Column", ""),
             ("BOX", "Box", ""),
+            ("LABEL", "Label", ""),
+            ("SPLIT", "Split", ""),
         ),
         ENUM_LAYOUT_TYPE=(
             ("ROW", "Row", ""),
             ("COLUMN", "Column", ""),
             ("BOX", "Box", ""),
+            ("SPLIT", "Split", ""),
+        ),
+        ENUM_LAYOUT_ELEMENT_TYPE=(
+            ("ROW", "Row", ""),
+            ("COLUMN", "Column", ""),
+            ("BOX", "Box", ""),
+            ("LABEL", "Label", ""),
+            ("SPLIT", "Split", ""),
         ),
     )
     sys.modules[f"{PACKAGE}.element"].ElementCURE = _ElementCURE

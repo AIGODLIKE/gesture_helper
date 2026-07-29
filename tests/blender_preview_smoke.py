@@ -47,6 +47,7 @@ from gesture_helper.utils.number_arrows import (  # noqa: E402
 )
 from gesture_helper.utils.layout_alignment import (  # noqa: E402
     resolve_extension_row_bounds,
+    resolve_split_line,
     separator_line_width,
 )
 from gesture_helper.utils.selection import select_element  # noqa: E402
@@ -313,6 +314,12 @@ with suppress_gesture_disk_save():
         'TEXT_CENTER',
         'TEXT_RIGHT',
     }
+    layout_type_items = {
+        item.identifier
+        for item in bpy.ops.wm.gesture_layout_type_set.get_rna_type()
+        .properties['layout_type'].enum_items
+    }
+    assert layout_type_items == {'ROW', 'COLUMN', 'BOX', 'SPLIT'}
     nested = second.element.add()
     nested.element_type = 'OPERATOR'
     nested.__init_element__()
@@ -332,6 +339,48 @@ with suppress_gesture_disk_save():
         )
     ) < 0.001
     assert divider_size.y < layout_metrics.sep_h
+
+    label = second.element.add()
+    label.element_type = 'LABEL'
+    label.__init_element__()
+    label.name = 'Split Ratio'
+    assert label.is_label
+    assert not label.is_layout_container
+    label_size = second._layout_node_size(label, layout_metrics)
+    assert abs(label_size.x - label.text_dimensions[0]) < 0.001
+    assert abs(label_size.y - layout_metrics.row_h) < 0.001
+
+    split = second.element.add()
+    split.___set_properties___({
+        'name': 'Native Split',
+        'element_type': 'SPLIT',
+        'split_factor': 0.35,
+    })
+    assert split.is_split
+    assert split.is_layout_container
+    assert split.layout_align is False
+    assert abs(split.split_factor - 0.35) < 0.001
+    split_label = split.element.add()
+    split_label.element_type = 'LABEL'
+    split_label.__init_element__()
+    split_label.name = '35%'
+    split_action = split.element.add()
+    split_action.element_type = 'OPERATOR'
+    split_action.__init_element__()
+    split_action.name = '65% Action'
+    split_action.operator_bl_idname = 'view3d.view_all'
+    split_size = second._layout_node_size(split, layout_metrics)
+    split_gap = second._layout_gap_for(split, layout_metrics)
+    assert split_gap > 0.0
+    split_slots = resolve_split_line(
+        2,
+        split_size.x,
+        split_gap,
+        split.split_factor,
+    )
+    assert abs(
+        split_slots[0][1] - (split_size.x - split_gap) * 0.35
+    ) < 0.001
 
     numeric = gesture.element.add()
     numeric.element_type = 'PROPERTY'
@@ -381,6 +430,12 @@ with suppress_gesture_disk_save():
     assert 'layout_align' not in exported_box
     assert 'layout_round_corners' not in exported_box
     assert 'layout_align_separators' not in exported_box
+    exported_split = next(
+        item for item in exported_box['element'].values()
+        if item.get('element_type') == 'SPLIT'
+    )
+    assert abs(exported_split['split_factor'] - 0.35) < 0.001
+    assert 'layout_align' not in exported_split
     second.layout_align = False
     second.layout_round_corners = False
     second.layout_align_separators = False
@@ -824,6 +879,7 @@ with suppress_gesture_disk_save():
         for leaf in element_preview._element_preview_adapter.panel_leaf_items
     }
     assert nested.as_pointer() in leaf_pointers
+    assert split_action.as_pointer() in leaf_pointers
     assert element_preview.scope == 'ELEMENT'
     close_preview(element_preview)
 

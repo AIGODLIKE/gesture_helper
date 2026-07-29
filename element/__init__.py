@@ -63,10 +63,23 @@ class Element(ElementCURE,
     def __init_box__(self):
         self.__init_direction_by_sort__()
 
+    def __init_label__(self):
+        pass
+
+    def __init_split__(self):
+        self.__init_direction_by_sort__()
+        # Blender's UILayout.split() defaults align to False. Its column gap
+        # remains present regardless of this value.
+        self.layout_align = False
+
     def ___set_properties___(self, data):
         """Set operator_bl_idname before other operator properties when present."""
         if "operator_bl_idname" in data:
             self.operator_bl_idname = data["operator_bl_idname"]
+        if data.get('element_type') == 'SPLIT' and 'layout_align' not in data:
+            # Collection imports do not call __init_element__, so apply the
+            # type-specific Blender default when old/minimal data omits it.
+            self.layout_align = False
         __set_property__(self, data)
 
     @property

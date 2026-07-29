@@ -76,7 +76,9 @@ class ElementAddProperty:
         """
         pref = get_pref()
         act = pref.active_element
-        is_leaf = act and (act.is_operator or act.is_property_display)
+        is_leaf = act and (
+            act.is_operator or act.is_property_display or act.is_label
+        )
         return not (is_leaf and pref.add_element_property.is_child_relationship)
 
     @staticmethod
@@ -121,6 +123,14 @@ class ElementAddProperty:
         return self.element_type == 'BOX'
 
     @property
+    def is_label(self) -> bool:
+        return self.element_type == 'LABEL'
+
+    @property
+    def is_split(self) -> bool:
+        return self.element_type == 'SPLIT'
+
+    @property
     def is_selected_if(self) -> bool:
         return self.selected_type == 'IF'
 
@@ -143,6 +153,7 @@ class ElementIcon:
         return (
             self.is_operator
             or self.is_child_gesture
+            or self.is_label
             or (self.is_property_display and self.display_property_type == 'BOOLEAN')
         )
 
@@ -246,7 +257,7 @@ class ElementExtension:
 
 
 class ElementLayoutProperty:
-    """Layout containers (row/column/box) and interactive property rows."""
+    """Layout containers/items and interactive property rows."""
 
     DEFAULT_PROPERTY_PATH = 'scene.cycles.samples'
     FALLBACK_PROPERTY_PATH = 'scene.render.resolution_percentage'
@@ -288,6 +299,18 @@ class ElementLayoutProperty:
         name='Align Divider Corners',
         description='Keep items separated by dividers in the same rounded corner group',
         default=True,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
+    split_factor: FloatProperty(
+        name='Factor',
+        description=(
+            'Percentage of width assigned to the first split item; '
+            'zero calculates equal widths automatically'
+        ),
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        subtype='FACTOR',
         update=lambda self, context: self.clear_derived_cache(),
     )
     layout_scale: FloatProperty(
@@ -401,13 +424,13 @@ class ElementLayoutProperty:
     property_true_icon: StringProperty(
         name='On Icon',
         description='Icon shown when a boolean property is enabled',
-        default='TICK',
+        default='CHECKBOX_HLT',
         update=lambda self, context: self.clear_derived_cache(),
     )
     property_false_icon: StringProperty(
         name='Off Icon',
         description='Icon shown when a boolean property is disabled',
-        default='COLOR_CLOSE',
+        default='CHECKBOX_DEHLT',
         update=lambda self, context: self.clear_derived_cache(),
     )
     show_property_advanced: BoolProperty(
@@ -430,7 +453,7 @@ class ElementLayoutProperty:
 
     @property
     def parent_is_layout(self) -> bool:
-        """True when any ancestor is a row/column/box container."""
+        """True when any ancestor is a layout container."""
         pe = self.parent_element
         while pe is not None:
             if pe.is_layout_container:

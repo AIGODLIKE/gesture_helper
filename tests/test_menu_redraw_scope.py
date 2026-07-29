@@ -633,6 +633,51 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertGreater(occupied, 0.0)
         runtime.draw_image.assert_called_once_with((10.0, 5.0), 14.0, 14.0, texture=texture)
 
+    def test_boolean_property_row_does_not_repeat_configured_state_icon(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_hovered_row = None
+        runtime._menu_pressed_row = None
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime.draw_image = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        texture_names = []
+        texture = object()
+
+        def get_texture(name):
+            texture_names.append(name)
+            return texture
+
+        _module(
+            f"{PACKAGE}.utils.texture",
+            Texture=types.SimpleNamespace(get_texture=get_texture),
+        )
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="BOOLEAN",
+                display_property_value=True,
+                display_property_fraction=None,
+                property_bool_icons_enabled=True,
+                is_draw_icon=True,
+                _gpu_draw_icon_name=lambda: "CHECKBOX_HLT",
+            ),
+            "Overlays: Visible",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+
+        runtime._draw_row(row, self._metrics(), self._colors())
+
+        self.assertEqual(texture_names, ["CHECKBOX_HLT"])
+        runtime.draw_image.assert_called_once_with(
+            (10.0, 5.0),
+            14.0,
+            14.0,
+            texture=texture,
+        )
+
     def test_header_has_square_lower_corners(self):
         runtime = menu_module.GestureMenuRuntime()
         runtime.draw_rounded_rectangle_area = Mock()

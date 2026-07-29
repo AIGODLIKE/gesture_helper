@@ -148,7 +148,11 @@ class DrawElement:
             *,
             frozen: bool = False,
     ) -> None:
-        from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
+        from ..utils.enum import (
+            ENUM_ELEMENT_TYPE,
+            ENUM_LAYOUT_ELEMENT_TYPE,
+            ENUM_SELECTED_TYPE,
+        )
         from ..ui.menu import (
             GESTURE_MT_add_element_menu,
             GESTURE_MT_layout_preset_menu,
@@ -188,7 +192,10 @@ class DrawElement:
         row = draw_label(items, 'Add item:')
         row.enabled = controls_enabled
         for i, n, d in ENUM_ELEMENT_TYPE:
-            if i in ('SELECTED_STRUCTURE', 'ROW', 'COLUMN', 'BOX'):
+            if i in (
+                    'SELECTED_STRUCTURE',
+                    'ROW', 'COLUMN', 'BOX', 'LABEL', 'SPLIT',
+            ):
                 continue
             if i == "DIVIDING_LINE":
                 cls.draw_element_add_div_property(row, frozen=frozen)
@@ -200,17 +207,19 @@ class DrawElement:
                     element_type=i,
                 )
 
-        from ..utils.enum import ENUM_LAYOUT_TYPE
         layout_column = column.column(align=True)
         row = draw_label(layout_column, 'Layout:')
         row.enabled = controls_enabled
-        for i, n, d in ENUM_LAYOUT_TYPE:
-            cls._draw_add_operator(
-                row,
-                n,
-                frozen=frozen,
-                element_type=i,
-            )
+        for i, n, d in ENUM_LAYOUT_ELEMENT_TYPE:
+            if i == 'LABEL':
+                cls.draw_element_add_label_property(row, frozen=frozen)
+            else:
+                cls._draw_add_operator(
+                    row,
+                    n,
+                    frozen=frozen,
+                    element_type=i,
+                )
         row.menu(
             GESTURE_MT_layout_preset_menu.__name__,
             icon='PRESET',
@@ -225,14 +234,45 @@ class DrawElement:
             *,
             frozen: bool = False,
     ) -> None:
+        cls._draw_element_add_nondirectional_property(
+            layout,
+            'DIVIDING_LINE',
+            'Div',
+            frozen=frozen,
+        )
+
+    @classmethod
+    def draw_element_add_label_property(
+            cls,
+            layout: 'bpy.types.UILayout',
+            *,
+            frozen: bool = False,
+    ) -> None:
+        cls._draw_element_add_nondirectional_property(
+            layout,
+            'LABEL',
+            'Label',
+            frozen=frozen,
+        )
+
+    @classmethod
+    def _draw_element_add_nondirectional_property(
+            cls,
+            layout: 'bpy.types.UILayout',
+            element_type: str,
+            text: str,
+            *,
+            frozen: bool = False,
+    ) -> None:
+        """Draw an item that is valid only inside a menu/layout collection."""
         pref = get_pref()
         add = pref.add_element_property
         relationship = add.relationship
         active = pref.active_element
         is_alert = False
 
-        # Dividers only make sense inside extension menus or layout panels
-        # (row/column/box), not as radial direction slots.
+        # Dividers and labels only make sense inside extension menus or layout
+        # containers, not as radial direction slots.
         if relationship == "ROOT":
             is_alert = True
         elif relationship == "SAME":
@@ -260,7 +300,7 @@ class DrawElement:
 
         cls._draw_add_operator(
             layout,
-            "Div",
+            text,
             frozen=frozen,
-            element_type="DIVIDING_LINE",
+            element_type=element_type,
         )

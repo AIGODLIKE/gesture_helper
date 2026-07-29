@@ -654,7 +654,7 @@ class ElementGpuDraw(PublicGpu, ElementGpuProperty):
         radial_offset = self.radial_draw_offset
 
         direction = self.direction
-        # ROW/COLUMN/BOX are inline presentation nodes, not radial buttons.
+        # Layout containers are inline presentation nodes, not radial buttons.
         # Draw their tree at the direction anchor immediately; only a nested
         # CHILD_GESTURE leaf is allowed to open a flyout.
         if self.is_layout_container:
@@ -1178,6 +1178,7 @@ class ElementGpuExtensionItem:
             len(items) == 1
             and not items[0].is_layout_container
             and not items[0].is_dividing_line
+            and not getattr(items[0], 'is_label', False)
             and not items[0].numeric_arrows_visible
         )
 
@@ -1239,13 +1240,21 @@ class ElementGpuExtensionItem:
                 )
                 draw_ctx = getattr(getattr(ops, 'session', None), 'draw_ctx', None)
                 mouse = getattr(draw_ctx, 'mouse_region', None) if draw_ctx is not None else None
-                from .extension_hit import publish_child_row_hit
-                hovered = publish_child_row_hit(item, ops, row_rect, mouse=mouse)
-                item.publish_numeric_arrow_areas(
-                    row_rect,
-                    row_h,
-                )
-                if item.numeric_arrows_visible:
+                is_label = bool(getattr(item, 'is_label', False))
+                if is_label:
+                    item.extension_by_child_draw_area = None
+                    item.property_decrement_draw_area = None
+                    item.property_value_draw_area = None
+                    item.property_increment_draw_area = None
+                    hovered = False
+                else:
+                    from .extension_hit import publish_child_row_hit
+                    hovered = publish_child_row_hit(item, ops, row_rect, mouse=mouse)
+                    item.publish_numeric_arrow_areas(
+                        row_rect,
+                        row_h,
+                    )
+                if not is_label and item.numeric_arrows_visible:
                     self.draw_rounded_rectangle_area(
                         (w * 0.5, -row_h * 0.5),
                         color=item._property_background_color(active=False),
@@ -1254,7 +1263,11 @@ class ElementGpuExtensionItem:
                         height=row_h,
                     )
                 # Numeric property rows paint a slider fill over the soft range.
-                fraction = item.display_property_fraction if item.is_property_display else None
+                fraction = (
+                    item.display_property_fraction
+                    if not is_label and item.is_property_display
+                    else None
+                )
                 if fraction is not None and fraction > 0.0:
                     fill_w = max(2.0, surface_w * fraction)
                     left = w * 0.5 - surface_w * 0.5
@@ -1265,11 +1278,18 @@ class ElementGpuExtensionItem:
                         width=fill_w,
                         height=row_h,
                     )
-                is_error = item.element_status_info.status.is_error
+                is_error = (
+                    item.element_status_info.status.is_error
+                    if not is_label
+                    else False
+                )
                 if (
-                    single_surface_item
-                    or is_error
-                    or (hovered and not item.numeric_arrows_visible)
+                    not is_label
+                    and (
+                        single_surface_item
+                        or is_error
+                        or (hovered and not item.numeric_arrows_visible)
+                    )
                 ):
                     stroke, line_width = self._outline_colors(active=hovered)
                     self.draw_rounded_rectangle_outlined(
@@ -1281,16 +1301,17 @@ class ElementGpuExtensionItem:
                         height=surface_h,
                         line_width=line_width,
                     )
-                item.gpu_draw_status_accent(
-                    (w * 0.5, -row_h * 0.5), surface_w, surface_h,
-                )
-                item.gpu_draw_numeric_arrows(
-                    w,
-                    row_h,
-                    field_left=row_left,
-                    field_right=row_right,
-                    draw_value=False,
-                )
+                if not is_label:
+                    item.gpu_draw_status_accent(
+                        (w * 0.5, -row_h * 0.5), surface_w, surface_h,
+                    )
+                    item.gpu_draw_numeric_arrows(
+                        w,
+                        row_h,
+                        field_left=row_left,
+                        field_right=row_right,
+                        draw_value=False,
+                    )
 
                 with gpu.matrix.push_pop():
                     # Vertically center the icon/text band inside the row.
@@ -1333,7 +1354,14 @@ class ElementGpuExtensionItem:
                         _tw, th = item.text_dimensions
                         if th < lay.icon_size:
                             gpu.matrix.translate((0, -(lay.icon_size - th) * 0.5))
-                        item.gpu_draw_label(use_offset=False)
+                        item.gpu_draw_label(
+                            use_offset=False,
+                            color=(
+                                tuple(self.draw_property.text_default_color)
+                                if is_label
+                                else None
+                            ),
+                        )
 
                     # Row/column/box content is already rendered inline; the
                     # chevron is reserved for actual child-gesture flyouts.

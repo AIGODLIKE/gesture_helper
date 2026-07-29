@@ -179,6 +179,47 @@ class LayoutAlignmentTests(unittest.TestCase):
             0.0,
         )
 
+    def test_split_zero_factor_uses_equal_columns_and_keeps_gap(self):
+        self.assertEqual(
+            layout_alignment.resolve_split_line(
+                3,
+                available=100,
+                gap=5,
+                factor=0.0,
+            ),
+            (
+                (0.0, 30.0),
+                (35.0, 30.0),
+                (70.0, 30.0),
+            ),
+        )
+
+    def test_split_factor_applies_to_first_column_only(self):
+        self.assertEqual(
+            layout_alignment.resolve_split_line(
+                3,
+                available=110,
+                gap=5,
+                factor=0.4,
+            ),
+            (
+                (0.0, 40.0),
+                (45.0, 30.0),
+                (80.0, 30.0),
+            ),
+        )
+
+    def test_single_split_matches_blender_factor_behavior(self):
+        self.assertEqual(
+            layout_alignment.resolve_split_line(
+                1,
+                available=80,
+                gap=5,
+                factor=0.25,
+            ),
+            ((0.0, 20.0),),
+        )
+
     def test_overflow_is_proportionally_compressed(self):
         result = layout_alignment.resolve_layout_line(
             (10, 30), available=30, gap=2, alignment='LEFT',

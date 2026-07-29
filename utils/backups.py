@@ -9,6 +9,8 @@ from os.path import abspath, join
 
 import bpy
 
+from .strict_json import load_json_strict, loads_json_strict
+
 BACKUP_DIR_NAME = "backups"
 GESTURES_FILENAME = "gesture_helper_gestures.json"
 PREFERENCES_EXPORT_EXTENSION = ".json"
@@ -225,8 +227,8 @@ def load_preferences_backup_file(file_path: str) -> dict:
         raise ValueError("Not a valid UTF-8 preferences backup file") from e
 
     try:
-        data = json.loads(text)
-    except json.JSONDecodeError as e:
+        data = loads_json_strict(text)
+    except (json.JSONDecodeError, ValueError) as e:
         raise ValueError("Invalid JSON in preferences backup file") from e
 
     if not isinstance(data, dict):
@@ -406,8 +408,8 @@ def gesture_auto_backup_unchanged(
         return False
     try:
         with open(candidate, "r", encoding="utf-8") as file:
-            previous = json.load(file)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError):
+            previous = load_json_strict(file)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
         return False
     if not isinstance(previous, dict):
         return False

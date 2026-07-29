@@ -1,5 +1,3 @@
-import json
-
 import bpy
 from bpy.app.translations import pgettext
 from bpy.props import BoolProperty, EnumProperty
@@ -14,6 +12,7 @@ from ..utils.public import (
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.structure_cache_ops import StructureCacheOps
+from ..utils.strict_json import load_json_strict
 
 
 def _preset_sort_key(gesture: dict, is_example: bool) -> tuple[bool, bool]:
@@ -23,7 +22,7 @@ def _preset_sort_key(gesture: dict, is_example: bool) -> tuple[bool, bool]:
 def _get_preset_sort_keys(filepath: str, is_example: bool) -> list[tuple[bool, bool]]:
     """Return source-group/type sort keys in the JSON import order."""
     with open(filepath, encoding='utf-8') as file:
-        gesture_data = json.load(file).get('gesture', {})
+        gesture_data = load_json_strict(file).get('gesture', {})
     if not isinstance(gesture_data, dict):
         return []
     return [
@@ -44,7 +43,7 @@ def get_all_preset_gesture_data() -> tuple[dict[str, dict], int]:
     collected = []
     for name, filepath in presets.items():
         with open(filepath, encoding='utf-8') as file:
-            data = json.load(file)
+            data = load_json_strict(file)
         gesture_data = data.get('gesture') if isinstance(data, dict) else None
         if not isinstance(gesture_data, dict):
             raise ValueError(

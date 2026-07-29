@@ -18,6 +18,7 @@ from .backups import (
 from .gesture_store import get_gesture_store
 from .public import get_pref
 from .selection import suppress_radio_updates
+from .strict_json import load_json_strict, loads_json_strict
 
 _suppress_disk_save = 0
 _save_timer_pending = False
@@ -58,7 +59,7 @@ def capture_gesture_snapshot() -> dict | None:
 
 def _read_gesture_file(path: str) -> dict:
     with open(path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+        data = load_json_strict(file)
     if not isinstance(data, dict) or 'gesture' not in data:
         raise ValueError("Invalid gesture file: missing 'gesture' data")
     gesture_data = data['gesture']
@@ -85,7 +86,7 @@ def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
         # Compare the exact JSON-compatible structure while the old file is
         # still untouched. This catches partial writes and serialization drift.
         written_data = _read_gesture_file(temp_path)
-        expected_data = json.loads(json.dumps(export_data, ensure_ascii=True))
+        expected_data = loads_json_strict(json.dumps(export_data, ensure_ascii=True))
         if written_data != expected_data:
             raise ValueError('Gesture file verification failed before replace')
 

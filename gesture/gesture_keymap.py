@@ -31,6 +31,13 @@ _TEMP_KMI_FIELDS = (
     'shift', 'ctrl', 'alt', 'oskey', 'key_modifier', 'repeat', 'head',
 )
 
+
+def _loads_keymap_json(value: str):
+    # Keep this import lazy so the keymap model remains independently testable.
+    from ..utils.strict_json import loads_json_strict
+
+    return loads_json_strict(value)
+
 _KEY_TEXT_FIELDS = frozenset({
     'type',
     'value',
@@ -144,9 +151,9 @@ class KeymapProperty:
     keymaps = property(fget=get_keymap, fset=set_keymap, doc='Stores keymap spaces where the shortcut is active')
 
     key_string: StringProperty(get=lambda self: json.dumps(self.get_key()),
-                               set=lambda self, value: self.set_key(json.loads(value)))
+                               set=lambda self, value: self.set_key(_loads_keymap_json(value)))
     keymaps_string: StringProperty(get=lambda self: json.dumps(self.get_keymap()),
-                                   set=lambda self, value: self.set_keymap(json.loads(value)))
+                                   set=lambda self, value: self.set_keymap(_loads_keymap_json(value)))
 
 
 class GestureKeymap(KeymapProperty):

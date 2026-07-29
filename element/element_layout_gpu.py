@@ -1,4 +1,4 @@
-"""GPU renderer for row/column/box layout panels (Blender UILayout-like).
+"""GPU renderer for Blender-like layout panels and label items.
 
 Layout containers are presentation nodes: their children are painted directly
 in the direction slot, just as ``pie.column()`` / ``pie.row()`` / ``pie.box()``
@@ -25,6 +25,7 @@ from ..utils.layout_alignment import (
     resolve_box_inset,
     resolve_layout_cross_axis,
     resolve_layout_line,
+    resolve_split_line,
     resolve_text_alignment_offset,
     separator_line_width,
 )
@@ -63,6 +64,10 @@ class ElementLayoutGpu:
 
     def _layout_gap_for(self, node, metrics) -> float:
         # Blender's Layout::row/column sets space_ to zero for align=True.
+        # Layout::split always retains columnspace; align only joins the
+        # contained button group.
+        if getattr(node, 'is_split', False):
+            return metrics.gap
         return 0.0 if self._layout_align_for(node) else metrics.gap
 
     @staticmethod
@@ -209,7 +214,7 @@ class ElementLayoutGpu:
             sizes = [size for _child, size in entries]
             scale = self._layout_scale_for(node)
             scale_vector = Vector(scale)
-            if node.is_row:
+            if node.is_row or getattr(node, 'is_split', False):
                 gap = self._layout_gap_for(node, metrics)
                 size = Vector((
                     sum(s.x for s in sizes) + gap * (len(sizes) - 1),
@@ -230,6 +235,19 @@ class ElementLayoutGpu:
                 )
                 size += Vector((inset_x * 2.0, inset_y * 2.0))
             size = size * scale_vector
+        elif getattr(node, 'is_label', False):
+            tw, _th = node.text_dimensions
+            w = float(tw)
+            icon_name = node._gpu_draw_icon_name()
+            if icon_name and Texture.get_texture(icon_name) is not None:
+                w += metrics.label_h
+                if tw > 0.0:
+                    w += metrics.gap
+            elif w <= 0.0:
+                # Blender gives an empty label one UI-unit slot instead of
+                # collapsing it to zero width.
+                w = metrics.label_h
+            size = Vector((w, metrics.row_h))
         elif node.is_dividing_line:
             size = Vector((metrics.row_h, self._layout_separator_height(metrics)))
         else:
@@ -363,6 +381,7 @@ class ElementLayoutGpu:
         align_separators = self._layout_align_separators_for(container)
         surface_flags = tuple(
             not child.is_dividing_line
+            and not getattr(child, 'is_label', False)
             and (
                 not child.is_layout_container
                 or child.is_box
@@ -376,7 +395,7 @@ class ElementLayoutGpu:
             and align_separators
             and any(child.is_dividing_line for child in children)
         )
-        gap = 0.0 if aligned else metrics.gap
+        gap = self._layout_gap_for(container, metrics)
         corner_masks = (
             aligned_surface_corner_masks(
                 surface_flags,
@@ -393,9 +412,17 @@ class ElementLayoutGpu:
         )
 
         if horizontal:
-            slots = resolve_layout_line(
-                (size.x for size in sizes), avail_w, gap, alignment,
-            )
+            if getattr(container, 'is_split', False):
+                slots = resolve_split_line(
+                    len(sizes),
+                    avail_w,
+                    gap,
+                    getattr(container, 'split_factor', 0.0),
+                )
+            else:
+                slots = resolve_layout_line(
+                    (size.x for size in sizes), avail_w, gap, alignment,
+                )
         else:
             slots = None
             cursor = 0.0
@@ -504,7 +531,7 @@ class ElementLayoutGpu:
                         gpu.matrix.translate((inset_x, -inset_y))
                         self._draw_layout_children(
                             node, children, ops, metrics, child_w,
-                            horizontal=node.is_row,
+                            horizontal=(node.is_row or getattr(node, 'is_split', False)),
                             inside_box=not aligned_box,
                             outer_corner_mask=corner_mask,
                         )
@@ -524,7 +551,7 @@ class ElementLayoutGpu:
                 else:
                     self._draw_layout_children(
                         node, children, ops, metrics, local_w,
-                        horizontal=node.is_row,
+                        horizontal=(node.is_row or getattr(node, 'is_split', False)),
                         inside_box=inside_box,
                         outer_corner_mask=corner_mask,
                     )
@@ -545,6 +572,21 @@ class ElementLayoutGpu:
                     height=separator_h,
                 )
             return
+        if getattr(node, 'is_label', False):
+            rect = get_current_2d_rect((0.0, -metrics.row_h, avail_w, 0.0))
+            node.extension_by_child_draw_area = None
+            node.property_decrement_draw_area = None
+            node.property_value_draw_area = None
+            node.property_increment_draw_area = None
+            if not self._layout_rect_is_visible(rect):
+                return
+            self._draw_layout_label(
+                node,
+                metrics,
+                avail_w,
+                text_alignment=text_alignment,
+            )
+            return
         rect = get_current_2d_rect((0.0, -metrics.row_h, avail_w, 0.0))
         if not self._layout_rect_is_visible(rect):
             return
@@ -561,6 +603,48 @@ class ElementLayoutGpu:
             corner_mask=corner_mask,
             text_alignment=text_alignment,
         )
+
+    def _draw_layout_label(
+            self,
+            item,
+            metrics,
+            avail_w,
+            *,
+            text_alignment='LEFT',
+    ) -> None:
+        """Draw a native-style label: icon/text only, without a hit surface."""
+        label = item.name_translate
+        from .element_gpu_draw import from_text_get_dimensions
+
+        dimensions = from_text_get_dimensions(label, metrics.text_size)
+        text_w, text_h = dimensions
+        icon_name = item._gpu_draw_icon_name()
+        texture = Texture.get_texture(icon_name) if icon_name else None
+        icon_width = (
+            metrics.label_h + (metrics.gap if text_w > 0.0 else 0.0)
+            if texture is not None
+            else 0.0
+        )
+        content_width = icon_width + text_w
+        offset = resolve_text_alignment_offset(
+            content_width,
+            avail_w,
+            text_alignment,
+        )
+        with gpu.matrix.push_pop():
+            gpu.matrix.translate((offset, -((metrics.row_h - metrics.label_h) * 0.5)))
+            if texture is not None:
+                item.gpu_draw_icon(False, icon_size=metrics.label_h)
+                gpu.matrix.translate((icon_width, 0.0))
+            if text_h < metrics.label_h:
+                gpu.matrix.translate((0.0, -(metrics.label_h - text_h) * 0.5))
+            item.gpu_draw_label(
+                use_offset=False,
+                text=label,
+                dimensions=dimensions,
+                color=tuple(self.draw_property.text_default_color),
+                size=metrics.text_size,
+            )
 
     def _draw_layout_leaf(
             self, item, ops, metrics, avail_w, *, inside_box=False,

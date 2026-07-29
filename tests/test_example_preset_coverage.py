@@ -232,6 +232,8 @@ class ExamplePresetCoverageTests(unittest.TestCase):
             _resolve_items(enum_path, _items_node(element_path, "property_drag_mode"))
         )
         cls.default_property_drag_mode = _property_default(element_path, "property_drag_mode")
+        cls.default_property_true_icon = _property_default(element_path, "property_true_icon")
+        cls.default_property_false_icon = _property_default(element_path, "property_false_icon")
         cls.expected_number_modes = {
             "ADD",
             "SUBTRACT",
@@ -275,6 +277,7 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         cls.observed_property_drag_invert_modes = set()
         cls.observed_property_show_value_modes = set()
         cls.observed_property_bool_icon_modes = set()
+        cls.observed_property_bool_icon_pairs = set()
         cls.observed_number_modes = set()
         cls.observed_bool_modes = set()
         cls.observed_enum_modes = set()
@@ -303,7 +306,7 @@ class ExamplePresetCoverageTests(unittest.TestCase):
                         cls.observed_element_types.add(element_type)
                         if element_type == "SELECTED_STRUCTURE":
                             cls.observed_selected_types.add(element.get("selected_type"))
-                        if element_type in {"ROW", "COLUMN", "BOX"}:
+                        if element_type in {"ROW", "COLUMN", "BOX", "SPLIT"}:
                             cls.observed_layout_alignments.add(
                                 element.get("layout_alignment", cls.default_layout_alignment)
                             )
@@ -335,6 +338,17 @@ class ExamplePresetCoverageTests(unittest.TestCase):
                             cls.observed_property_bool_icon_modes.add(
                                 element.get("property_bool_icons_enabled", False)
                             )
+                            if element.get("property_bool_icons_enabled", False):
+                                cls.observed_property_bool_icon_pairs.add((
+                                    element.get(
+                                        "property_true_icon",
+                                        cls.default_property_true_icon,
+                                    ),
+                                    element.get(
+                                        "property_false_icon",
+                                        cls.default_property_false_icon,
+                                    ),
+                                ))
                         if element_type == "OPERATOR":
                             cls.observed_operator_types.add(element.get("operator_type", "OPERATOR"))
                             cls.observed_operator_contexts.add(
@@ -465,6 +479,17 @@ class ExamplePresetCoverageTests(unittest.TestCase):
             {key: value for key, value in upper_right.items() if key not in varying_keys},
         )
 
+        split = next(
+            element
+            for element in _element_values(upper_right)
+            if element.get('element_type') == 'SPLIT'
+        )
+        self.assertEqual(split.get('split_factor'), 0.35)
+        self.assertEqual(
+            [child.get('element_type') for child in split['element'].values()],
+            ['LABEL', 'OPERATOR'],
+        )
+
         curve_display = next(
             element
             for root in roots
@@ -500,6 +525,19 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         self.assertEqual(self.observed_property_drag_invert_modes, {False, True})
         self.assertEqual(self.observed_property_show_value_modes, {False, True})
         self.assertEqual(self.observed_property_bool_icon_modes, {False, True})
+        self.assertEqual(
+            self.observed_property_bool_icon_pairs,
+            {(self.default_property_true_icon, self.default_property_false_icon)},
+        )
+
+    def test_boolean_property_default_icons_are_bundled_pngs(self):
+        for icon_name in (
+                self.default_property_true_icon,
+                self.default_property_false_icon,
+        ):
+            path = ROOT / "src" / "icons" / "blender" / f"{icon_name}.png"
+            self.assertTrue(path.is_file(), path)
+            self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"), path)
 
     def test_modal_control_modes_are_all_demonstrated(self):
         self.assertEqual(self.observed_number_modes, self.expected_number_modes)

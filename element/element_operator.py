@@ -142,6 +142,10 @@ class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """Sync element properties to temp KMI."""
         from ..utils.public_cache import PublicCache
+        from ..utils.property import property_assignment_in_progress
+
+        if property_assignment_in_progress():
+            return
         if PublicCache._suppress_operator_tmp_kmi:
             return
         if not self.is_operator or not self.operator_is_operator:

@@ -39,6 +39,8 @@ from gesture_helper.utils.gesture_items import (  # noqa: E402
     get_gesture_direction_items,
     get_gesture_extension_items,
 )
+from gesture_helper.element import Element  # noqa: E402
+from gesture_helper.utils.icons import get_blender_icons  # noqa: E402
 
 
 class FakeImport:
@@ -367,6 +369,28 @@ with bpy.context.temp_override(**_view3d_override()):
     assert lower_left_layout.layout_align_separators
     assert abs(lower_left_layout.layout_scale_x - 1.0) < 0.001
     assert abs(lower_left_layout.layout_scale_y - 1.0) < 0.001
+    for layout in (upper_right_layout, lower_left_layout):
+        native_split = next(
+            item for item in layout.element
+            if item.element_type == 'SPLIT'
+        )
+        assert native_split.is_split
+        assert native_split.is_layout_container
+        assert not native_split.layout_align
+        assert abs(native_split.split_factor - 0.35) < 0.001
+        assert [item.element_type for item in native_split.element] == [
+            'LABEL',
+            'OPERATOR',
+        ]
+        assert native_split.element[0].is_label
+        assert [
+            item.element_type for item in get_gesture_extension_items(native_split.element)
+        ] == ['LABEL', 'OPERATOR']
+        assert all(
+            not item.is_label
+            for item in get_gesture_direction_items(native_split.element).values()
+        )
+        assert native_split.main_element == native_split.element[1]
     viewport_states = next(
         element for element in _all_elements(element_layout)
         if element.name == "Viewport States"
@@ -374,6 +398,15 @@ with bpy.context.temp_override(**_view3d_override()):
     state_items = get_gesture_direction_items(viewport_states.element)
     assert set(state_items) == {"1", "3", "5"}
     assert all(item.property_bool_icons_enabled for item in state_items.values())
+    expected_state_icons = ("CHECKBOX_HLT", "CHECKBOX_DEHLT")
+    assert {
+        (item.property_true_icon, item.property_false_icon)
+        for item in state_items.values()
+    } == {expected_state_icons}
+    assert Element.bl_rna.properties["property_true_icon"].default == expected_state_icons[0]
+    assert Element.bl_rna.properties["property_false_icon"].default == expected_state_icons[1]
+    blender_icons = set(get_blender_icons())
+    assert set(expected_state_icons) <= blender_icons
 
     # Property examples share one flat menu. Only the type-specific groups are
     # child menus; the three example families are separated by divider rows.

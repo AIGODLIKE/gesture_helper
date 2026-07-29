@@ -64,6 +64,19 @@ class LayoutScaleTests(unittest.TestCase):
         self.assertEqual(nested["layout_scale_y"], 1.2)
         self.assertNotIn("layout_scale_x", elements["1"])
 
+    def test_import_migration_includes_split_containers(self):
+        elements = {
+            "0": {
+                "element_type": "SPLIT",
+                "layout_scale": 1.3,
+            },
+        }
+
+        layout_scale.migrate_legacy_layout_scales(elements)
+
+        self.assertEqual(elements["0"]["layout_scale_x"], 1.3)
+        self.assertEqual(elements["0"]["layout_scale_y"], 1.3)
+
 
 if __name__ == "__main__":
     unittest.main()

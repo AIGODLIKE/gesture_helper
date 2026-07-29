@@ -43,8 +43,19 @@ store = get_gesture_store()
 assert store is not None
 store.gesture.clear()
 GestureKeymap.key_all_unload()
+view_preferences = bpy.context.preferences.view
+show_number_arrows_property = view_preferences.bl_rna.properties.get(
+    "show_number_arrows"
+)
+original_show_number_arrows = (
+    bool(view_preferences.show_number_arrows)
+    if show_number_arrows_property is not None
+    else None
+)
 
 try:
+    if show_number_arrows_property is not None:
+        view_preferences.show_number_arrows = True
     gesture = store.gesture.add()
     gesture.name = "Focused Object Mode Smoke"
     gesture.enabled = False
@@ -127,6 +138,8 @@ try:
         )
         print("KEYMAP_SELECTOR_HOVER_SMOKE_STAGE numeric_hover_verified", flush=True)
 finally:
+    if original_show_number_arrows is not None:
+        view_preferences.show_number_arrows = original_show_number_arrows
     GestureKeymap.key_all_unload()
     store.gesture.clear()
     gesture_persistence.save_gestures_to_disk = lambda **_kwargs: None

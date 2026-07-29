@@ -1,5 +1,6 @@
-public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 import bpy
+
+public_color = {"size": 4, "subtype": 'COLOR', "min": 0, "max": 1}
 
 
 def is_blender_close() -> bool:

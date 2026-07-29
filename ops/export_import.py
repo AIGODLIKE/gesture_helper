@@ -1,5 +1,4 @@
 # Import dialog shows preset options
-import json
 import os
 import time
 from datetime import datetime
@@ -10,6 +9,7 @@ from bpy_extras.io_utils import ExportHelper, ImportHelper
 
 from ..ui.ui_list import ImportPresetUIList
 from ..utils.property import __set_prop__
+from ..utils.strict_json import load_json_strict, loads_json_strict
 from ..utils.backups import (
     blender_close_backup_filename,
     close_backup_filename,
@@ -87,6 +87,7 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_OVERLAY_ITEM,
         'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', 'main_item'],
     "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM],
+    'LABEL': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM],
     'PROPERTY': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
@@ -124,6 +125,13 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_OVERLAY_ITEM,
         'direction', 'main_item', 'layout_align', 'layout_alignment',
         'layout_round_corners', 'layout_align_separators',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
+    ],
+    'SPLIT': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators', 'split_factor',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
 }
@@ -192,7 +200,7 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
             if not isinstance(key_string, str):
                 raise ValueError(f"Invalid shortcut for gesture {key!r}: expected JSON text")
             try:
-                key_data = json.loads(key_string)
+                key_data = loads_json_strict(key_string)
             except (TypeError, ValueError) as exc:
                 raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
             if not isinstance(key_data, dict):
@@ -208,7 +216,7 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
             if not isinstance(keymaps_string, str):
                 raise ValueError(f"Invalid keymap list for gesture {key!r}: expected JSON text")
             try:
-                keymap_names = json.loads(keymaps_string)
+                keymap_names = loads_json_strict(keymaps_string)
             except (TypeError, ValueError) as exc:
                 raise ValueError(f"Invalid keymap list for gesture {key!r}: {exc}") from exc
             if (
@@ -547,7 +555,7 @@ class Import(PublicFileOperator):
             return False
     def read_json(self):
         with open(self.filepath, 'r', encoding='utf-8') as file:
-            return json.load(file)
+            return load_json_strict(file)
 
 
 class Export(PublicFileOperator):

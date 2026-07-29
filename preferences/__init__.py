@@ -18,6 +18,7 @@ from .other import OtherProperty
 from .. import __package__ as base_package
 from .. import gesture
 from ..utils.public import PublicProperty
+from ..utils.enum import LAYOUT_CONTAINER_TYPES
 
 
 def _update_enabled(_self, _context) -> None:
@@ -126,13 +127,17 @@ class GesturePreferences(PublicProperty,
                 res.pop("main_item")
             if "layout_alignment" in res and res["layout_alignment"] == "EXPAND":
                 res.pop("layout_alignment")
-            if "layout_align" in res and res["layout_align"]:
-                res.pop("layout_align")
+            if "layout_align" in res:
+                default_align = element_type != 'SPLIT'
+                if bool(res["layout_align"]) is default_align:
+                    res.pop("layout_align")
             if "layout_round_corners" in res and res["layout_round_corners"]:
                 res.pop("layout_round_corners")
             if "layout_align_separators" in res and res["layout_align_separators"]:
                 res.pop("layout_align_separators")
-            if element_type in {"ROW", "COLUMN", "BOX"}:
+            if "split_factor" in res and res["split_factor"] == 0.0:
+                res.pop("split_factor")
+            if element_type in LAYOUT_CONTAINER_TYPES:
                 scale_x = res.get("layout_scale_x")
                 scale_y = res.get("layout_scale_y")
 

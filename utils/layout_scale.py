@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-LAYOUT_CONTAINER_TYPES = frozenset({'ROW', 'COLUMN', 'BOX'})
+LAYOUT_CONTAINER_TYPES = frozenset({'ROW', 'COLUMN', 'BOX', 'SPLIT'})
 LAYOUT_SCALE_DEFAULT = 1.0
 LAYOUT_SCALE_MIN = 0.25
 LAYOUT_SCALE_MAX = 4.0

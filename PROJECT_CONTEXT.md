@@ -34,10 +34,13 @@ with bundled JSON presets, translations, and PNG icon assets.
   failed restore. `register_mod` snapshots before file load and restores after
   Blender clears the WindowManager store.
 - `utils/property.py` is the generic RNA-to-indexed-dict serializer/importer;
-  `ops/export_import.py` validates and sanitizes imported JSON. Keymap data is
-  strict (scalar shortcut fields and no unknown fields). Bundled source JSON
-  duplicate keys are rejected by tests, but runtime JSON readers currently do
-  not enforce that rule (see observed issues).
+  `ops/export_import.py` validates and sanitizes imported JSON. During strict
+  batch assignment, reactive active-gesture and temporary-operator KMI sync is
+  deferred until one final shortcut rebuild validates the completed data.
+  `utils/strict_json.py` rejects duplicate object keys for gesture imports,
+  persistence, preference backups, embedded shortcut JSON, bundled presets,
+  and translation catalogs. Keymap data is also strict about scalar shortcut
+  fields and unknown fields.
 
 ### Input, execution, and drawing flow
 
@@ -62,8 +65,12 @@ with bundled JSON presets, translations, and PNG icon assets.
    row cancels activation.
    The radial direction cue begins halfway between its center and inner ring,
    then eases its radius, sweep, opacity, and stroke weight into confirmation.
-   `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
-   nested menus. Layout containers keep Blender's two alignment concepts
+   `ROW`, `COLUMN`, `BOX`, and `SPLIT` are layout containers;
+   `LABEL` is a non-interactive text/icon layout item; and `CHILD_GESTURE`
+   creates nested menus. `SPLIT` follows Blender's native sizing rule:
+   factor zero divides columns equally, while a nonzero factor sizes the first
+   column and shares the remainder between later columns; split column spacing
+   remains present even when its button group is aligned. Layout containers keep Blender's two alignment concepts
    separate: `layout_align` defaults on and removes inter-item spacing;
    `layout_round_corners` independently enables rounded layout and child
    surfaces; and `layout_align_separators` controls whether a separator stays
@@ -205,12 +212,15 @@ with bundled JSON presets, translations, and PNG icon assets.
   combines the basic radial interaction into the complete direction-slots
   example. The elements/layout fixture
   explicitly demonstrates aligned `EXPAND`, `LEFT`, `CENTER`, and `RIGHT`
-  layouts with populated child groups. Its complete upper-right layout is
+  layouts with populated child groups, plus a `LABEL` inside a 35/65 `SPLIT`.
+  Its complete upper-right layout is
   duplicated at the lower-left radial slot for simultaneous preview. The
   upper-right copy retains its nonuniform example scale and loose alignment;
   the lower-left copy uses normal 1.0 scaling with tight alignment. The curve
   child menu uses the lower direction so both remain independently reachable.
-  It exposes boolean state icons through its `Viewport States` child gesture and
+  Boolean property state icons default to the bundled Blender-style
+  `CHECKBOX_HLT`/`CHECKBOX_DEHLT` pair. The fixture exposes that pair through
+  its `Viewport States` child gesture and
   includes the practical Subdivide modal control in its bottom extension.
   Property modal modes, quick-add actions, and editable displays share one flat
   menu separated by dividers. Coverage tests derive enum contracts from source and also require
@@ -262,10 +272,13 @@ flowchart TD
   enum flyouts, three-part numeric-field state/hit boxes, selector/backplate
   dragging, alignment RNA, and Space-drag), and
   panel behavior. Run them
-  with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
-  `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
+  with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`,
+  `BLENDER_USER_SCRIPTS`, and `BLENDER_USER_EXTENSIONS`, plus `--background
+  --python-exit-code 1`. Treat traceback/Python-error text as failure evidence
+  even when Blender exits zero.
 - Focused example-keymap, selector-close, and numeric-hover verification:
-  `tests/blender_keymap_selector_hover_smoke.py`.
+  `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
+  restores Blender's numeric-arrow preference instead of assuming its default.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
   `GH_PANEL_AB_MODE=ELEMENT_PREVIEW`, and `GH_PANEL_AB_ELEMENT_COUNT=300`, then
   run `tests/blender_panel_profile_ab.py` in foreground Blender. The 300-leaf,
@@ -273,30 +286,49 @@ flowchart TD
   its centered GPU preview measures about 32.3 ms per draw.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
+- Release-candidate verification on 2026-07-29: 160 Python files compiled in
+  memory, 268 unit tests passed, Ruff and `git diff --check` passed, and all 16
+  source JSON files passed duplicate-key validation. Seven isolated background
+  smoke scripts passed in both Blender 4.2.1 LTS and 5.2.0 LTS with zero
+  tracebacks/Python errors. Both CLIs validated source and the 5.2-built ZIP;
+  its 343 entries had no duplicates, unsafe paths, forbidden agent/test/cache
+  files, or corruption. The ZIP installed, started enabled, and disabled cleanly
+  in isolated 4.2 and 5.2 profiles.
 
 ## Current risks and observed issues
 
-1. **Runtime JSON accepts duplicate keys:** `ops/export_import.py:479` and
-   `utils/gesture_persistence.py:61` use plain `json.load`, so duplicate object
-   keys are silently replaced by the last value. Only bundled source files are
-   checked with `object_pairs_hook` in tests. This violates the repository's
-   strict-JSON constraint and can hide malformed or ambiguous imported data.
-2. **Lint failure (reproducible):** `python -m ruff check .` reports `E402`
-   at `utils/__init__.py:2` because `import bpy` follows `public_color`.
-   This is low-risk behaviorally but blocks a clean lint gate.
-3. **Blender-only behavior remains higher risk than unit coverage:** focused
-   example-keymap, selector-close, and numeric-hover verification passes in
-   Blender 4.2.1. The installed Blender 5.2.0 LTS build can abort with a native
-   access violation before the preview smoke reaches Python assertions, so
-   current-version coverage remains unverified. Foreground visual placement,
+1. **Untracked Gesture Helper shortcuts can be removed:**
+   `gesture/addon_keymap.py:clear_orphan_gesture_kmis()` removes every untracked
+   add-on-keyconfig item using Gesture Helper's operator idnames. That includes
+   user-created shortcuts using those operators, not only stale registry items.
+2. **Maya Grease Pencil actions are not Blender-4.2 portable:**
+   `src/preset/Maya Switch Mode.json` stores the 4.3+/5.x
+   `*_GREASE_PENCIL` mode identifiers. Strict import no longer builds temporary
+   operator KMIs from partially assigned data, so import is clean, but the four
+   actions themselves are not exercised by the 4.2 smoke matrix and may fail
+   when invoked there.
+3. **Submission asset-license decision remains open:** the bundled
+   `CHECKBOX_HLT`/`CHECKBOX_DEHLT` images are declared as Blender-derived GPL
+   assets, while the Nick review guidance expects submitted artwork to meet its
+   CC0 threshold. Do not change their provenance or license without an explicit
+   release decision.
+4. **Blender-exit detection depends on Python stack internals:**
+   `utils/__init__.py:is_blender_close()` uses `sys._getframe()` and searches for
+   an `addon_utils.disable_all` caller. It currently passes lifecycle smoke but
+   depends on implementation details that may change in later Blender/Python.
+5. **Blender-only behavior remains higher risk than unit coverage:** focused
+   example-preset and unified-preview verification, including layout RNA and
+   drawing, passes in Blender 4.2.1 and 5.2.0 LTS. The installed 5.2 build has
+   previously aborted with a native access violation before Python assertions,
+   so native instability may be intermittent. Foreground visual placement,
    multi-window behavior, and file-load restoration still require targeted
    manual checks.
-4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
+6. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
    `gesture_input.py`, or `utils/ui_draw_sync.py` should include a focused
    Blender smoke run and reload/disable verification.
-5. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
+7. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
    after Blender's flat build; changes to manifest exclusions or workflow
    layout should be checked by inspecting ZIP entries.
 ## Constraints
