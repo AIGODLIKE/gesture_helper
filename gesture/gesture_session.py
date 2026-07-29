@@ -145,6 +145,9 @@ class GestureSession:
         self._suppress_property_execute = False
         # True once the active drag moved far enough to count as a scrub.
         self._property_drag_moved = False
+        # Original values of matching selected-object properties once Alt
+        # propagation becomes active during this scrub.
+        self._property_drag_selected_values = None
         # LMB-down state for the decrement/value/increment regions.  The draw
         # pass consumes this state; mouse geometry remains owned by the current
         # layout token on the element.

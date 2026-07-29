@@ -12,7 +12,7 @@ class GestureExecutor:
     """Run selected gesture element operators from session selection state."""
 
     @staticmethod
-    def _run_property_element(ops, element) -> None:
+    def _run_property_element(ops, element, *, copy_to_selected: bool = False) -> None:
         """Property row action: toggle in place, or start the value-drag modal."""
         prop_type = element.display_property_type
         if prop_type is None:
@@ -28,7 +28,7 @@ class GestureExecutor:
             )
             return
         if prop_type in {'BOOLEAN', 'ENUM'}:
-            if element.toggle_display_property():
+            if element.toggle_display_property(copy_to_selected=copy_to_selected):
                 ops.report({'INFO'}, element.display_property_text)
             else:
                 ops.report(
@@ -44,6 +44,7 @@ class GestureExecutor:
                     data_path=element.property_context_path,
                     value_mode=element.property_drag_mode,
                     invert=element.property_drag_invert,
+                    copy_to_selected=copy_to_selected,
                 )
                 ops.report({'INFO'}, element.name_translate)
             return
@@ -63,7 +64,13 @@ class GestureExecutor:
             from ..element.element_operator import resolve_operator_bl_idname
 
             if i.is_property_display:
-                self._run_property_element(ops, i)
+                self._run_property_element(
+                    ops,
+                    i,
+                    copy_to_selected=bool(
+                        getattr(getattr(session, 'event', None), 'alt', False)
+                    ),
+                )
                 return
             if i.is_layout_container:
                 main = i.main_element

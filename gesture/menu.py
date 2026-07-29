@@ -1940,11 +1940,17 @@ class GestureMenuRuntime(PublicGpu):
         self._tag_menu_redraw()
         return True
 
-    def _set_menu_enum_choice(self, row) -> bool:
+    def _set_menu_enum_choice(self, row, event=None) -> bool:
         if row is None or row.kind != 'ENUM_ITEM' or not row.enabled:
             return False
         try:
-            changed = row.element.set_display_property_value(row.enum_identifier)
+            if getattr(event, 'alt', False):
+                changed = row.element.set_display_property_value(
+                    row.enum_identifier,
+                    copy_to_selected=True,
+                )
+            else:
+                changed = row.element.set_display_property_value(row.enum_identifier)
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             changed = False
         self._menu_enum_dropdown = None

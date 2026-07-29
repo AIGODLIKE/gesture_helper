@@ -106,6 +106,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    below the label so the value remains legible. Edge-arrow interaction changes
    only that edge block and chevron, leaving the middle value surface and text
    unchanged.
+   Holding Alt while changing a runtime `object` or `object.data` property
+   copies the resulting value to the matching writable property on every
+   selected editable object; cancelling an Alt numeric scrub restores each
+   target's original value.
    `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. RNA

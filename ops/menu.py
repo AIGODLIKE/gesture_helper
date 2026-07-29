@@ -228,13 +228,17 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             result.add('PASS_THROUGH')
         return result
 
-    def _execute_menu_row(self, row) -> None:
+    def _execute_menu_row(self, row, event=None) -> None:
         element = row.element
         if element is None:
             return
         element.ops = self
         if row.kind == 'PROPERTY':
-            GestureExecutor._run_property_element(self, element)
+            GestureExecutor._run_property_element(
+                self,
+                element,
+                copy_to_selected=bool(getattr(event, 'alt', False)),
+            )
             self._menu_mark_context_changed()
             return
         if row.kind != 'OPERATOR':
@@ -366,7 +370,12 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             except (AttributeError, ReferenceError, RuntimeError, TypeError):
                 can_reset = False
             if can_reset:
-                changed = row.element.reset_display_property_to_default()
+                if getattr(event, 'alt', False):
+                    changed = row.element.reset_display_property_to_default(
+                        copy_to_selected=True,
+                    )
+                else:
+                    changed = row.element.reset_display_property_to_default()
                 if changed:
                     self._menu_mark_context_changed()
                 elif hover_changed:
@@ -402,10 +411,17 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 is_numeric = False
             if is_numeric:
                 direction = 1 if event.type == 'WHEELUPMOUSE' else -1
-                changed = row.element.apply_property_wheel(
-                    direction,
-                    precise=getattr(event, 'shift', False),
-                )
+                if getattr(event, 'alt', False):
+                    changed = row.element.apply_property_wheel(
+                        direction,
+                        precise=getattr(event, 'shift', False),
+                        copy_to_selected=True,
+                    )
+                else:
+                    changed = row.element.apply_property_wheel(
+                        direction,
+                        precise=getattr(event, 'shift', False),
+                    )
                 if changed:
                     self._menu_mark_context_changed()
                     hover_changed = False
@@ -436,7 +452,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 if status is not None and status.is_error:
                     return self._repair_menu_row(row)
                 if row.kind == 'ENUM_ITEM':
-                    self._set_menu_enum_choice(row)
+                    self._set_menu_enum_choice(row, event)
                     if not self._menu_keep_open():
                         self._begin_menu_close()
                     return {'RUNNING_MODAL'}
@@ -447,16 +463,23 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                     self._tag_menu_redraw()
                 arrow_direction = self._menu_property_arrow_direction(row, event)
                 if arrow_direction:
-                    changed = row.element.apply_property_wheel(
-                        arrow_direction,
-                        precise=getattr(event, 'shift', False),
-                    )
+                    if getattr(event, 'alt', False):
+                        changed = row.element.apply_property_wheel(
+                            arrow_direction,
+                            precise=getattr(event, 'shift', False),
+                            copy_to_selected=True,
+                        )
+                    else:
+                        changed = row.element.apply_property_wheel(
+                            arrow_direction,
+                            precise=getattr(event, 'shift', False),
+                        )
                     if changed:
                         self._menu_mark_context_changed()
                     if not self._menu_keep_open():
                         self._begin_menu_close()
                     return {'RUNNING_MODAL'}
-                self._execute_menu_row(row)
+                self._execute_menu_row(row, event)
                 # Numeric body clicks may start a second modal that owns the
                 # release event. Do not leave its visual press latched behind.
                 if (

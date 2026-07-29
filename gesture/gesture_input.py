@@ -865,10 +865,17 @@ class GestureInputProcessor:
         # after this wheel interaction has already changed the value.
         session._suppress_property_execute = True
         direction = 1 if event.type == 'WHEELUPMOUSE' else -1
-        changed = item.apply_property_wheel(
-            direction,
-            precise=getattr(event, 'shift', False),
-        )
+        if getattr(event, 'alt', False):
+            changed = item.apply_property_wheel(
+                direction,
+                precise=getattr(event, 'shift', False),
+                copy_to_selected=True,
+            )
+        else:
+            changed = item.apply_property_wheel(
+                direction,
+                precise=getattr(event, 'shift', False),
+            )
         if changed:
             session._poll_context_revision = (
                 getattr(session, '_poll_context_revision', 0) + 1
@@ -908,7 +915,22 @@ class GestureInputProcessor:
             session._numeric_pressed_part = None
             session._property_drag_moved = False
 
-        changed = item.reset_display_property_to_default()
+        selected_targets = getattr(
+            session, '_property_drag_selected_values', None,
+        )
+        if drag is not None and selected_targets is None and getattr(event, 'alt', False):
+            selected_targets = item.capture_selected_property_values()
+        if selected_targets is not None:
+            changed = item.reset_display_property_to_default(
+                selected_targets=selected_targets,
+            )
+        elif getattr(event, 'alt', False):
+            changed = item.reset_display_property_to_default(
+                copy_to_selected=True,
+            )
+        else:
+            changed = item.reset_display_property_to_default()
+        session._property_drag_selected_values = None
         if changed:
             session._poll_context_revision = (
                 getattr(session, '_poll_context_revision', 0) + 1
@@ -935,6 +957,15 @@ class GestureInputProcessor:
         session._numeric_pressed_part = None
         session._property_drag_moved = False
         changed = element.set_display_property_value(start_value)
+        selected_targets = getattr(
+            session, '_property_drag_selected_values', None,
+        )
+        session._property_drag_selected_values = None
+        if selected_targets is not None:
+            changed = (
+                element.restore_selected_property_values(selected_targets)
+                or changed
+            )
         if changed:
             session._poll_context_revision = (
                 getattr(session, '_poll_context_revision', 0) + 1
@@ -972,12 +1003,27 @@ class GestureInputProcessor:
                 session._event_consumed = True
                 mouse = Vector((event.mouse_x, event.mouse_y))
                 delta = element.property_drag_delta(start_mouse, mouse)
-                changed, applied_delta = element.apply_property_drag(
-                    start_value,
-                    delta,
-                    precise=event.shift,
-                    return_applied_delta=True,
+                selected_targets = getattr(
+                    session, '_property_drag_selected_values', None,
                 )
+                if selected_targets is None and getattr(event, 'alt', False):
+                    selected_targets = element.capture_selected_property_values()
+                    session._property_drag_selected_values = selected_targets
+                if selected_targets is not None:
+                    changed, applied_delta = element.apply_property_drag(
+                        start_value,
+                        delta,
+                        precise=event.shift,
+                        return_applied_delta=True,
+                        selected_targets=selected_targets,
+                    )
+                else:
+                    changed, applied_delta = element.apply_property_drag(
+                        start_value,
+                        delta,
+                        precise=event.shift,
+                        return_applied_delta=True,
+                    )
                 if applied_delta != delta:
                     element.rebase_property_drag_start(
                         start_mouse, mouse, applied_delta,
@@ -1005,6 +1051,7 @@ class GestureInputProcessor:
                 session.property_drag = None
                 session._numeric_pressed_element = None
                 session._numeric_pressed_part = None
+                session._property_drag_selected_values = None
                 if getattr(session, '_property_drag_moved', False):
                     session._suppress_property_execute = True
                 session._property_drag_moved = False
@@ -1015,6 +1062,7 @@ class GestureInputProcessor:
                 session.property_drag = None
                 session._numeric_pressed_element = None
                 session._numeric_pressed_part = None
+                session._property_drag_selected_values = None
                 if getattr(session, '_property_drag_moved', False):
                     session._suppress_property_execute = True
                 session._property_drag_moved = False
@@ -1060,10 +1108,17 @@ class GestureInputProcessor:
                         if arrow_direction > 0
                         else NUMBER_PART_DECREMENT
                     )
-                    changed = item.apply_property_wheel(
-                        arrow_direction,
-                        precise=getattr(event, 'shift', False),
-                    )
+                    if getattr(event, 'alt', False):
+                        changed = item.apply_property_wheel(
+                            arrow_direction,
+                            precise=getattr(event, 'shift', False),
+                            copy_to_selected=True,
+                        )
+                    else:
+                        changed = item.apply_property_wheel(
+                            arrow_direction,
+                            precise=getattr(event, 'shift', False),
+                        )
                     if changed:
                         session._poll_context_revision = (
                             getattr(session, '_poll_context_revision', 0) + 1
@@ -1086,11 +1141,19 @@ class GestureInputProcessor:
                 session._numeric_pressed_element = item
                 session._numeric_pressed_part = NUMBER_PART_VALUE
                 session._property_drag_moved = False
+                session._property_drag_selected_values = (
+                    item.capture_selected_property_values()
+                    if getattr(event, 'alt', False)
+                    else None
+                )
                 self._begin_property_drag_interaction(session, event)
                 return True
             if prop_type in {'BOOLEAN', 'ENUM'}:
                 session._event_consumed = True
-                changed = item.toggle_display_property()
+                if getattr(event, 'alt', False):
+                    changed = item.toggle_display_property(copy_to_selected=True)
+                else:
+                    changed = item.toggle_display_property()
                 if changed:
                     session._poll_context_revision = (
                         getattr(session, '_poll_context_revision', 0) + 1

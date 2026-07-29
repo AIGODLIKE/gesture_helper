@@ -15,6 +15,12 @@ from ..utils.public import (
 )
 from ..utils.expression import resolve_context_path
 from ..utils.public_gpu import PublicGpu
+from ..utils.selected_property import (
+    capture_selected_object_values,
+    resolve_context_property,
+    restore_snapshot_values,
+    set_snapshot_values,
+)
 
 
 class StoreValue:
@@ -59,6 +65,12 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         default=False,
         options={'SKIP_SAVE'},
     )
+    copy_to_selected: BoolProperty(
+        name='Copy to Selected',
+        description='Set the same value on matching properties of selected objects',
+        default=False,
+        options={'SKIP_SAVE'},
+    )
     mouse = None
     last_mouse = None
     _draw_handle = None
@@ -70,6 +82,22 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     _panel_freeze_active = False
     _cursor_modal_active = False
     _confirm_on_lmb_release = False
+    _selected_property_values = None
+
+    def _begin_selected_property_copy(self, context) -> None:
+        if self._selected_property_values is not None:
+            return
+        resolved = resolve_context_property(context, self.data_path)
+        if resolved is None:
+            self._selected_property_values = []
+            return
+        owner, rna_prop = resolved
+        self._selected_property_values = capture_selected_object_values(
+            context,
+            self.data_path,
+            owner,
+            rna_prop,
+        )
 
     @classmethod
     def poll(cls, context):
@@ -214,6 +242,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         self._modal_area = context.area
         self._modal_window = context.window
         self._cursor_modal_active = False
+        self._selected_property_values = None
+        if getattr(self, 'copy_to_selected', False) or getattr(event, 'alt', False):
+            self._begin_selected_property_copy(context)
         self._confirm_on_lmb_release = bool(
             event.type == 'LEFTMOUSE' and event.value == 'PRESS'
         )
@@ -250,8 +281,11 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
     def _cancel_and_exit(self) -> set:
         """Restore the original value and always release modal UI ownership."""
         try:
-            if self.___value___ is not None:
-                self.__restore__()
+            try:
+                if self.___value___ is not None:
+                    self.__restore__()
+            finally:
+                restore_snapshot_values(self._selected_property_values)
         except BaseException:
             try:
                 self.exit()
@@ -282,6 +316,11 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
 
             if et in POINTER_MOVE_EVENT_TYPES:
+                if (
+                        self._selected_property_values is None
+                        and getattr(event, 'alt', False)
+                ):
+                    self._begin_selected_property_copy(context)
                 delta = self.value_delta(event, vm)
                 if self.invert:
                     delta = -delta
@@ -293,6 +332,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
                 if current_value != value:
                     by_path_set_value(bpy.context, self.data_path.split("."), value)
                     current_value = resolve_context_path(context, self.data_path)
+                set_snapshot_values(self._selected_property_values, current_value)
                 self._set_display_text(
                     context,
                     self._format_display_text(value=current_value),
@@ -341,6 +381,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         finally:
             self._display_text = ""
             self._overlay_mouse = None
+            self._selected_property_values = None
             try:
                 if self._panel_freeze_active:
                     from ..utils.ui_draw_sync import (

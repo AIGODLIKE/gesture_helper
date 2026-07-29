@@ -620,23 +620,61 @@ class ElementLayoutProperty:
         except (AttributeError, ReferenceError, RuntimeError, TypeError):
             return True
 
-    def set_display_property_value(self, value) -> bool:
+    def capture_selected_property_values(self):
+        """Snapshot matching values on other selected objects for Alt editing."""
+        import bpy
+
+        resolved = self.resolve_property()
+        if resolved is None:
+            return []
+        from ..utils.selected_property import capture_selected_object_values
+
+        owner, rna_prop = resolved
+        return capture_selected_object_values(
+            bpy.context,
+            self.property_context_path,
+            owner,
+            rna_prop,
+        )
+
+    @staticmethod
+    def restore_selected_property_values(snapshots) -> bool:
+        from ..utils.selected_property import restore_snapshot_values
+
+        return restore_snapshot_values(snapshots)
+
+    def set_display_property_value(
+            self,
+            value,
+            *,
+            copy_to_selected: bool = False,
+            selected_targets=None,
+    ) -> bool:
         if not self.display_property_is_editable:
             return False
         resolved = self.resolve_property()
         if resolved is None:
             return False
         owner, rna_prop = resolved
+        if copy_to_selected and selected_targets is None:
+            selected_targets = self.capture_selected_property_values()
+        changed = False
         try:
             current = getattr(owner, rna_prop.identifier)
-            if current == value:
-                return False
-            setattr(owner, rna_prop.identifier, value)
-            return getattr(owner, rna_prop.identifier) != current
+            if current != value:
+                setattr(owner, rna_prop.identifier, value)
+                changed = getattr(owner, rna_prop.identifier) != current
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
-            return False
+            pass
+        if selected_targets is not None:
+            from ..utils.selected_property import set_snapshot_values
 
-    def reset_display_property_to_default(self) -> bool:
+            changed = set_snapshot_values(selected_targets, value) or changed
+        return changed
+
+    def reset_display_property_to_default(
+            self, *, copy_to_selected: bool = False, selected_targets=None,
+    ) -> bool:
         """Restore a writable scalar number or boolean to its RNA default."""
         if not self.display_property_is_editable:
             return False
@@ -653,7 +691,11 @@ class ElementLayoutProperty:
             default = rna_prop.default
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
-        return self.set_display_property_value(default)
+        return self.set_display_property_value(
+            default,
+            copy_to_selected=copy_to_selected,
+            selected_targets=selected_targets,
+        )
 
     @property
     def display_property_text(self) -> str:
@@ -754,7 +796,13 @@ class ElementLayoutProperty:
         else:
             start_mouse.x = mouse.x - raw_delta
 
-    def apply_property_wheel(self, direction: int, *, precise: bool = False) -> bool:
+    def apply_property_wheel(
+            self,
+            direction: int,
+            *,
+            precise: bool = False,
+            copy_to_selected: bool = False,
+    ) -> bool:
         """Apply one wheel notch to the displayed scalar numeric property."""
         if direction == 0 or not self.display_property_is_editable:
             return False
@@ -783,7 +831,10 @@ class ElementLayoutProperty:
             )
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return False
-        return self.set_display_property_value(value)
+        return self.set_display_property_value(
+            value,
+            copy_to_selected=copy_to_selected,
+        )
 
     @property
     def display_property_fraction(self) -> float | None:
@@ -812,6 +863,7 @@ class ElementLayoutProperty:
             *,
             precise: bool = False,
             return_applied_delta: bool = False,
+            selected_targets=None,
     ) -> bool | tuple[bool, float]:
         """Set a scrubbed value and report whether the RNA value changed."""
         def result(changed: bool, applied_delta=delta_px):
@@ -840,18 +892,15 @@ class ElementLayoutProperty:
             return_applied_delta=True,
         )
         try:
-            current = getattr(owner, rna_prop.identifier)
-            if current == value:
-                return result(False, applied_delta)
-            setattr(owner, rna_prop.identifier, value)
-            return result(
-                getattr(owner, rna_prop.identifier) != current,
-                applied_delta,
+            changed = self.set_display_property_value(
+                value,
+                selected_targets=selected_targets,
             )
+            return result(changed, applied_delta)
         except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
             return result(False)
 
-    def toggle_display_property(self) -> bool:
+    def toggle_display_property(self, *, copy_to_selected: bool = False) -> bool:
         """Cycle the value in place (bool toggle / enum cycle). Returns success."""
         if not self.display_property_is_editable:
             return False
@@ -860,7 +909,10 @@ class ElementLayoutProperty:
             return False
         owner, rna_prop = resolved
         if rna_prop.type == 'BOOLEAN' and not getattr(rna_prop, 'is_array', False):
-            return self.set_display_property_value(not getattr(owner, rna_prop.identifier))
+            return self.set_display_property_value(
+                not getattr(owner, rna_prop.identifier),
+                copy_to_selected=copy_to_selected,
+            )
         if rna_prop.type == 'ENUM' and not getattr(rna_prop, 'is_enum_flag', False):
             identifiers = [item.identifier for item in rna_prop.enum_items]
             if not identifiers:
@@ -870,7 +922,10 @@ class ElementLayoutProperty:
                 index = identifiers.index(current)
             except ValueError:
                 index = -1
-            return self.set_display_property_value(identifiers[(index + 1) % len(identifiers)])
+            return self.set_display_property_value(
+                identifiers[(index + 1) % len(identifiers)],
+                copy_to_selected=copy_to_selected,
+            )
         return False
 
     @property
