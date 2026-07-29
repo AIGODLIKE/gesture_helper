@@ -24,11 +24,6 @@ class FakeNode:
 
 
 class LayoutScaleTests(unittest.TestCase):
-    def test_read_only_preview_uses_requested_magnification(self):
-        self.assertEqual(layout_scale.preview_ui_scale(1.0, False), 1.0)
-        self.assertEqual(layout_scale.preview_ui_scale(1.0, True), 1.2)
-        self.assertAlmostEqual(layout_scale.preview_ui_scale(1.5, True), 1.8)
-
     def test_axes_are_clamped_independently(self):
         node = FakeNode(x=10.0, y=0.1, stored={"layout_scale_x", "layout_scale_y"})
         self.assertEqual(layout_scale.layout_scale_pair(node), (4.0, 0.25))

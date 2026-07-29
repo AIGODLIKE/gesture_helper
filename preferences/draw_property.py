@@ -348,17 +348,22 @@ class DrawProperty(bpy.types.PropertyGroup):
         col.prop(draw, 'dividing_line_height')
 
     @staticmethod
-    def draw_color_property(layout: bpy.types.UILayout):
+    def draw_color_property(
+            layout: bpy.types.UILayout,
+            *,
+            show_theme: bool = True,
+    ):
         pref = get_pref()
         draw = pref.draw_property
         box = layout.box()
 
-        preset = box.column(align=True)
-        preset.label(text='Overlay Theme')
-        preset.prop(draw, 'theme_preset', text='')
-        if draw.theme_preset == 'CUSTOM':
-            preset.label(text='Custom colors are stored with preferences')
-        box.separator()
+        if show_theme:
+            preset = box.column(align=True)
+            preset.label(text='Overlay Theme')
+            preset.prop(draw, 'theme_preset', text='')
+            if draw.theme_preset == 'CUSTOM':
+                preset.label(text='Custom colors are stored with preferences')
+            box.separator()
 
         bb = box.column(align=True)
         bb.label(text='Surfaces')

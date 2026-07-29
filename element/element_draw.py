@@ -319,15 +319,40 @@ class ElementDraw:
             )
             operator.layout_type = identifier
 
-        column.prop(self, 'layout_align', text='Align', toggle=True)
+        style = column.row(align=True)
+        style.prop(self, 'layout_align', text='Align', toggle=True)
+        style.prop(
+            self,
+            'layout_round_corners',
+            text='Round Corners',
+            toggle=True,
+        )
+        column.prop(
+            self,
+            'layout_align_separators',
+            text='Align Divider Corners',
+            toggle=True,
+        )
         alignment = column.row(align=True)
-        alignment.label(text='Alignment')
+        alignment.label(text='Items')
         for identifier, label in (
                 ('EXPAND', 'Expand'),
                 ('LEFT', 'Left'),
                 ('CENTER', 'Center'),
                 ('RIGHT', 'Right')):
             alignment.prop_enum(
+                self,
+                'layout_alignment',
+                identifier,
+                text=label,
+            )
+        text_alignment = column.row(align=True)
+        text_alignment.label(text='Text')
+        for identifier, label in (
+                ('TEXT_LEFT', 'Left'),
+                ('TEXT_CENTER', 'Center'),
+                ('TEXT_RIGHT', 'Right')):
+            text_alignment.prop_enum(
                 self,
                 'layout_alignment',
                 identifier,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 import bpy
 
@@ -98,15 +98,29 @@ def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
             ...
 
 
-def _replace_gesture_store(store, restore: dict, index: int):
-    """Replace the live collection and return lenient shortcut failures."""
+def _replace_gesture_store(
+        store,
+        restore: dict,
+        index: int,
+        *,
+        strict: bool = False,
+):
+    """Replace the live collection and return shortcut failures."""
     from ..gesture import gesture_keymap
     from ..gesture.gesture_keymap import suppress_keymap_restarts
     from .cache_state import CacheState
-    from .property import __set_prop__
+    from .property import __set_prop__, strict_property_assignment
+    from .public_cache import PublicCacheFunc
 
+    assignment_guard = strict_property_assignment() if strict else nullcontext()
     with suppress_gesture_disk_save():
-        with CacheState.batch(), suppress_radio_updates(), suppress_keymap_restarts():
+        with (
+            CacheState.batch(),
+            suppress_radio_updates(),
+            suppress_keymap_restarts(),
+            assignment_guard,
+        ):
+            PublicCacheFunc.prepare_store_replacement()
             # A full rebuild prevents failed/removed RNA proxies from surviving
             # in the deferred per-gesture invalidation set.
             CacheState.mark_structure_dirty(None)
@@ -119,12 +133,20 @@ def _replace_gesture_store(store, restore: dict, index: int):
                 store.index_gesture = 0
         from ..gesture.gesture_relationship import get_gesture_index
         get_gesture_index.cache_clear()
-        failures = gesture_keymap.GestureKeymap.key_restart()
+        failures = gesture_keymap.GestureKeymap.key_restart(
+            validate_from_index=0 if strict else None,
+        )
     return failures
 
 
-def _apply_gesture_data(store, gesture_data: dict, *, target_index=None) -> None:
-    """Apply lenient startup data transactionally to the live WM store."""
+def _apply_gesture_data(
+        store,
+        gesture_data: dict,
+        *,
+        target_index=None,
+        strict: bool = False,
+) -> None:
+    """Replace the live WM store transactionally."""
     from ..ops.export_import import sanitize_gesture_import_data
 
     restore = sanitize_gesture_import_data(gesture_data)
@@ -134,7 +156,17 @@ def _apply_gesture_data(store, gesture_data: dict, *, target_index=None) -> None
         target_index = previous_index
 
     try:
-        failures = _replace_gesture_store(store, restore, target_index)
+        failures = _replace_gesture_store(
+            store,
+            restore,
+            target_index,
+            strict=strict,
+        )
+        if strict and failures:
+            raise ValueError(
+                "Invalid imported shortcut: "
+                + "; ".join(str(failure) for failure in failures[:3])
+            )
     except Exception as apply_error:
         try:
             rollback_failures = _replace_gesture_store(
@@ -153,7 +185,7 @@ def _apply_gesture_data(store, gesture_data: dict, *, target_index=None) -> None
                 + "; ".join(str(failure) for failure in rollback_failures[:3])
             )
         raise
-    if failures:
+    if failures and not strict:
         log_backup(
             "gestures load skipped invalid shortcut(s): "
             + "; ".join(str(failure) for failure in failures[:3])

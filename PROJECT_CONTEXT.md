@@ -64,19 +64,28 @@ with bundled JSON presets, translations, and PNG icon assets.
    then eases its radius, sweep, opacity, and stroke weight into confirmation.
    `ROW`, `COLUMN`, and `BOX` are layout containers and `CHILD_GESTURE` creates
    nested menus. Layout containers keep Blender's two alignment concepts
-   separate: `layout_align` defaults on, removes inter-item spacing, makes a
-   populated BOX flush with its child surfaces, and treats every drawable
-   child run as one rounded group with a single outer border. Nested layout
-   containers own a complete four-corner perimeter instead of inheriting
-   square middle corners from their parent group.
-   `layout_alignment`
-   controls horizontal `EXPAND`/`LEFT`/`CENTER`/`RIGHT` distribution.
-   Gesture and menu separators share the same thin stroke metric. Separators
-   do not restart rounded corners on either side; empty layout containers
+   separate: `layout_align` defaults on and removes inter-item spacing;
+   `layout_round_corners` independently enables rounded layout and child
+   surfaces; and `layout_align_separators` controls whether a separator stays
+   inside one adjacent rounded group or breaks it into independently rounded
+   runs. A populated aligned BOX remains flush with its child surfaces and
+   uses one outer border. Nested layout containers normally own their
+   configured four-corner perimeter; when an aligned parent keeps
+   divider-separated items in one group, participating nested containers
+   inherit that group's exposed corners so divider-adjacent corners stay
+   square. `layout_alignment` supports horizontal
+   `EXPAND`/`LEFT`/`CENTER`/`RIGHT` item distribution plus
+   `TEXT_LEFT`/`TEXT_CENTER`/`TEXT_RIGHT` modes that retain expanded item
+   geometry and move only the label inside the space left by icons, status
+   markers, numeric arrows, and child-menu chevrons. Gesture and menu
+   separators share the same thin stroke metric. Empty layout containers
    measure to zero, are omitted by their parent, and publish no draw or hit
    area. Layout-row hover changes only the background fill (no
    hover outline); property backgrounds and slider fills receive the same
    color blend so their value fraction remains visible.
+   Hovering or pressing any part of a three-part numeric field switches its
+   label to the active text color so the value remains legible over the
+   interaction fill.
    `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip
@@ -90,17 +99,26 @@ with bundled JSON presets, translations, and PNG icon assets.
    `GestureMenuRuntime` draw handler and a menu-specific area lookup so the
    unified preview's radial GPU base cannot shadow its draw routing. Plain
    Space-drag or left-dragging a menu title converts a centered menu preview
-   to a movable anchored preview. The preview selector has a draggable title
-   bar with an independent persisted-in-session offset. Read-only gesture,
-   menu, and element previews use a 1.2 UI scale multiplier while retaining the
+   to a movable anchored preview. The preview selector's complete backplate is
+   draggable with an independent persisted-in-session offset, while its
+   gesture rows and close button retain click priority. Read-only gesture,
+   menu, and element previews use the normal Blender UI scale and retain the
    live overlay palette.
    Radial and menu gesture previews share the compact translated selector and
    viewport instruction HUD; the menu backend initializes, draws, and routes
    selector input through its own handler before menu hit testing. Its compact
-   selector keeps the translated Exit Preview action beside Select Gesture in
-   the top title row; radial previews retain the static point/line history when
-   entering child gestures while still suppressing the live mouse trail. Selector
-   hover events do not consume Space-drag navigation.
+   selector uses an unframed Select Gesture label followed by an X close button
+   at the far right of the top row; hovering the X shows a localized Close
+   Preview tooltip. The selector alone scales its fixed metrics by 1.2; gesture
+   rows fill the available selector width, and inactive row backgrounds use 0.1
+   of their normal alpha while hover/pressed colors remain unchanged. Its
+   batched SDF shader performs the same sRGB-to-framebuffer conversion as the
+   other gesture GPU primitives, so every selector surface matches the active
+   overlay theme. The instruction HUD starts inside the View3D top-left corner
+   and its complete surface can be dragged with a session-only offset. Radial
+   previews retain the static
+   point/line history when entering child gestures while still suppressing the
+   live mouse trail. Selector hover events do not consume Space-drag navigation.
    Large layout previews cache static measurements, cull off-screen subtrees,
    publish only token-current visible hit rows, and resolve each visible row's
    status, label, icon, and display metrics once per draw.
@@ -143,7 +161,11 @@ with bundled JSON presets, translations, and PNG icon assets.
    Their headers expose a non-persistent, default-off update override for the
    duration of the modal. Registration resets it to false, and preference
    backup/restore explicitly excludes it. `utils/session_state.py` arbitrates
-   preview ownership.
+   preview ownership. Complete gesture-store replacement synchronously releases
+   active/frozen selection proxies, relationship dictionaries, and derived LRU
+   entries before clearing the RNA `CollectionProperty`; Blender can immediately
+   reuse collection pointer identities, so deferring that invalidation until
+   the final batched rebuild can make update callbacks resolve destroyed items.
 6. `gesture/pass_through/*` handles forwarding to Blender's native keymaps when
    a gesture does not consume the event.
 
@@ -153,6 +175,10 @@ with bundled JSON presets, translations, and PNG icon assets.
   sub-panels; `ui/` defines lists, menus, context-menu integration, and the
   main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
   and modal pause status is the first header item after that title.
+  Overlay sizing and color controls live on a dedicated Style preferences page
+  and in a default-collapsed Style child of the N-panel. The N-panel child keeps
+  the active theme selector in its header so presets can be switched without
+  expanding the full style controls.
   Menu gestures expose a default-on Keep Open toggle beside Menu Style; pinned
   menus pass unrelated editor input through, remain visible after their own
   actions, and close explicitly from the title-bar X (or cancel input).
@@ -166,17 +192,25 @@ with bundled JSON presets, translations, and PNG icon assets.
 - Ctrl+Alt+Shift on `wm.gesture_add` imports every bundled preset, then
   stably groups only the new entries as example `RADIAL`, example `MENU`,
   normal `RADIAL`, and normal `MENU`; the final reordered list is scheduled
-  for persistence.
+  for persistence. The same modifiers on the bundled-preset
+  `wm.gesture_import` button transactionally replace the complete gesture
+  store with those four groups and roll back to the previous store if strict
+  RNA or shortcut validation fails.
 - `utils/preset.py` discovers `src/preset/*.json`; the five files beginning
   `Example ` are opt-in debug fixtures grouped as essentials, elements/layout,
-  property controls, combined menu examples, and validation states. Menu style,
+  property controls, combined menu examples, and validation states. Every
+  example shortcut is registered in both `3D View` and `Object Mode`. Menu style,
   operator-context, and practical viewport examples share one menu gesture,
   with divider rows between the three child sections. The essentials fixture
   combines the basic radial interaction into the complete direction-slots
   example. The elements/layout fixture
   explicitly demonstrates aligned `EXPAND`, `LEFT`, `CENTER`, and `RIGHT`
-  layouts with populated child groups, exposes boolean state icons through its
-  `Viewport States` child gesture, and
+  layouts with populated child groups. Its complete upper-right layout is
+  duplicated at the lower-left radial slot for simultaneous preview. The
+  upper-right copy retains its nonuniform example scale and loose alignment;
+  the lower-left copy uses normal 1.0 scaling with tight alignment. The curve
+  child menu uses the lower direction so both remain independently reachable.
+  It exposes boolean state icons through its `Viewport States` child gesture and
   includes the practical Subdivide modal control in its bottom extension.
   Property modal modes, quick-add actions, and editable displays share one flat
   menu separated by dividers. Coverage tests derive enum contracts from source and also require
@@ -220,13 +254,18 @@ flowchart TD
 - Lint: `python -m ruff check .`.
 - Blender smoke scripts cover preset coverage, UI-theme RNA application,
   selector press/release cancellation, property data paths, import
-  rollback/keymaps, lifecycle/reload, preview (including menu draw routing,
-  translation, the visible exit action, single-action flyout surface geometry,
-  enum flyouts, three-part numeric-field state/hit boxes, selector/title
+  rollback/keymaps (including complete replacement after prewarming nested
+  relationship, active-selection, and frozen-UI caches), lifecycle/reload,
+  preview (including menu draw routing,
+  translation, the visible X close action, selector scaling/full-width rows,
+  top-left instruction-HUD dragging, single-action flyout surface geometry,
+  enum flyouts, three-part numeric-field state/hit boxes, selector/backplate
   dragging, alignment RNA, and Space-drag), and
   panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`, and
   `BLENDER_USER_SCRIPTS`, plus `--background --python-exit-code 1`.
+- Focused example-keymap, selector-close, and numeric-hover verification:
+  `tests/blender_keymap_selector_hover_smoke.py`.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
   `GH_PANEL_AB_MODE=ELEMENT_PREVIEW`, and `GH_PANEL_AB_ELEMENT_COUNT=300`, then
   run `tests/blender_panel_profile_ab.py` in foreground Blender. The 300-leaf,
@@ -245,12 +284,13 @@ flowchart TD
 2. **Lint failure (reproducible):** `python -m ruff check .` reports `E402`
    at `utils/__init__.py:2` because `import bpy` follows `public_color`.
    This is low-risk behaviorally but blocks a clean lint gate.
-3. **Blender-only behavior remains higher risk than unit coverage:** the current
-   preview smoke passes in Blender 4.2.1 and 5.2.0, including theme preset
-   application/custom detection, normal-hover-pressed selector behavior, menu
-   animation, pinned-menu RNA defaults, enum flyouts, selector exit/title
-   dragging, and cleanup. Foreground visual placement, multi-window behavior,
-   and file-load restoration still require targeted manual checks.
+3. **Blender-only behavior remains higher risk than unit coverage:** focused
+   example-keymap, selector-close, and numeric-hover verification passes in
+   Blender 4.2.1. The installed Blender 5.2.0 LTS build can abort with a native
+   access violation before the preview smoke reaches Python assertions, so
+   current-version coverage remains unverified. Foreground visual placement,
+   multi-window behavior, and file-load restoration still require targeted
+   manual checks.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
@@ -262,7 +302,8 @@ flowchart TD
 ## Constraints
 
 - Support Blender 4.2+ and current 5.x; use version-safe Blender UI icons.
-- Preserve bundled example preset shortcuts and nested fixture state exactly.
+- Preserve bundled example key events and nested fixture state exactly; every
+  example shortcut must cover both `3D View` and `Object Mode`.
 - JSON is UTF-8; conditional `IF`/`ELIF`/`ELSE` elements must be consecutive.
 - Dynamic RNA paths must validate the live owner and fail closed when collection
   identity cannot be preserved.

@@ -265,13 +265,28 @@ class ElementLayoutProperty:
             ('LEFT', 'Left', 'Align items to the left'),
             ('CENTER', 'Center', 'Center items'),
             ('RIGHT', 'Right', 'Align items to the right'),
+            ('TEXT_LEFT', 'Text Left', 'Keep item placement but align text to the left'),
+            ('TEXT_CENTER', 'Text Center', 'Keep item placement but center the text'),
+            ('TEXT_RIGHT', 'Text Right', 'Keep item placement but align text to the right'),
         ),
         default='EXPAND',
         update=lambda self, context: self.clear_derived_cache(),
     )
     layout_align: BoolProperty(
         name='Align',
-        description='Remove spacing and merge adjacent item corners like Blender align=True',
+        description='Remove spacing between adjacent layout items like Blender align=True',
+        default=True,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
+    layout_round_corners: BoolProperty(
+        name='Round Corners',
+        description='Round the layout and its child surfaces',
+        default=True,
+        update=lambda self, context: self.clear_derived_cache(),
+    )
+    layout_align_separators: BoolProperty(
+        name='Align Divider Corners',
+        description='Keep items separated by dividers in the same rounded corner group',
         default=True,
         update=lambda self, context: self.clear_derived_cache(),
     )

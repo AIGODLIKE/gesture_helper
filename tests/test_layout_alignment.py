@@ -25,6 +25,64 @@ class LayoutAlignmentTests(unittest.TestCase):
             layout_alignment.layout_group_corner_mask(False, inherited),
             inherited,
         )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(
+                True,
+                inherited,
+                join_parent_group=True,
+            ),
+            inherited,
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(
+                True,
+                inherited,
+                round_corners=False,
+            ),
+            layout_alignment.ROUND_CORNERS_NONE,
+        )
+
+    def test_nested_layout_joins_aligned_separator_corner_group(self):
+        top, _separator, bottom = (
+            layout_alignment.aligned_surface_corner_masks(
+                (True, False, True),
+                horizontal=False,
+                align_separators=True,
+            )
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(
+                True,
+                top,
+                join_parent_group=True,
+            ),
+            (True, True, False, False),
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(
+                True,
+                bottom,
+                join_parent_group=True,
+            ),
+            (False, False, True, True),
+        )
+
+    def test_nested_layout_stays_rounded_when_separator_alignment_is_off(self):
+        top, _separator, bottom = (
+            layout_alignment.aligned_surface_corner_masks(
+                (True, False, True),
+                horizontal=False,
+                align_separators=False,
+            )
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(True, top),
+            layout_alignment.ROUND_CORNERS_ALL,
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(True, bottom),
+            layout_alignment.ROUND_CORNERS_ALL,
+        )
 
     def test_aligned_populated_box_has_no_inner_inset(self):
         self.assertEqual(
@@ -73,6 +131,53 @@ class LayoutAlignmentTests(unittest.TestCase):
         )
         self.assertEqual(center, ((9.0, 10.0), (21.0, 30.0)))
         self.assertEqual(right, ((18.0, 10.0), (30.0, 30.0)))
+
+    def test_text_alignment_expands_items_without_changing_distribution(self):
+        expected = ((0.0, 15.0), (17.0, 45.0))
+        for alignment in ('TEXT_LEFT', 'TEXT_CENTER', 'TEXT_RIGHT'):
+            self.assertEqual(
+                layout_alignment.resolve_layout_line(
+                    (10, 30),
+                    available=62,
+                    gap=2,
+                    alignment=alignment,
+                ),
+                expected,
+            )
+
+    def test_text_alignment_offsets_only_the_label(self):
+        self.assertEqual(
+            layout_alignment.resolve_text_alignment_offset(
+                20,
+                60,
+                'TEXT_LEFT',
+            ),
+            0.0,
+        )
+        self.assertEqual(
+            layout_alignment.resolve_text_alignment_offset(
+                20,
+                60,
+                'TEXT_CENTER',
+            ),
+            20.0,
+        )
+        self.assertEqual(
+            layout_alignment.resolve_text_alignment_offset(
+                20,
+                60,
+                'TEXT_RIGHT',
+            ),
+            40.0,
+        )
+        self.assertEqual(
+            layout_alignment.resolve_text_alignment_offset(
+                80,
+                60,
+                'TEXT_RIGHT',
+            ),
+            0.0,
+        )
 
     def test_overflow_is_proportionally_compressed(self):
         result = layout_alignment.resolve_layout_line(
@@ -151,6 +256,22 @@ class LayoutAlignmentTests(unittest.TestCase):
                 (False, False, False, False),
                 (False, False, False, False),
                 (False, False, False, False),
+                (False, False, True, True),
+            ),
+        )
+
+    def test_unaligned_separator_breaks_rounded_corner_groups(self):
+        self.assertEqual(
+            layout_alignment.aligned_surface_corner_masks(
+                (True, True, False, True, True),
+                horizontal=False,
+                align_separators=False,
+            ),
+            (
+                (True, True, False, False),
+                (False, False, True, True),
+                (False, False, False, False),
+                (True, True, False, False),
                 (False, False, True, True),
             ),
         )

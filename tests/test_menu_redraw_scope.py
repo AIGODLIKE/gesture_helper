@@ -460,7 +460,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
             (True, True, False, False),
         )
 
-    def test_read_only_menu_preview_uses_requested_scale(self):
+    def test_read_only_menu_preview_keeps_normal_scale(self):
         menu_module.bpy.context.preferences = types.SimpleNamespace(
             view=types.SimpleNamespace(ui_scale=1.0),
         )
@@ -468,7 +468,7 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime.preview_read_only = False
         self.assertEqual(runtime._metrics().scale, 1.0)
         runtime.preview_read_only = True
-        self.assertEqual(runtime._metrics().scale, 1.2)
+        self.assertEqual(runtime._metrics().scale, 1.0)
 
     def test_menu_close_button_has_distinct_hover_and_pressed_surfaces(self):
         runtime = menu_module.GestureMenuRuntime()

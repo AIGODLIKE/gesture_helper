@@ -17,12 +17,15 @@ from mathutils import Vector
 from ..utils.gpu import get_current_2d_rect
 from ..utils.layout_alignment import (
     ROUND_CORNERS_ALL,
+    ROUND_CORNERS_NONE,
     aligned_surface_corner_masks,
     layout_group_corner_mask,
     normalize_layout_alignment,
+    layout_text_alignment,
     resolve_box_inset,
     resolve_layout_cross_axis,
     resolve_layout_line,
+    resolve_text_alignment_offset,
     separator_line_width,
 )
 from ..utils.layout_scale import layout_scale_pair
@@ -49,6 +52,14 @@ class ElementLayoutGpu:
     @staticmethod
     def _layout_align_for(node) -> bool:
         return bool(getattr(node, 'layout_align', True))
+
+    @staticmethod
+    def _layout_round_corners_for(node) -> bool:
+        return bool(getattr(node, 'layout_round_corners', True))
+
+    @staticmethod
+    def _layout_align_separators_for(node) -> bool:
+        return bool(getattr(node, 'layout_align_separators', True))
 
     def _layout_gap_for(self, node, metrics) -> float:
         # Blender's Layout::row/column sets space_ to zero for align=True.
@@ -302,7 +313,11 @@ class ElementLayoutGpu:
             ops,
             metrics,
             w,
-            corner_mask=ROUND_CORNERS_ALL,
+            corner_mask=(
+                ROUND_CORNERS_ALL
+                if self._layout_round_corners_for(self)
+                else ROUND_CORNERS_NONE
+            ),
         )
 
     def draw_gpu_layout_inline(self, ops, width: float) -> None:
@@ -328,7 +343,11 @@ class ElementLayoutGpu:
             ops,
             metrics,
             width,
-            corner_mask=ROUND_CORNERS_ALL,
+            corner_mask=(
+                ROUND_CORNERS_ALL
+                if self._layout_round_corners_for(self)
+                else ROUND_CORNERS_NONE
+            ),
         )
 
     def _draw_layout_children(
@@ -338,24 +357,39 @@ class ElementLayoutGpu:
         """Draw children with Blender-style EXPAND/LEFT/CENTER/RIGHT alignment."""
         sizes = [self._layout_node_size(child, metrics) for child in children]
         alignment = self._layout_alignment_for(container)
+        text_alignment = layout_text_alignment(alignment)
         aligned = self._layout_align_for(container)
+        round_corners = self._layout_round_corners_for(container)
+        align_separators = self._layout_align_separators_for(container)
+        surface_flags = tuple(
+            not child.is_dividing_line
+            and (
+                not child.is_layout_container
+                or child.is_box
+                or self._layout_align_for(child)
+            )
+            for child in children
+        )
+        join_separator_group = (
+            aligned
+            and round_corners
+            and align_separators
+            and any(child.is_dividing_line for child in children)
+        )
         gap = 0.0 if aligned else metrics.gap
         corner_masks = (
             aligned_surface_corner_masks(
-                (
-                    not child.is_dividing_line
-                    and (
-                        not child.is_layout_container
-                        or child.is_box
-                        or self._layout_align_for(child)
-                    )
-                    for child in children
-                ),
+                surface_flags,
                 horizontal=horizontal,
                 outer=outer_corner_mask,
+                align_separators=align_separators,
             )
-            if aligned
-            else (ROUND_CORNERS_ALL,) * len(children)
+            if aligned and round_corners
+            else (
+                (ROUND_CORNERS_ALL,) * len(children)
+                if round_corners
+                else (ROUND_CORNERS_NONE,) * len(children)
+            )
         )
 
         if horizontal:
@@ -371,6 +405,15 @@ class ElementLayoutGpu:
             corner_mask = layout_group_corner_mask(
                 child.is_layout_container,
                 corner_mask,
+                round_corners=(
+                    self._layout_round_corners_for(child)
+                    if child.is_layout_container
+                    else round_corners
+                ),
+                join_parent_group=(
+                    join_separator_group
+                    and surface_flags[index]
+                ),
             )
             with gpu.matrix.push_pop():
                 if horizontal:
@@ -383,6 +426,7 @@ class ElementLayoutGpu:
                         child_w,
                         inside_box=inside_box,
                         corner_mask=corner_mask,
+                        text_alignment=text_alignment,
                     )
                 else:
                     x, child_w = resolve_layout_cross_axis(size.x, avail_w, alignment)
@@ -394,6 +438,7 @@ class ElementLayoutGpu:
                         child_w,
                         inside_box=inside_box,
                         corner_mask=corner_mask,
+                        text_alignment=text_alignment,
                     )
             if not horizontal:
                 cursor += size.y + gap
@@ -407,6 +452,7 @@ class ElementLayoutGpu:
             *,
             inside_box=False,
             corner_mask=ROUND_CORNERS_ALL,
+            text_alignment='LEFT',
     ):
         node.ops = ops
         if node.is_layout_container:
@@ -513,11 +559,13 @@ class ElementLayoutGpu:
             inside_box=inside_box,
             draw_rect=rect,
             corner_mask=corner_mask,
+            text_alignment=text_alignment,
         )
 
     def _draw_layout_leaf(
             self, item, ops, metrics, avail_w, *, inside_box=False,
             draw_rect=None, corner_mask=ROUND_CORNERS_ALL,
+            text_alignment='LEFT',
     ):
         row_h = metrics.row_h
         draw = self.draw_property
@@ -628,7 +676,6 @@ class ElementLayoutGpu:
                         item.gpu_draw_icon(False, icon_size=metrics.label_h)
                     cursor_x += metrics.label_h + metrics.gap
             with gpu.matrix.push_pop():
-                gpu.matrix.translate((cursor_x, 0))
                 label = (
                     item.display_property_text
                     if is_property_display
@@ -636,7 +683,20 @@ class ElementLayoutGpu:
                 )
                 from .element_gpu_draw import from_text_get_dimensions
                 dimensions = from_text_get_dimensions(label, metrics.text_size)
-                _tw, th = dimensions
+                tw, th = dimensions
+                right_reserve = metrics.pad_x + arrow_slot
+                if is_child_gesture:
+                    right_reserve += metrics.gap + metrics.chevron
+                available_text = max(
+                    0.0,
+                    avail_w - metrics.pad_x - cursor_x - right_reserve,
+                )
+                text_offset = resolve_text_alignment_offset(
+                    tw,
+                    available_text,
+                    text_alignment,
+                )
+                gpu.matrix.translate((cursor_x + text_offset, 0))
                 if th < metrics.label_h:
                     gpu.matrix.translate((0, -(metrics.label_h - th) * 0.5))
                 item.gpu_draw_label(

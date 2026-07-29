@@ -16,6 +16,10 @@ from ..utils.active_selection import ActiveSelection
 from ..utils.structure_cache_ops import StructureCacheOps
 
 
+def _preset_sort_key(gesture: dict, is_example: bool) -> tuple[bool, bool]:
+    return (not is_example, gesture.get('gesture_type') == 'MENU')
+
+
 def _get_preset_sort_keys(filepath: str, is_example: bool) -> list[tuple[bool, bool]]:
     """Return source-group/type sort keys in the JSON import order."""
     with open(filepath, encoding='utf-8') as file:
@@ -23,10 +27,43 @@ def _get_preset_sort_keys(filepath: str, is_example: bool) -> list[tuple[bool, b
     if not isinstance(gesture_data, dict):
         return []
     return [
-        (not is_example, gesture.get('gesture_type') == 'MENU')
+        _preset_sort_key(gesture, is_example)
         for gesture in gesture_data.values()
         if isinstance(gesture, dict)
     ]
+
+
+def get_all_preset_gesture_data() -> tuple[dict[str, dict], int]:
+    """Load every bundled preset in the bulk-import display order."""
+    from ..utils.preset import (
+        DEBUG_ONLY_PRESET_NAMES,
+        get_preset_gesture_list,
+    )
+
+    presets = get_preset_gesture_list(include_debug_only=True)
+    collected = []
+    for name, filepath in presets.items():
+        with open(filepath, encoding='utf-8') as file:
+            data = json.load(file)
+        gesture_data = data.get('gesture') if isinstance(data, dict) else None
+        if not isinstance(gesture_data, dict):
+            raise ValueError(
+                f"Invalid bundled preset {name!r}: missing 'gesture' data"
+            )
+        is_example = name in DEBUG_ONLY_PRESET_NAMES
+        for key, gesture in gesture_data.items():
+            if not isinstance(gesture, dict):
+                raise ValueError(
+                    f"Invalid bundled preset {name!r} gesture {key!r}: "
+                    "expected an object"
+                )
+            collected.append((_preset_sort_key(gesture, is_example), gesture))
+
+    collected.sort(key=lambda item: item[0])
+    return (
+        {str(index): gesture for index, (_, gesture) in enumerate(collected)},
+        len(presets),
+    )
 
 
 def _sort_imported_presets(gestures, start_index: int, sort_keys) -> bool:

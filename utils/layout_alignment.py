@@ -3,8 +3,22 @@
 from __future__ import annotations
 
 
-LAYOUT_ALIGNMENTS = frozenset({'EXPAND', 'LEFT', 'CENTER', 'RIGHT'})
+LAYOUT_ALIGNMENTS = frozenset({
+    'EXPAND',
+    'LEFT',
+    'CENTER',
+    'RIGHT',
+    'TEXT_LEFT',
+    'TEXT_CENTER',
+    'TEXT_RIGHT',
+})
+TEXT_LAYOUT_ALIGNMENTS = frozenset({
+    'TEXT_LEFT',
+    'TEXT_CENTER',
+    'TEXT_RIGHT',
+})
 ROUND_CORNERS_ALL = (True, True, True, True)
+ROUND_CORNERS_NONE = (False, False, False, False)
 
 
 def separator_line_width(configured_height, ui_scale) -> float:
@@ -20,9 +34,17 @@ def separator_line_width(configured_height, ui_scale) -> float:
     return max(0.75, max(1.0, configured_height) * max(0.5, ui_scale) * 0.4)
 
 
-def layout_group_corner_mask(is_layout_container, inherited):
-    """Give every nested layout group its own complete outer perimeter."""
-    if bool(is_layout_container):
+def layout_group_corner_mask(
+        is_layout_container,
+        inherited,
+        *,
+        round_corners=True,
+        join_parent_group=False,
+):
+    """Resolve the exposed corners for a nested layout group."""
+    if not bool(round_corners):
+        return ROUND_CORNERS_NONE
+    if bool(is_layout_container) and not bool(join_parent_group):
         return ROUND_CORNERS_ALL
     return tuple(bool(value) for value in inherited)
 
@@ -45,6 +67,41 @@ def normalize_layout_alignment(value) -> str:
     return value if value in LAYOUT_ALIGNMENTS else 'EXPAND'
 
 
+def is_text_layout_alignment(value) -> bool:
+    """Return whether an alignment mode changes label placement only."""
+    return normalize_layout_alignment(value) in TEXT_LAYOUT_ALIGNMENTS
+
+
+def layout_distribution_alignment(value) -> str:
+    """Map text-only modes to the expanded item distribution they require."""
+    value = normalize_layout_alignment(value)
+    return 'EXPAND' if value in TEXT_LAYOUT_ALIGNMENTS else value
+
+
+def layout_text_alignment(value) -> str:
+    """Return the label alignment represented by a layout mode."""
+    value = normalize_layout_alignment(value)
+    if value == 'TEXT_CENTER':
+        return 'CENTER'
+    if value == 'TEXT_RIGHT':
+        return 'RIGHT'
+    return 'LEFT'
+
+
+def resolve_text_alignment_offset(text_width, available, alignment) -> float:
+    """Return the non-negative label offset inside an available text slot."""
+    text_width = max(0.0, float(text_width))
+    available = max(0.0, float(available))
+    free = max(0.0, available - text_width)
+    if alignment not in {'LEFT', 'CENTER', 'RIGHT'}:
+        alignment = layout_text_alignment(alignment)
+    if alignment == 'CENTER':
+        return free * 0.5
+    if alignment == 'RIGHT':
+        return free
+    return 0.0
+
+
 def resolve_layout_line(sizes, available, gap, alignment):
     """Resolve one horizontal UILayout row into ``(position, width)`` pairs.
 
@@ -56,7 +113,7 @@ def resolve_layout_line(sizes, available, gap, alignment):
     if not values:
         return ()
 
-    alignment = normalize_layout_alignment(alignment)
+    alignment = layout_distribution_alignment(alignment)
     available = max(0.0, float(available))
     gap = max(0.0, float(gap))
     item_space = max(0.0, available - gap * (len(values) - 1))
@@ -176,12 +233,18 @@ def aligned_child_corner_masks(count, *, horizontal, outer=ROUND_CORNERS_ALL):
     return tuple(masks)
 
 
-def aligned_surface_corner_masks(surface_flags, *, horizontal, outer=ROUND_CORNERS_ALL):
+def aligned_surface_corner_masks(
+        surface_flags,
+        *,
+        horizontal,
+        outer=ROUND_CORNERS_ALL,
+        align_separators=True,
+):
     """Return masks for drawable surfaces inside one aligned panel.
 
-    Non-surface children such as separators do not create a new rounded group:
-    only the first and last drawable surfaces inherit the panel's exposed
-    corners. This keeps every boundary inside the shared panel square.
+    When ``align_separators`` is true, non-surface children such as separators
+    do not create a new rounded group. When it is false, each separator breaks
+    the aligned run so the surfaces on either side expose their own corners.
     """
     flags = tuple(bool(value) for value in surface_flags)
     count = len(flags)
@@ -193,11 +256,28 @@ def aligned_surface_corner_masks(surface_flags, *, horizontal, outer=ROUND_CORNE
     if not surface_indexes:
         return tuple(masks)
 
-    surface_masks = aligned_child_corner_masks(
-        len(surface_indexes),
-        horizontal=horizontal,
-        outer=outer,
-    )
-    for index, mask in zip(surface_indexes, surface_masks):
-        masks[index] = mask
+    if align_separators:
+        groups = (surface_indexes,)
+    else:
+        groups = []
+        group = []
+        previous = None
+        for index in surface_indexes:
+            if previous is None or index == previous + 1:
+                group.append(index)
+            else:
+                groups.append(tuple(group))
+                group = [index]
+            previous = index
+        if group:
+            groups.append(tuple(group))
+
+    for group in groups:
+        surface_masks = aligned_child_corner_masks(
+            len(group),
+            horizontal=horizontal,
+            outer=outer,
+        )
+        for index, mask in zip(group, surface_masks):
+            masks[index] = mask
     return tuple(masks)

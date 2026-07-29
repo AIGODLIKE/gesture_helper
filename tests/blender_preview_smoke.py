@@ -27,6 +27,10 @@ from gesture_helper.element.extension_hit import (  # noqa: E402
     numeric_property_arrow_direction,
     numeric_property_arrow_part,
 )
+from gesture_helper.ops.quick_add.draw_gpu import (  # noqa: E402
+    SELECTOR_INACTIVE_ALPHA,
+    SELECTOR_SCALE,
+)
 from gesture_helper.ops.quick_add.gesture_preview import GesturePreview  # noqa: E402
 from gesture_helper.ops.export_import import Export  # noqa: E402
 from gesture_helper.ui import ui_list  # noqa: E402
@@ -34,6 +38,7 @@ from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save 
 from gesture_helper.utils import gesture_persistence  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
+from gesture_helper.utils.color import color_to_gpu, color_to_srgb  # noqa: E402
 from gesture_helper.utils.number_arrows import (  # noqa: E402
     NUMBER_PART_DECREMENT,
     NUMBER_PART_INCREMENT,
@@ -44,7 +49,6 @@ from gesture_helper.utils.layout_alignment import (  # noqa: E402
     resolve_extension_row_bounds,
     separator_line_width,
 )
-from gesture_helper.utils.layout_scale import preview_ui_scale  # noqa: E402
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
 from gesture_helper.utils.ui_theme import THEME_PRESETS  # noqa: E402
@@ -292,11 +296,23 @@ with suppress_gesture_disk_save():
     second.name = 'Second'
     assert second.layout_align is True
     assert second.bl_rna.properties['layout_align'] is not None
+    assert second.layout_round_corners is True
+    assert second.layout_align_separators is True
+    assert second.bl_rna.properties['layout_round_corners'] is not None
+    assert second.bl_rna.properties['layout_align_separators'] is not None
     alignment_items = {
         item.identifier
         for item in second.bl_rna.properties['layout_alignment'].enum_items
     }
-    assert alignment_items == {'EXPAND', 'LEFT', 'CENTER', 'RIGHT'}
+    assert alignment_items == {
+        'EXPAND',
+        'LEFT',
+        'CENTER',
+        'RIGHT',
+        'TEXT_LEFT',
+        'TEXT_CENTER',
+        'TEXT_RIGHT',
+    }
     nested = second.element.add()
     nested.element_type = 'OPERATOR'
     nested.__init_element__()
@@ -351,6 +367,11 @@ with suppress_gesture_disk_save():
         numeric_ops,
         mouse=(108.0, 32.0),
     ) == NUMBER_PART_INCREMENT
+    numeric_ops.direction_element = None
+    numeric_ops.distance = 0.0
+    numeric_ops.session.draw_ctx = SimpleNamespace(mouse_region=(50.0, 32.0))
+    numeric.ops = numeric_ops
+    assert tuple(numeric.text_color) == tuple(draw_preferences.text_active_color)
 
     exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
     exported_box = next(
@@ -358,14 +379,22 @@ with suppress_gesture_disk_save():
         if item.get('name') == 'Second'
     )
     assert 'layout_align' not in exported_box
+    assert 'layout_round_corners' not in exported_box
+    assert 'layout_align_separators' not in exported_box
     second.layout_align = False
+    second.layout_round_corners = False
+    second.layout_align_separators = False
     exported_gesture = next(iter(get_pref().get_gesture_data(get_all=True).values()))
     exported_box = next(
         item for item in exported_gesture['element'].values()
         if item.get('name') == 'Second'
     )
     assert exported_box['layout_align'] is False
+    assert exported_box['layout_round_corners'] is False
+    assert exported_box['layout_align_separators'] is False
     second.layout_align = True
+    second.layout_round_corners = True
+    second.layout_align_separators = True
 
     page_root = gesture.element.add()
     page_root.element_type = 'COLUMN'
@@ -427,7 +456,7 @@ with suppress_gesture_disk_save():
     radial_preview = start_preview('GESTURE', 'RADIAL')
     assert abs(
         radial_preview.session.draw_ctx.ui_scale
-        - preview_ui_scale(view_preferences.ui_scale, True)
+        - view_preferences.ui_scale
     ) < 0.001
     assert radial_preview.session.phase.shows_radial_ui
     assert radial_preview.session._gesture_timeout_timer is None
@@ -472,27 +501,136 @@ with suppress_gesture_disk_save():
     menu_preview = start_preview('GESTURE', 'MENU')
     assert abs(
         menu_preview._metrics().scale
-        - preview_ui_scale(view_preferences.ui_scale, True)
+        - view_preferences.ui_scale
     ) < 0.001
     menu_colors = menu_preview._colors()
     assert menu_colors.row == menu_colors.background
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
     assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview
-    assert menu_preview.gpu.gesture_bpu.root.children
-    selector_nodes = tuple(menu_preview.gpu.gesture_bpu._walk())
-    assert any(
-        node.kind == 'OPERATOR'
-        and node.operator == 'wm.gesture_preview_close'
+    selector = menu_preview.gpu.gesture_bpu
+    assert selector.root.children
+    assert abs(selector.font_size - 12 * SELECTOR_SCALE) < 0.001
+    assert abs(selector.padding - 3 * SELECTOR_SCALE) < 0.001
+    assert abs(selector.min_row_height - 20 * SELECTOR_SCALE) < 0.001
+    assert abs(selector.gap - 2 * SELECTOR_SCALE) < 0.001
+    assert abs(selector.corner_radius - 4 * SELECTOR_SCALE) < 0.001
+    assert selector.root_draggable
+    selector._cached_batch_sig = ('stale-theme',)
+    draw_preferences.theme_preset = 'MINIMAL_DARK'
+    selector._sync_theme()
+    assert selector._cached_batch_sig is None
+    assert all(
+        abs(component - reference) < 1e-6
+        for component, reference in zip(
+            selector.background,
+            color_to_gpu(draw_preferences.overlay_background_color),
+        )
+    )
+    draw_preferences.theme_preset = 'BLENDER_DARK'
+    selector._sync_theme()
+    for actual, expected in (
+        (selector.background, color_to_gpu(draw_preferences.overlay_background_color)),
+        (selector.row_color, color_to_gpu(draw_preferences.background_operator_color)),
+        (selector.header_color, color_to_gpu(draw_preferences.overlay_header_color)),
+        (selector.hover_color, color_to_gpu(draw_preferences.interaction_hover_color)),
+        (selector.pressed_color, color_to_gpu(draw_preferences.interaction_pressed_color)),
+        (
+            selector.active_color,
+            color_to_gpu(draw_preferences.background_operator_active_color),
+        ),
+        (selector.text_color, color_to_srgb(draw_preferences.text_default_color)),
+        (selector.text_hover_color, color_to_srgb(draw_preferences.text_active_color)),
+        (selector.separator_color, color_to_gpu(draw_preferences.dividing_line_color)),
+    ):
+        assert all(
+            abs(component - reference) < 1e-6
+            for component, reference in zip(actual, expected)
+        ), (actual, expected)
+    selector_nodes = tuple(selector._walk())
+    selector_close = next(
+        node
+        for node in selector_nodes
+        if (
+            node.kind == 'OPERATOR'
+            and node.operator == 'wm.gesture_preview_close'
+        )
+    )
+    assert selector_close.text == 'X'
+    assert selector_close.tooltip == 'Close Preview'
+    selector_title = selector.root.children[0].children[0]
+    assert selector_title.kind == 'LABEL'
+    assert not selector_title.draggable
+    assert not any(
+        node.draggable
         for node in selector_nodes
     )
+    selector_items = tuple(
+        node
+        for node in selector_nodes
+        if node.kind == 'OPERATOR' and node.operator == 'wm.context_set_int'
+    )
+    assert selector_items
+    assert all(node.fill_width for node in selector_items)
+    assert all(
+        abs(node.alpha_multiplier - SELECTOR_INACTIVE_ALPHA) < 0.001
+        for node in selector_items
+    )
     assert menu_preview.gpu.tips.root.children
+    assert menu_preview.gpu.tips.anchor == 'TOP_LEFT_REGION'
+    assert menu_preview.gpu.tips.root_draggable
     assert 0.0 <= menu_preview._menu_animation_reveal() < 1.0
     assert menu_preview._menu_animation_timer is not None
     assert bpy.app.timers.is_registered(menu_preview._menu_animation_timer)
     with bpy.context.temp_override(**override):
-        menu_preview.gpu.gesture_bpu._ensure_layout()
+        selector._ensure_layout()
         menu_preview.gpu.tips._ensure_layout()
+    selector_title_row = selector.root.children[0]
+    assert abs(selector_title_row.rect[2] - selector.root.rect[2]) < 0.001
+    assert abs(selector_close.rect[2] - selector.root.rect[2]) < 0.001
+    selector.sync_input(
+        selector._base_offset_position,
+        (
+            (selector_close.rect[0] + selector_close.rect[2]) * 0.5,
+            (selector_close.rect[1] + selector_close.rect[3]) * 0.5,
+        ),
+    )
+    assert selector.hover_tooltip == 'Close Preview'
+    tips = menu_preview.gpu.tips
+    assert abs(tips.root.rect[0] - (region.x + tips.padding * 2)) < 0.001
+    assert abs(
+        tips.root.rect[3]
+        - (region.y + region.height - tips.padding * 2)
+    ) < 0.001
+    assert all(
+        abs(node.rect[2] - selector.root.rect[2]) < 0.001
+        for node in selector_items
+    )
+    tips_before = tips.drag_offset.copy()
+    tips_x = int((tips.root.rect[0] + tips.root.rect[2]) * 0.5)
+    tips_y = int((tips.root.rect[1] + tips.root.rect[3]) * 0.5)
+    tips_press = preview_event(region, 'LEFTMOUSE')
+    tips_press.mouse_x = tips_x
+    tips_press.mouse_y = tips_y
+    tips_press.value = 'PRESS'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, tips_press) == {'RUNNING_MODAL'}
+    tips_move = preview_event(region, 'MOUSEMOVE')
+    tips_move.mouse_x = tips_x + 18
+    tips_move.mouse_y = tips_y - 9
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, tips_move) == {'RUNNING_MODAL'}
+    assert tuple(tips.drag_offset) == (
+        tips_before.x + 18,
+        tips_before.y - 9,
+    )
+    tips_release = preview_event(region, 'LEFTMOUSE')
+    tips_release.mouse_x = tips_move.mouse_x
+    tips_release.mouse_y = tips_move.mouse_y
+    tips_release.value = 'RELEASE'
+    with bpy.context.temp_override(**override):
+        assert menu_preview.modal(bpy.context, tips_release) == {'RUNNING_MODAL'}
+    assert tips._drag_mouse is None
     for overlay in (menu_preview.gpu.gesture_bpu, menu_preview.gpu.tips):
         x1, y1, x2, y2 = overlay.root.rect
         assert x2 > region.x and x1 < region.x + region.width, overlay.root.rect
@@ -591,8 +729,7 @@ with suppress_gesture_disk_save():
         assert menu_preview.modal(bpy.context, action_release) == {'RUNNING_MODAL'}
     assert selector._pressed is None
 
-    selector_header = next(node for node in selector._walk() if node.draggable)
-    sx1, sy1, sx2, sy2 = selector_header.rect
+    sx1, sy1, sx2, sy2 = selector_title.rect
     selector_press = preview_event(region, 'LEFTMOUSE')
     selector_press.mouse_x = int((sx1 + sx2) * 0.5)
     selector_press.mouse_y = int((sy1 + sy2) * 0.5)

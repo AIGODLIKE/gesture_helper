@@ -348,6 +348,25 @@ with bpy.context.temp_override(**_view3d_override()):
     # The state-icon controls live in the element/layout example's child
     # gesture so closely related examples do not create separate presets.
     element_layout = gestures_by_name["Element and Layout Example"]
+    element_layout_directions = get_gesture_direction_items(element_layout.element)
+    layout_directions = {
+        direction: element
+        for direction, element in element_layout_directions.items()
+        if element.name == "Layout Containers"
+    }
+    assert set(layout_directions) == {"2", "6"}, element_layout_directions
+    upper_right_layout = layout_directions["2"]
+    lower_left_layout = layout_directions["6"]
+    assert not upper_right_layout.layout_align
+    assert not upper_right_layout.layout_round_corners
+    assert not upper_right_layout.layout_align_separators
+    assert abs(upper_right_layout.layout_scale_x - 1.15) < 0.001
+    assert abs(upper_right_layout.layout_scale_y - 0.9) < 0.001
+    assert lower_left_layout.layout_align
+    assert lower_left_layout.layout_round_corners
+    assert lower_left_layout.layout_align_separators
+    assert abs(lower_left_layout.layout_scale_x - 1.0) < 0.001
+    assert abs(lower_left_layout.layout_scale_y - 1.0) < 0.001
     viewport_states = next(
         element for element in _all_elements(element_layout)
         if element.name == "Viewport States"

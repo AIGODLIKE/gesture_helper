@@ -220,6 +220,14 @@ class ExamplePresetCoverageTests(unittest.TestCase):
             _resolve_items(element_path, _items_node(element_path, "layout_alignment"))
         )
         cls.default_layout_alignment = _property_default(element_path, "layout_alignment")
+        cls.default_layout_round_corners = _property_default(
+            element_path,
+            "layout_round_corners",
+        )
+        cls.default_layout_align_separators = _property_default(
+            element_path,
+            "layout_align_separators",
+        )
         cls.expected_property_drag_modes = _enum_ids(
             _resolve_items(enum_path, _items_node(element_path, "property_drag_mode"))
         )
@@ -261,6 +269,8 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         cls.observed_operator_contexts = set()
         cls.observed_layout_alignments = set()
         cls.observed_layout_align_modes = set()
+        cls.observed_layout_round_corner_modes = set()
+        cls.observed_layout_separator_align_modes = set()
         cls.observed_property_drag_modes = set()
         cls.observed_property_drag_invert_modes = set()
         cls.observed_property_show_value_modes = set()
@@ -299,6 +309,18 @@ class ExamplePresetCoverageTests(unittest.TestCase):
                             )
                             cls.observed_layout_align_modes.add(
                                 element.get("layout_align", True)
+                            )
+                            cls.observed_layout_round_corner_modes.add(
+                                element.get(
+                                    "layout_round_corners",
+                                    cls.default_layout_round_corners,
+                                )
+                            )
+                            cls.observed_layout_separator_align_modes.add(
+                                element.get(
+                                    "layout_align_separators",
+                                    cls.default_layout_align_separators,
+                                )
                             )
                         if element_type == "PROPERTY":
                             cls.observed_property_drag_modes.add(
@@ -364,7 +386,11 @@ class ExamplePresetCoverageTests(unittest.TestCase):
                 for modifier in ("shift", "ctrl", "alt", "oskey"):
                     self.assertFalse(key_data.get(modifier), path.name)
                 self.assertEqual(key_data.get("key_modifier"), "NONE", path.name)
-                self.assertIsInstance(json.loads(gesture.get("keymaps_string", "[]")), list)
+                self.assertEqual(
+                    json.loads(gesture.get("keymaps_string", "[]")),
+                    ["3D View", "Object Mode"],
+                    path.name,
+                )
 
     def test_every_example_is_registered_as_debug_only(self):
         self.assertEqual(
@@ -396,6 +422,57 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         self.assertEqual(matches[0].get("element_type"), "PROPERTY")
         self.assertNotIn("operator_bl_idname", matches[0])
 
+    def test_element_layout_example_previews_layout_on_both_diagonals(self):
+        path = PRESET_DIR / "Example Elements and Layout.json"
+        with path.open(encoding="utf-8") as handle:
+            preset = json.load(handle, object_pairs_hook=_reject_duplicate_keys)
+
+        gesture = next(iter(preset["gesture"].values()))
+        roots = list(gesture["element"].values())
+        layouts = [
+            element
+            for element in roots
+            if (
+                element.get("name") == "Layout Containers"
+                and element.get("element_type") == "BOX"
+            )
+        ]
+        self.assertEqual(len(layouts), 2)
+        self.assertEqual({layout.get("direction") for layout in layouts}, {"2", "6"})
+
+        upper_right, lower_left = sorted(layouts, key=lambda item: item["direction"])
+        self.assertEqual(lower_left["element"], upper_right["element"])
+        self.assertEqual(upper_right.get("layout_scale_x"), 1.15)
+        self.assertEqual(upper_right.get("layout_scale_y"), 0.9)
+        self.assertFalse(upper_right.get("layout_align"))
+        self.assertFalse(upper_right.get("layout_round_corners"))
+        self.assertFalse(upper_right.get("layout_align_separators"))
+        self.assertEqual(lower_left.get("layout_scale_x"), 1.0)
+        self.assertEqual(lower_left.get("layout_scale_y"), 1.0)
+        self.assertTrue(lower_left.get("layout_align"))
+        self.assertTrue(lower_left.get("layout_round_corners"))
+        self.assertTrue(lower_left.get("layout_align_separators"))
+        varying_keys = {
+            "direction",
+            "layout_scale_x",
+            "layout_scale_y",
+            "layout_align",
+            "layout_round_corners",
+            "layout_align_separators",
+        }
+        self.assertEqual(
+            {key: value for key, value in lower_left.items() if key not in varying_keys},
+            {key: value for key, value in upper_right.items() if key not in varying_keys},
+        )
+
+        curve_display = next(
+            element
+            for root in roots
+            for element in _element_values(root)
+            if element.get("name") == "Curve Display"
+        )
+        self.assertEqual(curve_display.get("direction"), "7")
+
     def test_gesture_and_menu_types_are_all_demonstrated(self):
         self.assertEqual(self.observed_gesture_types, self.expected_gesture_types)
         self.assertEqual(self.observed_menu_styles, self.expected_menu_styles)
@@ -418,6 +495,8 @@ class ExamplePresetCoverageTests(unittest.TestCase):
         self.assertEqual(self.observed_layout_alignments, self.expected_layout_alignments)
         self.assertEqual(self.observed_property_drag_modes, self.expected_property_drag_modes)
         self.assertEqual(self.observed_layout_align_modes, {False, True})
+        self.assertEqual(self.observed_layout_round_corner_modes, {False, True})
+        self.assertEqual(self.observed_layout_separator_align_modes, {False, True})
         self.assertEqual(self.observed_property_drag_invert_modes, {False, True})
         self.assertEqual(self.observed_property_show_value_modes, {False, True})
         self.assertEqual(self.observed_property_bool_icon_modes, {False, True})

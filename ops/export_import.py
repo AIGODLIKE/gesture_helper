@@ -109,18 +109,21 @@ EXPORT_PROPERTY_ITEM = {
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
         'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'COLUMN': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
         'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
     'BOX': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_OVERLAY_ITEM,
         'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
         'layout_scale', 'layout_scale_x', 'layout_scale_y',
     ],
 }
@@ -302,13 +305,40 @@ class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
 class Import(PublicFileOperator):
     bl_label = 'Import gesture'
     bl_idname = 'wm.gesture_import'
-    bl_description = 'Import gesture presets from a JSON file or bundled examples'
+    bl_description = (
+        'Import gesture presets from a JSON file or bundled examples.\n'
+        'Hold Ctrl+Alt+Shift while clicking the bundled-preset button to '
+        'replace all gestures with every bundled preset'
+    )
+    replace_with_all_presets: BoolProperty(
+        default=False,
+        options={'HIDDEN', 'SKIP_SAVE'},
+    )
+
     @property
     def preset_items(self):
         from ..utils.preset import get_preset_gesture_list
         return get_preset_gesture_list()
 
+    @staticmethod
+    def _replace_all_requested(preset_show, event) -> bool:
+        return bool(
+            preset_show
+            and event.ctrl
+            and event.alt
+            and event.shift
+        )
+
+    def invoke(self, context, event):
+        if self._replace_all_requested(self.preset_show, event):
+            self.replace_with_all_presets = True
+            return self.execute(context)
+        return super().invoke(context, event)
+
     def execute(self, _):
+        if self.replace_with_all_presets:
+            self.replace_with_all_presets = False
+            return self._replace_all_presets()
         if self.preset_show:
             return {'FINISHED'}
         from ..utils.gesture_persistence import suppress_gesture_disk_save
@@ -317,6 +347,9 @@ class Import(PublicFileOperator):
         with suppress_gesture_disk_save():
             if not self.gesture_import():
                 return {'CANCELLED'}
+        return self._finish_import('after_import')
+
+    def _finish_import(self, description: str):
         self.cache_clear()
         from ..utils.public import PublicProperty
         PublicProperty.update_state()
@@ -326,7 +359,7 @@ class Import(PublicFileOperator):
         )
 
         cancel_scheduled_gesture_save()
-        path = save_gestures_to_disk(description='after_import')
+        path = save_gestures_to_disk(description=description)
         if not path:
             from bpy.app.translations import pgettext
             self.report(
@@ -334,6 +367,44 @@ class Import(PublicFileOperator):
                 pgettext("Imported to memory; gesture file write failed"),
             )
         return {'FINISHED'}
+
+    def _replace_all_presets(self):
+        try:
+            from .gesture_cure import get_all_preset_gesture_data
+            from ..utils.gesture_persistence import _apply_gesture_data
+            from ..utils.gesture_store import get_gesture_store
+
+            gesture_data, preset_count = get_all_preset_gesture_data()
+            if not gesture_data:
+                raise ValueError("No bundled gesture presets found")
+            store = get_gesture_store()
+            if store is None:
+                raise RuntimeError("Gesture store unavailable")
+            _apply_gesture_data(
+                store,
+                gesture_data,
+                target_index=0,
+                strict=True,
+            )
+        except Exception as exc:
+            from bpy.app.translations import pgettext
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+
+            self.report(
+                {'ERROR'},
+                pgettext("Import error: %s") % pgettext(str(exc)),
+            )
+            debug_trace_stack(key='export_import')
+            debug_traceback(key='export_import')
+            return {'CANCELLED'}
+
+        from bpy.app.translations import pgettext
+
+        self.report(
+            {'INFO'},
+            pgettext("Replaced all gestures with %d presets") % preset_count,
+        )
+        return self._finish_import('after_bulk_preset_replace')
 
     def draw(self, _):
         layout = self.layout

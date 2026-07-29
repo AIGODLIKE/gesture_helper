@@ -3,18 +3,21 @@ from ...src.lib.overlay_layout import OverlayLayout
 from ...utils.debug_util import debug_print
 
 
+SELECTOR_SCALE = 1.2
+SELECTOR_INACTIVE_ALPHA = 0.1
+
+
 class DrawGpu:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gesture_bpu = OverlayLayout()
         self.gesture_bpu.anchor = 'RIGHT_CENTER'
-        # Keep the selector compact so the viewport remains usable while
-        # previewing the gesture.
-        self.gesture_bpu.font_size = 12
-        self.gesture_bpu.padding = 3
-        self.gesture_bpu.min_row_height = 20
-        self.gesture_bpu.gap = 2
-        self.gesture_bpu.corner_radius = 4
+        self.gesture_bpu.font_size = 12 * SELECTOR_SCALE
+        self.gesture_bpu.padding = 3 * SELECTOR_SCALE
+        self.gesture_bpu.min_row_height = 20 * SELECTOR_SCALE
+        self.gesture_bpu.gap = 2 * SELECTOR_SCALE
+        self.gesture_bpu.corner_radius = 4 * SELECTOR_SCALE
+        self.gesture_bpu.root_draggable = True
         self.tips = GestureShowTips()
         self._bpu_content_key = None
 
@@ -44,35 +47,39 @@ class DrawGpu:
 
             if content_key != self._bpu_content_key or not self.gesture_bpu.root.children:
                 with self.gesture_bpu as bpu:
-                    bpu.sync_input(offset, mouse)
-                    # Keep the exit action beside the selector title.  It is a
-                    # compact utility action, rather than a full-width row.
-                    with bpu.row() as title_row:
-                        title_row.label(
-                            __name_translate__("Select Gesture"), draggable=True,
-                        )
+                    selector_hover_changed = bpu.sync_input(offset, mouse)
+                    with bpu.row(fill_width=True, align_last=True) as title_row:
+                        title_row.label(__name_translate__("Select Gesture"))
                         title_row.operator(
                             "wm.gesture_preview_close",
-                            __name_translate__("Exit Preview"),
+                            "X",
+                            tooltip=__name_translate__("Close Preview"),
                         )
                     bpu.separator()
                     if gesture_list:
                         for g in gesture_list:
                             name = f"{__name_translate__(g.name)}({g.__key_str__})"
-                            o = bpu.operator("wm.context_set_int", name, active=g.is_active)
+                            o = bpu.operator(
+                                "wm.context_set_int",
+                                name,
+                                active=g.is_active,
+                                fill_width=True,
+                                alpha_multiplier=SELECTOR_INACTIVE_ALPHA,
+                            )
                             o.data_path = "window_manager.gesture_index"
                             o.value = g.index
                     else:
                         bpu.label(__name_translate__("No gestures. Please add one."), alert=True)
                 self._bpu_content_key = content_key
             else:
-                self.gesture_bpu.sync_input(offset, mouse)
+                selector_hover_changed = self.gesture_bpu.sync_input(offset, mouse)
 
             drag_revision = self.gesture_bpu.drag_revision
             interaction_revision = self.gesture_bpu.interaction_revision
             if self.gesture_bpu.check_event(event):
                 if (
-                        self.gesture_bpu.drag_revision != drag_revision
+                        selector_hover_changed
+                        or self.gesture_bpu.drag_revision != drag_revision
                         or self.gesture_bpu.interaction_revision != interaction_revision
                 ):
                     if getattr(ops, '_preview_renderer', '') == 'MENU':
@@ -80,6 +87,11 @@ class DrawGpu:
                     else:
                         ops.tag_redraw()
                 return {'RUNNING_MODAL'}
+            if selector_hover_changed:
+                if getattr(ops, '_preview_renderer', '') == 'MENU':
+                    ops._tag_menu_redraw()
+                else:
+                    ops.tag_redraw()
 
             if not self.tips.root.children:
                 with self.tips as tips:
@@ -90,7 +102,14 @@ class DrawGpu:
                         "Space-drag to move, right-click in the viewport to exit",
                     ]:
                         tips.label(pgettext_iface(text))
+            self.tips.sync_input((0.0, 0.0), mouse)
+            tips_drag_revision = self.tips.drag_revision
             if self.tips.check_event(event):
+                if self.tips.drag_revision != tips_drag_revision:
+                    if getattr(ops, '_preview_renderer', '') == 'MENU':
+                        ops._tag_menu_redraw()
+                    else:
+                        ops.tag_redraw()
                 return {'RUNNING_MODAL'}
         except Exception as e:
             debug_print(e.args, key='gpu')

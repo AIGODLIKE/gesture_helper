@@ -18,7 +18,7 @@
       "enabled": false,
       "gesture_type": "RADIAL",
       "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
-      "keymaps_string": "[\"3D View\"]",
+      "keymaps_string": "[\"3D View\", \"Object Mode\"]",
       "element": {
         "0": {
           "name": "Mesh Object",
@@ -57,7 +57,7 @@
             "1": {
               "name": "Curve Display",
               "element_type": "CHILD_GESTURE",
-              "direction": "6",
+              "direction": "7",
               "icon": "CURVE_BEZCURVE",
               "enabled_icon": true,
               "element": {
@@ -183,9 +183,71 @@
                   "operator_bl_idname": "view3d.view_all"
                 }
               }
+            },
+            "5": {
+              "name": "Text Left Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "TEXT_LEFT",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "6": {
+              "name": "Text Center Alignment",
+              "element_type": "COLUMN",
+              "layout_alignment": "TEXT_CENTER",
+              "layout_align": true,
+              "layout_round_corners": false,
+              "element": {
+                "0": {
+                  "name": "Perspective / Orthographic",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_persportho"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            },
+            "7": {
+              "name": "Text Right Alignment",
+              "element_type": "COLUMN",
+              "layout_alignment": "TEXT_RIGHT",
+              "layout_align": true,
+              "layout_align_separators": false,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "2": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
             }
           },
-          "layout_align": false
+          "layout_align": false,
+          "layout_round_corners": false,
+          "layout_align_separators": false
         },
         "4": {
           "name": "Viewport States",
@@ -272,6 +334,161 @@
               }
             }
           }
+        },
+        "6": {
+          "name": "Layout Containers",
+          "element_type": "BOX",
+          "direction": "6",
+          "layout_alignment": "CENTER",
+          "layout_scale_x": 1.0,
+          "layout_scale_y": 1.0,
+          "overlay_offset": [
+            12,
+            -6
+          ],
+          "element": {
+            "0": {
+              "name": "Expand Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "EXPAND",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "direction": "4",
+                  "main_item": true,
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "Show Overlays",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "space_data.overlay.show_overlays"
+                }
+              }
+            },
+            "1": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "2": {
+              "name": "Right Alignment",
+              "element_type": "COLUMN",
+              "layout_alignment": "RIGHT",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            },
+            "3": {
+              "name": "Left Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "LEFT",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Perspective / Orthographic",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_persportho"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            },
+            "4": {
+              "name": "Center Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "CENTER",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "5": {
+              "name": "Text Left Alignment",
+              "element_type": "ROW",
+              "layout_alignment": "TEXT_LEFT",
+              "layout_align": true,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "6": {
+              "name": "Text Center Alignment",
+              "element_type": "COLUMN",
+              "layout_alignment": "TEXT_CENTER",
+              "layout_align": true,
+              "layout_round_corners": false,
+              "element": {
+                "0": {
+                  "name": "Perspective / Orthographic",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_persportho"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            },
+            "7": {
+              "name": "Text Right Alignment",
+              "element_type": "COLUMN",
+              "layout_alignment": "TEXT_RIGHT",
+              "layout_align": true,
+              "layout_align_separators": false,
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "2": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            }
+          },
+          "layout_align": true,
+          "layout_round_corners": true,
+          "layout_align_separators": true
         }
       },
       "description": "Covers every element type plus layout alignment, tight spacing, scaling, offsets, and a main action"

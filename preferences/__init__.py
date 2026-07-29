@@ -57,7 +57,8 @@ class GesturePreferences(PublicProperty,
         description='Which preferences page to display',
         items=[
             ('GESTURE', 'Gesture', 'Gesture list and element editor'),
-            ('PROPERTY', 'Property', 'Draw, backup, and general settings'),
+            ('PROPERTY', 'Property', 'Gesture, backup, and general settings'),
+            ('STYLE', 'Style', 'Overlay appearance and color settings'),
         ],
     )
 
@@ -127,6 +128,10 @@ class GesturePreferences(PublicProperty,
                 res.pop("layout_alignment")
             if "layout_align" in res and res["layout_align"]:
                 res.pop("layout_align")
+            if "layout_round_corners" in res and res["layout_round_corners"]:
+                res.pop("layout_round_corners")
+            if "layout_align_separators" in res and res["layout_align_separators"]:
+                res.pop("layout_align_separators")
             if element_type in {"ROW", "COLUMN", "BOX"}:
                 scale_x = res.get("layout_scale_x")
                 scale_y = res.get("layout_scale_y")

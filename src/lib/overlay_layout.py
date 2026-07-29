@@ -34,6 +34,16 @@ void main()
 # Rounded-box SDF: rectData = (center_x, center_y, half_w, half_h) in region px.
 # fragPos is interpolated in the same space, so no gl_FragCoord assumptions.
 _FRAG_SRC = """
+/* Match builtin overlay shaders: IEC sRGB uniform -> linear framebuffer. */
+vec4 gesture_srgb_to_framebuffer_space(vec4 in_color)
+{
+    vec3 c = max(in_color.rgb, vec3(0.0));
+    vec3 c1 = c * (1.0 / 12.92);
+    vec3 c2 = pow((c + 0.055) * (1.0 / 1.055), vec3(2.4));
+    in_color.rgb = mix(c1, c2, step(vec3(0.04045), c));
+    return in_color;
+}
+
 void main()
 {
     vec2 p = fragPos - rectData.xy;
@@ -42,7 +52,9 @@ void main()
     vec2 q = abs(p) - (b - vec2(r));
     float d = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - r;
     float alpha = 1.0 - smoothstep(-0.75, 0.75, d);
-    fragColor = vec4(finalColor.rgb, finalColor.a * alpha);
+    vec4 col = gesture_srgb_to_framebuffer_space(finalColor);
+    col.a *= alpha;
+    fragColor = col;
 }
 """
 
@@ -88,6 +100,7 @@ def clear_overlay_shader():
 class OverlayNode:
     kind: str
     text: str = ""
+    tooltip: str = ""
     active: bool = False
     alert: bool = False
     operator: str = ""
@@ -95,6 +108,9 @@ class OverlayNode:
     data: object | None = None
     prop: str = ""
     draggable: bool = False
+    fill_width: bool = False
+    align_last: bool = False
+    alpha_multiplier: float = 1.0
     children: list["OverlayNode"] = field(default_factory=list)
     # (x1, y1, x2, y2) in window coordinates after arrange.
     rect: tuple[float, float, float, float] | None = None
@@ -203,8 +219,9 @@ class OverlayLayout:
         self._stack = [self.root]
         self.offset_position = Vector((0.0, 0.0))
         self.mouse_position = Vector((-1e6, -1e6))
-        # 'TOP_LEFT' | 'RIGHT_CENTER' | 'BOTTOM_LEFT_REGION'
+        # 'TOP_LEFT' | 'RIGHT_CENTER' | 'TOP_LEFT_REGION' | 'BOTTOM_LEFT_REGION'
         self.anchor = 'TOP_LEFT'
+        self.root_draggable = False
         self.font_size = 14
         self.padding = 7
         self.min_row_height = 24
@@ -266,22 +283,47 @@ class OverlayLayout:
     def separator(self):
         return self._add(OverlayNode("SEPARATOR"))
 
-    def operator(self, operator, text=None, active=False):
+    def operator(
+            self,
+            operator,
+            text=None,
+            active=False,
+            *,
+            tooltip="",
+            fill_width=False,
+            alpha_multiplier=1.0,
+    ):
         props = SimpleNamespace()
-        self._add(OverlayNode("OPERATOR", text=text or operator, active=active,
-                              operator=operator, properties=props))
+        self._add(OverlayNode(
+            "OPERATOR",
+            text=text or operator,
+            tooltip=str(tooltip),
+            active=active,
+            operator=operator,
+            properties=props,
+            fill_width=bool(fill_width),
+            alpha_multiplier=max(0.0, float(alpha_multiplier)),
+        ))
         return props
 
     def prop(self, data, prop, text=None):
         label = text or data.bl_rna.properties[prop].name
         return self._add(OverlayNode("PROPERTY", text=label, data=data, prop=prop))
 
-    def _container(self, kind):
-        node = self._add(OverlayNode(kind))
+    def _container(self, kind, *, fill_width=False, align_last=False):
+        node = self._add(OverlayNode(
+            kind,
+            fill_width=bool(fill_width),
+            align_last=bool(align_last),
+        ))
         return _LayoutScope(self, node)
 
-    def row(self):
-        return self._container("ROW")
+    def row(self, *, fill_width=False, align_last=False):
+        return self._container(
+            "ROW",
+            fill_width=fill_width,
+            align_last=align_last,
+        )
 
     def column(self):
         return self._container("COLUMN")
@@ -332,13 +374,28 @@ class OverlayLayout:
         cx, cy = x + inset, y - inset
         for child in node.children:
             self._arrange(child, cx, cy)
-            if child.draggable and node.kind in {'COLUMN', 'BOX'}:
+            if (
+                    node.kind in {'COLUMN', 'BOX'}
+                    and (child.draggable or child.fill_width)
+            ):
                 x1, y1, _x2, y2 = child.rect
                 child.rect = (x1, y1, x + node.size.x - inset, y2)
+                if child.kind == "ROW" and child.align_last and child.children:
+                    trailing = child.children[-1]
+                    delta_x = child.rect[2] - trailing.rect[2]
+                    if delta_x > 0.0:
+                        self._translate_node(trailing, delta_x, 0.0)
             if node.kind == "ROW":
                 cx += child.size.x + self.gap
             else:
                 cy -= child.size.y + self.gap
+
+    def _translate_node(self, node, dx, dy):
+        if node.rect is not None:
+            x1, y1, x2, y2 = node.rect
+            node.rect = (x1 + dx, y1 + dy, x2 + dx, y2 + dy)
+        for child in node.children:
+            self._translate_node(child, dx, dy)
 
     def _walk(self, node=None):
         node = node or self.root
@@ -351,12 +408,21 @@ class OverlayLayout:
         x, y = self.offset_position
         if self.anchor == 'RIGHT_CENTER':
             return Vector((x - w, y + h / 2))
+        if self.anchor == 'TOP_LEFT_REGION':
+            region = bpy.context.region
+            pad = self.padding * 2
+            if region is not None:
+                return Vector((
+                    region.x + pad + x,
+                    region.y + region.height - pad + y,
+                ))
+            return Vector((pad + x, pad + y))
         if self.anchor == 'BOTTOM_LEFT_REGION':
             region = bpy.context.region
             pad = self.padding * 2
             if region is not None:
-                return Vector((region.x + pad, region.y + pad + h))
-            return Vector((pad, pad + h))
+                return Vector((region.x + pad + x, region.y + pad + h + y))
+            return Vector((pad + x, pad + h + y))
         return Vector((x, y))
 
     def sync_input(self, offset, mouse):
@@ -372,18 +438,20 @@ class OverlayLayout:
         offset_changed = offset != self.offset_position
         mouse_changed = mouse != self.mouse_position
         if not offset_changed and not mouse_changed:
-            return
+            return False
         self.offset_position = offset
         self.mouse_position = mouse
         if offset_changed:
             self._laid_out = False
             self._cached_batch_sig = None
-            return
+            return False
         if self._laid_out:
             prev = self._hover
             self._update_hover()
             if self._hover is not prev:
                 self._cached_batch_sig = None
+                return True
+        return False
 
     def _update_hover(self):
         mouse = self.mouse_position
@@ -392,6 +460,13 @@ class OverlayLayout:
              if n.kind in {"OPERATOR", "PROPERTY"} and self._contains(n.rect, mouse)),
             None,
         )
+
+    @property
+    def hover_tooltip(self) -> str:
+        node = self._hover
+        if node is None:
+            return ""
+        return str(node.tooltip or "")
 
     def _ensure_layout(self):
         if self._laid_out:
@@ -471,8 +546,49 @@ class OverlayLayout:
         if node.alert and node.kind != "LABEL":
             return self.alert_color
         if node.kind in {"OPERATOR", "PROPERTY"}:
-            return self.row_color
+            return (
+                *self.row_color[:3],
+                self.row_color[3] * node.alpha_multiplier,
+            )
         return self.background
+
+    def _tooltip_geometry(self):
+        node = self._hover
+        text = self.hover_tooltip
+        if not text or node is None or node.rect is None:
+            return None
+        from ...utils.blf_text import measure_text
+
+        font_size = max(11.0, self.font_size * 0.9)
+        text_width, line_height = measure_text(text, font_size)
+        pad = max(4.0, self.padding)
+        width = text_width + pad * 2.0
+        height = line_height + pad * 2.0
+        gap = max(4.0, self.gap)
+        x2 = node.rect[2]
+        x1 = x2 - width
+        y1 = node.rect[3] + gap
+        y2 = y1 + height
+
+        region = bpy.context.region
+        if region is not None:
+            left = float(region.x) + 2.0
+            right = float(region.x + region.width) - 2.0
+            bottom = float(region.y) + 2.0
+            top = float(region.y + region.height) - 2.0
+            if y2 > top:
+                y2 = node.rect[1] - gap
+                y1 = y2 - height
+            if x1 < left:
+                x1 = left
+                x2 = min(right, x1 + width)
+            elif x2 > right:
+                x2 = right
+                x1 = max(left, x2 - width)
+            if y1 < bottom:
+                y1 = bottom
+                y2 = min(top, y1 + height)
+        return text, font_size, pad, line_height, (x1, y1, x2, y2)
 
     def _build_rect_batch(self, ox, oy) -> _RectBatch:
         rects = _RectBatch()
@@ -496,6 +612,17 @@ class OverlayLayout:
                 continue
             rects.add(x1 - ox, y1 - oy, x2 - ox, y2 - oy,
                       self._node_fill(node), self.corner_radius)
+        tooltip = self._tooltip_geometry()
+        if tooltip is not None:
+            _text, _font_size, _pad, _line_height, (x1, y1, x2, y2) = tooltip
+            rects.add(
+                x1 - ox,
+                y1 - oy,
+                x2 - ox,
+                y2 - oy,
+                self.header_color,
+                self.corner_radius,
+            )
         rects.build()
         return rects
 
@@ -503,6 +630,7 @@ class OverlayLayout:
         hover_key = id(self._hover) if self._hover is not None else 0
         pressed_key = id(self._pressed) if self._pressed is not None else 0
         root_rect = self.root.rect
+        tooltip = self._tooltip_geometry()
         return (
             self._content_gen,
             root_rect,
@@ -520,6 +648,7 @@ class OverlayLayout:
             self.separator_color,
             self.corner_radius,
             self.padding,
+            tooltip,
         )
 
     def __gpu_draw__(self):
@@ -556,6 +685,15 @@ class OverlayLayout:
                 baseline = y2 - (node.size.y - line_h) * 0.5 - ascent
                 blf.position(0, x1 + self.padding - ox, baseline - oy, 0)
                 blf.draw(0, self._node_text(node))
+            tooltip = self._tooltip_geometry()
+            if tooltip is not None:
+                text, font_size, pad, line_h, (x1, y1, _x2, y2) = tooltip
+                ascent, _descent, _metric_h = line_metrics(font_size)
+                blf.size(0, font_size)
+                blf.color(0, *self.text_hover_color)
+                baseline = y2 - (y2 - y1 - line_h) * 0.5 - ascent
+                blf.position(0, x1 + pad - ox, baseline - oy, 0)
+                blf.draw(0, text)
         finally:
             gpu_draw_end()
 
@@ -624,6 +762,17 @@ class OverlayLayout:
             if header is not None:
                 self._drag_mouse = Vector((event.mouse_x, event.mouse_y))
                 return True
+            if (
+                    self.root_draggable
+                    and self._hover is None
+                    and self.root.rect is not None
+            ):
+                x1, y1, x2, y2 = self.root.rect
+                pad = self.padding
+                root_surface = (x1 - pad, y1 - pad, x2 + pad, y2 + pad)
+                if self._contains(root_surface, self.mouse_position):
+                    self._drag_mouse = Vector((event.mouse_x, event.mouse_y))
+                    return True
 
         node = self._hover
         if node is None:

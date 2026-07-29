@@ -270,12 +270,52 @@ class GesturePropertyPanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         PreferencesDraw.draw_ui_property(layout)
 
 
+class GestureStylePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
+    bl_label = "Style"
+    bl_idname = "GESTURE_PT_Style"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Gesture"
+    bl_parent_id = GesturePanel.bl_idname
+    bl_options = {"DEFAULT_CLOSED"}
+
+    @classmethod
+    def poll(cls, context):
+        return GesturePanel.poll(context)
+
+    def draw_header_preset(self, context):
+        from ..utils.ui_draw_sync import heavy_panel_skip_message
+
+        self.layout.enabled = not heavy_panel_skip_message(context)
+        self.layout.prop(get_pref().draw_property, 'theme_preset', text='')
+
+    def draw(self, context):
+        from ..utils.ui_draw_sync import (
+            draw_heavy_panel_paused,
+            panel_pause_state,
+        )
+
+        msg, layout_frozen = panel_pause_state(context)
+        if msg and not layout_frozen:
+            draw_heavy_panel_paused(self.layout, msg)
+            return
+        layout = self.layout
+        layout.scale_y = 1.2
+        layout.enabled = not msg
+        PreferencesDraw.draw_ui_style(
+            layout,
+            compact=True,
+            show_theme=False,
+        )
+
+
 panel_list = (
     GesturePanel,
     GestureItemPanel,
     GestureElementPanel,
     GestureModalEventPanel,
     GesturePropertyPanel,
+    GestureStylePanel,
 )
 
 

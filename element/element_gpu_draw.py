@@ -210,7 +210,15 @@ class ElementGpuProperty:
         if status.is_error:
             color = tuple(draw.text_active_color)
             return (*color[:3], max(0.92, color[3]))
-        color = tuple(draw.text_active_color if self.is_active_direction else draw.text_default_color)
+        active = self.is_active_direction
+        if self.numeric_arrows_visible:
+            hovered_part, pressed_part = self._numeric_field_states()
+            active = bool(
+                active
+                or hovered_part is not None
+                or pressed_part is not None
+            )
+        color = tuple(draw.text_active_color if active else draw.text_default_color)
         if status is ElementStatus.DISABLED:
             return tuple(getattr(
                 draw,

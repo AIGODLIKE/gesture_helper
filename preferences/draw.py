@@ -155,6 +155,26 @@ class PreferencesDraw(GestureDraw):
         col = row.box().column(align=True)
         col.label(text='Gesture')
         preferences.GestureProperty.draw_gesture_property(col)
-        col.separator()
-        preferences.DrawProperty.draw_text_property(col)
-        preferences.DrawProperty.draw_color_property(col)
+
+    @staticmethod
+    def draw_ui_style(layout, *, compact=False, show_theme=True):
+        """Draw overlay appearance and color settings."""
+        from .. import preferences
+
+        if compact:
+            container = layout.column(align=True)
+            container.use_property_split = True
+            preferences.DrawProperty.draw_text_property(container)
+            preferences.DrawProperty.draw_color_property(
+                container,
+                show_theme=show_theme,
+            )
+            return
+
+        row = layout.row()
+        row.use_property_split = True
+        preferences.DrawProperty.draw_text_property(row.column(align=True))
+        preferences.DrawProperty.draw_color_property(
+            row.column(align=True),
+            show_theme=show_theme,
+        )

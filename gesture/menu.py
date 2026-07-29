@@ -18,7 +18,6 @@ from ..utils.layout_alignment import (
     blend_layout_hover_color,
     separator_line_width,
 )
-from ..utils.layout_scale import preview_ui_scale
 from ..utils.number_arrows import (
     number_edge_color,
     NUMBER_HOVER_BLEND,
@@ -523,10 +522,7 @@ class GestureMenuRuntime(PublicGpu):
             return True
 
     def _metrics(self) -> MenuMetrics:
-        scale = preview_ui_scale(
-            max(0.5, float(bpy.context.preferences.view.ui_scale)),
-            getattr(self, 'preview_read_only', False),
-        )
+        scale = max(0.5, float(bpy.context.preferences.view.ui_scale))
         style = self._menu_style()
         if style == 'COMPACT':
             font_size = 11.0 * scale

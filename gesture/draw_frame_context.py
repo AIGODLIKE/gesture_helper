@@ -6,8 +6,6 @@ from dataclasses import dataclass
 
 import bpy
 
-from ..utils.layout_scale import preview_ui_scale
-
 
 @dataclass(slots=True)
 class DrawFrameContext:
@@ -44,11 +42,6 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
         scale = float(bpy.context.preferences.view.ui_scale)
     except (AttributeError, TypeError):
         scale = 1.0
-    scale = preview_ui_scale(
-        scale,
-        getattr(ops, "preview_read_only", False),
-    )
-
     pref = ops.pref
     draw = pref.draw_property
     gp = pref.gesture_property
