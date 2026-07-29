@@ -331,13 +331,15 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 1)
         self.assertEqual(
             runtime.draw_rounded_rectangle_area.call_args.kwargs["color"],
-            colors.row,
+            colors.background,
         )
         runtime.draw_image.assert_not_called()
         self.assertIsNone(boolean_row.decrement_rect)
         self.assertIsNone(boolean_row.increment_rect)
 
         runtime.draw_2d_line.reset_mock()
+        runtime.draw_rounded_rectangle_area.reset_mock()
+        runtime.draw_rectangle.reset_mock()
         numeric_row = menu_module.MenuRow(
             types.SimpleNamespace(
                 display_property_type="FLOAT",
@@ -355,13 +357,13 @@ class MenuRedrawScopeTests(unittest.TestCase):
         self.assertIsNotNone(numeric_row.decrement_rect)
         self.assertIsNotNone(numeric_row.value_rect)
         self.assertIsNotNone(numeric_row.increment_rect)
-        self.assertEqual(numeric_row.decrement_rect[0], numeric_row.rect[0] + 2.0)
+        self.assertEqual(numeric_row.decrement_rect[0], numeric_row.rect[0])
         self.assertEqual(numeric_row.decrement_rect[2], numeric_row.value_rect[0])
         self.assertEqual(numeric_row.value_rect[2], numeric_row.increment_rect[0])
-        self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2] - 2.0)
+        self.assertEqual(numeric_row.increment_rect[2], numeric_row.rect[2])
         self.assertEqual(runtime.draw_2d_line.call_count, 4)
-        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 1)
-        self.assertEqual(runtime.draw_rectangle.call_count, 4)
+        self.assertEqual(runtime.draw_rounded_rectangle_area.call_count, 4)
+        runtime.draw_rectangle.assert_not_called()
 
     def test_menu_row_has_distinct_normal_hover_and_pressed_surfaces(self):
         runtime = menu_module.GestureMenuRuntime()
@@ -388,10 +390,85 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime._draw_row(row, self._metrics(), colors)
         pressed = runtime.draw_rounded_rectangle_area.call_args.kwargs["color"]
 
-        self.assertEqual(normal, colors.row)
+        self.assertEqual(normal, colors.background)
         self.assertEqual(hovered, colors.hover)
         self.assertEqual(pressed, colors.pressed)
         self.assertEqual(len({normal, hovered, pressed}), 3)
+
+    def test_menu_rows_fill_their_complete_adjacent_bounds(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_hovered_row = None
+        runtime._menu_pressed_row = None
+        runtime.draw_rounded_rectangle_area = Mock()
+        runtime.draw_rectangle = Mock()
+        runtime.draw_text = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(is_draw_icon=False),
+            "Action",
+            "OPERATOR",
+            rect=(0.0, 24.0, 200.0, 48.0),
+        )
+
+        runtime._draw_row(row, self._metrics(), self._colors())
+
+        surface = runtime.draw_rounded_rectangle_area.call_args.kwargs
+        self.assertEqual(surface["width"], 200.0)
+        self.assertEqual(surface["height"], 24.0)
+
+    def test_menu_rows_keep_only_exposed_panel_corners(self):
+        root = menu_module.MenuPanel(
+            depth=0,
+            rows=[],
+            rect=(0.0, 0.0, 200.0, 72.0),
+            header_rect=(0.0, 48.0, 200.0, 72.0),
+        )
+        middle = menu_module.MenuRow(
+            None,
+            "Middle",
+            "OPERATOR",
+            rect=(0.0, 24.0, 200.0, 48.0),
+        )
+        bottom = menu_module.MenuRow(
+            None,
+            "Bottom",
+            "OPERATOR",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        flyout = menu_module.MenuPanel(
+            depth=1,
+            rows=[],
+            rect=(0.0, 0.0, 200.0, 48.0),
+        )
+        flyout_top = menu_module.MenuRow(
+            None,
+            "Top",
+            "OPERATOR",
+            rect=(0.0, 24.0, 200.0, 48.0),
+        )
+
+        self.assertEqual(
+            menu_module._menu_row_corner_mask(root, middle),
+            (False, False, False, False),
+        )
+        self.assertEqual(
+            menu_module._menu_row_corner_mask(root, bottom),
+            (False, False, True, True),
+        )
+        self.assertEqual(
+            menu_module._menu_row_corner_mask(flyout, flyout_top),
+            (True, True, False, False),
+        )
+
+    def test_read_only_menu_preview_uses_requested_scale(self):
+        menu_module.bpy.context.preferences = types.SimpleNamespace(
+            view=types.SimpleNamespace(ui_scale=1.0),
+        )
+        runtime = menu_module.GestureMenuRuntime()
+        runtime.preview_read_only = False
+        self.assertEqual(runtime._metrics().scale, 1.0)
+        runtime.preview_read_only = True
+        self.assertEqual(runtime._metrics().scale, 1.2)
 
     def test_menu_close_button_has_distinct_hover_and_pressed_surfaces(self):
         runtime = menu_module.GestureMenuRuntime()

@@ -66,12 +66,15 @@ with bundled JSON presets, translations, and PNG icon assets.
    nested menus. Layout containers keep Blender's two alignment concepts
    separate: `layout_align` defaults on, removes inter-item spacing, makes a
    populated BOX flush with its child surfaces, and treats every drawable
-   child surface as one rounded group with a single outer border.
+   child run as one rounded group with a single outer border. Nested layout
+   containers own a complete four-corner perimeter instead of inheriting
+   square middle corners from their parent group.
    `layout_alignment`
    controls horizontal `EXPAND`/`LEFT`/`CENTER`/`RIGHT` distribution.
-   Separators do not restart rounded corners on either side; empty layout
-   containers measure to zero, are omitted by their parent, and publish no
-   draw or hit area. Layout-row hover changes only the background fill (no
+   Gesture and menu separators share the same thin stroke metric. Separators
+   do not restart rounded corners on either side; empty layout containers
+   measure to zero, are omitted by their parent, and publish no draw or hit
+   area. Layout-row hover changes only the background fill (no
    hover outline); property backgrounds and slider fills receive the same
    color blend so their value fraction remains visible.
    `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
@@ -88,7 +91,9 @@ with bundled JSON presets, translations, and PNG icon assets.
    unified preview's radial GPU base cannot shadow its draw routing. Plain
    Space-drag or left-dragging a menu title converts a centered menu preview
    to a movable anchored preview. The preview selector has a draggable title
-   bar with an independent persisted-in-session offset.
+   bar with an independent persisted-in-session offset. Read-only gesture,
+   menu, and element previews use a 1.2 UI scale multiplier while retaining the
+   live overlay palette.
    Radial and menu gesture previews share the compact translated selector and
    viewport instruction HUD; the menu backend initializes, draws, and routes
    selector input through its own handler before menu hit testing. Its compact
@@ -105,9 +110,12 @@ with bundled JSON presets, translations, and PNG icon assets.
    independent normal, hover, and pressed feedback: edge clicks step, the
    value region scrubs or invokes property editing, and wheel input steps
    hovered values without leaking through a persistent menu to the editor.
-   Persistent-menu numeric fields use the same horizontal and vertical inset
-   as other row surfaces, but their background, slider fill, and three arrow
-   regions are square rather than rounded. Edge chevrons scale with row height.
+   Persistent-menu rows use the panel background in their idle state and meet
+   adjacent rows without an inset; internal row corners are square, while only
+   the exposed panel perimeter remains rounded. Numeric fields use the complete
+   row surface; their three internal part boundaries remain square, while an
+   exposed field edge inherits the panel perimeter corners. Edge chevrons scale
+   with row height.
    A radial numeric root still uses its complete item bounds,
    including the configured text margin, as that three-part field; it has no
    separate wrapper or inset numeric surface. Read-only numeric rows suppress

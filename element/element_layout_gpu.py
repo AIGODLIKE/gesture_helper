@@ -18,10 +18,12 @@ from ..utils.gpu import get_current_2d_rect
 from ..utils.layout_alignment import (
     ROUND_CORNERS_ALL,
     aligned_surface_corner_masks,
+    layout_group_corner_mask,
     normalize_layout_alignment,
     resolve_box_inset,
     resolve_layout_cross_axis,
     resolve_layout_line,
+    separator_line_width,
 )
 from ..utils.layout_scale import layout_scale_pair
 from ..utils.texture import Texture
@@ -54,14 +56,15 @@ class ElementLayoutGpu:
 
     @staticmethod
     def _layout_separator_height(metrics) -> float:
-        """Actual line height; separators do not own hidden vertical padding."""
-        return max(1.0, metrics.sep_h * 0.25)
+        """Actual shared line height; separators own no hidden vertical padding."""
+        return metrics.separator_line_width
 
     def _layout_metrics(self):
         from ..utils.blf_text import text_line_height
         text_size = float(self.text_size)
         label_h = text_line_height(text_size)
         mx, my = self.layout_margin
+        ui_scale = self._element_ui_scale()
         return SimpleNamespace(
             text_size=text_size,
             label_h=label_h,
@@ -73,6 +76,10 @@ class ElementLayoutGpu:
             margin_y=float(my),
             chevron=label_h * self._LAYOUT_CHEVRON_FRAC,
             sep_h=label_h * self._LAYOUT_SEP_FRAC,
+            separator_line_width=separator_line_width(
+                self.draw_property.dividing_line_height,
+                ui_scale,
+            ),
         )
 
     def _layout_children(self):
@@ -102,6 +109,7 @@ class ElementLayoutGpu:
             float(metrics.pad_y),
             float(metrics.chevron),
             float(metrics.sep_h),
+            float(metrics.separator_line_width),
         )
 
     def _prepare_layout_measure_cache(self, metrics) -> None:
@@ -360,6 +368,10 @@ class ElementLayoutGpu:
 
         for index, (child, size, corner_mask) in enumerate(
                 zip(children, sizes, corner_masks)):
+            corner_mask = layout_group_corner_mask(
+                child.is_layout_container,
+                corner_mask,
+            )
             with gpu.matrix.push_pop():
                 if horizontal:
                     x, child_w = slots[index]

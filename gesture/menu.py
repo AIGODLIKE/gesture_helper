@@ -13,7 +13,12 @@ from ..utils.color import color_to_srgb
 from ..utils.gesture_items import get_gesture_extension_items, poll_context_fingerprint
 from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 from ..utils.region_mouse import find_window_region, mouse_in_window_region
-from ..utils.layout_alignment import blend_layout_hover_color
+from ..utils.layout_alignment import (
+    ROUND_CORNERS_ALL,
+    blend_layout_hover_color,
+    separator_line_width,
+)
+from ..utils.layout_scale import preview_ui_scale
 from ..utils.number_arrows import (
     number_edge_color,
     NUMBER_HOVER_BLEND,
@@ -22,6 +27,7 @@ from ..utils.number_arrows import (
     NUMBER_PART_VALUE,
     NUMBER_PRESSED_BLEND,
     number_arrow_chevron,
+    number_field_corner_masks,
     number_field_part,
     number_field_rects,
     number_part_direction,
@@ -82,12 +88,25 @@ def _same_element(first, second) -> bool:
     return bool(first_key and first_key == second_key)
 
 
-def _property_field_rect(rect, scale: float):
-    """Inset a numeric field like the other menu rows and keep it square."""
-    x1, y1, x2, y2 = rect
-    inset = min(2.0 * max(0.5, float(scale)), max(0.0, (x2 - x1) * 0.2))
-    vertical = inset * 0.5
-    return (x1 + inset, y1 + vertical, x2 - inset, y2 - vertical)
+def _property_field_rect(rect, _scale: float):
+    """Use the complete row so adjacent menu fields meet without gaps."""
+    return tuple(float(value) for value in rect)
+
+
+def _menu_row_corner_mask(panel, row):
+    """Keep only corners exposed on the outer menu panel perimeter."""
+    if panel.rect is None or row.rect is None:
+        return ROUND_CORNERS_ALL
+    _px1, py1, _px2, py2 = panel.rect
+    _rx1, ry1, _rx2, ry2 = row.rect
+    top_exposed = panel.header_rect is None and abs(ry2 - py2) < 0.001
+    bottom_exposed = abs(ry1 - py1) < 0.001
+    return (
+        top_exposed,
+        top_exposed,
+        bottom_exposed,
+        bottom_exposed,
+    )
 
 
 def _smoothstep(progress: float) -> float:
@@ -114,6 +133,7 @@ class MenuMetrics:
     max_width: float
     flyout_gap: float
     border_width: float
+    separator_line_width: float = 1.0
 
 
 @dataclass
@@ -503,7 +523,10 @@ class GestureMenuRuntime(PublicGpu):
             return True
 
     def _metrics(self) -> MenuMetrics:
-        scale = max(0.5, float(bpy.context.preferences.view.ui_scale))
+        scale = preview_ui_scale(
+            max(0.5, float(bpy.context.preferences.view.ui_scale)),
+            getattr(self, 'preview_read_only', False),
+        )
         style = self._menu_style()
         if style == 'COMPACT':
             font_size = 11.0 * scale
@@ -515,6 +538,13 @@ class GestureMenuRuntime(PublicGpu):
             pad_x = 10.0 * scale
         _, line_height = measure_text('Ag', font_size)
         row_height = line_height + row_pad
+        divider_height = 2.0
+        try:
+            from ..utils.public import get_pref
+
+            divider_height = get_pref().draw_property.dividing_line_height
+        except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
+            pass
         return MenuMetrics(
             scale=scale,
             font_size=font_size,
@@ -529,6 +559,7 @@ class GestureMenuRuntime(PublicGpu):
             max_width=440.0 * scale,
             flyout_gap=5.0 * scale,
             border_width=max(0.75, scale),
+            separator_line_width=separator_line_width(divider_height, scale),
         )
 
     @staticmethod
@@ -546,7 +577,6 @@ class GestureMenuRuntime(PublicGpu):
         text = _rgba(getattr(menu, 'text', None), (0.82, 0.82, 0.82, 1.0))
         text_hover = _rgba(getattr(item, 'text_sel', None), (1.0, 1.0, 1.0, 1.0))
         outline = _rgba(getattr(menu, 'outline', None), (0.22, 0.22, 0.22, 1.0))
-        row = _rgba(getattr(regular, 'inner', None), header)
         pressed = blend_layout_hover_color(hover, background, 0.46)
         text_disabled = (*text[:3], 0.42)
         separator = (*outline[:3], 0.7)
@@ -558,7 +588,6 @@ class GestureMenuRuntime(PublicGpu):
             draw = get_pref().draw_property
             background = _rgba(draw.overlay_background_color, background)
             header = _rgba(draw.overlay_header_color, header)
-            row = _rgba(draw.background_operator_color, row)
             hover = _rgba(draw.interaction_hover_color, hover)
             pressed = _rgba(draw.interaction_pressed_color, pressed)
             text = _rgba(draw.text_default_color, text)
@@ -570,6 +599,7 @@ class GestureMenuRuntime(PublicGpu):
             warning = _rgba(draw.status_warning_color, warning)
         except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
             pass
+        row = background
         return MenuColors(
             background=background,
             header=header,
@@ -920,6 +950,22 @@ class GestureMenuRuntime(PublicGpu):
                 line_width=metrics.border_width,
             )
 
+    def _draw_panel_outline(self, panel, metrics, colors) -> None:
+        if self._menu_style() == 'BORDERLESS':
+            return
+        x1, y1, x2, y2 = panel.rect
+        width = x2 - x1
+        height = y2 - y1
+        self.draw_rounded_rectangle_outlined(
+            (x1 + width * 0.5, y1 + height * 0.5),
+            fill=(0.0, 0.0, 0.0, 0.0),
+            stroke=colors.outline,
+            radius=metrics.radius,
+            width=width,
+            height=height,
+            line_width=metrics.border_width,
+        )
+
     def _draw_header(self, panel, metrics, colors) -> None:
         if panel.header_rect is None:
             return
@@ -1111,6 +1157,7 @@ class GestureMenuRuntime(PublicGpu):
             y2,
             metrics,
             colors,
+            field_corner_mask=ROUND_CORNERS_ALL,
     ) -> None:
         prop_type, value, _fraction, base, active = visual
         height = y2 - y1
@@ -1152,6 +1199,14 @@ class GestureMenuRuntime(PublicGpu):
                     row.increment_rect,
                 ),
             )
+            part_masks = dict(zip(
+                (
+                    NUMBER_PART_DECREMENT,
+                    NUMBER_PART_VALUE,
+                    NUMBER_PART_INCREMENT,
+                ),
+                number_field_corner_masks(field_corner_mask),
+            ))
             for part, rect in part_rects:
                 if rect is None:
                     continue
@@ -1166,21 +1221,23 @@ class GestureMenuRuntime(PublicGpu):
                     continue
                 else:
                     state_color = number_edge_color(base)
-                    self.draw_rectangle(
-                        rx1,
-                        ry1,
-                        max(1.0, rx2 - rx1),
-                        max(1.0, ry2 - ry1),
-                        state_color,
+                    self.draw_rounded_rectangle_area(
+                        ((rx1 + rx2) * 0.5, (ry1 + ry2) * 0.5),
+                        color=state_color,
+                        radius=metrics.radius,
+                        width=max(1.0, rx2 - rx1),
+                        height=max(1.0, ry2 - ry1),
+                        corner_mask=part_masks[part],
                     )
                     continue
                 state_color = blend_layout_hover_color(base, target, amount)
-                self.draw_rectangle(
-                    rx1,
-                    ry1,
-                    max(1.0, rx2 - rx1),
-                    max(1.0, ry2 - ry1),
-                    state_color,
+                self.draw_rounded_rectangle_area(
+                    ((rx1 + rx2) * 0.5, (ry1 + ry2) * 0.5),
+                    color=state_color,
+                    radius=metrics.radius,
+                    width=max(1.0, rx2 - rx1),
+                    height=max(1.0, ry2 - ry1),
+                    corner_mask=part_masks[part],
                 )
 
             center_y = (y1 + y2) * 0.5
@@ -1293,7 +1350,14 @@ class GestureMenuRuntime(PublicGpu):
             color=color_to_srgb(colors.text_hover),
         )
 
-    def _draw_row(self, row, metrics, colors) -> None:
+    def _draw_row(
+            self,
+            row,
+            metrics,
+            colors,
+            *,
+            corner_mask=ROUND_CORNERS_ALL,
+    ) -> None:
         x1, y1, x2, y2 = row.rect
         width = x2 - x1
         height = y2 - y1
@@ -1303,7 +1367,7 @@ class GestureMenuRuntime(PublicGpu):
             self.draw_2d_line(
                 ((x1 + inset, y), (x2 - inset, y)),
                 color=colors.separator,
-                line_width=max(0.75, metrics.scale * 0.8),
+                line_width=metrics.separator_line_width,
             )
             return
 
@@ -1326,14 +1390,14 @@ class GestureMenuRuntime(PublicGpu):
         )
         is_surface = row.kind in {'OPERATOR', 'PROPERTY', 'CHILD', 'ENUM_ITEM'}
         if status.is_error or has_property_background or is_surface:
-            inset = 0.0 if has_number_field else 2.0 * metrics.scale
+            inset = 0.0
             if status.is_error:
                 row_color = colors.error
             elif property_visual is not None:
                 row_color = (
                     property_visual[3]
                     if has_property_background
-                    else colors.row
+                    else colors.background
                 )
                 if pressed and row.enabled:
                     row_color = blend_layout_hover_color(row_color, colors.pressed, 0.90)
@@ -1345,17 +1409,21 @@ class GestureMenuRuntime(PublicGpu):
                 elif hovered and row.enabled:
                     row_color = colors.hover
                 elif row.enabled:
-                    row_color = colors.row
+                    row_color = colors.background
                 else:
-                    row_color = (*colors.row[:3], colors.row[3] * 0.42)
+                    row_color = (
+                        *colors.background[:3],
+                        colors.background[3] * 0.42,
+                    )
             if has_number_field:
                 fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
-                self.draw_rectangle(
-                    fx1,
-                    fy1,
-                    max(1.0, fx2 - fx1),
-                    max(1.0, fy2 - fy1),
-                    row_color,
+                self.draw_rounded_rectangle_area(
+                    ((fx1 + fx2) * 0.5, (fy1 + fy2) * 0.5),
+                    color=row_color,
+                    radius=metrics.radius,
+                    width=max(1.0, fx2 - fx1),
+                    height=max(1.0, fy2 - fy1),
+                    corner_mask=corner_mask,
                 )
             else:
                 self.draw_rounded_rectangle_area(
@@ -1364,6 +1432,7 @@ class GestureMenuRuntime(PublicGpu):
                     radius=max(1.0, metrics.radius - inset),
                     width=max(1.0, width - inset * 2.0),
                     height=max(1.0, height - inset),
+                    corner_mask=corner_mask,
                 )
             if property_visual is not None and not status.is_error:
                 fraction = property_visual[2]
@@ -1377,12 +1446,19 @@ class GestureMenuRuntime(PublicGpu):
                     if has_number_field:
                         fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
                         fill_w = max(2.0, (fx2 - fx1) * fraction)
-                        self.draw_rectangle(
-                            fx1,
-                            fy1,
-                            fill_w,
-                            max(1.0, fy2 - fy1),
-                            fill_color,
+                        fill_mask = (
+                            corner_mask[0],
+                            corner_mask[1] and fill_w >= (fx2 - fx1),
+                            corner_mask[2] and fill_w >= (fx2 - fx1),
+                            corner_mask[3],
+                        )
+                        self.draw_rounded_rectangle_area(
+                            (fx1 + fill_w * 0.5, (fy1 + fy2) * 0.5),
+                            color=fill_color,
+                            radius=metrics.radius,
+                            width=fill_w,
+                            height=max(1.0, fy2 - fy1),
+                            corner_mask=fill_mask,
                         )
                     else:
                         self.draw_rounded_rectangle_area(
@@ -1391,6 +1467,7 @@ class GestureMenuRuntime(PublicGpu):
                             radius=max(1.0, metrics.radius - inset),
                             width=fill_w,
                             height=max(1.0, height - inset),
+                            corner_mask=corner_mask,
                         )
         if status is not ElementStatus.VALID:
             marker_color = colors.text_hover if status.is_error else colors.warning
@@ -1507,6 +1584,7 @@ class GestureMenuRuntime(PublicGpu):
                 y2=y2,
                 metrics=metrics,
                 colors=colors,
+                field_corner_mask=corner_mask,
             )
 
     @staticmethod
@@ -1556,7 +1634,13 @@ class GestureMenuRuntime(PublicGpu):
                 self._draw_panel_background(panel, metrics, colors)
                 self._draw_header(panel, metrics, colors)
                 for row in panel.rows:
-                    self._draw_row(row, metrics, colors)
+                    self._draw_row(
+                        row,
+                        metrics,
+                        colors,
+                        corner_mask=_menu_row_corner_mask(panel, row),
+                    )
+                self._draw_panel_outline(panel, metrics, colors)
             if not getattr(self, '_menu_closing_at', 0.0):
                 self._draw_hover_annotation(metrics, colors, region)
         finally:

@@ -7,6 +7,26 @@ LAYOUT_ALIGNMENTS = frozenset({'EXPAND', 'LEFT', 'CENTER', 'RIGHT'})
 ROUND_CORNERS_ALL = (True, True, True, True)
 
 
+def separator_line_width(configured_height, ui_scale) -> float:
+    """Resolve one shared thin divider stroke for gestures and menus."""
+    try:
+        configured_height = float(configured_height)
+    except (TypeError, ValueError):
+        configured_height = 2.0
+    try:
+        ui_scale = float(ui_scale)
+    except (TypeError, ValueError):
+        ui_scale = 1.0
+    return max(0.75, max(1.0, configured_height) * max(0.5, ui_scale) * 0.4)
+
+
+def layout_group_corner_mask(is_layout_container, inherited):
+    """Give every nested layout group its own complete outer perimeter."""
+    if bool(is_layout_container):
+        return ROUND_CORNERS_ALL
+    return tuple(bool(value) for value in inherited)
+
+
 def blend_layout_hover_color(color, accent, amount=0.35):
     """Blend RGB toward a hover accent while preserving the source alpha."""
     source = tuple(float(value) for value in color)

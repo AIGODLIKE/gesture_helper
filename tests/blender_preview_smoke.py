@@ -42,7 +42,9 @@ from gesture_helper.utils.number_arrows import (  # noqa: E402
 )
 from gesture_helper.utils.layout_alignment import (  # noqa: E402
     resolve_extension_row_bounds,
+    separator_line_width,
 )
+from gesture_helper.utils.layout_scale import preview_ui_scale  # noqa: E402
 from gesture_helper.utils.selection import select_element  # noqa: E402
 from gesture_helper.utils.session_state import SessionState  # noqa: E402
 from gesture_helper.utils.ui_theme import THEME_PRESETS  # noqa: E402
@@ -306,6 +308,13 @@ with suppress_gesture_disk_save():
     divider_size = second._layout_node_size(divider, layout_metrics)
     expected_divider_height = second._layout_separator_height(layout_metrics)
     assert abs(divider_size.y - expected_divider_height) < 0.001
+    assert abs(
+        divider_size.y
+        - separator_line_width(
+            draw_preferences.dividing_line_height,
+            second._element_ui_scale(),
+        )
+    ) < 0.001
     assert divider_size.y < layout_metrics.sep_h
 
     numeric = gesture.element.add()
@@ -416,6 +425,10 @@ with suppress_gesture_disk_save():
     ui_list.clear_element_tree_cache(clear_pages=True)
 
     radial_preview = start_preview('GESTURE', 'RADIAL')
+    assert abs(
+        radial_preview.session.draw_ctx.ui_scale
+        - preview_ui_scale(view_preferences.ui_scale, True)
+    ) < 0.001
     assert radial_preview.session.phase.shows_radial_ui
     assert radial_preview.session._gesture_timeout_timer is None
     assert not radial_preview.trajectory_mouse_move
@@ -457,6 +470,12 @@ with suppress_gesture_disk_save():
     with bpy.context.temp_override(**override):
         assert enum_property.display_property_type == 'ENUM'
     menu_preview = start_preview('GESTURE', 'MENU')
+    assert abs(
+        menu_preview._metrics().scale
+        - preview_ui_scale(view_preferences.ui_scale, True)
+    ) < 0.001
+    menu_colors = menu_preview._colors()
+    assert menu_colors.row == menu_colors.background
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
     assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview

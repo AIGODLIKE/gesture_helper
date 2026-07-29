@@ -7,6 +7,7 @@ LAYOUT_CONTAINER_TYPES = frozenset({'ROW', 'COLUMN', 'BOX'})
 LAYOUT_SCALE_DEFAULT = 1.0
 LAYOUT_SCALE_MIN = 0.25
 LAYOUT_SCALE_MAX = 4.0
+PREVIEW_UI_SCALE = 1.2
 
 
 def clamp_layout_scale(value) -> float:
@@ -16,6 +17,15 @@ def clamp_layout_scale(value) -> float:
     except (TypeError, ValueError):
         scale = LAYOUT_SCALE_DEFAULT
     return min(LAYOUT_SCALE_MAX, max(LAYOUT_SCALE_MIN, scale))
+
+
+def preview_ui_scale(base_scale, enabled) -> float:
+    """Apply the read-only preview magnification to a base UI scale."""
+    try:
+        scale = float(base_scale)
+    except (TypeError, ValueError):
+        scale = LAYOUT_SCALE_DEFAULT
+    return scale * (PREVIEW_UI_SCALE if bool(enabled) else 1.0)
 
 
 def layout_scale_pair(node) -> tuple[float, float]:

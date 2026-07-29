@@ -10,6 +10,22 @@ SPEC.loader.exec_module(layout_alignment)
 
 
 class LayoutAlignmentTests(unittest.TestCase):
+    def test_separator_line_width_matches_menu_and_gesture_thickness(self):
+        self.assertEqual(layout_alignment.separator_line_width(2, 1.0), 0.8)
+        self.assertEqual(layout_alignment.separator_line_width(2, 2.0), 1.6)
+        self.assertEqual(layout_alignment.separator_line_width(1, 0.5), 0.75)
+
+    def test_nested_layout_group_restores_all_outer_corners(self):
+        inherited = (False, False, False, False)
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(True, inherited),
+            layout_alignment.ROUND_CORNERS_ALL,
+        )
+        self.assertEqual(
+            layout_alignment.layout_group_corner_mask(False, inherited),
+            inherited,
+        )
+
     def test_aligned_populated_box_has_no_inner_inset(self):
         self.assertEqual(
             layout_alignment.resolve_box_inset(True, True, 8, 5),

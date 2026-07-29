@@ -15,6 +15,7 @@ from ..utils.color import color_to_srgb
 from ..utils.layout_alignment import (
     blend_layout_hover_color,
     resolve_extension_row_bounds,
+    separator_line_width,
 )
 from ..utils.ui_theme import interaction_color
 from ..utils.public_gpu import PublicGpu
@@ -1048,7 +1049,10 @@ class ElementGpuExtensionItem:
 
     def _separator_metrics(self, icon_size: float) -> tuple[float, float]:
         """Return (line thickness, total separator step) with equal pad above/below."""
-        dh = self.dividing_line_height
+        dh = separator_line_width(
+            self.draw_property.dividing_line_height,
+            self._element_ui_scale(),
+        )
         pad = float(icon_size) * self._SEP_PAD_FRAC
         return dh, dh + pad * 2.0
 
