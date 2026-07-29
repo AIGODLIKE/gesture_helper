@@ -17,6 +17,11 @@ GESTURE_IDNAMES = {
     "wm.gesture_menu",
     "gesture.operator",
 }
+MANUAL_BINDING = (
+    "Window",
+    "wm.gesture_operator",
+    "Manual User Shortcut",
+)
 
 
 def gesture_bindings() -> Counter:
@@ -91,34 +96,39 @@ assert bpy.ops.wm.gesture_layout_preset_add(preset="TOOLBAR") == {"FINISHED"}
 radial = next(gesture for gesture in store.gesture if gesture.name == "Lifecycle Radial")
 assert [element.element_type for element in radial.element] == ["PROPERTY", "BOX"]
 
-# A shortcut left by an interrupted old release must be removed without
-# disturbing the current RADIAL/MENU pair.
+# A shortcut that is not in the add-on's exact ownership registry must survive
+# every restart, even when it uses a Gesture Helper operator idname.
 addon_keyconfig = bpy.context.window_manager.keyconfigs.addon
 window_keymap = addon_keyconfig.keymaps.get("Window")
 assert window_keymap is not None
-window_keymap.keymap_items.new(
-    "gesture.operator", type="F9", value="PRESS",
+manual_kmi = window_keymap.keymap_items.new(
+    "wm.gesture_operator", type="F9", value="PRESS",
 )
+manual_kmi.properties.gesture = MANUAL_BINDING[-1]
 GestureKeymap.key_restart()
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial"),
     ("Window", "wm.gesture_menu", "Lifecycle Menu"),
+    MANUAL_BINDING,
 })
 
 radial.name = "Lifecycle Radial Renamed"
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
     ("Window", "wm.gesture_menu", "Lifecycle Menu"),
+    MANUAL_BINDING,
 })
 
 menu.enabled = False
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
+    MANUAL_BINDING,
 })
 menu.enabled = True
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
     ("Window", "wm.gesture_menu", "Lifecycle Menu"),
+    MANUAL_BINDING,
 })
 
 saved_path = save_gestures_to_disk(description="lifecycle_smoke")
@@ -137,6 +147,7 @@ assert restored == {
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
     ("Window", "wm.gesture_menu", "Lifecycle Menu"),
+    MANUAL_BINDING,
 })
 
 # Delete and rebuild: the removed menu shortcut must not survive as an orphan.
@@ -147,6 +158,23 @@ menu_index = next(
 with suppress_gesture_disk_save():
     store.gesture.remove(menu_index)
 GestureKeymap.key_restart()
+assert_bindings({
+    ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
+    MANUAL_BINDING,
+})
+
+# The artificial add-on-keyconfig KMI has now survived rename, enable/disable,
+# File > New, and repeated rebuilds. Remove the smoke-owned item before
+# unregistering its operator; Blender does not support orphan add-on KMIs safely.
+window_keymap = bpy.context.window_manager.keyconfigs.addon.keymaps.get("Window")
+assert window_keymap is not None
+manual_items = [
+    item
+    for item in window_keymap.keymap_items
+    if item.idname == MANUAL_BINDING[1] and item.type == "F9"
+]
+assert len(manual_items) == 1, manual_items
+window_keymap.keymap_items.remove(manual_items[0])
 assert_bindings({
     ("Window", "wm.gesture_operator", "Lifecycle Radial Renamed"),
 })

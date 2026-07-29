@@ -111,8 +111,29 @@ classes_list = (
 )
 
 
+def _validate_registered_element_schema() -> None:
+    """Fail registration if Blender retained an older Element RNA schema."""
+    from ..utils.enum import ENUM_ELEMENT_TYPE
+
+    expected = tuple(item[0] for item in ENUM_ELEMENT_TYPE)
+    actual = tuple(
+        item.identifier
+        for item in Element.bl_rna.properties['element_type'].enum_items
+    )
+    if actual != expected:
+        raise RuntimeError(
+            "Gesture Helper Element RNA is stale: "
+            f"expected {expected!r}, got {actual!r}"
+        )
+
+
 def register():
     register_classes_safe(classes_list)
+    try:
+        _validate_registered_element_schema()
+    except Exception:
+        unregister_classes_safe(classes_list)
+        raise
     setattr(
         bpy.types.WindowManager,
         WM_STORE_ATTR,

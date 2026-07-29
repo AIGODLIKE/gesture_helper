@@ -8,6 +8,7 @@ import math
 import time
 
 from ..utils.expression import literal_to_dict
+from ..utils.operator_compat import resolve_operator_properties
 from ..utils.gesture_items import poll_context_fingerprint
 from ..utils.public_cache import PublicCache
 
@@ -231,6 +232,11 @@ def get_operator_argument_error(element) -> str | None:
     if func is None:
         return "Operator not found"
     try:
+        values = resolve_operator_properties(
+            getattr(element, "operator_bl_idname", ""),
+            values,
+            func,
+        )
         properties = func.get_rna_type().properties
         for name, value in values.items():
             prop = properties.get(name)

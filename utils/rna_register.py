@@ -13,49 +13,85 @@ def _operator_struct_id(bl_idname: str) -> str:
     return f"{module.upper()}_OT_{name}"
 
 
-def _unregister_stale_operator(cls) -> None:
-    """Drop an older class with the same bl_idname after a module reload."""
+def _registered_class_identifiers(cls) -> tuple[str, ...]:
+    """Return Blender RNA identifiers that can point at an older class."""
+    identifiers = []
     bl_idname = getattr(cls, 'bl_idname', None)
-    if not bl_idname:
-        return
-    old_cls = None
-    # bl_rna_get_subclass_py expects the RNA struct identifier on supported
-    # Blender versions (e.g. WM_OT_gesture_element_add), not the dotted
-    # operator id. Keep the dotted lookup as a compatibility fallback.
-    for identifier in (_operator_struct_id(bl_idname), bl_idname):
-        try:
-            old_cls = bpy.types.Operator.bl_rna_get_subclass_py(identifier)
-        except (AttributeError, TypeError, RuntimeError):
-            continue
-        if old_cls is not None:
-            break
-    if old_cls is None or old_cls is cls or not getattr(old_cls, 'is_registered', False):
-        return
     try:
-        bpy.utils.unregister_class(old_cls)
-    except (RuntimeError, TypeError):
-        pass
+        is_operator = issubclass(cls, bpy.types.Operator)
+    except TypeError:
+        is_operator = False
+    if is_operator and bl_idname:
+        identifiers.append(_operator_struct_id(bl_idname))
+    if bl_idname:
+        identifiers.append(bl_idname)
+    identifiers.append(cls.__name__)
+    return tuple(dict.fromkeys(identifiers))
+
+
+def _find_registered_class(cls):
+    """Find the live RNA class occupying the new class's identifiers."""
+    identifiers = _registered_class_identifiers(cls)
+    for identifier in identifiers:
+        try:
+            old_cls = getattr(bpy.types, identifier, None)
+        except (AttributeError, RuntimeError, TypeError):
+            old_cls = None
+        if old_cls is not None:
+            return old_cls
+
+    # Registered PropertyGroups are not consistently exposed as normal
+    # ``bpy.types`` attributes. Ask their concrete RNA base for the Python
+    # subclass, using the same path for panels, menus, preferences, and ops.
+    for base_name in (
+            'Operator',
+            'Panel',
+            'Menu',
+            'UIList',
+            'Header',
+            'PropertyGroup',
+            'AddonPreferences',
+    ):
+        base = getattr(bpy.types, base_name, None)
+        if base is None:
+            continue
+        try:
+            if not issubclass(cls, base):
+                continue
+        except TypeError:
+            continue
+        for identifier in identifiers:
+            try:
+                old_cls = base.bl_rna_get_subclass_py(identifier)
+            except (AttributeError, TypeError, RuntimeError):
+                continue
+            if old_cls is not None:
+                return old_cls
+    return None
+
+
+def _unregister_stale_class(cls) -> None:
+    """Drop an older RNA class with the same identifier after a reload."""
+    old_cls = _find_registered_class(cls)
+    if old_cls is None or old_cls is cls:
+        return
+    if not getattr(old_cls, 'is_registered', False):
+        return
+    bpy.utils.unregister_class(old_cls)
 
 
 def register_classes_safe(classes) -> None:
     """Register classes; re-register when already registered so RNA props refresh.
 
-    Skipping already-registered classes leaves stale OperatorProperties after a
-    Python reload (e.g. missing ``gesture`` on ``wm.gesture_operator``).
+    Skipping an older PropertyGroup is as unsafe as skipping an operator: its
+    RNA enum can stay stale even though bundled presets were updated on disk.
     """
     for cls in classes:
         if getattr(cls, 'is_registered', False):
-            try:
-                bpy.utils.unregister_class(cls)
-            except RuntimeError:
-                pass
+            bpy.utils.unregister_class(cls)
         else:
-            _unregister_stale_operator(cls)
-        try:
-            bpy.utils.register_class(cls)
-        except RuntimeError as exc:
-            if 'already registered' not in str(exc).lower():
-                raise
+            _unregister_stale_class(cls)
+        bpy.utils.register_class(cls)
 
 
 def unregister_classes_safe(classes) -> None:

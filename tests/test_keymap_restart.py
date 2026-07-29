@@ -68,7 +68,6 @@ def _load_keymap_module():
         f"{PACKAGE}.gesture.addon_keymap",
         AddonKeymapRegistry=Registry,
         add_addon_kmi=lambda *_args, **_kwargs: None,
-        clear_orphan_gesture_kmis=lambda: 0,
     )
     _module(
         f"{PACKAGE}.gesture.temp_keymap",
@@ -208,19 +207,14 @@ class KeymapRestartTests(unittest.TestCase):
                 calls.append("load")
                 return [keymap_module.KeymapLoadFailure("Gesture", None, "invalid")]
 
-        original_clear = keymap_module.clear_orphan_gesture_kmis
-        keymap_module.clear_orphan_gesture_kmis = lambda: calls.append("orphans") or 0
-        try:
+        with keymap_module.suppress_keymap_restarts():
+            self.assertEqual(Harness.key_restart(), ())
             with keymap_module.suppress_keymap_restarts():
                 self.assertEqual(Harness.key_restart(), ())
-                with keymap_module.suppress_keymap_restarts():
-                    self.assertEqual(Harness.key_restart(), ())
-            self.assertEqual(calls, [])
-            failures = Harness.key_restart()
-        finally:
-            keymap_module.clear_orphan_gesture_kmis = original_clear
+        self.assertEqual(calls, [])
+        failures = Harness.key_restart()
 
-        self.assertEqual(calls, ["unload", "orphans", "load"])
+        self.assertEqual(calls, ["unload", "load"])
         self.assertEqual([str(failure) for failure in failures], ["Gesture: invalid"])
 
     def test_import_validation_ignores_old_failures_and_forces_new_disabled_items(self):
@@ -244,22 +238,15 @@ class KeymapRestartTests(unittest.TestCase):
                     return [new_failure]
                 return [old_failure, new_failure]
 
-        original_clear = keymap_module.clear_orphan_gesture_kmis
-        keymap_module.clear_orphan_gesture_kmis = lambda: calls.append("orphans") or 0
-        try:
-            failures = Harness.key_restart(validate_from_index=2)
-        finally:
-            keymap_module.clear_orphan_gesture_kmis = original_clear
+        failures = Harness.key_restart(validate_from_index=2)
 
         self.assertEqual(failures, (new_failure,))
         self.assertEqual(
             calls,
             [
                 "unload",
-                "orphans",
                 ("load", True, 2),
                 "unload",
-                "orphans",
                 ("load", False, 0),
             ],
         )

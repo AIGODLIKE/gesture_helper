@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Gesture Helper is a Blender 4.2+ Extension (also loadable as a legacy add-on)
+Gesture Helper is a Blender 4.3+ Extension (also loadable as a legacy add-on)
 for binding radial gestures and persistent menus to Blender operators, modal
 operators, and RNA property edits. The repository is Python-only at runtime,
 with bundled JSON presets, translations, and PNG icon assets.
@@ -15,9 +15,14 @@ with bundled JSON presets, translations, and PNG icon assets.
   `bl_info`; `blender_manifest.toml` is the Extension package contract.
 - `register_mod.py` registers `ui`, `ops`, `preferences`, `props`, and
   translation classes, installs the `WindowManager.gesture_helper` pointer,
-  clears stale keymaps/caches, restores persisted gestures, and installs
+  clears owned keymaps and caches, restores persisted gestures, and installs
   load/playback handlers. Unregister cancels timers, modal/draw handlers,
   saves state, removes keymaps and RNA properties, then unregisters modules.
+- `utils/rna_register.py` replaces stale operators, PropertyGroups, panels,
+  menus, lists, headers, and preferences during reload. Gesture registration
+  compares the complete live `Element.element_type` RNA enum with the source
+  declaration and fails immediately instead of importing presets into a stale
+  schema.
 - `utils/rna_register.py` provides reload-tolerant class registration. The
   package build excludes tests, documentation, VCS files, caches, and agent
   files via `[build].paths_exclude_pattern`.
@@ -53,6 +58,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    hover state; `gesture/gesture_executor.py` chooses immediate vs release
    execution. `element/element_operator.py` invokes operators and modal
    wrappers; `element/element_property.py` resolves and edits live RNA.
+   `utils/operator_compat.py` migrates legacy `*_GPENCIL` mode arguments to
+   Blender 4.3+ `*_GREASE_PENCIL` identifiers. `object.mode_set` uses its native
+   call defaults because forced execution-context/undo overrides are unsafe for
+   Grease Pencil modes.
 4. `gesture/gesture_draw_gpu.py`, `element/*draw*.py`, and `src/lib` calculate
    GPU geometry and hit boxes. `gesture/menu.py` renders persistent menus;
    `utils/ui_theme.py` owns five coordinated overlay presets (Blender Dark,
@@ -175,6 +184,9 @@ with bundled JSON presets, translations, and PNG icon assets.
    the final batched rebuild can make update callbacks resolve destroyed items.
 6. `gesture/pass_through/*` handles forwarding to Blender's native keymaps when
    a gesture does not consume the event.
+   Runtime keymaps are derived state: `gesture/addon_keymap.py` preserves the
+   exact KMI object registry across Python hot reload and removes only those
+   registered objects. No operator-id/name-based orphan sweep is performed.
 
 ### UI, preferences, and assets
 
@@ -197,9 +209,10 @@ with bundled JSON presets, translations, and PNG icon assets.
   by default); runtime tooltip fade timing is fixed and does not persist state.
   `ops/quick_add/` implements context-sensitive creation helpers and previews.
 - Ctrl+Alt+Shift on `wm.gesture_add` imports every bundled preset, then
-  stably groups only the new entries as example `RADIAL`, example `MENU`,
-  normal `RADIAL`, and normal `MENU`; the final reordered list is scheduled
-  for persistence. The same modifiers on the bundled-preset
+  appends every preset in one strict transaction already ordered as example
+  `RADIAL`, example `MENU`, normal `RADIAL`, and normal `MENU`; any schema,
+  RNA, or shortcut failure rolls the complete appended batch back. The same
+  modifiers on the bundled-preset
   `wm.gesture_import` button transactionally replace the complete gesture
   store with those four groups and roll back to the previous store if strict
   RNA or shortcut validation fails.
@@ -262,7 +275,9 @@ flowchart TD
 - Pure tests: `python -m unittest discover -s tests -p 'test_*.py' -v`.
 - Syntax: `python -m compileall -q element gesture ops preferences ui utils tests`.
 - Lint: `python -m ruff check .`.
-- Blender smoke scripts cover preset coverage, UI-theme RNA application,
+- Blender smoke scripts cover preset coverage, complete bundled-preset
+  transactional import, PropertyGroup RNA reload/schema refresh, Grease Pencil
+  mode execution, UI-theme RNA application,
   selector press/release cancellation, property data paths, import
   rollback/keymaps (including complete replacement after prewarming nested
   relationship, active-selection, and frozen-UI caches), lifecycle/reload,
@@ -286,54 +301,47 @@ flowchart TD
   its centered GPU preview measures about 32.3 ms per draw.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
-- Release-candidate verification on 2026-07-29: 160 Python files compiled in
-  memory, 268 unit tests passed, Ruff and `git diff --check` passed, and all 16
-  source JSON files passed duplicate-key validation. Seven isolated background
-  smoke scripts passed in both Blender 4.2.1 LTS and 5.2.0 LTS with zero
+- Release-candidate verification on 2026-07-29: 173 Python files compiled in
+  memory, 272 unit tests passed, Ruff and `git diff --check` passed, and all 16
+  source JSON files passed duplicate-key validation. Nine isolated background
+  smoke scripts passed in both Blender 4.3.2 and 5.2.0 LTS with zero
   tracebacks/Python errors. Both CLIs validated source and the 5.2-built ZIP;
-  its 343 entries had no duplicates, unsafe paths, forbidden agent/test/cache
-  files, or corruption. The ZIP installed, started enabled, and disabled cleanly
-  in isolated 4.2 and 5.2 profiles.
+  its 344 entries had no duplicates, unsafe paths, forbidden agent/test/cache
+  files, `eval`/`exec` calls, or corruption. SHA-256 is
+  `5098A577F44CCC3F0F2001620FC7B64D34364E3CBF54BA4B4AB1E389456161D6`.
+  The ZIP installed into isolated local Extension repositories, started
+  enabled, imported all 11 bundled presets, exposed the current `SPLIT` RNA,
+  and disabled cleanly in Blender 4.3 and 5.2.
 
 ## Current risks and observed issues
 
-1. **Untracked Gesture Helper shortcuts can be removed:**
-   `gesture/addon_keymap.py:clear_orphan_gesture_kmis()` removes every untracked
-   add-on-keyconfig item using Gesture Helper's operator idnames. That includes
-   user-created shortcuts using those operators, not only stale registry items.
-2. **Maya Grease Pencil actions are not Blender-4.2 portable:**
-   `src/preset/Maya Switch Mode.json` stores the 4.3+/5.x
-   `*_GREASE_PENCIL` mode identifiers. Strict import no longer builds temporary
-   operator KMIs from partially assigned data, so import is clean, but the four
-   actions themselves are not exercised by the 4.2 smoke matrix and may fail
-   when invoked there.
-3. **Submission asset-license decision remains open:** the bundled
+1. **Submission asset-license decision remains open:** the bundled
    `CHECKBOX_HLT`/`CHECKBOX_DEHLT` images are declared as Blender-derived GPL
    assets, while the Nick review guidance expects submitted artwork to meet its
    CC0 threshold. Do not change their provenance or license without an explicit
    release decision.
-4. **Blender-exit detection depends on Python stack internals:**
+2. **Blender-exit detection depends on Python stack internals:**
    `utils/__init__.py:is_blender_close()` uses `sys._getframe()` and searches for
    an `addon_utils.disable_all` caller. It currently passes lifecycle smoke but
    depends on implementation details that may change in later Blender/Python.
-5. **Blender-only behavior remains higher risk than unit coverage:** focused
+3. **Blender-only behavior remains higher risk than unit coverage:** focused
    example-preset and unified-preview verification, including layout RNA and
-   drawing, passes in Blender 4.2.1 and 5.2.0 LTS. The installed 5.2 build has
+   drawing, passes in Blender 4.3.2 and 5.2.0 LTS. The installed 5.2 build has
    previously aborted with a native access violation before Python assertions,
    so native instability may be intermittent. Foreground visual placement,
    multi-window behavior, and file-load restoration still require targeted
    manual checks.
-6. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
+4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,
    `gesture_input.py`, or `utils/ui_draw_sync.py` should include a focused
    Blender smoke run and reload/disable verification.
-7. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
+5. **Packaging drift risk:** the CI workflow builds a nested `{id}/` archive
    after Blender's flat build; changes to manifest exclusions or workflow
    layout should be checked by inspecting ZIP entries.
 ## Constraints
 
-- Support Blender 4.2+ and current 5.x; use version-safe Blender UI icons.
+- Support Blender 4.3+ and current 5.x; use version-safe Blender UI icons.
 - Preserve bundled example key events and nested fixture state exactly; every
   example shortcut must cover both `3D View` and `Object Mode`.
 - JSON is UTF-8; conditional `IF`/`ELIF`/`ELSE` elements must be consecutive.

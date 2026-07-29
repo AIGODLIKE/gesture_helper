@@ -242,7 +242,7 @@ def register():
 
     clear_temp_keymap()
     public_cache.PublicCacheFunc.cache_clear()
-    gesture_keymap.GestureKeymap.key_clear_legacy()
+    gesture_keymap.GestureKeymap.key_clear_owned()
 
     global _deferred_init_done
     if not _deferred_init_done:
@@ -315,7 +315,7 @@ def unregister():
     except Exception as exc:
         _shutdown_log(f"automatic shutdown backup failed: {exc}")
     clear_pref_cache()
-    gesture_keymap.GestureKeymap.key_clear_legacy()
+    gesture_keymap.GestureKeymap.key_clear_owned()
 
     from .utils.gesture_store import get_gesture_store
     store = get_gesture_store()

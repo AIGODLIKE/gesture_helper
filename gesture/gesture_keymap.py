@@ -19,7 +19,7 @@ from idprop.types import IDPropertyGroup
 from ..utils.property import set_property, get_kmi_property
 from ..utils.public import get_debug, debug_print
 from ..utils.public_cache import cache_update_lock
-from .addon_keymap import AddonKeymapRegistry, add_addon_kmi, clear_orphan_gesture_kmis
+from .addon_keymap import AddonKeymapRegistry, add_addon_kmi
 from .temp_keymap import draw_temp_keymap_item, get_temp_kmi
 
 default_key = {'type': 'RIGHTMOUSE', 'value': 'PRESS'}
@@ -315,13 +315,11 @@ class GestureKeymap(KeymapProperty):
         AddonKeymapRegistry.clear()
 
     @classmethod
-    def key_clear_legacy(cls) -> int:
-        """Clear keymaps, including legacy orphan scan (called on register/unregister)."""
+    def key_clear_owned(cls) -> None:
+        """Remove only the exact keymap items registered by this add-on."""
         cls.key_all_unload()
-        clear_count = clear_orphan_gesture_kmis()
         if get_debug('key'):
-            debug_print("Gesture Clear Legacy Keymap count", clear_count, flush=True, key='key')
-        return clear_count
+            debug_print("Gesture Clear Owned Keymaps", flush=True, key='key')
 
     @classmethod
     def key_restart(
@@ -333,7 +331,6 @@ class GestureKeymap(KeymapProperty):
         if _key_restart_suppression:
             return ()
         cls.key_all_unload()
-        clear_orphan_gesture_kmis()
 
         if validate_from_index is None:
             failures = tuple(cls.key_all_load())
@@ -345,7 +342,6 @@ class GestureKeymap(KeymapProperty):
                 start_index=max(0, validate_from_index),
             )
             cls.key_all_unload()
-            clear_orphan_gesture_kmis()
             normal_failures = cls.key_all_load()
             imported_normal_failures = [
                 failure

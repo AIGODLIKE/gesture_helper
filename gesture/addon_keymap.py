@@ -7,19 +7,23 @@ from mathutils import Euler, Matrix, Vector
 
 from ..utils.debug_util import debug_print
 
-_GESTURE_OPERATOR_IDNAMES = frozenset({
-    "wm.gesture_operator",
-    "wm.gesture_menu",
-    "gesture.operator",  # legacy idname from older builds
-})
-
 _WARNED_UNKNOWN_PROP_TYPES: set[type] = set()
+
+# ``importlib.reload()`` reuses the module dictionary.  Keep the exact KMI
+# objects created by the add-on across a hot reload so the new class can still
+# remove them without guessing ownership from operator ids or gesture names.
+try:
+    _OWNED_KEYMAP_ENTRIES
+except NameError:
+    _OWNED_KEYMAP_ENTRIES: list[
+        tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]
+    ] = []
 
 
 class AddonKeymapRegistry:
     """Track keymap items created by this add-on for list-based unload."""
 
-    _entries: list[tuple[bpy.types.KeyMap, bpy.types.KeyMapItem]] = []
+    _entries = _OWNED_KEYMAP_ENTRIES
 
     @classmethod
     def add(cls, keymap: bpy.types.KeyMap, kmi: bpy.types.KeyMapItem) -> None:
@@ -149,33 +153,3 @@ def add_addon_kmi(
     _set_kmi_properties(properties, kmi.properties)
     AddonKeymapRegistry.add(keymap, kmi)
     return keymap, kmi
-
-
-def clear_orphan_gesture_kmis() -> int:
-    """Remove legacy Gesture Helper keymap items not tracked in the registry.
-
-    Only scans ``keyconfigs.addon`` and only removes items whose ``idname`` is in
-    ``_GESTURE_OPERATOR_IDNAMES``. Other add-ons' shortcuts are never touched.
-    """
-    wm = getattr(bpy.context, "window_manager", None)
-    if wm is None:
-        return 0
-    kcs = wm.keyconfigs
-    if kcs is None or kcs.addon is None:
-        return 0
-    registered = {id(kmi) for _, kmi in AddonKeymapRegistry._entries}
-    clear_count = 0
-
-    for km in kcs.addon.keymaps.values():
-        for kmi in list(km.keymap_items):
-            if kmi.idname not in _GESTURE_OPERATOR_IDNAMES:
-                continue
-            if id(kmi) in registered:
-                continue
-            try:
-                km.keymap_items.remove(kmi)
-                clear_count += 1
-            except (ReferenceError, RuntimeError, ValueError):
-                ...
-
-    return clear_count

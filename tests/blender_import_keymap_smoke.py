@@ -18,7 +18,7 @@ assert addon is not None
 
 from gesture_helper.gesture.gesture_keymap import GestureKeymap  # noqa: E402
 from gesture_helper.ops.gesture_cure import (  # noqa: E402
-    _sort_imported_presets,
+    add_all_preset,
     get_all_preset_gesture_data,
 )
 from gesture_helper.ops.export_import import Import  # noqa: E402
@@ -78,30 +78,15 @@ before_kmis = gesture_kmis()
 assert [gesture.name for gesture in store.gesture] == ["Existing"]
 assert before_kmis, "Expected the original gesture shortcut to be registered"
 
-# The Ctrl+Alt+Shift bulk-preset path keeps existing gestures intact, then
-# groups its new example gestures/menus before their normal-preset counterparts.
-bulk_radial = store.gesture.add()
-bulk_radial.name = "Bulk Radial"
-bulk_radial.gesture_type = "RADIAL"
-bulk_menu_a = store.gesture.add()
-bulk_menu_a.name = "Bulk Menu A"
-bulk_menu_a.gesture_type = "MENU"
-bulk_menu_b = store.gesture.add()
-bulk_menu_b.name = "Bulk Menu B"
-bulk_menu_b.gesture_type = "MENU"
-bulk_radial_b = store.gesture.add()
-bulk_radial_b.name = "Bulk Radial B"
-bulk_radial_b.gesture_type = "RADIAL"
-assert _sort_imported_presets(
-    store.gesture,
-    1,
-    [(True, False), (False, True), (True, True), (False, False)],
-)
-assert [gesture.name for gesture in store.gesture] == [
-    "Existing", "Bulk Radial B", "Bulk Menu A", "Bulk Radial", "Bulk Menu B",
-]
-while len(store.gesture) > 1:
-    store.gesture.remove(len(store.gesture) - 1)
+# The real Ctrl+Alt+Shift bulk path must validate every bundled preset in one
+# transaction while preserving the existing prefix and display grouping.
+expected_gestures, preset_count = get_all_preset_gesture_data()
+expected_names = [gesture["name"] for gesture in expected_gestures.values()]
+assert add_all_preset() == preset_count
+assert [gesture.name for gesture in store.gesture] == ["Existing", *expected_names]
+_apply_gesture_data(store, before_data)
+assert [gesture.name for gesture in store.gesture] == ["Existing"]
+assert gesture_kmis() == before_kmis
 
 # Snapshot/disk replacement is also transactional. Inject a post-assignment
 # failure and verify the old live collection, index, cache, and KMIs return.
@@ -323,9 +308,7 @@ event = type("Event", (), {"ctrl": True, "alt": True, "shift": True})()
 assert Import._replace_all_requested(True, event)
 assert not Import._replace_all_requested(False, event)
 
-expected_gestures, preset_count = get_all_preset_gesture_data()
 assert preset_count > 0
-expected_names = [gesture["name"] for gesture in expected_gestures.values()]
 result = bpy.ops.wm.gesture_import(
     run_execute=True,
     replace_with_all_presets=True,

@@ -199,6 +199,21 @@ class ElementStatusTests(unittest.TestCase):
         self.assert_argument_error({"flags": ["X"]}, "expects a set")
         self.assert_argument_error({"flags": {"Z"}}, "unknown enum value")
 
+    def test_legacy_grease_pencil_mode_alias_is_validated_against_live_rna(self):
+        properties = {
+            "mode": FakeProperty(
+                "mode",
+                "ENUM",
+                enum_items=("OBJECT", "PAINT_GREASE_PENCIL"),
+            ),
+        }
+        element = FakeElement(
+            {"mode": "PAINT_GPENCIL"},
+            properties,
+        )
+        element.operator_bl_idname = "object.mode_set"
+        self.assertIsNone(status_module.get_operator_argument_error(element))
+
     def test_invalid_arguments_take_priority_over_poll(self):
         element = FakeElement({"count": "three"}, self.properties, poll=False)
         status = status_module._evaluate_status(element, include_poll=True)

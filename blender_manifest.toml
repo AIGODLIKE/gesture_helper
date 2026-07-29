@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 
-blender_version_min = "4.2.0"
+blender_version_min = "4.3.0"
 id = "gesture_helper"
 license = ["SPDX:GPL-3.0-or-later"]
 copyright = [
@@ -12,7 +12,7 @@ maintainer = "ACGGIT Community"
 name = "Gesture Helper"
 tagline = "Use gestures to run Blender operators or change properties"
 type = "add-on"
-version = "2.3.6"
+version = "2.4.0"
 tags = ["3D View", "User Interface"]
 website = "https://github.com/AIGODLIKE/gesture_helper"
 support = "https://github.com/AIGODLIKE/gesture_helper/issues"
