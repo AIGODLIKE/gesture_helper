@@ -4,19 +4,21 @@ from __future__ import annotations
 
 import json
 import os
-from contextlib import contextmanager
+import tempfile
+from contextlib import contextmanager, nullcontext
 
 import bpy
 
 from .backups import (
+    iter_gestures_save_paths,
     iter_gestures_load_candidates,
     iter_gestures_load_fallback_after_failure,
     log_backup,
-    resolve_gestures_save_path,
 )
 from .gesture_store import get_gesture_store
 from .public import get_pref
 from .selection import suppress_radio_updates
+from .strict_json import load_json_strict, loads_json_strict
 
 _suppress_disk_save = 0
 _save_timer_pending = False
@@ -48,9 +50,16 @@ def cancel_scheduled_gesture_save() -> None:
     _save_timer_pending = False
 
 
+def capture_gesture_snapshot() -> dict | None:
+    """Serialize the live WM store for restoration across the next file load."""
+    if get_gesture_store() is None:
+        return None
+    return get_pref().get_gesture_data(True)
+
+
 def _read_gesture_file(path: str) -> dict:
     with open(path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+        data = load_json_strict(file)
     if not isinstance(data, dict) or 'gesture' not in data:
         raise ValueError("Invalid gesture file: missing 'gesture' data")
     gesture_data = data['gesture']
@@ -59,43 +68,177 @@ def _read_gesture_file(path: str) -> dict:
     return data
 
 
-def _apply_gesture_data(store, gesture_data: dict) -> None:
-    from ..ops.export_import import sanitize_gesture_import_data
+def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
+    """Write and validate a gesture file before atomically replacing ``path``."""
+    directory = os.path.dirname(path) or os.curdir
+    os.makedirs(directory, exist_ok=True)
+    fd, temp_path = tempfile.mkstemp(
+        dir=directory,
+        prefix=f'.{os.path.basename(path)}.',
+        suffix='.tmp',
+    )
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as file:
+            json.dump(export_data, file, ensure_ascii=True, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+
+        # Compare the exact JSON-compatible structure while the old file is
+        # still untouched. This catches partial writes and serialization drift.
+        written_data = _read_gesture_file(temp_path)
+        expected_data = loads_json_strict(json.dumps(export_data, ensure_ascii=True))
+        if written_data != expected_data:
+            raise ValueError('Gesture file verification failed before replace')
+
+        os.replace(temp_path, path)
+    finally:
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except OSError:
+            ...
+
+
+def _replace_gesture_store(
+        store,
+        restore: dict,
+        index: int,
+        *,
+        strict: bool = False,
+):
+    """Replace the live collection and return shortcut failures."""
     from ..gesture import gesture_keymap
-    from .property import __set_prop__
+    from ..gesture.gesture_keymap import suppress_keymap_restarts
+    from .cache_state import CacheState
+    from .property import __set_prop__, strict_property_assignment
+    from .public_cache import PublicCacheFunc
+
+    assignment_guard = strict_property_assignment() if strict else nullcontext()
+    with suppress_gesture_disk_save():
+        with (
+            CacheState.batch(),
+            suppress_radio_updates(),
+            suppress_keymap_restarts(),
+            assignment_guard,
+        ):
+            PublicCacheFunc.prepare_store_replacement()
+            # A full rebuild prevents failed/removed RNA proxies from surviving
+            # in the deferred per-gesture invalidation set.
+            CacheState.mark_structure_dirty(None)
+            store.gesture.clear()
+            if restore:
+                __set_prop__(store, 'gesture', restore)
+            if len(store.gesture):
+                store.index_gesture = min(max(index, 0), len(store.gesture) - 1)
+            else:
+                store.index_gesture = 0
+        from ..gesture.gesture_relationship import get_gesture_index
+        get_gesture_index.cache_clear()
+        failures = gesture_keymap.GestureKeymap.key_restart(
+            validate_from_index=0 if strict else None,
+        )
+    return failures
+
+
+def _apply_gesture_data(
+        store,
+        gesture_data: dict,
+        *,
+        target_index=None,
+        strict: bool = False,
+) -> None:
+    """Replace the live WM store transactionally."""
+    from ..ops.export_import import sanitize_gesture_import_data
 
     restore = sanitize_gesture_import_data(gesture_data)
-    with suppress_radio_updates():
-        store.gesture.clear()
-        if restore:
-            __set_prop__(store, 'gesture', restore)
-        if len(store.gesture):
-            store.index_gesture = min(max(store.index_gesture, 0), len(store.gesture) - 1)
-        else:
-            store.index_gesture = 0
-    from ..gesture.gesture_relationship import get_gesture_index
-    get_gesture_index.cache_clear()
-    gesture_keymap.GestureKeymap.key_restart()
+    previous_data = get_pref().get_gesture_data(True)
+    previous_index = store.index_gesture
+    if target_index is None:
+        target_index = previous_index
+
+    try:
+        failures = _replace_gesture_store(
+            store,
+            restore,
+            target_index,
+            strict=strict,
+        )
+        if strict and failures:
+            raise ValueError(
+                "Invalid imported shortcut: "
+                + "; ".join(str(failure) for failure in failures[:3])
+            )
+    except Exception as apply_error:
+        try:
+            rollback_failures = _replace_gesture_store(
+                store,
+                previous_data,
+                previous_index,
+            )
+        except Exception as rollback_error:
+            raise RuntimeError(
+                f"gesture restore failed ({apply_error}); "
+                f"rollback failed ({rollback_error})"
+            ) from apply_error
+        if rollback_failures:
+            log_backup(
+                "gestures restore rollback skipped invalid shortcut(s): "
+                + "; ".join(str(failure) for failure in rollback_failures[:3])
+            )
+        raise
+    if failures and not strict:
+        log_backup(
+            "gestures load skipped invalid shortcut(s): "
+            + "; ".join(str(failure) for failure in failures[:3])
+        )
+
+
+def restore_gesture_snapshot(gesture_data: dict) -> bool:
+    """Restore a file-load snapshot without requiring a writable user folder."""
+    if not isinstance(gesture_data, dict):
+        return False
+    store = get_gesture_store()
+    if store is None:
+        return False
+    try:
+        _apply_gesture_data(store, gesture_data)
+    except Exception as exc:
+        log_backup(f"gestures memory restore failed: {exc}")
+        from .debug_util import debug_traceback
+        debug_traceback(key='export_import')
+        return False
+    log_backup(f"gestures memory restore: ok ({len(store.gesture)} gesture(s))")
+    return True
 
 
 def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
     """Write all gestures to CONFIG (or backups fallback). Return path or None."""
     from ..ops.export_import import Export
 
-    pref = get_pref()
-    path = resolve_gestures_save_path()
     try:
+        if get_gesture_store() is None:
+            log_backup("gestures save skipped: gesture store unavailable")
+            return None
+        pref = get_pref()
         export_data = Export._build_export_data(
             pref,
             all_gestures=True,
             description=description,
         )
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(export_data, file, ensure_ascii=True, indent=2)
-        count = len(export_data.get('gesture') or {})
-        log_backup(f"gestures save: {count} gesture(s) -> {path}")
-        return path
+        last_error = None
+        for path in iter_gestures_save_paths():
+            try:
+                _write_gesture_file_atomic(path, export_data)
+            except (OSError, TypeError, ValueError) as exc:
+                last_error = exc
+                log_backup(f"gestures save path failed ({path}): {exc}")
+                continue
+            count = len(export_data.get('gesture') or {})
+            log_backup(f"gestures save: {count} gesture(s) -> {path}")
+            return path
+        if last_error is not None:
+            raise last_error
+        raise OSError("No Gesture Helper save path is available")
     except Exception as e:
         log_backup(f"gestures save failed: {e}")
         from .debug_util import debug_traceback
@@ -153,22 +296,23 @@ def _migrate_legacy_preferences_gestures(store) -> bool:
     log_backup(
         f"gestures migrate: {len(legacy)} gesture(s) from preferences -> WM/disk"
     )
-    from ..ops.export_import import sanitize_gesture_import_data
-    from .property import get_property, __set_prop__
+    from .property import get_property
 
     raw = {str(i): get_property(g) for i, g in enumerate(legacy)}
-    restore = sanitize_gesture_import_data(raw)
-    with suppress_radio_updates():
-        store.gesture.clear()
-        if restore:
-            __set_prop__(store, 'gesture', restore)
-        store.index_gesture = min(getattr(pref, "index_gesture", 0), max(len(store.gesture) - 1, 0))
-    from ..gesture.gesture_relationship import get_gesture_index
-    get_gesture_index.cache_clear()
+    _apply_gesture_data(
+        store,
+        raw,
+        target_index=getattr(pref, "index_gesture", 0),
+    )
     saved = save_gestures_to_disk(description='migrated_from_userpref')
     if saved is not None:
         clear_legacy_preferences_gestures()
-    return saved is not None
+    else:
+        log_backup(
+            "gestures migrate: restored to memory; disk write failed, "
+            "legacy preferences retained for retry"
+        )
+    return True
 
 
 def clear_legacy_preferences_gestures() -> None:
@@ -221,8 +365,13 @@ def load_gestures_from_disk() -> bool:
             from .debug_util import debug_traceback
             debug_traceback(key='export_import')
 
-    if _migrate_legacy_preferences_gestures(store):
-        return True
+    try:
+        if _migrate_legacy_preferences_gestures(store):
+            return True
+    except Exception as e:
+        log_backup(f"gestures legacy migration failed: {e}")
+        from .debug_util import debug_traceback
+        debug_traceback(key='export_import')
 
     log_backup("gestures load: no file and no in-memory gestures")
     return False

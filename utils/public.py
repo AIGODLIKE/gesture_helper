@@ -1,14 +1,18 @@
 import bpy
+from typing import TYPE_CHECKING
 from bpy.props import StringProperty, CollectionProperty
 from mathutils import Vector
 
-from .public_cache import PublicCacheFunc, cache_update_lock
+from .public_cache import cache_update_lock
 from . import pref
 from . import gesture_items as _gesture_items
 from .pref_access import PrefAccess
 from .active_selection import ActiveSelection
 from .structure_cache_ops import StructureCacheOps
 from .adapter import operator_setattr
+
+if TYPE_CHECKING:
+    from ..element import Element
 
 # Re-export mixins for ``from ..utils.public import PrefAccess`` etc.
 
@@ -331,10 +335,7 @@ class PublicMouseModal:
         elif value_mode == "MOUSE_CHANGES_ARBITRARY":
             x = event.mouse_x - self.mouse.x
             y = event.mouse_y - self.mouse.y
-            if x > y:
-                return max(x, y)
-            else:
-                return min(x, y)
+            return x if abs(x) >= abs(y) else y
         else:
             raise ValueError("Invalid value mode: %r" % value_mode)
 

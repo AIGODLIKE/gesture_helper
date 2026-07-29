@@ -1,8 +1,8 @@
-import bpy
 from bpy.app.translations import pgettext
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 
 from ..gesture import GestureKeymap
+from ..gesture.gesture_property import GESTURE_TYPE_ITEMS
 from ..utils.public import (
     PublicOperator,
     poll_addon_preferences,
@@ -11,18 +11,65 @@ from ..utils.public import (
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.structure_cache_ops import StructureCacheOps
+from ..utils.strict_json import load_json_strict
+
+
+def _preset_sort_key(gesture: dict, is_example: bool) -> tuple[bool, bool]:
+    return (not is_example, gesture.get('gesture_type') == 'MENU')
+
+
+def get_all_preset_gesture_data() -> tuple[dict[str, dict], int]:
+    """Load every bundled preset in the bulk-import display order."""
+    from ..utils.preset import (
+        DEBUG_ONLY_PRESET_NAMES,
+        get_preset_gesture_list,
+    )
+
+    presets = get_preset_gesture_list(include_debug_only=True)
+    collected = []
+    for name, filepath in presets.items():
+        with open(filepath, encoding='utf-8') as file:
+            data = load_json_strict(file)
+        gesture_data = data.get('gesture') if isinstance(data, dict) else None
+        if not isinstance(gesture_data, dict):
+            raise ValueError(
+                f"Invalid bundled preset {name!r}: missing 'gesture' data"
+            )
+        is_example = name in DEBUG_ONLY_PRESET_NAMES
+        for key, gesture in gesture_data.items():
+            if not isinstance(gesture, dict):
+                raise ValueError(
+                    f"Invalid bundled preset {name!r} gesture {key!r}: "
+                    "expected an object"
+                )
+            collected.append((_preset_sort_key(gesture, is_example), gesture))
+
+    collected.sort(key=lambda item: item[0])
+    return (
+        {str(index): gesture for index, (_, gesture) in enumerate(collected)},
+        len(presets),
+    )
 
 
 def add_all_preset():
-    from ..utils.preset import get_preset_gesture_list
-    count = 0
-    for k, v in get_preset_gesture_list().items():
-        bpy.ops.wm.gesture_import(
-            filepath=v,
-            run_execute=True,
-        )
-        count += 1
-    return count
+    """Append every bundled preset as one strict, rollback-safe transaction."""
+    from .export_import import Import
+
+    gesture_data, preset_count = get_all_preset_gesture_data()
+    if not gesture_data:
+        raise ValueError("No bundled gesture presets found")
+
+    reports = []
+    importer = type("BundledPresetImport", (), {})()
+    importer.read_json = lambda: {"gesture": gesture_data}
+    importer.report = lambda level, message: reports.append((set(level), message))
+    from ..utils.public_cache import PublicCacheFunc
+    importer.cache_clear = PublicCacheFunc.cache_clear
+    if not Import.gesture_import(importer):
+        detail = reports[-1][1] if reports else "Bundled preset import failed"
+        raise ValueError(detail)
+    Import._finish_import(importer, 'after_bulk_preset_import')
+    return preset_count
 
 
 class GestureCURE:
@@ -39,9 +86,18 @@ class GestureCURE:
         bl_label = 'Add gesture'
         bl_description = (
             'Add a new gesture. '
-            'Hold Ctrl+Alt+Shift while clicking to import all bundled presets'
+            'Hold Ctrl+Alt+Shift while clicking to import every bundled preset, '
+            'including examples'
         )
         bl_options = {'REGISTER'}
+
+        gesture_type: EnumProperty(
+            name='Type',
+            description='Choose the runtime type for this new item',
+            items=GESTURE_TYPE_ITEMS,
+            default='RADIAL',
+            options={'SKIP_SAVE'},
+        )
 
         @classmethod
         def poll(cls, context):
@@ -49,10 +105,26 @@ class GestureCURE:
 
         def invoke(self, context, event):
             if event.ctrl and event.alt and event.shift:
-                count = add_all_preset()
+                try:
+                    count = add_all_preset()
+                except Exception as exc:
+                    self.report({'ERROR'}, str(exc))
+                    return {'CANCELLED'}
                 self.report({'INFO'}, pgettext("Imported %d presets") % count)
                 return {'FINISHED'}
-            return self.execute(context)
+            return context.window_manager.invoke_props_dialog(self, width=260)
+
+        def draw(self, _context):
+            column = self.layout.column(align=True)
+            column.label(text='Choose the type for the new item')
+            column.prop(self, 'gesture_type', expand=True)
+            column.separator()
+
+            gesture_info = column.box()
+            gesture_info.label(text='Gesture: drag in a direction to choose an action.')
+            menu_info = column.box()
+            menu_info.label(text='Menu: open a persistent menu at the cursor and click an item.')
+            column.label(text='The type is fixed after creation.', icon='INFO')
 
         def execute(self, _):
             from ..utils.gesture_store import get_gesture_store, get_gestures
@@ -61,7 +133,8 @@ class GestureCURE:
             if gestures is None or store is None:
                 return {'CANCELLED'}
             add = gestures.add()
-            add.name = 'Gesture'
+            add.name = 'Menu' if self.gesture_type == 'MENU' else 'Gesture'
+            add.gesture_type = self.gesture_type
             store.index_gesture = len(gestures) - 1
             GestureKeymap.key_restart()
             self.structure_changed(add)

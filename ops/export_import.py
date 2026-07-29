@@ -1,5 +1,4 @@
 # Import dialog shows preset options
-import json
 import os
 import time
 from datetime import datetime
@@ -8,15 +7,18 @@ import bpy
 from bpy.props import BoolProperty, StringProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-from ..gesture import GestureKeymap
 from ..ui.ui_list import ImportPresetUIList
 from ..utils.property import __set_prop__
+from ..utils.strict_json import load_json_strict, loads_json_strict
 from ..utils.backups import (
     blender_close_backup_filename,
     close_backup_filename,
+    gesture_auto_backup_unchanged,
     log_backup,
     PREFERENCES_EXPORT_EXTENSION,
     PREFERENCES_LEGACY_EXTENSION,
+    PREFERENCES_OLD_FILENAME,
+    prune_rotating_gesture_backups,
     resolve_backups_folder,
 )
 from ..utils.public import (
@@ -43,12 +45,20 @@ EXPORT_PROPERTY_EXCLUDE = (
 
 EXPORT_ICON_ITEM = ['icon', 'enabled_icon']
 EXPORT_PUBLIC_ITEM = ['name', 'element_type', 'enabled', 'description']
+EXPORT_OVERLAY_ITEM = ['overlay_offset']
 EXPORT_PROPERTY_ITEM = {
     'SELECTED_STRUCTURE': [*EXPORT_PUBLIC_ITEM, 'selected_type', 'poll_string'],
-    'CHILD_GESTURE': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM, 'direction'],
+    'CHILD_GESTURE': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_ICON_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction',
+        'main_item',
+    ],
     'OPERATOR_MODAL': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
+        *EXPORT_OVERLAY_ITEM,
         'modal_events',
         'modal_events_index',
         'control_property',
@@ -70,12 +80,60 @@ EXPORT_PROPERTY_ITEM = {
         'operator_context',
         'operator_properties',
         'event_shift',
-        'direction', 'operator_type'],
+        'direction', 'operator_type', 'main_item'],
     'OPERATOR_OPERATOR': [
         *EXPORT_PUBLIC_ITEM,
         *EXPORT_ICON_ITEM,
-        'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', ],
-    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM]
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'operator_bl_idname', 'operator_context', 'operator_properties', 'main_item'],
+    "DIVIDING_LINE": [*EXPORT_PUBLIC_ITEM],
+    'LABEL': [*EXPORT_PUBLIC_ITEM, *EXPORT_ICON_ITEM],
+    'PROPERTY': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction',
+        'property_data_path',
+        'property_drag_mode',
+        'property_drag_invert',
+        'property_wheel_step',
+        'property_show_value',
+        'property_value_format',
+        'property_value_precision',
+        'property_true_text',
+        'property_false_text',
+        'property_bool_icons_enabled',
+        'property_true_icon',
+        'property_false_icon',
+        'main_item',
+    ],
+    'ROW': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
+    ],
+    'COLUMN': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
+    ],
+    'BOX': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
+    ],
+    'SPLIT': [
+        *EXPORT_PUBLIC_ITEM,
+        *EXPORT_OVERLAY_ITEM,
+        'direction', 'main_item', 'layout_align', 'layout_alignment',
+        'layout_round_corners', 'layout_align_separators', 'split_factor',
+        'layout_scale', 'layout_scale_x', 'layout_scale_y',
+    ],
 }
 
 
@@ -86,8 +144,14 @@ def _is_legacy_script_element(element: dict) -> bool:
 def _remove_legacy_script_from_tree(elements: dict) -> None:
     remove_keys = []
     for key, element in elements.items():
+        if not isinstance(element, dict):
+            raise ValueError(f"Invalid element data at key {key!r}: expected an object")
         nested = element.get('element')
         if nested:
+            if not isinstance(nested, dict):
+                raise ValueError(
+                    f"Invalid child element data at key {key!r}: expected an object"
+                )
             _remove_legacy_script_from_tree(nested)
         if _is_legacy_script_element(element):
             debug_print(
@@ -121,17 +185,86 @@ def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
 
 
 def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Remove legacy SCRIPT elements, migrate operator ids, strip radio flags."""
+    """Validate and migrate gesture JSON before applying it to RNA."""
     from ..utils.selection import strip_radio_from_copy_data
 
-    for gesture in gesture_data.values():
+    if not isinstance(gesture_data, dict):
+        raise ValueError("Invalid gesture file: 'gesture' must be an object")
+
+    for key, gesture in gesture_data.items():
+        if not isinstance(gesture, dict):
+            raise ValueError(f"Invalid gesture data at key {key!r}: expected an object")
+
+        key_string = gesture.get('key_string')
+        if key_string is not None:
+            if not isinstance(key_string, str):
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: expected JSON text")
+            try:
+                key_data = loads_json_strict(key_string)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
+            if not isinstance(key_data, dict):
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: expected an object")
+            from ..gesture.gesture_keymap import validate_keymap_data
+            try:
+                validate_keymap_data(key_data)
+            except ValueError as exc:
+                raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
+
+        keymaps_string = gesture.get('keymaps_string')
+        if keymaps_string is not None:
+            if not isinstance(keymaps_string, str):
+                raise ValueError(f"Invalid keymap list for gesture {key!r}: expected JSON text")
+            try:
+                keymap_names = loads_json_strict(keymaps_string)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid keymap list for gesture {key!r}: {exc}") from exc
+            if (
+                not isinstance(keymap_names, list)
+                or not all(isinstance(name, str) for name in keymap_names)
+            ):
+                raise ValueError(
+                    f"Invalid keymap list for gesture {key!r}: expected a list of names"
+                )
+
+        gesture_type = gesture.get('gesture_type', 'RADIAL')
+        gesture['gesture_type'] = (
+            gesture_type if gesture_type in {'RADIAL', 'MENU'} else 'RADIAL'
+        )
+        menu_style = gesture.get('menu_style', 'PANEL')
+        gesture['menu_style'] = (
+            menu_style
+            if menu_style in {'PANEL', 'COMPACT', 'BORDERLESS'}
+            else 'PANEL'
+        )
+
         elements = gesture.get('element')
+        if elements is not None and not isinstance(elements, dict):
+            raise ValueError(
+                f"Invalid element collection for gesture {key!r}: expected an object"
+            )
         if elements:
             _remove_legacy_script_from_tree(elements)
             _migrate_legacy_operator_ids_in_tree(elements)
+            from ..utils.layout_scale import migrate_legacy_layout_scales
+            migrate_legacy_layout_scales(elements)
             for child in elements.values():
                 strip_radio_from_copy_data(child)
     return gesture_data
+
+
+def _normalize_imported_gesture_names(gestures, start_index: int) -> None:
+    """Give appended gestures stable unique names before KMI registration."""
+    used = {gestures[index].name for index in range(min(start_index, len(gestures)))}
+    for index in range(start_index, len(gestures)):
+        gesture = gestures[index]
+        base = gesture.name or (
+            'Menu' if gesture.gesture_type == 'MENU' else 'Gesture'
+        )
+        name = gesture.__generate_new_name__(used, base)
+        if gesture.name != name:
+            gesture.name = name
+        used.add(name)
 
 
 class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
@@ -180,28 +313,61 @@ class PublicFileOperator(PublicOperator, PrefAccess, StructureCacheOps):
 class Import(PublicFileOperator):
     bl_label = 'Import gesture'
     bl_idname = 'wm.gesture_import'
-    bl_description = 'Import gesture presets from a JSON file or bundled examples'
+    bl_description = (
+        'Import gesture presets from a JSON file or bundled examples.\n'
+        'Hold Ctrl+Alt+Shift while clicking the bundled-preset button to '
+        'replace all gestures with every bundled preset'
+    )
+    replace_with_all_presets: BoolProperty(
+        default=False,
+        options={'HIDDEN', 'SKIP_SAVE'},
+    )
+
     @property
     def preset_items(self):
         from ..utils.preset import get_preset_gesture_list
         return get_preset_gesture_list()
 
+    @staticmethod
+    def _replace_all_requested(preset_show, event) -> bool:
+        return bool(
+            preset_show
+            and event.ctrl
+            and event.alt
+            and event.shift
+        )
+
+    def invoke(self, context, event):
+        if self._replace_all_requested(self.preset_show, event):
+            self.replace_with_all_presets = True
+            return self.execute(context)
+        return super().invoke(context, event)
+
     def execute(self, _):
+        if self.replace_with_all_presets:
+            self.replace_with_all_presets = False
+            return self._replace_all_presets()
         if self.preset_show:
             return {'FINISHED'}
-        if not self.gesture_import():
-            return {'CANCELLED'}
+        from ..utils.gesture_persistence import suppress_gesture_disk_save
+        # Keep cache-lock finalizers inside the transaction's disk-save guard.
+        # A failed import is rolled back before the event loop can run timers.
+        with suppress_gesture_disk_save():
+            if not self.gesture_import():
+                return {'CANCELLED'}
+        return self._finish_import('after_import')
+
+    def _finish_import(self, description: str):
         self.cache_clear()
         from ..utils.public import PublicProperty
         PublicProperty.update_state()
-        GestureKeymap.key_restart()
         from ..utils.gesture_persistence import (
             cancel_scheduled_gesture_save,
             save_gestures_to_disk,
         )
 
         cancel_scheduled_gesture_save()
-        path = save_gestures_to_disk(description='after_import')
+        path = save_gestures_to_disk(description=description)
         if not path:
             from bpy.app.translations import pgettext
             self.report(
@@ -209,6 +375,44 @@ class Import(PublicFileOperator):
                 pgettext("Imported to memory; gesture file write failed"),
             )
         return {'FINISHED'}
+
+    def _replace_all_presets(self):
+        try:
+            from .gesture_cure import get_all_preset_gesture_data
+            from ..utils.gesture_persistence import _apply_gesture_data
+            from ..utils.gesture_store import get_gesture_store
+
+            gesture_data, preset_count = get_all_preset_gesture_data()
+            if not gesture_data:
+                raise ValueError("No bundled gesture presets found")
+            store = get_gesture_store()
+            if store is None:
+                raise RuntimeError("Gesture store unavailable")
+            _apply_gesture_data(
+                store,
+                gesture_data,
+                target_index=0,
+                strict=True,
+            )
+        except Exception as exc:
+            from bpy.app.translations import pgettext
+            from ..utils.debug_util import debug_trace_stack, debug_traceback
+
+            self.report(
+                {'ERROR'},
+                pgettext("Import error: %s") % pgettext(str(exc)),
+            )
+            debug_trace_stack(key='export_import')
+            debug_traceback(key='export_import')
+            return {'CANCELLED'}
+
+        from bpy.app.translations import pgettext
+
+        self.report(
+            {'INFO'},
+            pgettext("Replaced all gestures with %d presets") % preset_count,
+        )
+        return self._finish_import('after_bulk_preset_replace')
 
     def draw(self, _):
         layout = self.layout
@@ -225,10 +429,16 @@ class Import(PublicFileOperator):
 
     @cache_update_lock
     def gesture_import(self) -> bool:
+        store = None
+        old_length = 0
+        old_index = 0
+        did_mutate_store = False
         try:
             from ..gesture import gesture_keymap
 
             from ..utils.selection import suppress_radio_updates
+            from ..utils.gesture_persistence import suppress_gesture_disk_save
+            from ..utils.property import strict_property_assignment
 
             data = self.read_json()
             if not isinstance(data, dict) or 'gesture' not in data:
@@ -241,10 +451,32 @@ class Import(PublicFileOperator):
                 store = get_gesture_store()
                 if store is None:
                     raise RuntimeError("Gesture store unavailable")
-                __set_prop__(store, 'gesture', restore)
+                old_length = len(store.gesture)
+                old_index = store.index_gesture
+                # Element/gesture update callbacks normally rebuild keymaps as
+                # each RNA field arrives. Keep the existing bindings alive
+                # until the whole imported batch can be validated once.
+                with (
+                    suppress_gesture_disk_save(),
+                    gesture_keymap.suppress_keymap_restarts(),
+                    strict_property_assignment(),
+                ):
+                    did_mutate_store = True
+                    __set_prop__(store, 'gesture', restore)
+                    _normalize_imported_gesture_names(
+                        store.gesture,
+                        old_length,
+                    )
             from ..gesture.gesture_relationship import get_gesture_index
             get_gesture_index.cache_clear()
-            gesture_keymap.GestureKeymap.key_restart()
+            failures = gesture_keymap.GestureKeymap.key_restart(
+                validate_from_index=old_length,
+            )
+            if failures:
+                raise ValueError(
+                    "Invalid imported shortcut: "
+                    + "; ".join(str(failure) for failure in failures[:3])
+                )
 
             auth = data.get('author', '')
             des = data.get('description', '')
@@ -262,16 +494,68 @@ class Import(PublicFileOperator):
             self.report({'INFO'}, text)
             return True
         except Exception as e:
+            rollback_errors = []
+            if did_mutate_store and store is not None:
+                try:
+                    from ..gesture import gesture_keymap
+                    from ..utils.gesture_persistence import suppress_gesture_disk_save
+                    from ..utils.selection import suppress_radio_updates
+
+                    with (
+                        suppress_radio_updates(),
+                        suppress_gesture_disk_save(),
+                        gesture_keymap.suppress_keymap_restarts(),
+                    ):
+                        while len(store.gesture) > old_length:
+                            store.gesture.remove(len(store.gesture) - 1)
+                        store.index_gesture = min(
+                            max(old_index, 0), max(len(store.gesture) - 1, 0),
+                        )
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import rollback failed: {rollback_error}",
+                        key='export_import',
+                    )
+                try:
+                    # Property callbacks may have queued the appended Gesture
+                    # proxies for a deferred rebuild. They are invalid after
+                    # removal, so replace them with one full live-store rebuild.
+                    from ..utils.public_cache import PublicCacheFunc
+
+                    PublicCacheFunc.cache_clear()
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import cache recovery failed: {rollback_error}",
+                        key='export_import',
+                    )
+                try:
+                    from ..gesture.gesture_relationship import get_gesture_index
+
+                    get_gesture_index.cache_clear()
+                    gesture_keymap.GestureKeymap.key_restart()
+                except Exception as rollback_error:
+                    rollback_errors.append(rollback_error)
+                    debug_print(
+                        f"Gesture import keymap recovery failed: {rollback_error}",
+                        key='export_import',
+                    )
             from bpy.app.translations import pgettext
             # Translate msgid + detail separately; never report e.args (tuple noise).
-            self.report({'ERROR'}, pgettext("Import error: %s") % pgettext(str(e)))
+            detail = str(e)
+            if rollback_errors:
+                detail += "; rollback failed: " + "; ".join(
+                    str(error) for error in rollback_errors
+                )
+            self.report({'ERROR'}, pgettext("Import error: %s") % pgettext(detail))
             from ..utils.debug_util import debug_trace_stack, debug_traceback
             debug_trace_stack(key='export_import')
             debug_traceback(key='export_import')
             return False
     def read_json(self):
         with open(self.filepath, 'r', encoding='utf-8') as file:
-            return json.load(file)
+            return load_json_strict(file)
 
 
 class Export(PublicFileOperator):
@@ -289,7 +573,14 @@ class Export(PublicFileOperator):
     def file_path(self):
         folder_path = self.filepath
 
-        if self.is_invoke and folder_path.endswith('.json'):
+        # ``EXEC_DEFAULT`` callers (scripts, presets and tests) bypass
+        # ``invoke`` but still pass a concrete JSON filename. Treat it exactly
+        # like a path chosen in the file browser instead of creating a
+        # directory whose name ends in ``.json``.
+        if (
+            folder_path.lower().endswith(self.filename_ext)
+            and not os.path.isdir(folder_path)
+        ):
             return os.path.abspath(folder_path)
 
         if not folder_path:
@@ -352,21 +643,27 @@ class Export(PublicFileOperator):
         if gestures is None or len(gestures) == 0:
             return {'CANCELLED'}
 
-        gesture_data = self.export_data['gesture']
+        export_data = self.export_data
+        gesture_data = export_data['gesture']
         if not len(gesture_data):
             self.report({'INFO'}, pgettext("No export items selected"))
             return {'CANCELLED'}
 
         path = self.file_path
-        self.write_json_file()
+        try:
+            self.write_json_file(export_data)
+        except (OSError, TypeError, ValueError) as exc:
+            log_backup(f"manual gesture export failed ({path}): {exc}")
+            self.report({'ERROR'}, pgettext("Export failed. Check the path: %s") % path)
+            return {'CANCELLED'}
         self.report({'INFO'}, pgettext("Exported to %s") % path)
         return {'FINISHED'}
 
-    def write_json_file(self):
+    def write_json_file(self, export_data=None):
+        from ..utils.gesture_persistence import _write_gesture_file_atomic
+
         path = self.file_path
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(self.export_data, file, ensure_ascii=True, indent=2)
+        _write_gesture_file_atomic(path, export_data or self.export_data)
 
     @staticmethod
     def _build_export_data(pref, *, all_gestures: bool, description: str = 'auto_backups') -> dict:
@@ -381,13 +678,29 @@ class Export(PublicFileOperator):
         }
 
     @staticmethod
-    def _automatic_backup_path(is_blender_close: bool) -> str:
-        folder_path = resolve_backups_folder()
+    def _automatic_backup_path(
+        is_blender_close: bool,
+        *,
+        folder: str | None = None,
+    ) -> str:
+        folder_path = folder or resolve_backups_folder()
         if is_blender_close:
             pref = get_pref()
             mode = pref.backups_property.backups_file_mode
-            return os.path.abspath(os.path.join(
-                folder_path, blender_close_backup_filename(mode)))
+            filename = blender_close_backup_filename(mode)
+            path = os.path.abspath(os.path.join(folder_path, filename))
+            # The human-readable EVERY filename has second precision.  A
+            # rapid reload/close in the same second must not overwrite the
+            # earlier snapshot, so add a deterministic suffix only on collision.
+            if mode == "BLENDER_CLOSE_EVERY":
+                stem, extension = os.path.splitext(path)
+                candidate = path
+                serial = 1
+                while os.path.exists(candidate):
+                    candidate = f"{stem}-{serial:03d}{extension}"
+                    serial += 1
+                path = candidate
+            return path
         return os.path.abspath(os.path.join(folder_path, close_backup_filename()))
 
     @classmethod
@@ -423,11 +736,35 @@ class Export(PublicFileOperator):
             log_backup("skipped: export data empty")
             return None
 
-        path = cls._automatic_backup_path(is_blender_close)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            json.dump(export_data, file, ensure_ascii=True, indent=2)
-        log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
+        # Skip write when the target already contains the same gesture payload
+        # (export ``time`` always changes — compare gesture only).
+        # Compare only the target file for stable naming modes.  ``EVERY``
+        # intentionally writes on each close, even when the payload is equal.
+        path = cls._automatic_backup_path(is_blender_close, folder=folder)
+        mode = prop.backups_file_mode if is_blender_close else None
+        can_skip_unchanged = not is_blender_close or mode in {
+            "BLENDER_CLOSE_DAY", "BLENDER_CLOSE_ONE",
+        }
+        if can_skip_unchanged and gesture_auto_backup_unchanged(
+            export_data, folder, path=path
+        ):
+            log_backup(f"skipped: unchanged target {path}")
+            path = None
+        else:
+            from ..utils.gesture_persistence import _write_gesture_file_atomic
+
+            _write_gesture_file_atomic(path, export_data)
+            log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
+
+        # Cap rotating copies (oldest by mtime first); prefs single-file excluded.
+        max_auto_backups = getattr(prop, 'max_auto_backups', 100)
+        deleted, deleted_bytes = prune_rotating_gesture_backups(
+            max_auto_backups, folder)
+        if deleted:
+            log_backup(
+                f"pruned {deleted} auto backup(s) "
+                f"({deleted_bytes} bytes), max={max_auto_backups}"
+            )
         return path
 
     @staticmethod
@@ -596,7 +933,11 @@ class ImportPreferences(bpy.types.Operator, ImportHelper):
 
     filename_ext = PREFERENCES_EXPORT_EXTENSION
     filter_glob: bpy.props.StringProperty(
-        default=f"*{PREFERENCES_EXPORT_EXTENSION};*{PREFERENCES_LEGACY_EXTENSION}",
+        default=(
+            f"*{PREFERENCES_EXPORT_EXTENSION};"
+            f"*{PREFERENCES_LEGACY_EXTENSION};"
+            f"{PREFERENCES_OLD_FILENAME}"
+        ),
         options={'HIDDEN'},
         maxlen=255,
     )

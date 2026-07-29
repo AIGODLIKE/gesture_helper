@@ -1,20 +1,31 @@
 import os
 from ..utils.debug_util import debug_print
 
-DEBUG_ONLY_PRESET_NAMES = frozenset({"Example Preset"})
+DEBUG_ONLY_PRESET_NAMES = frozenset({
+    "Example Elements and Layout",
+    "Example Essentials",
+    "Example Property Controls",
+    "Example Practical Menu",
+    "Example Validation States",
+})
 
 
 def get_preset_gesture_list(*, include_debug_only: bool | None = None) -> dict[str, str]:
     from .public import PRESET_FOLDER
-    from .debug_util import get_debug
 
     if include_debug_only is None:
-        include_debug_only = get_debug()
+        try:
+            from .pref import get_pref
+            include_debug_only = bool(
+                get_pref().debug_property.show_example_presets
+            )
+        except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
+            include_debug_only = False
 
     items = {}
 
     try:
-        for f in os.listdir(PRESET_FOLDER):
+        for f in sorted(os.listdir(PRESET_FOLDER), key=str.casefold):
             path = os.path.join(PRESET_FOLDER, f)
             name = f[:-5]
 

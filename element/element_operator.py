@@ -5,10 +5,12 @@ from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public import get_debug, debug_print
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
 from ..utils.expression import literal_to_dict, parse_operator_properties
+from ..utils.operator_compat import resolve_operator_properties
 
 
 def migrate_legacy_operator_bl_idname(bl_idname: str) -> str:
@@ -61,7 +63,7 @@ class ModalProperty:
     @property
     def active_event(self) -> ElementModalOperatorEventItem | None:
         """Active modal event item."""
-        if len(self.modal_events) > self.modal_events_index and self.modal_events:
+        if 0 <= self.modal_events_index < len(self.modal_events):
             return self.modal_events[self.modal_events_index]
         return None
 
@@ -79,7 +81,11 @@ class ModalProperty:
     def modal_properties(self):
         """Get operator property dict."""
         try:
-            return literal_to_dict(self.last_modal_operator_property)
+            return resolve_operator_properties(
+                resolve_operator_bl_idname(self.operator_bl_idname),
+                literal_to_dict(self.last_modal_operator_property),
+                self.operator_func,
+            )
         except Exception as e:
             from ..utils.debug_util import debug_traceback, debug_trace_stack
             debug_print('Properties Error', key='operator')
@@ -100,7 +106,7 @@ class ModalProperty:
         return self.properties
 
     def run_element_modal_event(self, ops, context, event) -> bool:
-        if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
+        if event.type in POINTER_MOVE_EVENT_TYPES:
             last_mouse = getattr(ops, "mouse", None)
             mouse = Vector((event.mouse_x, event.mouse_y))
             is_change = False
@@ -142,6 +148,10 @@ class RunOperatorPropertiesSync:
     def to_operator_tmp_kmi(self) -> None:
         """Sync element properties to temp KMI."""
         from ..utils.public_cache import PublicCache
+        from ..utils.property import property_assignment_in_progress
+
+        if property_assignment_in_progress():
+            return
         if PublicCache._suppress_operator_tmp_kmi:
             return
         if not self.is_operator or not self.operator_is_operator:
@@ -229,16 +239,33 @@ class RunOperator:
 
     def __running_by_bl_idname__(self, operator_properties: str = None):
         """Run operator by bl_idname."""
-        if operator_properties is None:
-            operator_properties = self.operator_properties
         try:
             if func := self.operator_func:
-                if isinstance(operator_properties, dict):
-                    prop = operator_properties
+                if operator_properties is None:
+                    prop = self.properties
+                elif isinstance(operator_properties, dict):
+                    prop = resolve_operator_properties(
+                        resolve_operator_bl_idname(self.operator_bl_idname),
+                        operator_properties,
+                        func,
+                    )
                 else:
-                    prop = literal_to_dict(operator_properties)
+                    prop = resolve_operator_properties(
+                        resolve_operator_bl_idname(self.operator_bl_idname),
+                        literal_to_dict(operator_properties),
+                        func,
+                    )
 
-                func(self.operator_context, True, **prop)
+                runtime_idname = resolve_operator_bl_idname(self.operator_bl_idname)
+                # Mode switching is not an undoable edit. Forced execution and
+                # undo positional overrides can crash older Grease Pencil code
+                # and alter its context-dependent enum, so let this native
+                # operator use its defaults. Other operators retain the existing
+                # context and undo behavior.
+                if runtime_idname == "object.mode_set":
+                    func(**prop)
+                else:
+                    func(self.operator_context, True, **prop)
 
                 def g(v):
                     return f'"{v}"' if type(v) is str else v
@@ -303,6 +330,9 @@ class OperatorProperty:
             return
         debug_print("update_operator_properties:", self.operator_properties, key='operator')
         self.to_operator_tmp_kmi()
+        # Operator arguments participate in status/poll results. Invalidate
+        # the derived UI/GPU caches only after this real RNA content change.
+        self.clear_derived_cache()
 
     operator_bl_idname: StringProperty(
         name='Operator bl_idname',
@@ -331,7 +361,11 @@ class OperatorProperty:
     def properties(self):
         """Get operator property dict."""
         try:
-            return literal_to_dict(self.operator_properties)
+            return resolve_operator_properties(
+                resolve_operator_bl_idname(self.operator_bl_idname),
+                literal_to_dict(self.operator_properties),
+                self.operator_func,
+            )
         except Exception as e:
             from ..utils.debug_util import debug_trace_stack, debug_traceback
             debug_print('Properties Error', key='operator')

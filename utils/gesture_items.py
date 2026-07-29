@@ -12,6 +12,16 @@ from __future__ import annotations
 import bpy
 
 
+def _rna_identity(value) -> int:
+    """Stable identity for a Blender RNA value across Python proxy wrappers."""
+    if value is None:
+        return 0
+    try:
+        return int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return id(value)
+
+
 def poll_context_fingerprint() -> tuple:
     """Lightweight fingerprint of context values poll expressions commonly read."""
     context = bpy.context
@@ -30,12 +40,26 @@ def poll_context_fingerprint() -> tuple:
     except (AttributeError, RuntimeError, TypeError, ImportError):
         active_tool = None
     selected = getattr(context, 'selected_objects', None) or ()
+    try:
+        selected_ids = tuple(sorted(_rna_identity(item) for item in selected))
+    except (ReferenceError, RuntimeError, TypeError):
+        selected_ids = ()
     return (
         mode,
-        id(obj) if obj is not None else 0,
+        _rna_identity(obj),
         mesh_select_mode,
         active_tool,
-        len(selected),
+        selected_ids,
+    )
+
+
+def _is_direction_slot_item(item) -> bool:
+    """Element kinds that can occupy a radial direction slot."""
+    return (
+        item.is_child_gesture
+        or item.is_operator
+        or item.is_property_display
+        or item.is_layout_container
     )
 
 
@@ -61,7 +85,7 @@ def get_gesture_direction_items(iteration):
                     direction.update(child)
                     last_selected_structure = item
             continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator:  # Child gesture or operator
+        elif _is_direction_slot_item(item):
             if item.enabled:
                 direction[item.direction] = item
         if item.enabled:  # Reset structure chain when enabled
@@ -89,10 +113,22 @@ def get_gesture_extension_items(iteration):
                     extension.extend(child)
                     last_selected_structure = item
             continue  # Skip non-structure handling below
-        elif item.is_child_gesture or item.is_operator or item.is_dividing_line:
-            # Child gesture, operator, or divider
+        elif (
+                _is_direction_slot_item(item)
+                or item.is_dividing_line
+                or getattr(item, 'is_label', False)
+        ):
             if item.enabled:
                 extension.append(item)
         if item.enabled:  # Reset structure chain when enabled
             last_selected_structure = None
     return extension
+
+
+def iter_panel_leaves(items):
+    """Yield panel leaves, flattening every layout container."""
+    for item in items:
+        if item.is_layout_container:
+            yield from iter_panel_leaves(get_gesture_extension_items(item.element))
+        else:
+            yield item

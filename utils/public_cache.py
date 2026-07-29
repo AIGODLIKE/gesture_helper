@@ -150,6 +150,22 @@ class PublicCache:
 
 class PublicCacheFunc(PublicCache):
     @staticmethod
+    def prepare_store_replacement():
+        """Release cached RNA proxies before clearing the gesture store."""
+        from .selection import clear_all_active_element_caches
+        from .ui_draw_sync import clear_frozen_ui_selections
+
+        # Blender may reuse CollectionProperty pointer identities immediately
+        # after clear(). Drop every old proxy while its RNA is still valid so
+        # update callbacks for replacement elements cannot resolve stale owners.
+        clear_all_active_element_caches()
+        clear_frozen_ui_selections()
+        PublicCache.cache_clear_data()
+        PublicCache.__structure_generation__ += 1
+        PublicCache.__derived_generation__ += 1
+        PublicCacheFunc.clear_derived_lru_caches()
+
+    @staticmethod
     def gesture_cache_clear():
         from ..gesture import gesture_relationship
         gesture_relationship.get_gesture_index.cache_clear()

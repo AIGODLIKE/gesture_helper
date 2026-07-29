@@ -63,7 +63,10 @@ class CreateSwitchPanel(bpy.types.Operator):
     bl_idname = 'wm.gesture_create_switch_panel'
 
     panel_name: bpy.props.StringProperty()
-    filter: bpy.props.StringProperty(options={"TEXTEDIT_UPDATE"}, name="Filter")
+    filter: bpy.props.StringProperty(
+        options={"TEXTEDIT_UPDATE"},
+        name="Filter Panel Categories",
+    )
     space_type: bpy.props.EnumProperty(
         name="Editor",
         items=_space_type_items,

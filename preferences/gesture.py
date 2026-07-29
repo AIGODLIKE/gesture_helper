@@ -12,12 +12,13 @@ class GestureProperty(bpy.types.PropertyGroup):
         description='Idle time before the radial gesture UI appears',
         **_gen_gesture_prop(200, 'TIME'),
     )
-    modal_operator_target_fps: IntProperty(
-        name='Modal Operator Target FPS',
-        description='Report an error when one modal operator step takes longer than one frame at this rate',
-        default=10,
-        min=1,
-        max=240,
+    hover_tooltip_delay: IntProperty(
+        name='Hover Tooltip Delay (ms)',
+        description='Time the pointer must remain on an item before its tooltip appears',
+        default=300,
+        min=0,
+        max=5000,
+        subtype='TIME',
     )
     radius: IntProperty(
         name='Gesture Radius',
@@ -64,7 +65,7 @@ class GestureProperty(bpy.types.PropertyGroup):
         col = layout.box().column(align=True)
         g = pref.gesture_property
         col.prop(g, 'timeout')
-        col.prop(g, 'modal_operator_target_fps')
+        col.prop(g, 'hover_tooltip_delay')
         col.prop(g, 'radius')
         col.prop(g, 'threshold')
         col.prop(g, 'threshold_confirm')

@@ -40,7 +40,7 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
     def draw_logical_operator(self, layout: 'bpy.types.UILayout'):
         from ..utils.public_ui import draw_extend_ui
         is_draw, lay = draw_extend_ui(layout,
-                                      f'draw_logical_operator',
+                                      'draw_logical_operator',
                                       label='Syntax help',
                                       default_extend=False,
                                       )

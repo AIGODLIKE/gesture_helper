@@ -2,9 +2,13 @@ import bpy
 from bpy.app.translations import pgettext
 
 from ..ops.quick_add.create_element_operator import CreateElementOperator
-from ..ops.quick_add.create_element_property import CreateElementProperty
+from ..ops.quick_add.create_element_property import (
+    CreateElementProperty,
+    gesture_control_property_error,
+)
 from ..utils.public import get_pref
 from ..utils.session_state import SessionState
+from ..utils.translate import translate_rna_text
 
 
 class ContextMenu(bpy.types.Menu):
@@ -36,9 +40,40 @@ class ContextMenu(bpy.types.Menu):
             layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
             layout.enabled = get_pref().active_gesture is not None
             if show_property:
-                layout.operator(
+                prop_type = button_prop.type
+                property_name = translate_rna_text(
+                    button_prop.name,
+                    getattr(button_prop, 'translation_context', None),
+                )
+                direct = layout.column(align=True)
+                control_shape_supported = (
+                    prop_type in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}
+                    and not getattr(button_prop, 'is_array', False)
+                    and not getattr(button_prop, 'is_enum_flag', False)
+                )
+                if control_shape_supported:
+                    control_error = gesture_control_property_error(
+                        button_pointer, button_prop,
+                    )
+                    control = direct.column(align=True)
+                    control.enabled = control_error is None
+                    control.operator_context = 'EXEC_DEFAULT'
+                    operator = control.operator(
+                        CreateElementProperty.bl_idname,
+                        text=(
+                            pgettext("Add Gesture-Controlled Property %s")
+                            % property_name
+                        ),
+                        icon='LOCKED' if control_error else 'MOUSE_MOVE',
+                    )
+                    operator.display_property = True
+                    operator.property_type = prop_type
+
+                actions = direct
+                actions.operator_context = 'INVOKE_DEFAULT'
+                actions.operator(
                     CreateElementProperty.bl_idname,
-                    text=pgettext("Add Property %s") % __name_translate__(button_prop.name)
+                    text=pgettext("Property Actions for %s") % property_name,
                 )
 
             if show_operator:

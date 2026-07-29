@@ -11,6 +11,7 @@ from __future__ import annotations
 import bpy
 
 from ...utils.debug_util import debug_print
+from ...utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..addon_keymap import get_kmi_operator_properties
 from . import cursor
 from .invoke import defer_kmi_pass_through, defer_operator_call, invoke_operator_now
@@ -126,12 +127,15 @@ class GesturePassThroughKeymap:
     def try_pass_annotations_eraser(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
         if context.space_data and context.space_data.type in ("VIEW_3D", "NODE_EDITOR"):
             if context.active_annotation_layer:
-                if (event.type, event.type_prev) in [
+                event_pair = (event.type, event.type_prev)
+                if event_pair in [
                     ('D', 'RIGHTMOUSE'),
                     ('RIGHTMOUSE', 'D'),
-                    ('MOUSEMOVE', 'D'),
                     ('D', 'D')
-                ]:
+                ] or (
+                        event.type in POINTER_MOVE_EVENT_TYPES
+                        and event.type_prev == 'D'
+                ):
                     return {'FINISHED', 'PASS_THROUGH'}
         return None
 

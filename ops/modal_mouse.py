@@ -1,21 +1,26 @@
-import blf
 import bpy
 import gpu
 from bl_operators.wm import operator_value_undo_return
 from bpy.app.translations import pgettext
-from bpy.props import StringProperty, EnumProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty
 from mathutils import Vector
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public import (
     by_path_set_value,
     PublicMouseModal,
     debug_print,
     poll_addon_preferences,
-    tag_redraw,
 )
 from ..utils.expression import resolve_context_path
 from ..utils.public_gpu import PublicGpu
+from ..utils.selected_property import (
+    capture_selected_object_values,
+    resolve_context_property,
+    restore_snapshot_values,
+    set_snapshot_values,
+)
 
 
 class StoreValue:
@@ -54,12 +59,45 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         description="How to interpret the value",
         options={'SKIP_SAVE'},
     )
+    invert: BoolProperty(
+        name='Invert',
+        description='Reverse the mouse direction used to adjust the value',
+        default=False,
+        options={'SKIP_SAVE'},
+    )
+    copy_to_selected: BoolProperty(
+        name='Copy to Selected',
+        description='Set the same value on matching properties of selected objects',
+        default=False,
+        options={'SKIP_SAVE'},
+    )
     mouse = None
     last_mouse = None
     _draw_handle = None
     _draw_space_cls = None
     _display_text = ""
     _overlay_mouse = None
+    _modal_area = None
+    _modal_window = None
+    _panel_freeze_active = False
+    _cursor_modal_active = False
+    _confirm_on_lmb_release = False
+    _selected_property_values = None
+
+    def _begin_selected_property_copy(self, context) -> None:
+        if self._selected_property_values is not None:
+            return
+        resolved = resolve_context_property(context, self.data_path)
+        if resolved is None:
+            self._selected_property_values = []
+            return
+        owner, rna_prop = resolved
+        self._selected_property_values = capture_selected_object_values(
+            context,
+            self.data_path,
+            owner,
+            rna_prop,
+        )
 
     @classmethod
     def poll(cls, context):
@@ -108,12 +146,29 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         return header_text
 
     def _set_display_text(self, context, text: str, *, mouse: Vector | None = None) -> None:
+        text_changed = text != self._display_text
         self._display_text = text
         if mouse is not None:
             self._overlay_mouse = mouse.copy()
-        if context.area is not None:
+        if text_changed and context.area is not None:
             context.area.header_text_set(text or None)
-        tag_redraw()
+        self._tag_window_redraw(context)
+
+    def _tag_window_redraw(self, context=None) -> None:
+        """Redraw the value overlay without rebuilding the N-panel."""
+        area = getattr(context, 'area', None) or self._modal_area
+        if area is None:
+            return
+        try:
+            from ..utils.region_mouse import find_window_region
+            region = find_window_region(area)
+            if region is not None:
+                region.tag_redraw()
+            # Do not fall back to ``area.tag_redraw()``: that also invalidates
+            # the frozen sidebar UI and makes every value-drag mouse event
+            # rebuild the Gesture panels.
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            ...
 
     def _mouse_overlay_position(self) -> Vector | None:
         mouse = self._overlay_mouse
@@ -133,15 +188,16 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
 
         scale = bpy.context.preferences.view.ui_scale
         size = int(12 * scale)
-        font_id = 0
 
         gpu.state.blend_set('ALPHA')
-        blf.size(font_id, size)
-        width, height = blf.dimensions(font_id, text)
+        from ..utils.blf_text import measure_text
+        # Metric line height: the pill no longer jumps while the value text
+        # changes between digits, descenders, or CJK property names.
+        width, line_h = measure_text(text, size)
         padding = 8 * scale
         # draw_rounded_rectangle_area is centered on `position`; keep text in the same space.
         box_w = width + padding * 2
-        box_h = height + padding
+        box_h = line_h + padding
         self.draw_rounded_rectangle_area(
             position,
             color=(0.0, 0.0, 0.0, 0.65),
@@ -149,9 +205,9 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             height=box_h,
             radius=int(4 * scale),
         )
-        # draw_text places baseline at y - size; center the label inside the pill.
+        # draw_text places the line-box top at the given position.
         text_x = position.x - width / 2
-        text_y = position.y + size - height / 2
+        text_y = position.y + line_h / 2
         self.draw_text(text, position=(text_x, text_y), size=size)
 
     def register_draw(self, context):
@@ -175,7 +231,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             pass
         self._draw_handle = None
         self._draw_space_cls = None
-        tag_redraw()
+        self._tag_window_redraw()
 
     def invoke(self, context, event):
         self.__store__()
@@ -183,53 +239,174 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
         if self.___value___ is None:
             return {'CANCELLED'}
 
-        self.start_mouse(event)
-        region = context.region
-        self._overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
-        initial_value = resolve_context_path(context, self.data_path)
-        self._set_display_text(
-            context,
-            self._format_display_text(value=initial_value),
-            mouse=self._overlay_mouse,
+        self._modal_area = context.area
+        self._modal_window = context.window
+        self._cursor_modal_active = False
+        self._selected_property_values = None
+        if getattr(self, 'copy_to_selected', False) or getattr(event, 'alt', False):
+            self._begin_selected_property_copy(context)
+        self._confirm_on_lmb_release = bool(
+            event.type == 'LEFTMOUSE' and event.value == 'PRESS'
         )
-        self.register_draw(context)
-        context.window_manager.modal_handler_add(self)
+        from ..utils.ui_draw_sync import (
+            begin_panel_layout_freeze,
+            cancel_all,
+            tag_gesture_ui_regions,
+        )
+        cancel_all()
+        begin_panel_layout_freeze(self)
+        self._panel_freeze_active = True
+        # Build the unchanged disabled layout once. Mouse moves below redraw
+        # only the WINDOW region, so the panel neither jumps nor runs UILists.
+        tag_gesture_ui_regions()
+
+        try:
+            context.window.cursor_modal_set('NONE')
+            self._cursor_modal_active = True
+            self.start_mouse(event)
+            self._overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
+            initial_value = resolve_context_path(context, self.data_path)
+            self._set_display_text(
+                context,
+                self._format_display_text(value=initial_value),
+                mouse=self._overlay_mouse,
+            )
+            self.register_draw(context)
+            context.window_manager.modal_handler_add(self)
+        except Exception:
+            self.exit()
+            raise
         return {'RUNNING_MODAL'}
+
+    def _cancel_and_exit(self) -> set:
+        """Restore the original value and always release modal UI ownership."""
+        try:
+            try:
+                if self.___value___ is not None:
+                    self.__restore__()
+            finally:
+                restore_snapshot_values(self._selected_property_values)
+        except BaseException:
+            try:
+                self.exit()
+            except BaseException:
+                # Preserve the value-restoration error; cleanup was attempted.
+                pass
+            raise
+        self.exit()
+        return {'CANCELLED'}
+
+    def _cleanup_modal_after_error(self) -> None:
+        """Best-effort cancel without replacing the active modal exception."""
+        try:
+            self._cancel_and_exit()
+        except BaseException:
+            pass
 
     def modal(self, context, event):
         et = event.type
 
-        vm = self.value_mode
-        self.set_cursor(context, vm)
-        overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
+        # A deactivation event may no longer have a usable window region.
+        # Release the modal before reading coordinates or touching the cursor.
+        if et == 'WINDOW_DEACTIVATE':
+            return self._cancel_and_exit()
 
-        if et == 'MOUSEMOVE':
-            delta = self.value_delta(event, vm)
-            if type(self.___value___) == int:
-                value = int(round(self.___value___ + delta))
-            else:
-                value = self.___value___ + delta
-            by_path_set_value(bpy.context, self.data_path.split("."), value)
-            current_value = resolve_context_path(context, self.data_path)
-            self._set_display_text(
-                context,
-                self._format_display_text(value=current_value),
-                mouse=overlay_mouse,
-            )
+        try:
+            vm = self.value_mode
+            overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
 
-        elif 'LEFTMOUSE' == et or event.value == "RELEASE":
+            if et in POINTER_MOVE_EVENT_TYPES:
+                if (
+                        self._selected_property_values is None
+                        and getattr(event, 'alt', False)
+                ):
+                    self._begin_selected_property_copy(context)
+                delta = self.value_delta(event, vm)
+                if self.invert:
+                    delta = -delta
+                if isinstance(self.___value___, int):
+                    value = int(round(self.___value___ + delta))
+                else:
+                    value = self.___value___ + delta
+                current_value = resolve_context_path(context, self.data_path)
+                if current_value != value:
+                    by_path_set_value(bpy.context, self.data_path.split("."), value)
+                    current_value = resolve_context_path(context, self.data_path)
+                set_snapshot_values(self._selected_property_values, current_value)
+                self._set_display_text(
+                    context,
+                    self._format_display_text(value=current_value),
+                    mouse=overlay_mouse,
+                )
+        except BaseException:
+            self._cleanup_modal_after_error()
+            raise
+
+        if (
+                et == 'LEFTMOUSE'
+                and event.value == 'RELEASE'
+                and self._confirm_on_lmb_release
+        ):
+            # A native-style field drag started by LMB press commits on the
+            # matching release. Handoff modals keep ignoring stale releases.
             self.exit()
             return operator_value_undo_return(self.___value___)
 
-        elif et in {'RIGHTMOUSE', 'ESC'}:
-            self.__restore__()
+        if (
+                et == 'LEFTMOUSE'
+                and event.value == 'PRESS'
+                and not self._confirm_on_lmb_release
+        ):
+            # Gesture handoff starts without an owned LMB press, so retain the
+            # existing click-to-confirm boundary for that path.
             self.exit()
-            return {'CANCELLED'}
+            return operator_value_undo_return(self.___value___)
+
+        if et in {'RIGHTMOUSE', 'ESC'} and event.value == 'PRESS':
+            return self._cancel_and_exit()
 
         return {'RUNNING_MODAL'}
 
+    def cancel(self, _context):
+        self._cancel_and_exit()
+
     def exit(self):
-        self.unregister_draw()
-        self._display_text = ""
-        self._overlay_mouse = None
-        super().exit()
+        area = self._modal_area
+        window = self._modal_window
+        cursor_modal_active = self._cursor_modal_active
+        self._cursor_modal_active = False
+        self._confirm_on_lmb_release = False
+        try:
+            self.unregister_draw()
+        finally:
+            self._display_text = ""
+            self._overlay_mouse = None
+            self._selected_property_values = None
+            try:
+                if self._panel_freeze_active:
+                    from ..utils.ui_draw_sync import (
+                        end_panel_layout_freeze,
+                        tag_gesture_ui_regions,
+                    )
+                    self._panel_freeze_active = False
+                    try:
+                        end_panel_layout_freeze(self)
+                    finally:
+                        tag_gesture_ui_regions()
+            finally:
+                self._modal_area = None
+                self._modal_window = None
+                try:
+                    super().exit()
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    pass
+                try:
+                    if area is not None:
+                        area.header_text_set(None)
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    pass
+                try:
+                    if cursor_modal_active and window is not None:
+                        window.cursor_modal_restore()
+                except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                    pass

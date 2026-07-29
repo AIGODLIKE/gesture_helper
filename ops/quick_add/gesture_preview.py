@@ -1,141 +1,909 @@
 import bpy
-from bpy.props import StringProperty
+from bpy.props import EnumProperty, StringProperty
 from mathutils import Vector
 
 from .draw_gpu import DrawGpu
+from ...gesture.element_preview import ElementPreviewAdapter
 from ...gesture.gesture_draw_gpu import GestureGpuDraw
 from ...gesture.gesture_handle import GestureHandle
-from ...gesture.gesture_input import refresh_snapshot
+from ...gesture.gesture_input import (
+    clear_gesture_item_memos,
+    refresh_poll_context_fingerprint,
+    refresh_snapshot,
+    update_extension_hover,
+)
 from ...gesture.gesture_runtime import GestureRuntimeMixin
 from ...gesture.gesture_session import GestureSession
+from ...gesture.menu import GestureMenuRuntime
+from ...gesture.preview_input import PreviewGestureInputProcessor
 from ...utils.adapter import operator_setattr
-from ...utils.public import PublicOperator, debug_print
+from ...utils.input_event import POINTER_MOVE_EVENT_TYPES
+from ...utils.public import PublicOperator
 from ...utils.session_state import SessionState
 
 
-class GesturePreview(PublicOperator, GestureHandle, GestureGpuDraw, GestureRuntimeMixin):
-    bl_idname = "wm.gesture_preview"
-    bl_label = "Gesture preview"
-    bl_description = "Preview gesture layout and directions without running operators"
+PREVIEW_SCOPE_ITEMS = (
+    ('GESTURE', 'Gesture', 'Preview the active gesture or menu'),
+    ('ELEMENT', 'Element', 'Preview the active element and its subtree'),
+)
 
-    # Must use annotation form — Blender reads bpy.props from __annotations__.
-    gesture: StringProperty()
+_PREVIEW_TIMER_EVENTS = frozenset({
+    'TIMER', 'TIMER0', 'TIMER1', 'TIMER2', 'TIMER_JOBS',
+    'TIMER_AUTOSAVE', 'TIMER_REPORT', 'TIMERREGION',
+})
+_ELEMENT_POINTER_EVENTS = frozenset({
+    *POINTER_MOVE_EVENT_TYPES, 'LEFTMOUSE',
+    'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
+})
 
-    offset = Vector([300, 0])
+
+def _rna_identity(value) -> int:
+    if value is None:
+        return 0
+    try:
+        return int(value.as_pointer())
+    except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+        return id(value)
+
+
+class GesturePreview(
+        PublicOperator,
+        GestureHandle,
+        GestureGpuDraw,
+        GestureRuntimeMixin,
+        GestureMenuRuntime,
+):
+    """One read-only preview lifecycle with interchangeable render backends."""
+
+    bl_idname = 'wm.gesture_preview'
+    bl_label = 'Gesture Preview'
+    bl_description = 'Preview the active gesture, menu, or selected element without running it'
+
+    gesture: StringProperty(options={'HIDDEN'})
+    scope: EnumProperty(items=PREVIEW_SCOPE_ITEMS, default='GESTURE', options={'HIDDEN'})
+
+    # Menu previews must not replace or publish the real persistent-menu runtime.
+    _active_by_window = {}
+    _active_by_area = {}
+    _draw_handles = {}
+    _tracks_session_menu_state = False
+    preview_read_only = True
+
+    offset = Vector((300, 0))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        operator_setattr(self, "session", GestureSession())
-        operator_setattr(self, "points_list", None)
-        operator_setattr(self, "mouse_position", None)
-        operator_setattr(self, "__difference_mouse__", None)
-        operator_setattr(self, "start_mouse_position", None)
-        operator_setattr(self, "offset_position", Vector((0, 0)))
-        operator_setattr(self, "gpu", DrawGpu())
+        operator_setattr(self, 'session', GestureSession())
+        operator_setattr(self, 'points_list', None)
+        operator_setattr(self, 'mouse_position', None)
+        operator_setattr(self, '__difference_mouse__', None)
+        operator_setattr(self, 'start_mouse_position', None)
+        operator_setattr(self, 'offset_position', Vector((0, 0)))
+        operator_setattr(self, 'gpu', DrawGpu())
+        operator_setattr(self, '_input_processor', PreviewGestureInputProcessor())
+        operator_setattr(self, '_element_preview_adapter', ElementPreviewAdapter())
 
-    def __gpu_draw__(self):
-        self.gpu.tips.__gpu_draw__()
-        self.gpu.gesture_bpu.__gpu_draw__()
-        super().__gpu_draw__()
+        operator_setattr(self, '_preview_renderer', '')
+        operator_setattr(self, '_preview_target_key', None)
+        operator_setattr(self, '_preview_close_requested', False)
+        operator_setattr(self, '_preview_cleaned', False)
+        operator_setattr(self, '_preview_gpu_registered', False)
+        operator_setattr(self, '_preview_menu_registered', False)
+        operator_setattr(self, '_preview_event_timer', None)
+        operator_setattr(self, '_preview_window_manager', None)
+        operator_setattr(self, '_preview_window', None)
+
+        operator_setattr(self, '_menu_area', None)
+        operator_setattr(self, '_menu_screen', None)
+        operator_setattr(self, '_menu_window', None)
+        operator_setattr(self, '_menu_gesture_ref', None)
+        operator_setattr(self, '_menu_anchor', (0.0, 0.0))
+        operator_setattr(self, '_menu_centered', True)
+        operator_setattr(self, '_menu_panels', [])
+        operator_setattr(self, '_menu_open_path', [])
+        operator_setattr(self, '_menu_hovered_row', None)
+        operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_hovered_close', False)
+        operator_setattr(self, '_menu_pressed_row', None)
+        operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_pressed_close', False)
+        operator_setattr(self, '_menu_enum_dropdown', None)
+        operator_setattr(self, '_menu_layout_key', None)
+        operator_setattr(self, '_menu_layout_dirty', True)
+        operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_runtime_cleaned', False)
+        operator_setattr(self, '_menu_draw_count', 0)
+        operator_setattr(self, '_menu_last_draw_error', '')
+        operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
+        operator_setattr(self, '_menu_opened_at', 0.0)
+        operator_setattr(self, '_menu_closing_at', 0.0)
+        operator_setattr(self, '_menu_close_start_reveal', 1.0)
+        operator_setattr(self, '_menu_animation_timer', None)
+        operator_setattr(self, '_menu_animation_serial', 0)
 
     @classmethod
     def poll(cls, context):
         if SessionState.gesture_preview_active:
-            cls.poll_message_set("Gesture preview is already running")
+            cls.poll_message_set('A preview is already running')
+            return False
+        try:
+            from ...utils.public import get_pref
+
+            active = get_pref().active_gesture
+        except (KeyError, AttributeError, ReferenceError, RuntimeError):
+            active = None
+        if active is None:
+            cls.poll_message_set('Select a gesture to preview')
+            return False
+        area = getattr(context, 'area', None)
+        if (area is None or area.type != 'VIEW_3D') and cls.find_view3d_context(context) is None:
+            cls.poll_message_set('Open a 3D View to preview this gesture')
             return False
         return True
 
+    @staticmethod
+    def find_view3d_context(context) -> dict | None:
+        """Return a VIEW_3D WINDOW override without a temporary screen."""
+        wm = getattr(context, 'window_manager', None)
+        if wm is None:
+            return None
+        current_window = getattr(context, 'window', None)
+        try:
+            windows = list(wm.windows)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return None
+        if current_window in windows:
+            windows.remove(current_window)
+            windows.insert(0, current_window)
+        for window in windows:
+            try:
+                areas = window.screen.areas
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
+            for area in areas:
+                if area.type != 'VIEW_3D':
+                    continue
+                region = next((item for item in area.regions if item.type == 'WINDOW'), None)
+                if region is not None:
+                    return {'window': window, 'area': area, 'region': region}
+        return None
+
+    @property
+    def mouse_is_in_extension_any_area(self) -> bool:
+        if self._preview_renderer == 'MENU':
+            return True
+        draw_ctx = getattr(self.session, 'draw_ctx', None)
+        return bool(draw_ctx is not None and draw_ctx.in_extension_ui)
+
     @property
     def is_exit(self):
-        return self.is_right_mouse
+        event = self.event
+        if event.type == 'ESC' and event.value == 'PRESS':
+            return True
+        return self.is_right_mouse and self._mouse_in_window_region(event)
 
-    def __sync_gesture__(self):
-        """Sync gesture name from preview."""
-        ag = self.pref.active_gesture
-        if ag and self.gesture != ag.name:
-            self.gesture = ag.name
-            self.session.gesture_name = ag.name
-            tree = self.trajectory_tree
-            if len(tree) >= 2:
-                debug_print(tree, key='modal')
+    def _mouse_in_window_region(self, event) -> bool:
+        area = self.session.area
+        if area is None:
+            return True
+        from ...utils.region_mouse import find_window_region
+
+        try:
+            region = find_window_region(area)
+        except ReferenceError:
+            return True
+        if region is None:
+            return True
+        return (
+            region.x <= event.mouse_x <= region.x + region.width
+            and region.y <= event.mouse_y <= region.y + region.height
+        )
+
+    def _preview_anchor(self, context, event) -> Vector:
+        from ...utils.region_mouse import find_window_region
+
+        region = find_window_region(context.area)
+        if region is None:
+            return Vector((event.mouse_x, event.mouse_y))
+        return Vector((region.x + region.width * 0.5, region.y + region.height * 0.5))
+
+    def _owner_area_is_live(self) -> bool:
+        area = self.session.area
+        screen = self.session.screen
+        window = self._preview_window
+        if area is None or screen is None or window is None:
+            return False
+        try:
+            return window.screen == screen and any(candidate == area for candidate in screen.areas)
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return False
+
+    def _active_preview_target(self):
+        try:
+            if self.scope == 'ELEMENT':
+                return 'ELEMENT', self.pref.active_element
+            gesture = self.pref.active_gesture
+        except (AttributeError, KeyError, ReferenceError, RuntimeError):
+            return None, None
+        if gesture is None:
+            return None, None
+        try:
+            renderer = 'MENU' if gesture.gesture_type == 'MENU' else 'RADIAL'
+        except (AttributeError, ReferenceError, RuntimeError):
+            return None, None
+        return renderer, gesture
+
+    def _enter_radial_renderer(self, context, event, gesture) -> bool:
+        from ...utils.public_cache import PublicCache
+
+        anchor = self._preview_anchor(context, event)
+        self.gesture = gesture.name
+        self.session.reset(event, context.area, context.screen, self.gesture)
+        self.start_mouse_position = anchor.copy()
+        self.offset_position = anchor.copy()
+        self.session._gesture_circle_center = anchor.copy()
+        self.session._last_trajectory_mouse = anchor.copy()
+        self.trajectory_tree.append(None, anchor.copy())
+        # Preview is a static inspection surface: show radial items at once
+        # instead of replaying the invoke timeout/tracking phase.
+        self.session.advance_to_ui_visible()
+        refresh_snapshot(self.session, self)
+        self.register_draw()
+        operator_setattr(self, '_preview_gpu_registered', True)
+        operator_setattr(
+            self,
+            '_preview_target_key',
+            (
+                'RADIAL', _rna_identity(gesture), gesture.name,
+                PublicCache.__structure_generation__,
+                PublicCache.__derived_generation__,
+            ),
+        )
+        return True
+
+    def _enter_menu_renderer(self, context, event, gesture) -> bool:
+        from ...utils.public_cache import PublicCache
+
+        anchor = self._preview_anchor(context, event)
+        self.gesture = gesture.name
+        self.session.reset(event, context.area, context.screen, self.gesture)
+        self.offset_position = anchor.copy()
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
+        operator_setattr(self, '_menu_area', context.area)
+        operator_setattr(self, '_menu_screen', context.screen)
+        operator_setattr(self, '_menu_window', context.window)
+        operator_setattr(self, '_menu_gesture_ref', gesture)
+        operator_setattr(self, '_menu_open_path', [])
+        operator_setattr(self, '_menu_hovered_row', None)
+        operator_setattr(self, '_menu_hovered_part', None)
+        operator_setattr(self, '_menu_hovered_close', False)
+        operator_setattr(self, '_menu_pressed_row', None)
+        operator_setattr(self, '_menu_pressed_part', None)
+        operator_setattr(self, '_menu_pressed_close', False)
+        operator_setattr(self, '_menu_enum_dropdown', None)
+        operator_setattr(self, '_menu_layout_key', None)
+        operator_setattr(self, '_menu_layout_dirty', True)
+        operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_runtime_cleaned', False)
+        operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
+        operator_setattr(self, 'event', event)
+        if not self._register_menu_runtime(context):
+            return False
+        operator_setattr(self, '_preview_menu_registered', True)
+        # The menu backend owns a separate draw handler, so initialize the
+        # shared selector/tips HUD here instead of waiting for the radial draw
+        # path to receive its first modal event.
+        self._preview_hud_event(event)
+        self._ensure_layout(force=True)
+        self._start_menu_open_animation()
+        operator_setattr(
+            self,
+            '_preview_target_key',
+            (
+                'MENU', _rna_identity(gesture), gesture.name,
+                PublicCache.__structure_generation__,
+                PublicCache.__derived_generation__,
+            ),
+        )
+        return True
+
+    def _enter_element_renderer(self, context, event, element) -> bool:
+        gesture = None
+        try:
+            gesture = element.parent_gesture if element is not None else self.pref.active_gesture
+        except (AttributeError, ReferenceError, RuntimeError):
+            ...
+        self.gesture = gesture.name if gesture is not None else ''
+        self.session.reset(event, context.area, context.screen, self.gesture)
+        anchor = self._preview_anchor(context, event)
+        self.session._gesture_circle_center = anchor.copy()
+        self.session._last_trajectory_mouse = anchor.copy()
+        self.trajectory_tree.append(None, anchor.copy())
+        self.session.advance_to_ui_visible()
+        self.register_draw()
+        operator_setattr(self, '_preview_gpu_registered', True)
+        self._sync_element_target(element, force=True)
+        return True
+
+    def _enter_renderer(self, context, event, renderer, target) -> bool:
+        operator_setattr(self, '_preview_renderer', renderer)
+        if renderer == 'RADIAL':
+            return self._enter_radial_renderer(context, event, target)
+        if renderer == 'MENU':
+            return self._enter_menu_renderer(context, event, target)
+        return self._enter_element_renderer(context, event, target)
+
+    def _leave_renderer(self) -> None:
+        renderer = self._preview_renderer
+        if renderer in {'RADIAL', 'ELEMENT'}:
+            if self._preview_gpu_registered:
+                operator_setattr(self, '_preview_gpu_registered', False)
+                self.unregister_draw()
+            self._cancel_gesture_timeout_timer()
+            self.session.release_element_proxies(self)
+            clear_gesture_item_memos(self.session, self)
+        elif renderer == 'MENU' and self._preview_menu_registered:
+            operator_setattr(self, '_preview_menu_registered', False)
+            operator_setattr(self, '_menu_runtime_cleaned', True)
+            self._unregister_menu_runtime()
+        operator_setattr(self, '_menu_close_requested', False)
+        operator_setattr(self, '_menu_enum_dropdown', None)
+        operator_setattr(self, '_menu_hovered_close', False)
+        operator_setattr(self, '_menu_pressed_close', False)
+        operator_setattr(self, '_menu_drag_mouse', None)
+        operator_setattr(self, '_menu_drag_button', None)
+        operator_setattr(self, '_preview_renderer', '')
+        operator_setattr(self, '_preview_target_key', None)
+
+    def _switch_renderer(self, context, event, renderer, target) -> bool:
+        self._leave_renderer()
+        return self._enter_renderer(context, event, renderer, target)
+
+    def _sync_radial_target(self, gesture) -> None:
+        from ...utils.public_cache import PublicCache
+
+        identity = ('RADIAL', _rna_identity(gesture), gesture.name)
+        key = (
+            *identity,
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
+        if key == self._preview_target_key:
+            return
+        previous = self._preview_target_key
+        if previous is not None and previous[:3] == identity:
+            clear_gesture_item_memos(self.session, self)
+            self.session._element_status_cache = None
+            refresh_snapshot(self.session, self)
+            operator_setattr(self, '_preview_target_key', key)
+            self.tag_redraw()
+            return
+        tree = self.trajectory_tree
+        center = tree.points_list[0].copy() if tree.points_list else self.offset_position.copy()
+        event = self.session.event
+        area = self.session.area
+        screen = self.session.screen
+        self._cancel_gesture_timeout_timer()
+        clear_gesture_item_memos(self.session, self)
+        self.gesture = gesture.name
+        self.session.reset(event, area, screen, self.gesture)
+        self.session._gesture_circle_center = center.copy()
+        self.session._last_trajectory_mouse = center.copy()
+        self.trajectory_tree.append(None, center.copy())
+        self.session.advance_to_ui_visible()
+        refresh_snapshot(self.session, self)
+        operator_setattr(self, '_preview_target_key', key)
+        self.tag_redraw()
+
+    def _sync_menu_target(self, gesture) -> None:
+        from ...utils.public_cache import PublicCache
+
+        identity = ('MENU', _rna_identity(gesture), gesture.name)
+        key = (
+            *identity,
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
+        if key == self._preview_target_key:
+            return
+        previous = self._preview_target_key
+        self.gesture = gesture.name
+        operator_setattr(self, '_menu_gesture_ref', gesture)
+        if previous is None or previous[:3] != identity:
+            operator_setattr(self, '_menu_open_path', [])
+            operator_setattr(self, '_menu_hovered_row', None)
+            operator_setattr(self, '_menu_hovered_part', None)
+            operator_setattr(self, '_menu_hovered_close', False)
+            operator_setattr(self, '_menu_pressed_row', None)
+            operator_setattr(self, '_menu_pressed_part', None)
+            operator_setattr(self, '_menu_pressed_close', False)
+        operator_setattr(self, '_menu_layout_dirty', True)
+        self._ensure_layout()
+        operator_setattr(self, '_preview_target_key', key)
+        self._tag_menu_redraw()
+
+    def _refresh_preview_poll_context(self, event, *, restore_event: bool) -> bool:
+        session = self.session
+        previous_event = session.event
+        previous = session._poll_context_fingerprint
+        session.event = event
+        session._input_event_serial += 1
+        current = refresh_poll_context_fingerprint(session)
+        if restore_event:
+            session.event = previous_event
+        if previous == current:
+            return False
+        session._element_status_cache = None
+        clear_gesture_item_memos(session, self)
+        return True
+
+    def _sync_element_target(self, element, *, force=False) -> None:
+        from ...utils.public_cache import PublicCache, PublicCacheFunc
+
+        gesture = None
+        try:
+            gesture = element.parent_gesture if element is not None else self.pref.active_gesture
+        except (AttributeError, ReferenceError, RuntimeError):
+            ...
+        if gesture is not None:
+            PublicCacheFunc.ensure_gesture_structure(gesture)
+        key = (
+            'ELEMENT',
+            _rna_identity(gesture),
+            _rna_identity(element),
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
+        if not force and key == self._preview_target_key:
+            return
+
+        canonical = self.session.canonical_element(element) if element is not None else None
+        self.gesture = gesture.name if gesture is not None else ''
+        self.session.layout_token = object()
+        self.session.draw_ctx = None
+        self.session._element_status_cache = None
+        clear_gesture_item_memos(self.session, self)
+        self._element_preview_adapter.set_element(canonical, self.session)
+        self.session.snapshot.direction_element = None
+        self.session.snapshot.direction_items = {}
+        self.session.snapshot.extension_element = self._element_preview_adapter
+        self.session.extension_hover = self._element_preview_adapter.initial_hover_path()
+        self.session.advance_to_ui_visible()
+        operator_setattr(self, '_preview_target_key', key)
+        self.tag_redraw()
+
+    def _sync_preview_target(self, context, event) -> bool:
+        renderer, target = self._active_preview_target()
+        if self.scope == 'GESTURE' and target is None:
+            return False
+        if renderer != self._preview_renderer:
+            return self._switch_renderer(context, event, renderer, target)
+        if renderer == 'RADIAL':
+            self._sync_radial_target(target)
+        elif renderer == 'MENU':
+            self._sync_menu_target(target)
+        else:
+            self._sync_element_target(target)
+        return True
+
+    def _add_preview_event_timer(self, context) -> None:
+        wm = context.window_manager
+        timer = wm.event_timer_add(0.15, window=context.window)
+        operator_setattr(self, '_preview_window_manager', wm)
+        operator_setattr(self, '_preview_event_timer', timer)
+
+    def _remove_preview_event_timer(self) -> None:
+        timer = self._preview_event_timer
+        wm = self._preview_window_manager
+        operator_setattr(self, '_preview_event_timer', None)
+        operator_setattr(self, '_preview_window_manager', None)
+        if timer is None or wm is None:
+            return
+        try:
+            wm.event_timer_remove(timer)
+        except (ReferenceError, RuntimeError, ValueError):
+            ...
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
+        scope = self.scope if self.scope in {'GESTURE', 'ELEMENT'} else 'GESTURE'
+        self.scope = scope
+        renderer, target = self._active_preview_target()
+        if scope == 'GESTURE' and target is None:
+            self.report({'WARNING'}, 'Select a gesture to preview')
+            return {'CANCELLED'}
+        if scope == 'ELEMENT' and target is None:
+            self.report({'WARNING'}, 'Select an element to preview')
+            return {'CANCELLED'}
+
+        area = getattr(context, 'area', None)
+        if area is None or area.type != 'VIEW_3D':
+            override = self.find_view3d_context(context)
+            if override is None:
+                self.report({'WARNING'}, 'Open a 3D View to preview this item')
+                return {'CANCELLED'}
+            try:
+                with context.temp_override(**override):
+                    result = bpy.ops.wm.gesture_preview(
+                        'INVOKE_DEFAULT',
+                        gesture=getattr(self.pref.active_gesture, 'name', ''),
+                        scope=scope,
+                    )
+            except (AttributeError, RuntimeError, TypeError):
+                self.report({'WARNING'}, 'Unable to start the preview in the 3D View')
+                return {'CANCELLED'}
+            operator_setattr(self, '_preview_cleaned', True)
+            return {'FINISHED'} if result and 'RUNNING_MODAL' in result else result
+
+        operator_setattr(self, '_preview_cleaned', False)
+        operator_setattr(self, '_preview_close_requested', False)
+        operator_setattr(self, '_preview_window', context.window)
         self.init_invoke(event)
-        self.session.reset(event, context.area, context.screen, self.gesture)
 
-        self.start_mouse_position = Vector((event.mouse_x, event.mouse_y))
-        self.offset_position = self.start_mouse_position
+        if not SessionState.begin_gesture_preview(self, scope):
+            self.report({'WARNING'}, 'A preview is already running')
+            return {'CANCELLED'}
+        try:
+            if not self._enter_renderer(context, event, renderer, target):
+                raise RuntimeError('preview renderer registration failed')
+            self._add_preview_event_timer(context)
+            context.window_manager.modal_handler_add(self)
+        except Exception:
+            self.__exit_modal__()
+            self.report({'WARNING'}, 'Unable to start the preview')
+            return {'CANCELLED'}
 
-        self._schedule_gesture_timeout_timer()
-        self._ensure_trajectory_seed()
-        refresh_snapshot(self.session, self)
-        self.trajectory_event_update(context, event)
-        self.register_draw()
-
-        wm = context.window_manager
-        wm.modal_handler_add(self)
-        SessionState.gesture_preview_active = True
-
-        self.__sync_gesture__()
+        self._tag_preview_redraw()
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-        self.area = context.area
-        self.screen = context.screen
-        self.__sync_gesture__()
+        if self._preview_cleaned:
+            return {'FINISHED'}
+        if self._preview_renderer == 'MENU' and self._menu_close_requested:
+            self.__exit_modal__()
+            return {'FINISHED'}
+        if self._preview_close_requested:
+            self.__exit_modal__()
+            return {'FINISHED'}
+        if not self._owner_area_is_live():
+            self.__exit_modal__()
+            return {'CANCELLED'}
 
         self.init_modal(event)
-        self.trajectory_event_update(context, event)
-        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
-
-        res = self.gpu.draw_run(self, event)
-        if res:
-            if "FINISHED" in res:
-                self.__exit_modal__()
-            return res
-        m = self.modal_event(event)
-        if m:
-            return m
-        return {'PASS_THROUGH'}
-
-    def cancel(self, context):
-        self.__exit_modal__()
-
-    def modal_event(self, event):
-        """Handle Space-drag to move the preview UI, and right-click to exit."""
-        space = (event.type == "SPACE" and not event.alt and not event.ctrl and not event.shift)
-        mv = (event.type == "MOUSEMOVE" and event.type_prev == "SPACE")
-        if space or mv:
-            if event.value == "PRESS":
-                self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
-                self.points_list = self.trajectory_tree.points_list
-            elif event.value == "RELEASE":
-                nd = self.start_mouse_position - self.mouse_position
-                diff = self.__difference_mouse__ - nd
-
-                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
-                self.points_list = None
-                self.__difference_mouse__ = None
-            elif self.__difference_mouse__:
-                nd = self.start_mouse_position - self.mouse_position
-                diff = self.__difference_mouse__ - nd
-                self.offset_position = self.mouse_position - diff
-
-                self.trajectory_tree.points_list = [pos + diff for pos in self.points_list]
-
-            return {'PASS_THROUGH', 'RUNNING_MODAL'}
+        if not self._sync_preview_target(context, event):
+            self.__exit_modal__()
+            return {'FINISHED'}
         if self.is_exit:
+            if self._preview_renderer == 'MENU':
+                self._begin_menu_close()
+                return {'RUNNING_MODAL'}
             self.__exit_modal__()
             return {'FINISHED'}
 
-    def __exit_modal__(self):
-        SessionState.gesture_preview_active = False
-        self.unregister_draw()
-        self._cancel_gesture_timeout_timer()
-        from ...gesture.gesture_input import clear_gesture_item_memos
-        clear_gesture_item_memos(self.session, self)
+        if self._preview_renderer == 'RADIAL':
+            return self._modal_radial(context, event)
+        if self._preview_renderer == 'MENU':
+            return self._modal_menu(event)
+        return self._modal_element(event)
 
-        window = getattr(bpy.context, 'window', None)
-        if window is not None and window.screen is not None:
-            for area in window.screen.areas:
-                area.tag_redraw()
+    def _modal_radial(self, context, event):
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            if self._refresh_preview_poll_context(event, restore_event=True):
+                refresh_snapshot(self.session, self)
+                self.tag_redraw()
+            return {'PASS_THROUGH'}
+        self.trajectory_event_update(context, event)
+        result = self._preview_hud_event(event)
+        if result:
+            return result
+        drag_result = self._radial_drag_event(event)
+        if drag_result:
+            return drag_result
+        return {'PASS_THROUGH'}
+
+    def _modal_menu(self, event):
+        operator_setattr(self, 'event', event)
+        if getattr(self, '_menu_closing_at', 0.0):
+            return {'RUNNING_MODAL'}
+        hud_result = self._preview_hud_event(event)
+        if hud_result:
+            return hud_result
+        drag_result = self._menu_drag_event(event)
+        if drag_result is not None:
+            return drag_result
+        if event.type in POINTER_MOVE_EVENT_TYPES:
+            if self._update_menu_hover(event):
+                self._tag_menu_redraw()
+            return {'PASS_THROUGH'}
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            previous_key = self._menu_layout_key
+            self._ensure_layout()
+            if self._menu_layout_key != previous_key:
+                self._tag_menu_redraw()
+            return {'PASS_THROUGH'}
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            self._ensure_layout()
+            if self._menu_close_hit(event):
+                self._press_menu_close()
+                self._begin_menu_close()
+                return {'RUNNING_MODAL'}
+            self._update_menu_hover(event)
+            row = getattr(self, '_menu_hovered_row', None)
+            if row is not None and row.kind == 'ENUM_ITEM':
+                self._close_menu_enum_dropdown()
+                return {'RUNNING_MODAL'}
+            if self._is_enum_property_row(row):
+                self._toggle_menu_enum_dropdown(row)
+                return {'RUNNING_MODAL'}
+            if row is not None and row.enabled:
+                if self._press_menu_row(row, event):
+                    self._tag_menu_redraw()
+            if self._menu_contains(self._menu_mouse(event)):
+                return {'RUNNING_MODAL'}
+            self._close_menu_enum_dropdown()
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if self._clear_menu_press():
+                self._tag_menu_redraw()
+                return {'RUNNING_MODAL'}
+        if event.type in {'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            self._ensure_layout()
+            if self._menu_contains(self._menu_mouse(event)):
+                return {'RUNNING_MODAL'}
+        return {'PASS_THROUGH'}
+
+    @staticmethod
+    def _preview_menu_drag_start(owner, event, button) -> bool:
+        point = owner._menu_mouse(event)
+        if point is None:
+            return False
+        owner._ensure_layout()
+        panels = getattr(owner, '_menu_panels', ())
+        if getattr(owner, '_menu_centered', False) and panels:
+            root_rect = panels[0].rect
+            owner._menu_anchor = (root_rect[0], root_rect[3])
+            owner._menu_centered = False
+        owner._menu_drag_mouse = point
+        owner._menu_drag_button = button
+        sync_tooltip = getattr(owner, '_sync_menu_tooltip', None)
+        if callable(sync_tooltip):
+            sync_tooltip(None)
+        return True
+
+    @staticmethod
+    def _preview_menu_drag_finish(owner, button) -> bool:
+        active_button = getattr(owner, '_menu_drag_button', None)
+        if active_button is None and button == 'SPACE' and owner._menu_drag_mouse is not None:
+            active_button = 'SPACE'
+        if active_button != button:
+            return False
+        owner._menu_drag_mouse = None
+        owner._menu_drag_button = None
+        return True
+
+    @staticmethod
+    def _preview_menu_drag_move(owner, event) -> bool:
+        previous = owner._menu_drag_mouse
+        if previous is None or event.type not in POINTER_MOVE_EVENT_TYPES:
+            return False
+        point = owner._menu_mouse(event)
+        if point is None:
+            return True
+        anchor_x, anchor_y = owner._menu_anchor
+        owner._menu_anchor = (
+            anchor_x + point[0] - previous[0],
+            anchor_y + point[1] - previous[1],
+        )
+        owner._menu_drag_mouse = point
+        owner._menu_layout_dirty = True
+        owner._ensure_layout(force=True)
+        owner._tag_menu_redraw()
+        return True
+
+    def _menu_drag_event(self, event):
+        """Move a menu preview from its header or with plain Space."""
+        plain_space = (
+            event.type == 'SPACE'
+            and not event.alt
+            and not event.ctrl
+            and not event.shift
+        )
+        if plain_space and event.value == 'PRESS':
+            GesturePreview._preview_menu_drag_start(self, event, 'SPACE')
+            return {'RUNNING_MODAL'}
+
+        if plain_space and event.value == 'RELEASE':
+            if not GesturePreview._preview_menu_drag_finish(self, 'SPACE'):
+                return None
+            return {'RUNNING_MODAL'}
+
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            if self._menu_header_hit(event):
+                GesturePreview._preview_menu_drag_start(self, event, 'LEFTMOUSE')
+                return {'RUNNING_MODAL'}
+            return None
+        if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            if GesturePreview._preview_menu_drag_finish(self, 'LEFTMOUSE'):
+                return {'RUNNING_MODAL'}
+            return None
+
+        if GesturePreview._preview_menu_drag_move(self, event):
+            return {'RUNNING_MODAL'}
+        return None
+
+    def _modal_element(self, event):
+        session = self.session
+        poll_changed = self._refresh_preview_poll_context(
+            event,
+            restore_event=event.type in _PREVIEW_TIMER_EVENTS,
+        )
+        if poll_changed:
+            _renderer, target = self._active_preview_target()
+            self._sync_element_target(target, force=True)
+        if event.type in _PREVIEW_TIMER_EVENTS:
+            return {'PASS_THROUGH'}
+        if event.type not in _ELEMENT_POINTER_EVENTS:
+            return {'PASS_THROUGH'}
+
+        session.event = event
+        session.event_count += 1
+        session.snapshot.mouse_window = Vector((event.mouse_x, event.mouse_y))
+        session.draw_ctx = None
+        from ...gesture.draw_frame_context import refresh_draw_frame_context
+
+        refresh_draw_frame_context(session, self)
+        before = tuple(session.extension_hover)
+        update_extension_hover(session, self)
+        from ...gesture.gesture_input import sync_runtime_tooltip
+
+        tooltip_changed = sync_runtime_tooltip(session, self)
+        if (
+                before != tuple(session.extension_hover)
+                or tooltip_changed
+        ):
+            self.tag_redraw()
+
+        if event.type in {'LEFTMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            from ...element.extension_hit import stack_any_ui
+
+            if stack_any_ui(session.extension_hover, self):
+                return {'RUNNING_MODAL'}
+        return {'PASS_THROUGH'}
+
+    def cancel(self, _context):
+        self.__exit_modal__()
+
+    def _apply_trajectory_drag(self, diff: Vector) -> None:
+        self.trajectory_tree.set_points(pos + diff for pos in self.points_list)
+        last = self.trajectory_tree.last_point
+        if last is not None:
+            self.session._gesture_circle_center = last.copy()
+            self.session._last_trajectory_mouse = last.copy()
+
+    def _radial_drag_event(self, event):
+        space = event.type == 'SPACE' and not event.alt and not event.ctrl and not event.shift
+        moving = event.type in POINTER_MOVE_EVENT_TYPES and event.type_prev == 'SPACE'
+        if not (space or moving):
+            return None
+        if event.value == 'PRESS':
+            self.__difference_mouse__ = self.start_mouse_position - self.mouse_position
+            self.points_list = self.trajectory_tree.points_list
+        elif event.value == 'RELEASE':
+            next_difference = self.start_mouse_position - self.mouse_position
+            diff = self.__difference_mouse__ - next_difference
+            self._apply_trajectory_drag(diff)
+            self.points_list = None
+            self.__difference_mouse__ = None
+        elif self.__difference_mouse__:
+            next_difference = self.start_mouse_position - self.mouse_position
+            diff = self.__difference_mouse__ - next_difference
+            self.offset_position = self.mouse_position - diff
+            self._apply_trajectory_drag(diff)
+        return {'PASS_THROUGH', 'RUNNING_MODAL'}
+
+    def _preview_hud_event(self, event) -> set:
+        """Refresh and route input to the HUD shared by gesture previews."""
+        if self.scope != 'GESTURE':
+            return set()
+        self.mouse_position = Vector((event.mouse_x, event.mouse_y))
+        return self.gpu.draw_run(self, event)
+
+    def _draw_preview_hud(self) -> None:
+        """Draw the selector and instructions above the active backend."""
+        self.gpu.tips.__gpu_draw__()
+        self.gpu.gesture_bpu.__gpu_draw__()
+
+    def _draw_menu(self) -> None:
+        GestureMenuRuntime._draw_menu(self)
+        if self._preview_renderer == 'MENU':
+            self._draw_preview_hud()
+
+    def __gpu_draw__(self):
+        if self._preview_renderer == 'RADIAL':
+            self._draw_preview_hud()
+        GestureGpuDraw.__gpu_draw__(self)
+
+    def gpu_draw_gesture(self):
+        if self._preview_renderer != 'ELEMENT':
+            return GestureGpuDraw.gpu_draw_gesture(self)
+        region = bpy.context.region
+        if region is None:
+            return None
+        self._element_preview_adapter.draw_centered(
+            self,
+            (float(region.width) * 0.5, float(region.height) * 0.5),
+        )
+        self.gpu_draw_runtime_annotation(region)
+        return None
+
+    def _tag_preview_redraw(self) -> None:
+        if self._preview_renderer == 'MENU':
+            self._tag_menu_redraw()
+        else:
+            self.tag_redraw()
+        try:
+            from ...utils.public import tag_redraw
+
+            tag_redraw()
+        except (AttributeError, ReferenceError, RuntimeError):
+            ...
+
+    def _request_preview_close(self) -> None:
+        if self._preview_cleaned:
+            return
+        if self._preview_renderer == 'MENU':
+            self._begin_menu_close()
+            return
+        operator_setattr(self, '_preview_close_requested', True)
+        operator_setattr(self, '_menu_close_requested', True)
+        self._tag_preview_redraw()
+
+    def _force_preview_cleanup(self) -> None:
+        self.__exit_modal__()
+
+    def __exit_modal__(self):
+        if self._preview_cleaned:
+            return
+        operator_setattr(self, '_preview_cleaned', True)
+        try:
+            self._remove_preview_event_timer()
+        finally:
+            try:
+                self._leave_renderer()
+            finally:
+                self.session.release_element_proxies(self)
+                SessionState.end_gesture_preview(self)
+                operator_setattr(self, '_preview_window', None)
+        try:
+            from ...utils.public import tag_redraw
+
+            tag_redraw()
+        except (AttributeError, ReferenceError, RuntimeError):
+            ...
+
+
+class GesturePreviewClose(PublicOperator):
+    bl_idname = 'wm.gesture_preview_close'
+    bl_label = 'Close Preview'
+    bl_description = 'Close the active gesture or element preview'
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, _context):
+        return SessionState.gesture_preview_active
+
+    def execute(self, _context):
+        if not SessionState.request_gesture_preview_close():
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
+
+class GesturePreviewFrozen(bpy.types.Operator):
+    """Property-free stand-in for disabled preview buttons during a freeze."""
+
+    bl_idname = 'wm.gesture_preview_frozen'
+    bl_label = 'Gesture Preview'
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        return {'CANCELLED'}

@@ -5,17 +5,46 @@ from bpy.props import EnumProperty, StringProperty, IntProperty, FloatProperty, 
 
 from ...utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE, from_rna_get_enum_items, ENUM_BOOL_VALUE_CHANGE_MODE
 from ...utils.property_data import (
-    CREATE_ELEMENT_DATA_PATHS,
     CREATE_ELEMENT_BRUSH_PATH,
+    can_use_clipboard_context_fallback,
     convert_data_path_to_context,
     normalize_context_data_path,
     resolve_context_data_path,
-    resolve_id_data_context_path,
-    resolve_view_layer_data_path,
+    validate_context_data_path,
 )
 from ...utils.public import get_pref, PublicOperator, debug_print
 from ...utils.pref_access import PrefAccess
 from ...utils.structure_cache_ops import StructureCacheOps
+
+
+def gesture_control_property_error(pointer, rna_prop) -> str | None:
+    """Return why an RNA property cannot be edited directly by a gesture."""
+    if pointer is None or rna_prop is None:
+        return "Property context is unavailable"
+    try:
+        prop_type = getattr(rna_prop, 'type', None)
+        is_array = getattr(rna_prop, 'is_array', False)
+        is_enum_flag = getattr(rna_prop, 'is_enum_flag', False)
+        is_readonly = getattr(rna_prop, 'is_readonly', False)
+        identifier = rna_prop.identifier
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        return "Property context is unavailable"
+    if prop_type not in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}:
+        return "This property type cannot be gesture-controlled"
+    if is_array:
+        return "Array properties cannot be gesture-controlled"
+    if prop_type == 'ENUM' and is_enum_flag:
+        return "Multi-select enum properties cannot be gesture-controlled"
+    if is_readonly:
+        return "This property is read-only"
+    try:
+        if pointer.is_property_readonly(identifier):
+            return "This property is not editable in the current context"
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        # Older Blender builds and a few transient button pointers do not
+        # expose the dynamic check. The static RNA flag remains authoritative.
+        pass
+    return None
 
 
 class Enum:
@@ -95,14 +124,26 @@ class OpsProperty(Enum):
     ])
 
     value_mode: EnumProperty(items=ENUM_NUMBER_VALUE_CHANGE_MODE, name="Value Mode")
+    invert: BoolProperty(
+        options={'HIDDEN', 'SKIP_SAVE'},
+        name='Invert',
+        description='Reverse the mouse direction used by modal adjustment',
+        default=False,
+    )
     int_value: IntProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Int Value", default=0)
     float_value: FloatProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="Float Value", default=0)
     string_value: StringProperty(options={'HIDDEN', 'SKIP_SAVE'}, name="String Value")
+    display_property: BoolProperty(
+        options={'HIDDEN', 'SKIP_SAVE'},
+        name="Display Property",
+        description="Add as a property display element instead of an operator",
+        default=False,
+    )
 
     @property
     def __data_path__(self) -> str:
         """bpy.context.space_data.show_gizmo -> space_data.show_gizmo"""
-        return self.data_path.replace("bpy.context.", "")
+        return self.data_path.removeprefix("bpy.context.")
 
     @classmethod
     def clear_info(cls):
@@ -174,6 +215,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
                         layout.label(text="Cannot add this property")
                     else:
                         self.draw_enum(layout)
+                self.draw_display_property(layout, prop, prop_type)
             else:
                 layout.alert = True
                 layout.label(text="Unable to get data path")
@@ -200,7 +242,7 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
                 layout.label(text=f"data_path:\t{self.data_path}")
 
     def draw_boolean(self, layout: bpy.types.UILayout):
-        layout.label(text="Set Boolean Value")
+        layout.label(text="Blender Property Operator")
         for item in self.rna_type.properties["boolean_mode"].enum_items:  # Draw boolean add modes
             ops = layout.operator(CreateElementProperty.bl_idname, text=item.name)
             ops.boolean_mode = item.identifier
@@ -208,29 +250,41 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
             ops.property_type = "BOOLEAN"
 
     def draw_int(self, layout: bpy.types.UILayout):
-        layout.label(text="Modify Int Value")
-        layout.prop(self, "value_mode", expand=True)
-        layout.separator()
+        layout.label(text="Property Action")
+        modes = layout.row(align=True)
+        modes.prop_enum(self, 'value_mode', 'SET_VALUE', text='Fixed Value')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_HORIZONTAL', text='Horizontal')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_VERTICAL', text='Vertical')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_ARBITRARY', text='Either Axis')
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "int_value")
-        layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
+        else:
+            layout.prop(self, 'invert')
+        text = 'Add Fixed-Value Operator' if self.value_mode == 'SET_VALUE' else 'Add Modal Mouse Operator'
+        ops = layout.operator(CreateElementProperty.bl_idname, text=text)
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.int_value = self.int_value
+        ops.invert = self.invert
         ops.property_type = "INT"
 
     def draw_float(self, layout: bpy.types.UILayout):
-        layout.label(text="Modify Float Value")
-        layout.prop(self, "value_mode", expand=True)
-        layout.separator()
+        layout.label(text="Property Action")
+        modes = layout.row(align=True)
+        modes.prop_enum(self, 'value_mode', 'SET_VALUE', text='Fixed Value')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_HORIZONTAL', text='Horizontal')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_VERTICAL', text='Vertical')
+        modes.prop_enum(self, 'value_mode', 'MOUSE_CHANGES_ARBITRARY', text='Either Axis')
         if self.value_mode == "SET_VALUE":
             layout.prop(self, "float_value")
-        layout.separator()
-        ops = layout.operator(CreateElementProperty.bl_idname, text="Add")
+        else:
+            layout.prop(self, 'invert')
+        text = 'Add Fixed-Value Operator' if self.value_mode == 'SET_VALUE' else 'Add Modal Mouse Operator'
+        ops = layout.operator(CreateElementProperty.bl_idname, text=text)
         ops.value_mode = self.value_mode
         ops.data_path = self.data_path
         ops.float_value = self.float_value
+        ops.invert = self.invert
         ops.property_type = "FLOAT"
 
     def draw_string(self, layout: bpy.types.UILayout):
@@ -242,6 +296,26 @@ class Draw(PublicOperator, PrefAccess, StructureCacheOps, OpsProperty):
         ops.data_path = self.data_path
         ops.string_value = self.string_value
         ops.property_type = "STRING"
+
+    def draw_display_property(self, layout: bpy.types.UILayout, prop, prop_type: str):
+        """Add-as-display-row entry (bool click, number drag, enum cycle)."""
+        if prop_type not in {"BOOLEAN", "INT", "FLOAT", "ENUM"}:
+            return
+        if getattr(prop, "is_array", False) or getattr(prop, "is_enum_flag", False):
+            return
+        layout.separator()
+        box = layout.box().column(align=True)
+        box.label(text="Gesture-Controlled Property")
+        control_error = gesture_control_property_error(self.button_pointer, prop)
+        if control_error:
+            box.label(text=control_error, icon='LOCKED')
+            box.enabled = False
+        else:
+            box.label(text="Shows the live value and changes it directly from the gesture")
+        ops = box.operator(CreateElementProperty.bl_idname, text="Add Gesture-Controlled Property")
+        ops.display_property = True
+        ops.data_path = self.data_path
+        ops.property_type = prop_type
 
     def draw_enum(self, layout: bpy.types.UILayout):
         layout.label(text="Modify Enumeration")
@@ -328,8 +402,12 @@ class Create(Draw):
         if vm == "SET_VALUE":
             self._set_context_operator(ae, 'wm.context_set_int', data_path=path, value=self.int_value)
         else:
-            ae.operator_bl_idname = (
-                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            self._set_context_operator(
+                ae,
+                ModalMouseOperator.bl_idname,
+                data_path=path,
+                value_mode=vm,
+                invert=self.invert,
             )
 
     def create_float(self):
@@ -342,8 +420,12 @@ class Create(Draw):
         if vm == "SET_VALUE":
             self._set_context_operator(ae, 'wm.context_set_float', data_path=path, value=self.float_value)
         else:
-            ae.operator_bl_idname = (
-                f"{ModalMouseOperator.bl_idname}(data_path='{path}', value_mode='{vm}')"
+            self._set_context_operator(
+                ae,
+                ModalMouseOperator.bl_idname,
+                data_path=path,
+                value_mode=vm,
+                invert=self.invert,
             )
 
     def create_string(self):
@@ -409,11 +491,27 @@ class Create(Draw):
         if pt == "ENUM" and self.button_prop and self.button_prop.is_enum_flag:
             self.report({'ERROR'}, "Multi-select enum (set) is not supported")
             return False
-        if pt == "ENUM" and not self.has_enum_items:
+        if pt == "ENUM" and not self.display_property and not self.has_enum_items:
             self.report({'ERROR'}, "Dynamic enum properties cannot be added")
             return False
+        if self.display_property:
+            control_error = gesture_control_property_error(
+                self.button_pointer, self.button_prop,
+            )
+            if control_error:
+                self.report({'ERROR'}, control_error)
+                return False
         self.cache_clear()
         with pref.add_element_property.active_radio():
+            if self.display_property:
+                bpy.ops.wm.gesture_element_add(element_type="PROPERTY")
+                ae = self._created_element()
+                if ae:
+                    ae.property_data_path = self.__data_path__
+                    bp = self.button_prop
+                    if bp:
+                        ae.name = pgettext_n(bp.name, bp.translation_context)
+                return True
             bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
             if pt == "BOOLEAN":
                 self.create_boolean()
@@ -466,6 +564,7 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         self.copy_data_path()
         self.init_string()
+        self.init_number()
         self.init_enum()
         return context.window_manager.invoke_popup(**{'operator': self, 'width': 400})
 
@@ -476,6 +575,12 @@ class CreateElementProperty(Create):
         self.from_context_get_info(context)
         if not self.button_pointer or not self.button_prop:
             self.report({'ERROR'}, "Property context lost, right-click the property again")
+            return {'CANCELLED'}
+        if not self.data_path:
+            self.copy_data_path()
+        if not self.data_path:
+            self.report({'ERROR'}, "Unable to resolve a bpy.context data path")
+            self.clear_info()
             return {'CANCELLED'}
 
         debug_print(
@@ -492,61 +597,73 @@ class CreateElementProperty(Create):
 
     def copy_data_path(self) -> None:
         """Resolve bpy.context-style RNA path for wm.context_* operators."""
+        self.data_path = ""
         pointer = self.button_pointer
-        prop_identifier = self.button_prop.identifier
-        pointer_name = pointer.__class__.__name__
-        id_data_type = type(pointer.id_data)
+        prop = self.button_prop
+        if pointer is None or prop is None:
+            return
 
-        if id_data_type is bpy.types.Mesh:
-            self.data_path = f"bpy.context.object.data.{prop_identifier}"
-            return
-        if id_data_type is bpy.types.Text and bpy.context.area.ui_type == "TEXT_EDITOR":
-            self.data_path = f"bpy.context.space_data.text.{prop_identifier}"
-            return
-        if pointer_name == "View3DShading" and bpy.context.area.ui_type == "PROPERTIES":
-            self.data_path = f"bpy.context.scene.display.shading.{prop_identifier}"
-            return
-        view_layer_path = resolve_view_layer_data_path(pointer, prop_identifier)
-        if view_layer_path:
-            self.data_path = view_layer_path
-            return
-        id_data_path = resolve_id_data_context_path(pointer, prop_identifier)
-        if id_data_path:
-            self.data_path = id_data_path
-            return
-        if pointer_name in CREATE_ELEMENT_DATA_PATHS:
-            self.data_path = f"{CREATE_ELEMENT_DATA_PATHS[pointer_name]}.{prop_identifier}"
-            return
-        if pointer_name == 'Brush' and bpy.context.object:
+        prop_identifier = prop.identifier
+        pointer_name = pointer.__class__.__name__
+
+        if pointer_name == 'Brush':
             mode = UnifiedPaintPanel.get_brush_mode(bpy.context)
             if mode in CREATE_ELEMENT_BRUSH_PATH:
-                self.data_path = f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.{prop_identifier}"
-                return
+                candidate = (
+                    f"{CREATE_ELEMENT_BRUSH_PATH[mode]}.brush.{prop_identifier}"
+                )
+                if validate_context_data_path(
+                        pointer, prop_identifier, candidate):
+                    self.data_path = candidate
+                    return
 
         resolved = resolve_context_data_path(pointer, prop_identifier)
         if resolved:
             self.data_path = resolved
             return
 
+        if not can_use_clipboard_context_fallback(pointer):
+            return
+
         cp = bpy.ops.ui.copy_data_path_button
         if cp.poll():
-            cp(full_path=True)
-            clipboard = bpy.context.window_manager.clipboard
-            converted = convert_data_path_to_context(clipboard, pointer)
-            if converted:
-                debug_print("use clipboard", converted, key='operator')
-                self.data_path = converted
-                return
-            normalized = normalize_context_data_path(clipboard)
-            if normalized:
-                debug_print("use clipboard", normalized, key='operator')
-                self.data_path = normalized
-                return
+            window_manager = bpy.context.window_manager
+            previous_clipboard = window_manager.clipboard
+            try:
+                result = cp(full_path=True)
+                if 'FINISHED' not in result:
+                    return
+                clipboard = window_manager.clipboard
+                candidates = (
+                    convert_data_path_to_context(clipboard, pointer),
+                    normalize_context_data_path(clipboard),
+                )
+                for candidate in candidates:
+                    if candidate and validate_context_data_path(
+                            pointer, prop_identifier, candidate):
+                        debug_print(
+                            "use clipboard", candidate, key='operator',
+                        )
+                        self.data_path = candidate
+                        return
+            finally:
+                window_manager.clipboard = previous_clipboard
 
     def init_string(self):
         prop = self.button_prop
         if prop and prop.type == "STRING":
             self.string_value = getattr(self.button_pointer, prop.identifier, "")
+
+    def init_number(self):
+        prop = self.button_prop
+        pointer = self.button_pointer
+        if not prop or not pointer or getattr(prop, 'is_array', False):
+            return
+        value = getattr(pointer, prop.identifier, None)
+        if prop.type == 'INT' and isinstance(value, int):
+            self.int_value = value
+        elif prop.type == 'FLOAT' and isinstance(value, (int, float)):
+            self.float_value = value
 
     def init_enum(self):
         prop = self.button_prop

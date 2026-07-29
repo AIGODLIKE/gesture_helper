@@ -18,6 +18,11 @@ from .other import OtherProperty
 from .. import __package__ as base_package
 from .. import gesture
 from ..utils.public import PublicProperty
+from ..utils.enum import LAYOUT_CONTAINER_TYPES
+
+
+def _update_enabled(_self, _context) -> None:
+    gesture.GestureKeymap.key_restart()
 
 
 class GesturePreferences(PublicProperty,
@@ -45,22 +50,30 @@ class GesturePreferences(PublicProperty,
     enabled: BoolProperty(
         name='Enable gesture',
         description="Enable the gesture system",
-        default=True, update=lambda self, context: gesture.GestureKeymap.key_restart())
+        default=True,
+        update=_update_enabled,
+    )
     show_page: EnumProperty(
         name='Preferences page',
         description='Which preferences page to display',
         items=[
             ('GESTURE', 'Gesture', 'Gesture list and element editor'),
-            ('PROPERTY', 'Property', 'Draw, backup, and general settings'),
+            ('PROPERTY', 'Property', 'Gesture and general settings'),
+            ('BACKUPS', 'Backups', 'Backup and restore settings'),
+            ('STYLE', 'Style', 'Overlay appearance and color settings'),
         ],
     )
 
 
     def get_gesture_data(self, get_all: bool = False) -> {}:
-        from ..ops.export_import import EXPORT_PROPERTY_ITEM, EXPORT_PROPERTY_EXCLUDE
+        from ..ops.export_import import (
+            EXPORT_PROPERTY_ITEM,
+            EXPORT_PROPERTY_EXCLUDE,
+            EXPORT_PUBLIC_ITEM,
+        )
         from ..utils.property import get_property
 
-        def filter_data(filter_dict, exclude_keywords=None):
+        def filter_data(filter_dict, exclude_keywords=None, source=None):
             if exclude_keywords is None:
                 exclude_keywords = []
             res = {}
@@ -71,7 +84,7 @@ class GesturePreferences(PublicProperty,
                 if element_type == "OPERATOR" and f"OPERATOR_{operator_type.upper()}" in EXPORT_PROPERTY_ITEM:
                     element_type = f"OPERATOR_{operator_type.upper()}"
 
-                for i in EXPORT_PROPERTY_ITEM[element_type]:
+                for i in EXPORT_PROPERTY_ITEM.get(element_type, EXPORT_PUBLIC_ITEM):
                     if i in filter_dict:
                         res[i] = filter_dict[i]
             else:
@@ -81,7 +94,21 @@ class GesturePreferences(PublicProperty,
                 exclude = exclude_keywords.copy()
                 if element_type == "CHILD_GESTURE" and filter_dict.get('direction', None) == "9":  # Bottom gesture: skip direction export
                     exclude.append("direction")
-                res['element'] = {k: filter_data(v, exclude) for k, v in filter_dict['element'].items()}
+
+                child_source = getattr(source, 'element', None)
+
+                def get_child_source(key):
+                    if child_source is None:
+                        return None
+                    try:
+                        return child_source[int(key)]
+                    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+                        return None
+
+                res['element'] = {
+                    k: filter_data(v, exclude, get_child_source(k))
+                    for k, v in filter_dict['element'].items()
+                }
 
             # Strip default export values
             if "enabled" in res and res['enabled']:  # Enabled is default; skip export
@@ -97,6 +124,55 @@ class GesturePreferences(PublicProperty,
                 res.pop("operator_type")
             if "operator_properties" in res and res["operator_properties"] == "{}":  # Default empty props
                 res.pop("operator_properties")
+            if "main_item" in res and not res["main_item"]:  # Default: not a main action
+                res.pop("main_item")
+            if "layout_alignment" in res and res["layout_alignment"] == "EXPAND":
+                res.pop("layout_alignment")
+            if "layout_align" in res:
+                default_align = element_type != 'SPLIT'
+                if bool(res["layout_align"]) is default_align:
+                    res.pop("layout_align")
+            if "layout_round_corners" in res and res["layout_round_corners"]:
+                res.pop("layout_round_corners")
+            if "layout_align_separators" in res and res["layout_align_separators"]:
+                res.pop("layout_align_separators")
+            if "split_factor" in res and res["split_factor"] == 0.0:
+                res.pop("split_factor")
+            if element_type in LAYOUT_CONTAINER_TYPES:
+                scale_x = res.get("layout_scale_x")
+                scale_y = res.get("layout_scale_y")
+
+                # Old AddonPreferences DNA can still contain only an explicit
+                # legacy scale while the newly added axes remain at defaults.
+                # Preserve that value until the normal import migration runs.
+                is_property_set = getattr(source, 'is_property_set', None)
+                if callable(is_property_set):
+                    try:
+                        if (
+                                is_property_set('layout_scale')
+                                and not is_property_set('layout_scale_x')
+                                and not is_property_set('layout_scale_y')
+                        ):
+                            scale_x = scale_y = res.get('layout_scale')
+                            if scale_x is not None:
+                                res['layout_scale_x'] = scale_x
+                                res['layout_scale_y'] = scale_y
+                    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                        pass
+
+                if scale_x is not None and scale_y is not None:
+                    # Keep uniform values readable by older add-on versions.
+                    # A non-uniform pair has no faithful legacy representation.
+                    if scale_x == scale_y:
+                        res["layout_scale"] = scale_x
+                    else:
+                        res.pop("layout_scale", None)
+            if "layout_scale" in res and res["layout_scale"] == 1.0:
+                res.pop("layout_scale")
+            if "layout_scale_x" in res and res["layout_scale_x"] == 1.0:
+                res.pop("layout_scale_x")
+            if "layout_scale_y" in res and res["layout_scale_y"] == 1.0:
+                res.pop("layout_scale_y")
 
             for k in exclude_keywords:
                 if k in res:
@@ -111,7 +187,7 @@ class GesturePreferences(PublicProperty,
         for index, g in enumerate(gestures):
             if g.selected or get_all:
                 origin = get_property(g, EXPORT_PROPERTY_EXCLUDE)
-                item = filter_data(origin)
+                item = filter_data(origin, source=g)
                 data[str(index)] = item
         return data
 

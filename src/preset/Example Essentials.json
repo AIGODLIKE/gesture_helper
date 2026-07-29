@@ -1,0 +1,106 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: gesture types, menu styles, radial directions, bottom extension, and practical modal control",
+  "gesture": {
+    "0": {
+      "name": "Direction Slots Example",
+      "enabled": false,
+      "gesture_type": "RADIAL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\"]",
+      "element": {
+        "0": {
+          "name": "Right View",
+          "element_type": "OPERATOR",
+          "direction": "1",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'RIGHT', 'align_active': False, 'relative': False}"
+        },
+        "1": {
+          "name": "Front View",
+          "element_type": "OPERATOR",
+          "direction": "2",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'FRONT', 'align_active': False, 'relative': False}"
+        },
+        "2": {
+          "name": "Top View",
+          "element_type": "OPERATOR",
+          "direction": "3",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'TOP', 'align_active': False, 'relative': False}"
+        },
+        "3": {
+          "name": "Back View",
+          "element_type": "OPERATOR",
+          "direction": "4",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'BACK', 'align_active': False, 'relative': False}"
+        },
+        "4": {
+          "name": "Left View",
+          "element_type": "OPERATOR",
+          "direction": "5",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'LEFT', 'align_active': False, 'relative': False}"
+        },
+        "5": {
+          "name": "View All",
+          "element_type": "OPERATOR",
+          "direction": "6",
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "6": {
+          "name": "Bottom View",
+          "element_type": "OPERATOR",
+          "direction": "7",
+          "operator_bl_idname": "view3d.view_axis",
+          "operator_properties": "{'type': 'BOTTOM', 'align_active': False, 'relative': False}"
+        },
+        "7": {
+          "name": "Perspective Toggle",
+          "element_type": "OPERATOR",
+          "direction": "8",
+          "operator_bl_idname": "view3d.view_persportho"
+        },
+        "8": {
+          "name": "Bottom Extension",
+          "element_type": "CHILD_GESTURE",
+          "direction": "9",
+          "icon": "MENU_PANEL",
+          "enabled_icon": true,
+          "element": {
+            "0": {
+              "name": "Frame Selected",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_bl_idname": "view3d.view_selected"
+            },
+            "1": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "2": {
+              "name": "Toggle Overlays",
+              "element_type": "PROPERTY",
+              "direction": "3",
+              "property_data_path": "space_data.overlay.show_overlays"
+            }
+          }
+        }
+      },
+      "description": "Directions 1 through 8 are real root radial slots; direction 9 is a root child gesture that opens the bottom extension"
+    }
+  }
+}

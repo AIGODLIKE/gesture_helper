@@ -23,6 +23,7 @@ class Gesture(
 ):
     def update_name(self):
         self.key_restart()
+        self.structure_changed(self)
 
     # Draw gesture overlay with GPU
     element: CollectionProperty(type=Element)
@@ -48,12 +49,20 @@ class Gesture(
             sp.label(text=self.__key_str__)
             layout = sp.row(align=True)
         layout.separator()
+        layout.label(
+            text='',
+            icon='MENU_PANEL' if self.gesture_type == 'MENU' else 'MOUSE_MOVE',
+        )
         layout.label(text=self.name_translate, translate=False)
         if prop.gesture_show_description:
             layout.label(text=self.description_translate)
 
 
 def _on_store_index_gesture_update(self, _context):
+    from ..utils.property import property_assignment_in_progress
+
+    if property_assignment_in_progress():
+        return
     try:
         if len(self.gesture):
             self.gesture[self.index_gesture].to_temp_kmi()
@@ -81,7 +90,10 @@ classes_list = (
     ElementModalOperatorEventCRUE.SelectControlProperty,
 
     Element,
+    ElementCURE.FrozenADD,
     ElementCURE.ADD,
+    ElementCURE.AddLayoutPreset,
+    ElementCURE.SwitchLayoutType,
     ElementCURE.SORT,
     ElementCURE.COPY,
     ElementCURE.CUT,
@@ -99,8 +111,29 @@ classes_list = (
 )
 
 
+def _validate_registered_element_schema() -> None:
+    """Fail registration if Blender retained an older Element RNA schema."""
+    from ..utils.enum import ENUM_ELEMENT_TYPE
+
+    expected = tuple(item[0] for item in ENUM_ELEMENT_TYPE)
+    actual = tuple(
+        item.identifier
+        for item in Element.bl_rna.properties['element_type'].enum_items
+    )
+    if actual != expected:
+        raise RuntimeError(
+            "Gesture Helper Element RNA is stale: "
+            f"expected {expected!r}, got {actual!r}"
+        )
+
+
 def register():
     register_classes_safe(classes_list)
+    try:
+        _validate_registered_element_schema()
+    except Exception:
+        unregister_classes_safe(classes_list)
+        raise
     setattr(
         bpy.types.WindowManager,
         WM_STORE_ATTR,

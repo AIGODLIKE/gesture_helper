@@ -1,11 +1,35 @@
 import time
 
-import blf
 import bpy
 import gpu
 from mathutils import Vector
 
 from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
+from ..utils.color import color_to_srgb
+
+
+_DIRECTION_TIP_START_RADIUS_RATIO = 0.5
+_DIRECTION_TIP_START_ARC = 24.0
+_DIRECTION_TIP_START_ALPHA = 0.28
+_DIRECTION_TIP_END_ARC = 45.0
+
+
+def _direction_tip_transition(distance: float, threshold: float, confirm_r: float):
+    """Return eased radius, sweep, alpha, and progress for the direction cue."""
+    span = max(1e-6, float(confirm_r) - float(threshold))
+    progress = min(1.0, max(0.0, (float(distance) - float(threshold)) / span))
+    eased = progress * progress * (3.0 - 2.0 * progress)
+    tip_r = float(threshold) * (
+        _DIRECTION_TIP_START_RADIUS_RATIO
+        + (1.0 - _DIRECTION_TIP_START_RADIUS_RATIO) * eased
+    )
+    tip_arc = _DIRECTION_TIP_START_ARC + (
+        _DIRECTION_TIP_END_ARC - _DIRECTION_TIP_START_ARC
+    ) * eased
+    tip_alpha = _DIRECTION_TIP_START_ALPHA + (
+        1.0 - _DIRECTION_TIP_START_ALPHA
+    ) * eased
+    return tip_r, tip_arc, tip_alpha, eased
 
 
 class DrawDebug(PublicGpu):
@@ -101,12 +125,39 @@ class DrawDebug(PublicGpu):
 class GestureGpuDraw(DrawDebug):
     __temp_draw_class__ = {}
     __temp_debug_draw_class__ = {}
-    __modal_draw_count__ = 0
-    __active_draw_instance__ = None
+    __active_draw_instances__ = {}
+    # A normal gesture removes its GPU handler before dispatching the final
+    # operator.  Keep a lightweight finishing marker so panel draws remain on
+    # the paused path until that dispatch has completed.
+    __finishing_draw_instances__ = {}
+
+    def mark_modal_finishing(self) -> None:
+        """Keep heavy editor panels paused during final modal dispatch."""
+        GestureGpuDraw.__finishing_draw_instances__[id(self)] = self
+
+    def clear_modal_finishing(self) -> None:
+        """Release the final-dispatch pause marker."""
+        finishing = GestureGpuDraw.__finishing_draw_instances__.pop(id(self), None)
+        if finishing is None:
+            return
+        session = getattr(self, "session", None)
+        if session is not None:
+            from ..utils.ui_draw_sync import release_gesture_panel_state
+            release_gesture_panel_state(session)
+
+    @staticmethod
+    def _context_instance():
+        area = bpy.context.area
+        if area is None:
+            return None
+        try:
+            return GestureGpuDraw.__active_draw_instances__.get(area.as_pointer())
+        except ReferenceError:
+            return None
 
     @staticmethod
     def _gpu_draw_handler():
-        inst = GestureGpuDraw.__active_draw_instance__
+        inst = GestureGpuDraw._context_instance()
         if inst is None:
             return
         try:
@@ -116,7 +167,7 @@ class GestureGpuDraw(DrawDebug):
 
     @staticmethod
     def _gpu_debug_draw_handler():
-        inst = GestureGpuDraw.__active_draw_instance__
+        inst = GestureGpuDraw._context_instance()
         if inst is None:
             return
         try:
@@ -134,8 +185,14 @@ class GestureGpuDraw(DrawDebug):
                 return
             if self.is_draw_gpu:
                 from .draw_frame_context import refresh_draw_frame_context
-                if getattr(self, "session", None) is not None:
-                    refresh_draw_frame_context(self.session, self)
+                session = getattr(self, "session", None)
+                if session is not None and getattr(session, "draw_ctx", None) is None:
+                    refresh_draw_frame_context(session, self)
+                if session is not None:
+                    session._layout_frame_measure_cache = {}
+                    # A fresh token makes geometry omitted by viewport culling
+                    # ineligible for hit testing immediately after this draw.
+                    session.layout_token = object()
                 gpu_draw_begin()
                 try:
                     self.gpu_draw_gesture()
@@ -152,7 +209,32 @@ class GestureGpuDraw(DrawDebug):
         if not space:
             return
         cls = space.rna_type
-        GestureGpuDraw.__active_draw_instance__ = self
+        self.clear_modal_finishing()
+        area_key = self.area.as_pointer()
+        self._gesture_draw_area_key = area_key
+        existing = GestureGpuDraw.__active_draw_instances__.get(area_key)
+        identifier = str(getattr(self, "bl_idname", "")).casefold()
+        existing_identifier = str(
+            getattr(existing, "bl_idname", "")
+        ).casefold()
+        # Capture the visible panel before replacing an active preview. Closing
+        # the preview clears SessionState, but the disabled row must keep the
+        # exact label/button content that was visible at gesture entry.
+        self._capture_modal_panel_state()
+        if (
+                existing is not None
+                and existing is not self
+                and identifier in {"wm.gesture_operator", "wm_ot_gesture_operator"}
+                and existing_identifier in {"wm.gesture_preview", "wm_ot_gesture_preview"}
+        ):
+            # Preview and a real gesture cannot share one draw slot. End the
+            # preview through its normal cleanup so its modal handler and
+            # SessionState do not survive underneath the real gesture.
+            try:
+                existing.__exit_modal__()
+            except Exception:
+                GestureGpuDraw.__active_draw_instances__.pop(area_key, None)
+        GestureGpuDraw.__active_draw_instances__[area_key] = self
         debug_gpu = False
         try:
             debug_gpu = bool(self.pref.debug_property.debug_draw_gpu_mode)
@@ -187,20 +269,63 @@ class GestureGpuDraw(DrawDebug):
             if debug_class:
                 GestureGpuDraw.__temp_debug_draw_class__[cls] = debug_class
 
-        GestureGpuDraw.__modal_draw_count__ += 1
-        GestureGpuDraw.__active_draw_instance__ = self
-        # Drop any pending N-panel keymap/operator sync so it cannot key_restart mid-draw.
-        from ..utils.ui_draw_sync import cancel_all
+        # Drop any pending N-panel keymap/operator sync so it cannot key_restart
+        # mid-draw. Rebuild the UI region once at modal entry so the original
+        # layout can be shown disabled; ordinary mouse moves only redraw the
+        # gesture WINDOW region and leave this frozen layout untouched.
+        from ..utils.ui_draw_sync import cancel_all, tag_gesture_ui_regions
         cancel_all()
+        tag_gesture_ui_regions()
         self._tag_redraw_gesture_screen()
+
+    def _capture_modal_panel_state(self) -> None:
+        """Capture panel-only state before the gesture owns UI redraws.
+
+        ``GestureModalEventPanel.poll`` normally resolves the selected element
+        through the live RNA store. During a gesture that lookup can rebuild
+        transient selection/proxy state while input is being dispatched. Keep
+        the visibility and element used by the already-visible panel on the
+        session instead; it is discarded with the session after modal exit.
+        """
+        identifier = str(getattr(self, "bl_idname", "")).casefold()
+        if identifier not in {"wm.gesture_operator", "wm_ot_gesture_operator"}:
+            return
+        session = getattr(self, "session", None)
+        if session is None:
+            return
+        try:
+            active_gesture = self.pref.active_gesture
+            active = self.pref.active_element
+            visible = bool(active is not None and active.operator_is_modal)
+        except (AttributeError, KeyError, ReferenceError, RuntimeError, TypeError):
+            active_gesture = None
+            active = None
+            visible = False
+        try:
+            from ..utils.session_state import SessionState
+            preview_active = bool(SessionState.gesture_preview_active)
+            preview_scope = str(SessionState.gesture_preview_scope or '')
+        except (AttributeError, ImportError, ReferenceError, RuntimeError, TypeError):
+            preview_active = False
+            preview_scope = ''
+        session._frozen_active_gesture = active_gesture
+        session._frozen_active_element = active
+        session._frozen_preview_active = preview_active
+        session._frozen_preview_scope = preview_scope
+        session._modal_event_panel_element = active if visible else None
+        from ..utils.ui_draw_sync import set_frozen_ui_selection
+        session._frozen_ui_selection_key = set_frozen_ui_selection(
+            active_gesture,
+            active,
+            area=getattr(session, "area", None),
+        )
 
     @classmethod
     def _remove_all_draw_handlers(cls):
         """Remove every registered GPU draw handler and reset counters."""
         from ..utils.public import tag_redraw as tag_redraw_all
 
-        GestureGpuDraw.__modal_draw_count__ = 0
-        GestureGpuDraw.__active_draw_instance__ = None
+        GestureGpuDraw.__active_draw_instances__.clear()
         for c, sub_class in GestureGpuDraw.__temp_draw_class__.items():
             for key, value in sub_class.items():
                 try:
@@ -217,23 +342,47 @@ class GestureGpuDraw(DrawDebug):
         GestureGpuDraw.__temp_debug_draw_class__.clear()
         tag_redraw_all()
 
-    @classmethod
-    def unregister_draw(cls):
+    def unregister_draw(self):
         """Cancel GPU draw handler when the last modal session ends."""
         from ..utils.public import tag_redraw as tag_redraw_all
+        from ..utils.ui_draw_sync import tag_gesture_ui_regions
 
-        GestureGpuDraw.__modal_draw_count__ = max(0, GestureGpuDraw.__modal_draw_count__ - 1)
-        if GestureGpuDraw.__modal_draw_count__ > 0:
+        key = getattr(self, '_gesture_draw_area_key', None)
+        if key is None:
+            try:
+                key = self.area.as_pointer()
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                key = None
+        if key is not None and GestureGpuDraw.__active_draw_instances__.get(key) is self:
+            GestureGpuDraw.__active_draw_instances__.pop(key, None)
+        self._gesture_draw_area_key = None
+        if id(self) not in GestureGpuDraw.__finishing_draw_instances__:
+            from ..utils.ui_draw_sync import release_gesture_panel_state
+            release_gesture_panel_state(getattr(self, "session", None))
+            # The owner area can live in a different window from the current
+            # bpy.context window during deactivation/system cancellation.
+            tag_gesture_ui_regions()
+        if GestureGpuDraw.__active_draw_instances__:
             # Must not call cls.tag_redraw() — subclasses override it as an
             # instance method (Blender 4.2 / 5.x both).
             tag_redraw_all()
             return
-        cls._remove_all_draw_handlers()
+        self._remove_all_draw_handlers()
 
     @classmethod
     def force_unregister_draw(cls):
         """Remove all GPU draw handlers (call on add-on unregister)."""
         cls._remove_all_draw_handlers()
+        from ..utils.ui_draw_sync import (
+            clear_frozen_ui_selections,
+            invalidate_playback_panel_state,
+        )
+        # This is add-on teardown, so all gesture snapshots can be discarded;
+        # normal modal completion uses the per-session path above and never
+        # touches another window's explicit property-drag snapshot.
+        clear_frozen_ui_selections()
+        invalidate_playback_panel_state()
+        cls.__finishing_draw_instances__.clear()
 
     def gpu_draw_trajectory_mouse_move(self):
         """Draw mouse-move trajectory line."""
@@ -272,6 +421,7 @@ class GestureGpuDraw(DrawDebug):
         threshold = draw_ctx.threshold if draw_ctx is not None else (
             self.pref.gesture_property.threshold * scale
         )
+        from ..utils.blf_text import measure_text
         for (el, pos) in zip(tree.child_element, tree.points_list):
             with gpu.matrix.push_pop():
                 gpu.matrix.translate(pos)
@@ -281,14 +431,14 @@ class GestureGpuDraw(DrawDebug):
                 tn = __name_translate__(text)
 
                 is_last = pos == tree.points_list[-1]
-                font_id = 0
-                blf.size(font_id, size)
-                (w, h) = blf.dimensions(font_id, tn)
+                # Metric line height keeps knot labels at a constant offset
+                # regardless of which glyphs the name happens to contain.
+                w, line_h = measure_text(tn, size)
                 gpu.matrix.translate(Vector((-(w / 2), 0)))
                 if is_last:
                     gpu.matrix.translate(Vector((0, -threshold)))
                 else:
-                    gpu.matrix.translate(Vector((0, -h)))
+                    gpu.matrix.translate(Vector((0, -line_h)))
 
                 self.draw_text(tn, size=size)
 
@@ -299,6 +449,104 @@ class GestureGpuDraw(DrawDebug):
             return draw_ctx.ui_scale
         return bpy.context.preferences.view.ui_scale
 
+    def _draw_empty_state(self, text: str, *, warning: bool = False) -> None:
+        """Draw a compact Blender-style status row at the gesture center."""
+        from ..utils.blf_text import measure_text
+
+        scale = self._draw_ui_scale()
+        size = max(10, round(self.draw_property.text_gpu_draw_size * scale * 0.82))
+        text_w, text_h = measure_text(text, size)
+        pad_x = max(8.0, 8.0 * scale)
+        pad_y = max(5.0, 5.0 * scale)
+        badge = max(16.0, text_h + 2.0 * scale)
+        gap = max(6.0, 6.0 * scale)
+        width = text_w + pad_x * 2.0 + badge + gap
+        height = max(text_h + pad_y * 2.0, badge + pad_y * 2.0)
+        draw = self.draw_property
+        stroke = draw.status_warning_color if warning else draw.outline_active_color
+
+        self.draw_rounded_rectangle_outlined(
+            (0.0, 0.0),
+            fill=draw.background_child_color,
+            stroke=stroke,
+            radius=min(5.0 * scale, height * 0.2),
+            width=width,
+            height=height,
+            line_width=max(0.75, float(draw.outline_width) * scale),
+        )
+        left = -width * 0.5 + pad_x
+        badge_color = draw.status_warning_color if warning else draw.background_child_active_color
+        self.draw_rounded_rectangle_area(
+            (left + badge * 0.5, 0.0),
+            color=badge_color,
+            radius=min(3.0 * scale, badge * 0.22),
+            width=badge,
+            height=badge,
+        )
+        mark = "!" if warning else "i"
+        mark_w, mark_h = measure_text(mark, size)
+        self.draw_text(
+            mark,
+            position=(left + (badge - mark_w) * 0.5, mark_h * 0.5),
+            size=size,
+            color=(1.0, 1.0, 1.0, 0.96),
+        )
+        self.draw_text(
+            text,
+            position=(left + badge + gap, text_h * 0.5),
+            size=size,
+            color=color_to_srgb(draw.text_default_color),
+        )
+
+    def _runtime_annotation_anchor(self, element):
+        """Prefer the hovered row, then fall back to the radial item button."""
+        from ..element.extension_hit import point_in_rect
+
+        draw_ctx = getattr(self.session, 'draw_ctx', None)
+        mouse = getattr(draw_ctx, 'mouse_region', None)
+        row_rect = getattr(element, 'extension_by_child_draw_area', None)
+        if point_in_rect(mouse, row_rect):
+            return row_rect
+        return getattr(element, 'item_draw_area', None) or row_rect
+
+    def gpu_draw_runtime_annotation(self, region) -> None:
+        """Draw delayed native RNA metadata and diagnostics for the hover."""
+        if not self.session.phase.shows_radial_ui:
+            return
+        state = getattr(self.session, 'tooltip_state', None)
+        from .runtime_tooltip import tooltip_draw_data
+
+        element, tooltip, reveal = tooltip_draw_data(state)
+        if reveal <= 0.0:
+            return
+
+        draw = self.draw_property
+        if tooltip.color_role == 'error':
+            accent = draw.status_error_color
+        elif tooltip.color_role == 'warning':
+            accent = draw.status_warning_color
+        elif tooltip.color_role == 'disabled':
+            accent = draw.status_disabled_color
+        else:
+            accent = draw.outline_active_color
+        scale = self._draw_ui_scale()
+        size = max(10, round(draw.text_gpu_draw_size * scale * 0.78))
+        metadata = tuple(color_to_srgb(draw.text_default_color))
+        metadata = (*metadata[:3], metadata[3] * 0.38)
+        self.draw_runtime_tooltip(
+            tooltip,
+            anchor_rect=self._runtime_annotation_anchor(element),
+            viewport_size=(region.width, region.height),
+            size=size,
+            scale=scale,
+            fill=draw.background_child_color,
+            stroke=accent,
+            text_color=color_to_srgb(draw.text_default_color),
+            metadata_color=metadata,
+            issue_color=color_to_srgb(accent),
+            reveal=reveal,
+        )
+
     def gpu_draw_gesture(self):
         """Draw gesture overlay; extension_hover is pruned then re-seeded while painting."""
         if getattr(self, 'session', None) is None:
@@ -306,8 +554,6 @@ class GestureGpuDraw(DrawDebug):
         region = bpy.context.region
         if region is None:
             return
-
-        from .gesture_input import extension_rollback
 
         scale = self._draw_ui_scale()
         session = self.session
@@ -317,23 +563,27 @@ class GestureGpuDraw(DrawDebug):
         )
         from ..src.translate import __name_translate__
 
-        # Prune stack from previous-frame hit boxes before redraw (legacy contract).
-        for el in self.session.extension_hover:
-            el.ops = self
-        extension_rollback(self.session)
         from .draw_frame_context import refresh_draw_ctx_extension_flag
         refresh_draw_ctx_extension_flag(self.session, self)
 
         with gpu.matrix.push_pop():
             gpu.matrix.translate([-region.x, -region.y])
             self.gpu_draw_direction_element()
-            if self.session.phase.shows_radial_ui:
-                self.gpu_draw_trajectory_gesture_line()
-            else:
-                if self.is_window_region_type:
+            preview = bool(getattr(self, 'preview_read_only', False))
+            if not preview:
+                if self.session.phase.shows_radial_ui:
+                    self.gpu_draw_trajectory_gesture_line()
+                elif self.is_window_region_type:
                     self.gpu_draw_trajectory_mouse_move()
-            self.gpu_draw_trajectory_gesture_point()
-            self.gpu_draw_last_item_name()
+                self.gpu_draw_trajectory_gesture_point()
+                self.gpu_draw_last_item_name()
+            elif len(self.trajectory_tree.points_list) > 1:
+                # A read-only preview must not show the live mouse trail, but
+                # entered child gestures are stable navigation history.  Draw
+                # that history so nested previews retain their visual path.
+                self.gpu_draw_trajectory_gesture_line()
+                self.gpu_draw_trajectory_gesture_point()
+                self.gpu_draw_last_item_name()
         if self.session.phase.shows_radial_ui:
             center = self.__circle_center_region_position__
             if center is None:
@@ -367,30 +617,37 @@ class GestureGpuDraw(DrawDebug):
                     angle = self.angle_unsigned
                     zone = self.session.snapshot.threshold_zone
                     if zone.is_beyond and angle is not None:
-                        # Direction tip grows inside the start (inner) ring only —
-                        # BEYOND maps progress → 0..threshold; CONFIRM sits on threshold.
+                        # Begin halfway out, then ease position, sweep, opacity,
+                        # and weight into the confirmed direction cue.
                         tip_color = draw.trajectory_gesture_color
                         if zone.is_confirm:
                             tip_width = max(5.0, 5.5 * scale)
                             tip_r = threshold
+                            tip_arc = _DIRECTION_TIP_END_ARC
                         else:
-                            tip_width = max(2.5, 3.0 * scale)
+                            dist = float(self.session.snapshot.distance)
+                            tip_r, tip_arc, tip_alpha, eased = _direction_tip_transition(
+                                dist,
+                                threshold,
+                                confirm_r,
+                            )
+                            start_width = max(2.5, 3.0 * scale)
+                            end_width = max(5.0, 5.5 * scale)
+                            tip_width = start_width + (end_width - start_width) * eased
+                            base_alpha = tip_color[3] if len(tip_color) > 3 else 1.0
                             tip_color = (
                                 *tip_color[:3],
-                                tip_color[3] * 0.55 if len(tip_color) > 3 else 0.55,
+                                base_alpha * tip_alpha,
                             )
-                            dist = float(self.session.snapshot.distance)
-                            span = max(1e-6, confirm_r - threshold)
-                            t = (dist - threshold) / span
-                            tip_r = max(1.0, threshold * min(1.0, max(0.0, t)))
                         self.draw_arc(
-                            (0, 0), tip_r, angle, 45,
+                            (0, 0), tip_r, angle, tip_arc,
                             color=tip_color,
                             line_width=tip_width,
                             segments=48,
                         )
 
                 draw_items = list(self.direction_items.values())
+                self._prepare_radial_overlay_offsets(draw_items, center, region)
                 for item in draw_items:
                     with gpu.matrix.push_pop():
                         item.draw_gpu_item(self)
@@ -398,9 +655,111 @@ class GestureGpuDraw(DrawDebug):
                 og = self.operator_gesture
                 if og is None or not len(og.element):
                     text = __name_translate__('This gesture has no elements. Please add some.')
-                    self.draw_text(text)
+                    self._draw_empty_state(text)
                 elif not len(draw_items):
-                    self.draw_text(__name_translate__('No gestures match the current conditions. Please add one.'))
+                    self._draw_empty_state(
+                        __name_translate__('No gestures match the current conditions. Please add one.'),
+                        warning=True,
+                    )
+        self.gpu_draw_runtime_annotation(region)
+
+    def _prepare_radial_overlay_offsets(self, draw_items, center, region) -> None:
+        """Measure and resolve root overlays only when their inputs change."""
+        session = self.session
+        if not draw_items:
+            session.radial_auto_offsets = {}
+            session._radial_offset_cache = None
+            return
+
+        draw_ctx = getattr(session, 'draw_ctx', None)
+        radius = draw_ctx.gesture_radius if draw_ctx is not None else (
+            self.gesture_property.radius * self._draw_ui_scale()
+        )
+        scale = draw_ctx.ui_scale if draw_ctx is not None else self._draw_ui_scale()
+
+        def direction_order(item):
+            try:
+                return int(item.direction)
+            except (AttributeError, TypeError, ValueError):
+                return 99
+
+        # Collision placement is independent of the cursor. Keep a compact
+        # content/viewport key so ordinary hover motion can reuse the previous
+        # result; derived-generation and poll revision cover structure and
+        # property-value changes respectively.
+        try:
+            item_key = tuple(sorted(
+                (
+                    id(item),
+                    str(getattr(item, 'direction', '')),
+                    tuple(float(value) for value in getattr(item, 'overlay_offset', (0.0, 0.0))),
+                )
+                for item in draw_items
+            ))
+        except (AttributeError, ReferenceError, RuntimeError, TypeError, ValueError):
+            item_key = tuple(id(item) for item in draw_items)
+        draw_key = (
+            item_key,
+            float(radius),
+            float(scale),
+            float(center.x),
+            float(center.y),
+            int(getattr(region, 'width', 0)),
+            int(getattr(region, 'height', 0)),
+        )
+        from ..utils.public_cache import PublicCache
+        cache_key = (
+            PublicCache.__derived_generation__,
+            getattr(session, '_poll_context_fingerprint', None),
+            getattr(session, '_poll_context_revision', 0),
+            draw_key,
+        )
+        cached = getattr(session, '_radial_offset_cache', None)
+        if cached is not None and cached[0] == cache_key:
+            session.radial_auto_offsets = cached[1]
+            return
+
+        records = []
+        for item in sorted(draw_items, key=direction_order):
+            item.ops = self
+            try:
+                base_bounds = item.radial_base_bounds(radius)
+                manual = item.overlay_offset
+                manual_bounds = (
+                    base_bounds[0] + float(manual[0]),
+                    base_bounds[1] + float(manual[1]),
+                    base_bounds[2] + float(manual[0]),
+                    base_bounds[3] + float(manual[1]),
+                )
+                records.append((
+                    item,
+                    manual_bounds,
+                    tuple(item.radial_outward_vector),
+                ))
+            except (AttributeError, ReferenceError, TypeError, ValueError):
+                # One malformed item must not suppress the rest of the overlay.
+                continue
+
+        if not records:
+            session.radial_auto_offsets = {}
+            session._radial_offset_cache = (cache_key, {})
+            return
+
+        inset = max(2.0, 4.0 * scale)
+        viewport = (
+            -float(center.x) + inset,
+            -float(center.y) + inset,
+            float(region.width) - float(center.x) - inset,
+            float(region.height) - float(center.y) - inset,
+        )
+        from ..utils.radial_collision import resolve_radial_collisions
+        offsets = resolve_radial_collisions(
+            records,
+            viewport=viewport,
+            padding=max(2.0, 4.0 * scale),
+        )
+        session.radial_auto_offsets = offsets
+        session._radial_offset_cache = (cache_key, offsets)
 
     def gpu_draw_direction_element(self):
         """Draw active direction element label."""

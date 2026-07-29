@@ -16,6 +16,8 @@ class DrawFrameContext:
     text_gpu_draw_radius: float = 0.0
     margin_x: float = 0.0
     margin_y: float = 0.0
+    layout_margin_x: float = 0.0
+    layout_margin_y: float = 0.0
     gesture_radius: float = 0.0
     threshold: float = 0.0
     # Extra delta past *threshold* (confirm radius = threshold + threshold_confirm).
@@ -40,14 +42,20 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
         scale = float(bpy.context.preferences.view.ui_scale)
     except (AttributeError, TypeError):
         scale = 1.0
-
     pref = ops.pref
     draw = pref.draw_property
     gp = pref.gesture_property
     mx, my = draw.margin
+    layout_mx, layout_my = draw.layout_margin
 
     from ..utils.region_mouse import ops_window_mouse
     mouse = ops_window_mouse(ops)
+    if getattr(session, "property_drag", None) is not None:
+        locked_mouse = getattr(session, "_property_drag_hover_mouse", None)
+        if locked_mouse is not None:
+            # Blender's active number button owns hover for the complete scrub.
+            # Keep the pressed field stable even though the hidden pointer moves.
+            mouse = locked_mouse
 
     threshold = float(gp.threshold) * scale
     ctx = DrawFrameContext(
@@ -56,6 +64,8 @@ def refresh_draw_frame_context(session, ops) -> DrawFrameContext:
         text_gpu_draw_radius=float(draw.text_gpu_draw_radius) * scale,
         margin_x=float(mx) * scale,
         margin_y=float(my) * scale,
+        layout_margin_x=float(layout_mx) * scale,
+        layout_margin_y=float(layout_my) * scale,
         gesture_radius=float(gp.radius) * scale,
         threshold=threshold,
         threshold_confirm=float(gp.threshold_confirm) * scale,

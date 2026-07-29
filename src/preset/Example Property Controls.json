@@ -1,0 +1,557 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: editable property displays, every quick-add property action, and all modal control modes",
+  "gesture": {
+    "0": {
+      "name": "Property Controls Example",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "COMPACT",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\"]",
+      "element": {
+        "0": {
+          "name": "Integer Controls",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Integer Add (Ctrl+A)",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "A",
+                  "event_ctrl": true,
+                  "number_value_mode": "ADD",
+                  "int_incremental_value": 1,
+                  "control_property": "number_cuts"
+                }
+              }
+            },
+            "1": {
+              "name": "Integer Subtract",
+              "element_type": "OPERATOR",
+              "direction": "3",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "B",
+                  "number_value_mode": "SUBTRACT",
+                  "int_incremental_value": 1,
+                  "control_property": "number_cuts"
+                }
+              }
+            },
+            "2": {
+              "name": "Integer Set",
+              "element_type": "OPERATOR",
+              "direction": "5",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "C",
+                  "number_value_mode": "SET_VALUE",
+                  "int_value": 2,
+                  "control_property": "number_cuts"
+                }
+              }
+            },
+            "3": {
+              "name": "Integer Horizontal",
+              "element_type": "OPERATOR",
+              "direction": "7",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                  "int_incremental_value": 1,
+                  "control_property": "number_cuts"
+                }
+              }
+            },
+            "4": {
+              "name": "Integer Vertical",
+              "element_type": "OPERATOR",
+              "direction": "2",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_VERTICAL",
+                  "int_incremental_value": 1,
+                  "control_property": "number_cuts"
+                }
+              }
+            },
+            "5": {
+              "name": "Integer Arbitrary",
+              "element_type": "OPERATOR",
+              "direction": "4",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_ARBITRARY",
+                  "int_incremental_value": 1,
+                  "control_property": "number_cuts"
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "name": "Float Controls",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Float Add",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "D",
+                  "number_value_mode": "ADD",
+                  "float_incremental_value": 0.1,
+                  "control_property": "smoothness"
+                }
+              }
+            },
+            "1": {
+              "name": "Float Subtract (Alt+E)",
+              "element_type": "OPERATOR",
+              "direction": "3",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "E",
+                  "event_alt": true,
+                  "number_value_mode": "SUBTRACT",
+                  "float_incremental_value": 0.1,
+                  "control_property": "smoothness"
+                }
+              }
+            },
+            "2": {
+              "name": "Float Set",
+              "element_type": "OPERATOR",
+              "direction": "5",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "F",
+                  "number_value_mode": "SET_VALUE",
+                  "float_value": 0.5,
+                  "control_property": "smoothness"
+                }
+              }
+            },
+            "3": {
+              "name": "Float Horizontal",
+              "element_type": "OPERATOR",
+              "direction": "7",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_HORIZONTAL",
+                  "float_incremental_value": 0.01,
+                  "control_property": "smoothness"
+                }
+              }
+            },
+            "4": {
+              "name": "Float Vertical",
+              "element_type": "OPERATOR",
+              "direction": "2",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_VERTICAL",
+                  "float_incremental_value": 0.01,
+                  "control_property": "smoothness"
+                }
+              }
+            },
+            "5": {
+              "name": "Float Arbitrary",
+              "element_type": "OPERATOR",
+              "direction": "4",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "number_value_mode": "MOUSE_CHANGES_ARBITRARY",
+                  "float_incremental_value": 0.01,
+                  "control_property": "smoothness"
+                }
+              }
+            }
+          }
+        },
+        "2": {
+          "name": "Boolean Controls",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set True",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "G",
+                  "bool_value_mode": "SET_TRUE",
+                  "control_property": "ngon"
+                }
+              }
+            },
+            "1": {
+              "name": "Set False",
+              "element_type": "OPERATOR",
+              "direction": "3",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "H",
+                  "bool_value_mode": "SET_FALSE",
+                  "control_property": "ngon"
+                }
+              }
+            },
+            "2": {
+              "name": "Switch Boolean (Shift+I)",
+              "element_type": "OPERATOR",
+              "direction": "5",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "I",
+                  "event_shift": true,
+                  "bool_value_mode": "SWITCH",
+                  "control_property": "ngon"
+                }
+              }
+            }
+          }
+        },
+        "3": {
+          "name": "Enum Controls",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Enum",
+              "element_type": "OPERATOR",
+              "direction": "1",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "J",
+                  "enum_value_mode": "SET",
+                  "enum_value_a": "STRAIGHT_CUT",
+                  "control_property": "quadcorner"
+                }
+              }
+            },
+            "1": {
+              "name": "Cycle Forward + Wrap",
+              "element_type": "OPERATOR",
+              "direction": "3",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "K",
+                  "enum_value_mode": "CYCLE",
+                  "enum_reverse": false,
+                  "enum_wrap": true,
+                  "control_property": "quadcorner"
+                }
+              }
+            },
+            "2": {
+              "name": "Toggle Enum",
+              "element_type": "OPERATOR",
+              "direction": "5",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "L",
+                  "enum_value_mode": "TOGGLE",
+                  "enum_value_a": "STRAIGHT_CUT",
+                  "enum_value_b": "INNERVERT",
+                  "control_property": "quadcorner"
+                }
+              }
+            },
+            "3": {
+              "name": "Cycle Reverse + Wrap",
+              "element_type": "OPERATOR",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "M",
+                  "enum_value_mode": "CYCLE",
+                  "enum_reverse": true,
+                  "enum_wrap": true,
+                  "control_property": "quadcorner"
+                }
+              }
+            },
+            "4": {
+              "name": "Cycle Forward + Clamp",
+              "element_type": "OPERATOR",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "N",
+                  "enum_value_mode": "CYCLE",
+                  "enum_reverse": false,
+                  "enum_wrap": false,
+                  "control_property": "quadcorner"
+                }
+              }
+            },
+            "5": {
+              "name": "Cycle Reverse + Clamp",
+              "element_type": "OPERATOR",
+              "operator_type": "MODAL",
+              "operator_bl_idname": "mesh.subdivide",
+              "modal_events": {
+                "0": {
+                  "event_type": "O",
+                  "enum_value_mode": "CYCLE",
+                  "enum_reverse": true,
+                  "enum_wrap": false,
+                  "control_property": "quadcorner"
+                }
+              }
+            }
+          }
+        },
+        "4": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "5": {
+          "name": "Boolean Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Overlays True",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_boolean",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_overlays', 'value': True}"
+            },
+            "1": {
+              "name": "Set Overlays False",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_boolean",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_overlays', 'value': False}"
+            },
+            "2": {
+              "name": "Toggle Overlays",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_toggle",
+              "operator_properties": "{'data_path': 'space_data.overlay.show_overlays'}"
+            }
+          }
+        },
+        "6": {
+          "name": "Integer Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Resolution to 75",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_int",
+              "operator_properties": "{'data_path': 'scene.render.resolution_percentage', 'value': 75}"
+            },
+            "1": {
+              "name": "Adjust Resolution Horizontally",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'scene.render.resolution_percentage', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL', 'invert': False}"
+            },
+            "2": {
+              "name": "Adjust Resolution Vertically",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'scene.render.resolution_percentage', 'value_mode': 'MOUSE_CHANGES_VERTICAL', 'invert': False}"
+            },
+            "3": {
+              "name": "Adjust Resolution Freely",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'scene.render.resolution_percentage', 'value_mode': 'MOUSE_CHANGES_ARBITRARY', 'invert': False}"
+            }
+          }
+        },
+        "7": {
+          "name": "Float Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Focal Length to 50",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_float",
+              "operator_properties": "{'data_path': 'space_data.lens', 'value': 50.0}"
+            },
+            "1": {
+              "name": "Adjust Focal Length Horizontally",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'space_data.lens', 'value_mode': 'MOUSE_CHANGES_HORIZONTAL', 'invert': False}"
+            },
+            "2": {
+              "name": "Adjust Focal Length Vertically",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'space_data.lens', 'value_mode': 'MOUSE_CHANGES_VERTICAL', 'invert': False}"
+            },
+            "3": {
+              "name": "Adjust Focal Length Freely",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.gesture_modal_mouse_operator",
+              "operator_properties": "{'data_path': 'space_data.lens', 'value_mode': 'MOUSE_CHANGES_ARBITRARY', 'invert': False}"
+            }
+          }
+        },
+        "8": {
+          "name": "String Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Render Output Path",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_string",
+              "operator_properties": "{'data_path': 'scene.render.filepath', 'value': '//render/'}"
+            }
+          }
+        },
+        "9": {
+          "name": "Enum Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Set Solid Shading",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_set_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value': 'SOLID'}"
+            },
+            "1": {
+              "name": "Cycle Shading",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_cycle_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'reverse': False, 'wrap': True}"
+            },
+            "2": {
+              "name": "Toggle Solid and Wireframe",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_toggle_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type', 'value_1': 'SOLID', 'value_2': 'WIREFRAME'}"
+            },
+            "3": {
+              "name": "Shading Menu",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_menu_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type'}"
+            },
+            "4": {
+              "name": "Shading Pie Menu",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "wm.context_pie_enum",
+              "operator_properties": "{'data_path': 'space_data.shading.type'}"
+            }
+          }
+        },
+        "10": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "11": {
+          "name": "Focal Length",
+          "element_type": "PROPERTY",
+          "direction": "1",
+          "property_data_path": "space_data.lens",
+          "property_drag_mode": "MOUSE_CHANGES_HORIZONTAL",
+          "property_value_precision": 1,
+          "property_value_format": "{name}: {value} mm"
+        },
+        "12": {
+          "name": "Resolution Scale",
+          "element_type": "PROPERTY",
+          "direction": "3",
+          "property_data_path": "scene.render.resolution_percentage",
+          "property_drag_mode": "MOUSE_CHANGES_VERTICAL",
+          "property_drag_invert": true,
+          "property_value_format": "{name}: {value}%"
+        },
+        "13": {
+          "name": "Clip End",
+          "element_type": "PROPERTY",
+          "direction": "4",
+          "property_data_path": "space_data.clip_end",
+          "property_drag_mode": "MOUSE_CHANGES_ARBITRARY",
+          "property_wheel_step": 0.5,
+          "property_value_precision": 2,
+          "property_value_format": "{name}: {value} m",
+          "overlay_offset": [
+            -10,
+            8
+          ]
+        },
+        "14": {
+          "name": "Viewport Shading",
+          "element_type": "PROPERTY",
+          "direction": "5",
+          "property_data_path": "space_data.shading.type"
+        },
+        "15": {
+          "name": "Overlays",
+          "element_type": "PROPERTY",
+          "direction": "7",
+          "property_data_path": "space_data.overlay.show_overlays",
+          "property_true_text": "Visible",
+          "property_false_text": "Hidden",
+          "property_bool_icons_enabled": false
+        },
+        "16": {
+          "name": "Gizmo (Name Only)",
+          "element_type": "PROPERTY",
+          "direction": "2",
+          "property_data_path": "space_data.show_gizmo",
+          "property_show_value": false
+        }
+      },
+      "description": "One menu groups modal controls, quick-add property actions, and editable property displays"
+    }
+  }
+}

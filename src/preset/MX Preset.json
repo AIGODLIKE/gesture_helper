@@ -529,11 +529,10 @@
                     },
                     "1": {
                       "name": "Show Gizmo",
-                      "element_type": "OPERATOR",
+                      "element_type": "PROPERTY",
                       "icon": "GIZMO",
                       "enabled_icon": true,
-                      "operator_bl_idname": "wm.context_toggle",
-                      "operator_properties": "{'data_path': 'space_data.show_gizmo'}"
+                      "property_data_path": "space_data.show_gizmo"
                     },
                     "2": {
                       "name": "Selectability & Visibility",

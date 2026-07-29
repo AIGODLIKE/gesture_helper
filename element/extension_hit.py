@@ -5,8 +5,6 @@ Call sites pick flag subsets so executor, draw highlight, and rollback stay alig
 
 from __future__ import annotations
 
-from typing import Any
-
 # Bit flags — combine with ``|`` / test with ``&``.
 PANEL = 1
 CHILD_ROW = 2
@@ -44,9 +42,87 @@ def _mouse_for(el, ops=None) -> tuple[float, float] | None:
     return ops_window_mouse(ops)
 
 
+def layout_is_current(el, ops) -> bool:
+    """True when *el*'s hit boxes were stamped by the current session layout.
+
+    GPU draw stamps ``_gesture_layout_token`` next to every hit box it writes;
+    a session reset swaps the token, so boxes left by a previous gesture or a
+    pre-draw state can never satisfy a hit test.
+    """
+    session = getattr(ops, "session", None) if ops is not None else None
+    return session is not None and getattr(el, "_gesture_layout_token", None) is session.layout_token
+
+
+def radial_root_hit_area(el):
+    """Return the visible hit rectangle for one root radial element."""
+    if getattr(el, "is_layout_container", False) or str(getattr(el, "direction", "")) == "9":
+        return getattr(el, "extension_draw_area", None)
+    return getattr(el, "item_draw_area", None)
+
+
+def find_radial_root_hit(
+        direction_items: dict,
+        ops,
+        *,
+        mouse: tuple[float, float] | None = None,
+        preferred_direction: int | str | None = None,
+):
+    """Return ``(direction, element)`` for the current root overlay under the mouse.
+
+    The angle-selected direction is checked first when hit rectangles overlap;
+    remaining directions are checked numerically for deterministic behavior.
+    Stale rectangles from an earlier gesture session are always ignored.
+    """
+    if not direction_items:
+        return None
+    if mouse is None:
+        first = next(iter(direction_items.values()), None)
+        mouse = _mouse_for(first, ops) if first is not None else None
+    if mouse is None:
+        return None
+
+    preferred_key = str(preferred_direction) if preferred_direction is not None else None
+
+    def direction_order(pair):
+        key, _element = pair
+        if key == preferred_key:
+            return -1, 0
+        try:
+            return 0, int(key)
+        except (TypeError, ValueError):
+            return 1, str(key)
+
+    for key, element in sorted(direction_items.items(), key=direction_order):
+        if not layout_is_current(element, ops):
+            continue
+        if point_in_rect(mouse, radial_root_hit_area(element)):
+            return key, element
+    return None
+
+
+def resolve_radial_root_selection(angle_direction, angle_element, root_hit):
+    """Apply a visible root hit to the angle-derived radial selection.
+
+    Direction 9 is an extension panel, not an executable radial direction. A
+    hit there blocks the angle underneath it while ``extension_hover`` resolves
+    the actual panel row on the same event.
+    """
+    if root_hit is None:
+        return angle_direction, angle_element
+    hit_direction, hit_element = root_hit
+    if str(hit_direction) == "9":
+        return None, None
+    try:
+        return int(hit_direction), hit_element
+    except (TypeError, ValueError):
+        return angle_direction, angle_element
+
+
 def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None) -> int:
     """Return hit flags for one extension panel element."""
     ops = ops or getattr(el, "ops", None)
+    if not layout_is_current(el, ops):
+        return 0
     if mouse is None:
         mouse = _mouse_for(el, ops)
     if mouse is None:
@@ -66,10 +142,7 @@ def hit_test_extension(el, ops=None, *, mouse: tuple[float, float] | None = None
         x, y = mouse
         if x1 < x < x2:
             flags |= VERTICAL_BAND
-            try:
-                w, h = el.extension_dimensions
-            except (AttributeError, TypeError, ValueError):
-                w = h = 0.0
+            h = max(0.0, y2 - y1)
             if h:
                 if (y1 - h < y < y1) or (y2 < y < y2 + h):
                     flags |= VERTICAL_TRAVEL
@@ -102,20 +175,83 @@ def _hit_right_band(el, ops, mouse: tuple[float, float]) -> bool:
     item = getattr(el, "extension_draw_area", None)
     if item is None:
         return False
-    try:
-        w, h = el.extension_dimensions
-    except (AttributeError, TypeError, ValueError):
-        return False
     x1, y1, x2, y2 = item
+    w = max(0.0, x2 - x1)
+    h = max(0.0, y2 - y1)
     return (x2 < x < x2 + w) and (y1 - h < y < y2 + h)
 
 
 def hit_test_child_row(item, ops=None, *, mouse: tuple[float, float] | None = None) -> bool:
     """True when mouse is over an extension child row hit box."""
     ops = ops or getattr(item, "ops", None)
+    if not layout_is_current(item, ops):
+        return False
     if mouse is None:
         mouse = _mouse_for(item, ops)
     return point_in_rect(mouse, getattr(item, "extension_by_child_draw_area", None))
+
+
+def numeric_property_arrow_direction(item, ops=None, *, mouse=None) -> int:
+    """Return -1/1 for a current numeric arrow hit, otherwise 0."""
+    ops = ops or getattr(item, 'ops', None)
+    if not layout_is_current(item, ops):
+        return 0
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    return numeric_property_arrow_part(item, ops, mouse=mouse, direction=True)
+
+
+def numeric_property_arrow_part(item, ops=None, *, mouse=None, direction=False):
+    """Return the current numeric field part, or its +/- direction.
+
+    ``direction=True`` preserves the old arrow API for callers that only need
+    to step a value.  The part itself is also consumed by the renderer to
+    display independent hover and pressed states.
+    """
+    ops = ops or getattr(item, 'ops', None)
+    if not layout_is_current(item, ops):
+        return 0 if direction else None
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    from ..utils.number_arrows import (
+        number_field_part,
+        number_part_direction,
+    )
+
+    part = number_field_part(
+        mouse,
+        getattr(item, 'property_decrement_draw_area', None),
+        getattr(item, 'property_value_draw_area', None),
+        getattr(item, 'property_increment_draw_area', None),
+    )
+    return number_part_direction(part) if direction else part
+
+
+def publish_child_row_hit(item, ops, rect, *, mouse=None) -> bool:
+    """Publish current draw geometry, then resolve hover against that geometry."""
+    item.extension_by_child_draw_area = rect
+    session = getattr(ops, "session", None) if ops is not None else None
+    if session is not None:
+        item._gesture_layout_token = session.layout_token
+    if mouse is None:
+        mouse = _mouse_for(item, ops)
+    return point_in_rect(mouse, rect)
+
+
+def panel_hit_items(container, ops, *, mouse=None):
+    """Rows worth scanning for the current pointer position.
+
+    Layout leaves are entirely contained by their root panel. Avoid walking a
+    large visible-row list while the pointer is in the N-panel or elsewhere
+    outside that GPU panel.
+    """
+    if getattr(container, 'is_layout_container', False):
+        if mouse is None:
+            mouse = _mouse_for(container, ops)
+        if not (hit_test_extension(container, ops, mouse=mouse) & PANEL):
+            return ()
+        return container.panel_leaf_items
+    return getattr(container, 'extension_items', ()) or ()
 
 
 def stack_hits_flags(
@@ -133,7 +269,8 @@ def stack_hits_flags(
     for el in extension_hover:
         el.ops = ops
         combined |= hit_test_extension(el, ops, mouse=mouse)
-        for item in getattr(el, "extension_items", []) or []:
+        items = panel_hit_items(el, ops, mouse=mouse)
+        for item in items:
             item.ops = ops
             if hit_test_child_row(item, ops, mouse=mouse):
                 combined |= CHILD_ROW

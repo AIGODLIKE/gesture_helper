@@ -1,8 +1,7 @@
 import bpy
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 
-from .element_property import ElementAddProperty
-from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_SELECTED_TYPE
+from ..utils.enum import ENUM_ELEMENT_TYPE, ENUM_LAYOUT_TYPE, ENUM_SELECTED_TYPE
 from ..utils.public import (
     PublicOperator,
     get_pref,
@@ -37,6 +36,16 @@ def _select_sibling_after_remove(element, parent, index, is_last):
 class ElementCURE:
     """CRUD operations for elements."""
 
+    class FrozenADD(bpy.types.Operator):
+        """Property-free stand-in for disabled Add buttons during UI freeze."""
+
+        bl_label = 'Add element item'
+        bl_idname = 'wm.gesture_element_add_frozen'
+        bl_options = {'INTERNAL'}
+
+        def execute(self, _context):
+            return {'CANCELLED'}
+
     @cache_update_lock
     def copy(self):
         """Copy element."""
@@ -60,13 +69,17 @@ class ElementCURE:
 
         is_ok = move_from and (self not in list(move_from.element))
         move_element = is_ok and move_from != self and self != self.parent_element
-        movable = (self.is_child_gesture or self.is_selected_structure) and move_element
+        movable = (
+            self.is_child_gesture
+            or self.is_selected_structure
+            or self.is_layout_container
+        ) and move_element
         return bool(movable)
 
     @property
     def is_can_be_cut(self) -> bool:
         """Return whether this item can be cut."""
-        return self.is_child_gesture or self.is_selected_structure
+        return self.is_child_gesture or self.is_selected_structure or self.is_layout_container
 
     class ElementPoll(PrefAccess, ActiveSelection, StructureCacheOps, PublicOperator, PublicCacheFunc):
 
@@ -74,28 +87,11 @@ class ElementCURE:
         def poll(cls, _):
             return poll_message_active_element(cls)
 
-    class ADD(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps, ElementAddProperty):
-        bl_label = 'Add element item'
-        bl_idname = 'wm.gesture_element_add'
-        bl_options = {'REGISTER'}
-        last_element = None
+    class ElementAddPoll(PublicOperator, PrefAccess, ActiveSelection, StructureCacheOps):
 
         @classmethod
-        def poll(cls, context):
+        def poll(cls, _):
             return poll_message_active_gesture(cls)
-
-        @classmethod
-        def description(cls, context, properties):
-            texts = []
-
-            if properties.element_type == 'SELECTED_STRUCTURE':
-                for (i, t, d) in ENUM_SELECTED_TYPE:
-                    if i == properties.selected_type:
-                        texts.append(d)
-            for (i, t, d) in ENUM_ELEMENT_TYPE:
-                if i == properties.element_type:
-                    texts.append(d)
-            return translate_lines_text(*texts)
 
         @property
         def collection(self):
@@ -116,9 +112,46 @@ class ElementCURE:
                 return gesture.element
             return None
 
+    class ADD(ElementAddPoll):
+        bl_label = 'Add element item'
+        bl_idname = 'wm.gesture_element_add'
+        bl_options = {'REGISTER'}
+        last_element = None
+
+        # Keep operator RNA local. Inheriting ElementAddProperty and declaring
+        # the same fields again creates a stale duplicate operator struct in
+        # Blender 5.x, so bpy.ops cannot resolve this class reliably.
+        element_type: EnumProperty(
+            name='Type',
+            default='CHILD_GESTURE',
+            items=ENUM_ELEMENT_TYPE,
+        )
+        selected_type: EnumProperty(
+            name='Structure type',
+            items=ENUM_SELECTED_TYPE,
+        )
+
+        @classmethod
+        def description(cls, context, properties):
+            texts = []
+
+            if properties.element_type == 'SELECTED_STRUCTURE':
+                for (i, t, d) in ENUM_SELECTED_TYPE:
+                    if i == properties.selected_type:
+                        texts.append(d)
+            for (i, t, d) in ENUM_ELEMENT_TYPE:
+                if i == properties.element_type:
+                    texts.append(d)
+            return translate_lines_text(*texts)
+
         @property
         def add_name(self):
-            return self.element_type.title() + (" " + self.selected_type if self.is_selected_structure else "")
+            suffix = (
+                " " + self.selected_type
+                if self.element_type == 'SELECTED_STRUCTURE'
+                else ""
+            )
+            return self.element_type.title() + suffix
 
         def execute(self, _):
             gesture = self.active_gesture
@@ -134,7 +167,16 @@ class ElementCURE:
                 add.element_type = self.element_type
                 add.selected_type = self.selected_type
                 add.__init_element__()
-                add.name = self.add_name
+                # Blender's RNA calls scene.cycles.samples just "Samples";
+                # use the panel-facing name for this useful default. Quick-add
+                # replaces it with the clicked property's source name later.
+                if (
+                    add.is_property_display
+                    and add.property_data_path == add.DEFAULT_PROPERTY_PATH
+                ):
+                    add.name = "Max Samples"
+                elif not add.is_property_display or not add.name:
+                    add.name = self.add_name
 
                 if self.pref.add_element_property.add_active_radio:
                     if self.active_element:
@@ -146,6 +188,115 @@ class ElementCURE:
                 self.cache_clear(gesture=gesture)
 
             self.__class__.last_element = add
+            return {'FINISHED'}
+
+    class AddLayoutPreset(ElementAddPoll):
+        """Create a useful nested layout without placeholder operators."""
+
+        bl_label = 'Add Layout Preset'
+        bl_idname = 'wm.gesture_layout_preset_add'
+        bl_description = 'Add a prebuilt gesture layout structure'
+        bl_options = {'UNDO'}
+
+        preset: EnumProperty(
+            name='Layout preset',
+            items=(
+                ('PANEL', 'Panel Column', 'A boxed vertical content group'),
+                ('TOOLBAR', 'Toolbar Row', 'A boxed horizontal action group'),
+                ('SPLIT', 'Two Columns', 'Two vertical groups arranged side by side'),
+            ),
+            default='PANEL',
+            options={'HIDDEN', 'SKIP_SAVE'},
+        )
+
+        _PRESETS = {
+            'PANEL': (
+                'BOX', 'Panel', (
+                    ('COLUMN', 'Content', ()),
+                ),
+            ),
+            'TOOLBAR': (
+                'BOX', 'Toolbar', (
+                    ('ROW', 'Actions', ()),
+                ),
+            ),
+            'SPLIT': (
+                'ROW', 'Two Columns', (
+                    ('COLUMN', 'Left', ()),
+                    ('COLUMN', 'Right', ()),
+                ),
+            ),
+        }
+
+        @staticmethod
+        def _add_preset_node(collection, spec, gesture):
+            element_type, name, children, *extra = spec
+            item = collection.add()
+            collection.update()
+            PublicCacheFunc.ensure_gesture_structure(gesture)
+            item.element_type = element_type
+            item.__init_element__()
+            item.name = name
+            if element_type == 'PROPERTY' and extra:
+                item.property_data_path = extra[0]
+            for child_spec in children:
+                ElementCURE.AddLayoutPreset._add_preset_node(
+                    item.element, child_spec, gesture,
+                )
+            return item
+
+        def execute(self, _):
+            gesture = self.active_gesture
+            target = self.collection
+            spec = self._PRESETS.get(self.preset)
+            if gesture is None or target is None or spec is None:
+                return {'CANCELLED'}
+
+            with CacheState.batch():
+                root = self._add_preset_node(target, spec, gesture)
+                PublicCacheFunc.ensure_gesture_structure(gesture)
+                if self.active_element:
+                    self.active_element.show_child = True
+                root.update_radio()
+                self.cache_clear(gesture=gesture)
+
+            ElementCURE.ADD.last_element = root
+            return {'FINISHED'}
+
+    class SwitchLayoutType(ElementPoll):
+        """Change a layout node's presentation type without losing children."""
+
+        bl_label = 'Switch Layout Type'
+        bl_idname = 'wm.gesture_layout_type_set'
+        bl_description = 'Switch the active layout between Row, Column, Box and Split'
+        bl_options = {'REGISTER', 'UNDO'}
+
+        layout_type: EnumProperty(
+            name='Layout type',
+            items=ENUM_LAYOUT_TYPE,
+            default='ROW',
+        )
+
+        @classmethod
+        def poll(cls, context):
+            if not poll_message_active_element(cls):
+                return False
+            try:
+                return get_pref().active_element.is_layout_container
+            except (AttributeError, ReferenceError):
+                return False
+
+        def execute(self, _):
+            element = self.active_element
+            if element is None or not element.is_layout_container:
+                return {'CANCELLED'}
+            if element.element_type == self.layout_type:
+                return {'FINISHED'}
+            gesture = element.parent_gesture
+            with CacheState.batch():
+                element.element_type = self.layout_type
+                element.clear_derived_cache()
+                self.cache_clear(gesture=gesture)
             return {'FINISHED'}
 
     class REMOVE(ElementPoll):

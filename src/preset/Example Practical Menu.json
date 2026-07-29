@@ -1,0 +1,473 @@
+{
+  "time": 1785000000,
+  "blender_version": [5, 2, 0],
+  "addon_version": [2, 3, 6],
+  "author": "ACGGIT Community",
+  "description": "Example: menu styles, operator contexts, and a practical 3D View menu in one divided menu",
+  "gesture": {
+    "0": {
+      "name": "Menu Examples",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "PANEL",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\"]",
+      "element": {
+        "0": {
+          "name": "Menu Styles",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Object Available",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.object",
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_selected"
+                },
+                "1": {
+                  "name": "Show Overlays",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "space_data.overlay.show_overlays"
+                }
+              }
+            },
+            "1": {
+              "name": "No Active Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELSE",
+              "element": {
+                "0": {
+                  "name": "View All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_all"
+                }
+              }
+            },
+            "2": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "3": {
+              "name": "Viewport Actions",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Show Gizmo",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "space_data.show_gizmo"
+                },
+                "1": {
+                  "name": "Camera View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_camera"
+                }
+              }
+            }
+          }
+        },
+        "1": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "2": {
+          "name": "Operator Contexts",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Invoke Contexts",
+              "element_type": "CHILD_GESTURE",
+              "icon": "MENU_PANEL",
+              "enabled_icon": true,
+              "element": {
+                "0": {
+                  "name": "Invoke Default",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_DEFAULT"
+                },
+                "1": {
+                  "name": "Invoke Region Window",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_REGION_WIN"
+                },
+                "2": {
+                  "name": "Invoke Region Channels",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_REGION_CHANNELS"
+                },
+                "3": {
+                  "name": "Invoke Region Preview",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_REGION_PREVIEW"
+                },
+                "4": {
+                  "name": "Invoke Area",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_AREA"
+                },
+                "5": {
+                  "name": "Invoke Screen",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "INVOKE_SCREEN"
+                }
+              }
+            },
+            "1": {
+              "name": "Execute Contexts",
+              "element_type": "CHILD_GESTURE",
+              "icon": "MENU_PANEL",
+              "enabled_icon": true,
+              "element": {
+                "0": {
+                  "name": "Execute Default",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "EXEC_DEFAULT"
+                },
+                "1": {
+                  "name": "Execute Region Window",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "EXEC_REGION_WIN"
+                },
+                "2": {
+                  "name": "Execute Region Channels",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "EXEC_REGION_CHANNELS"
+                },
+                "3": {
+                  "name": "Execute Region Preview",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "EXEC_REGION_PREVIEW"
+                },
+                "4": {
+                  "name": "Execute Area",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "wm.memory_statistics",
+                  "operator_context": "EXEC_AREA"
+                }
+              }
+            }
+          }
+        },
+        "3": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "4": {
+          "name": "Practical Viewport Menu",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+        "0": {
+          "name": "Frame Selected",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.object is not None",
+          "element": {
+            "0": {
+              "name": "Frame Selected",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_selected"
+            }
+          }
+        },
+        "1": {
+          "name": "View All",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "ELSE",
+          "element": {
+            "0": {
+              "name": "View All",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_all"
+            }
+          }
+        },
+        "2": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "3": {
+          "name": "View Actions",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Front View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_axis",
+              "operator_properties": "{'type': 'FRONT', 'align_active': False, 'relative': False}"
+            },
+            "1": {
+              "name": "Right View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_axis",
+              "operator_properties": "{'type': 'RIGHT', 'align_active': False, 'relative': False}"
+            },
+            "2": {
+              "name": "Top View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_axis",
+              "operator_properties": "{'type': 'TOP', 'align_active': False, 'relative': False}"
+            },
+            "3": {
+              "name": "Bottom View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_axis",
+              "operator_properties": "{'type': 'BOTTOM', 'align_active': False, 'relative': False}"
+            },
+            "4": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "5": {
+              "name": "Perspective / Orthographic",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_persportho"
+            },
+            "6": {
+              "name": "Camera View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_camera"
+            },
+            "7": {
+              "name": "Local View",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.localview"
+            }
+          }
+        },
+        "4": {
+          "name": "Viewport Display",
+          "element_type": "CHILD_GESTURE",
+          "element": {
+            "0": {
+              "name": "Show Overlays",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.overlay.show_overlays"
+            },
+            "1": {
+              "name": "Show Gizmos",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.show_gizmo"
+            },
+            "2": {
+              "name": "Show Floor",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.overlay.show_floor"
+            },
+            "3": {
+              "name": "Shading",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.shading.type"
+            },
+            "4": {
+              "name": "Lens",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.lens"
+            },
+            "5": {
+              "name": "Clip End",
+              "element_type": "PROPERTY",
+              "property_data_path": "space_data.clip_end"
+            }
+          }
+        },
+        "5": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "6": {
+          "name": "Object Actions",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.mode == 'OBJECT' and C.object is not None",
+          "element": {
+            "0": {
+              "name": "Selection",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Select All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "object.select_all",
+                  "operator_properties": "{'action': 'SELECT'}"
+                },
+                "1": {
+                  "name": "Deselect All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "object.select_all",
+                  "operator_properties": "{'action': 'DESELECT'}"
+                },
+                "2": {
+                  "name": "Invert Selection",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "object.select_all",
+                  "operator_properties": "{'action': 'INVERT'}"
+                }
+              }
+            },
+            "1": {
+              "name": "Transform",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Move",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.translate"
+                },
+                "1": {
+                  "name": "Rotate",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.rotate"
+                },
+                "2": {
+                  "name": "Scale",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.resize"
+                },
+                "3": {
+                  "name": "Duplicate",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "object.duplicate_move"
+                }
+              }
+            },
+            "2": {
+              "name": "Object Display",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Wireframe Display",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "object.display_type"
+                },
+                "1": {
+                  "name": "Show Name",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "object.show_name"
+                },
+                "2": {
+                  "name": "In Front",
+                  "element_type": "PROPERTY",
+                  "property_data_path": "object.show_in_front"
+                }
+              }
+            },
+            "3": {
+              "name": "Mesh Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.object is not None and C.object.type == 'MESH'",
+              "element": {
+                "0": {
+                  "name": "Mesh Shading",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Shade Smooth",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "object.shade_smooth"
+                    },
+                    "1": {
+                      "name": "Shade Flat",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "object.shade_flat"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "7": {
+          "name": "Mesh Edit Actions",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "ELIF",
+          "poll_string": "C.mode == 'EDIT_MESH'",
+          "element": {
+            "0": {
+              "name": "Selection",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Select All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.select_all",
+                  "operator_properties": "{'action': 'SELECT'}"
+                },
+                "1": {
+                  "name": "Deselect All",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.select_all",
+                  "operator_properties": "{'action': 'DESELECT'}"
+                },
+                "2": {
+                  "name": "Invert Selection",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.select_all",
+                  "operator_properties": "{'action': 'INVERT'}"
+                }
+              }
+            },
+            "1": {
+              "name": "Transform",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Move",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.translate"
+                },
+                "1": {
+                  "name": "Rotate",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.rotate"
+                },
+                "2": {
+                  "name": "Scale",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "transform.resize"
+                },
+                "3": {
+                  "name": "Duplicate",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.duplicate_move"
+                }
+              }
+            },
+            "2": {
+              "name": "Mesh Shading",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Shade Smooth",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.faces_shade_smooth"
+                },
+                "1": {
+                  "name": "Shade Flat",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "mesh.faces_shade_flat"
+                }
+              }
+            }
+          }
+        }
+          }
+        }
+      },
+      "description": "Menu style, operator-context, and practical viewport examples separated in one menu"
+    }
+  }
+}

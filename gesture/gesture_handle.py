@@ -49,17 +49,17 @@ class GestureHandle:
         cancel_timeout_timer(self.session)
         from .gesture_input import cancel_bottom_child_dwell_timer
         cancel_bottom_child_dwell_timer(self.session)
+        from .runtime_tooltip import cancel_hover_tooltip
+        cancel_hover_tooltip(getattr(self.session, "tooltip_state", None))
 
     @classmethod
     def cancel_active_gesture_timeout_timer(cls) -> None:
-        """Cancel timeout timer on the active gesture modal (call on unregister)."""
+        """Cancel timeout timers on all active gesture modals (call on unregister)."""
         from .gesture_draw_gpu import GestureGpuDraw
-        inst = GestureGpuDraw.__active_draw_instance__
-        if inst is None:
-            return
-        cancel = getattr(inst, '_cancel_gesture_timeout_timer', None)
-        if callable(cancel):
-            cancel()
+        for inst in list(GestureGpuDraw.__active_draw_instances__.values()):
+            cancel = getattr(inst, '_cancel_gesture_timeout_timer', None)
+            if callable(cancel):
+                cancel()
 
     def _schedule_gesture_timeout_timer(self):
         schedule_timeout_timer(self.session, self.pref.gesture_property.timeout, self)

@@ -1,0 +1,122 @@
+{
+  "time": 1784800000,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    3,
+    6
+  ],
+  "author": "ACGGIT Community",
+  "description": "Example: valid, disabled, context-blocked, invalid, and read-only element states",
+  "gesture": {
+    "0": {
+      "name": "Validation States Example",
+      "enabled": false,
+      "gesture_type": "MENU",
+      "menu_style": "BORDERLESS",
+      "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\"]",
+      "element": {
+        "0": {
+          "name": "Valid Operator",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "1": {
+          "name": "Disabled Element",
+          "element_type": "OPERATOR",
+          "enabled": false,
+          "operator_bl_idname": "view3d.view_all"
+        },
+        "2": {
+          "name": "Context-Dependent Operator",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "mesh.delete"
+        },
+        "3": {
+          "name": "Missing Operator",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "example.operator_not_found"
+        },
+        "4": {
+          "name": "Invalid Operator Arguments",
+          "element_type": "OPERATOR",
+          "operator_bl_idname": "view3d.view_all",
+          "operator_properties": "{'unknown_argument': True}"
+        },
+        "5": {
+          "name": "Missing Property Path",
+          "element_type": "PROPERTY",
+          "property_data_path": "scene.gesture_helper_missing_property"
+        },
+        "6": {
+          "name": "Object Property States",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.object",
+          "element": {
+            "0": {
+              "name": "String Display (Read Only)",
+              "element_type": "PROPERTY",
+              "property_data_path": "object.name"
+            },
+            "1": {
+              "name": "Array Display (Read Only)",
+              "element_type": "PROPERTY",
+              "property_data_path": "object.location"
+            },
+            "2": {
+              "name": "RNA Read-Only Enum",
+              "element_type": "PROPERTY",
+              "property_data_path": "object.type"
+            },
+            "3": {
+              "name": "Multi-Select Enum (Read Only)",
+              "element_type": "PROPERTY",
+              "property_data_path": "scene.tool_settings.snap_elements"
+            }
+          }
+        },
+        "7": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "8": {
+          "name": "Orphan ELIF",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "ELIF",
+          "poll_string": "True",
+          "element": {
+            "0": {
+              "name": "Unreachable Action",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_all"
+            }
+          }
+        },
+        "9": {
+          "name": "Dividing_Line",
+          "element_type": "DIVIDING_LINE"
+        },
+        "10": {
+          "name": "Invalid Condition Expression",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.object and (",
+          "element": {
+            "0": {
+              "name": "Unreachable Action",
+              "element_type": "OPERATOR",
+              "operator_bl_idname": "view3d.view_all"
+            }
+          }
+        }
+      },
+      "description": "Use this debug example to inspect every status badge and unsupported property shape"
+    }
+  }
+}
