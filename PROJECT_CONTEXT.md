@@ -214,6 +214,15 @@ with bundled JSON presets, translations, and PNG icon assets.
   Menu gestures expose a default-on Keep Open toggle beside Menu Style; pinned
   menus pass unrelated editor input through, remain visible after their own
   actions, and close explicitly from the title-bar X (or cancel input).
+  Persistent-menu registries retain an ordered set of instances per window and
+  area, so one shared space-class draw handler renders every open menu from
+  oldest to newest. Different gestures may remain open together, but each
+  gesture has at most one persistent-menu instance across the process;
+  triggering it again cancels a pending close and promotes the existing menu
+  without creating another modal owner. Cleanup removes only the matching
+  instance and releases the handler after the last menu exits. In overlapping
+  geometry, the newest menu owns pointer input; uncovered portions of older
+  menus remain interactive, and cancel input closes only the topmost menu.
   Expanded element trees with more than 48 visible descendants use a cached,
   area/root-scoped 32-row page; selection changes reveal their page, while
   explicit page changes are preserved. Layout Gesture Action choices are built
@@ -316,6 +325,10 @@ flowchart TD
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.
+- Simultaneous persistent-menu registry, one-instance-per-gesture reuse,
+  draw-order, overlap ownership, and cleanup smoke:
+  `tests/blender_multi_menu_smoke.py`; run it with the same four isolated
+  Blender user roots used by the other background smoke scripts.
 - Large-panel profile: set `GH_PANEL_AB_AUTOMATION=1`,
   `GH_PANEL_AB_MODE=ELEMENT_PREVIEW`, and `GH_PANEL_AB_ELEMENT_COUNT=300`, then
   run `tests/blender_panel_profile_ab.py` in foreground Blender. In the

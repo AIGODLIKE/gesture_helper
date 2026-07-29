@@ -36,7 +36,17 @@ def _load_menu_module():
         pass
 
     class GestureMenuRuntime:
-        pass
+        def _registered_menu_for_gesture(self, _gesture):
+            return None
+
+        def _menu_is_obscured_at(self, _point):
+            return False
+
+        def _menu_is_topmost(self):
+            return True
+
+        def _clear_menu_hover(self):
+            return False
 
     class PublicOperator:
         pass
@@ -118,6 +128,19 @@ class MenuModalBaselineTests(unittest.TestCase):
         window.modal_operators = [FakeOperator(1), menu]
 
         self.assertFalse(menu._has_external_modal(FakeContext(window)))
+
+    def test_existing_gesture_menu_is_reused_instead_of_starting_another(self):
+        menu = self.make_menu()
+        gesture = object()
+        existing = types.SimpleNamespace(_reuse_menu_runtime=lambda: None)
+        existing._reuse_menu_runtime = lambda: setattr(existing, 'reused', True)
+        menu._registered_menu_for_gesture = lambda candidate: (
+            existing if candidate is gesture else None
+        )
+
+        self.assertTrue(menu._activate_existing_menu(gesture))
+        self.assertTrue(existing.reused)
+        self.assertFalse(menu._activate_existing_menu(object()))
 
     def test_new_modal_is_detected_until_it_finishes(self):
         window = FakeWindow([FakeOperator(1)])
@@ -212,6 +235,59 @@ class MenuModalBaselineTests(unittest.TestCase):
         result = menu.modal(FakeContext(window), event)
 
         self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertEqual(closes, [True])
+
+    def test_obscured_pointer_event_passes_through_without_hovering_old_menu(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._menu_mouse = lambda event: event.point
+        menu._menu_is_obscured_at = lambda _point: True
+        changes = []
+        menu._clear_menu_hover = lambda: changes.append('clear-hover') or True
+        menu._clear_menu_press = lambda: changes.append('clear-press') or False
+        menu._tag_menu_redraw = lambda: changes.append('redraw')
+        menu._update_menu_hover = lambda _event: changes.append('hover')
+        event = types.SimpleNamespace(
+            type='MOUSEMOVE',
+            value='NOTHING',
+            point=(10.0, 10.0),
+        )
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertEqual(changes, ['clear-hover', 'clear-press', 'redraw'])
+
+    def test_escape_closes_only_the_topmost_menu(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._close_menu_enum_dropdown = lambda: False
+        closes = []
+        menu._begin_menu_close = lambda: closes.append(True)
+        event = types.SimpleNamespace(type='ESC', value='PRESS')
+
+        menu._menu_is_topmost = lambda: False
+        self.assertEqual(
+            menu.modal(FakeContext(window), event),
+            {'PASS_THROUGH'},
+        )
+        self.assertFalse(closes)
+
+        menu._menu_is_topmost = lambda: True
+        self.assertEqual(
+            menu.modal(FakeContext(window), event),
+            {'RUNNING_MODAL'},
+        )
         self.assertEqual(closes, [True])
 
     def test_wheel_over_numeric_row_changes_value_without_zooming_editor(self):

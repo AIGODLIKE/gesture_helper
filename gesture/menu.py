@@ -192,8 +192,33 @@ class GestureMenuRuntime(PublicGpu):
     _tracks_session_menu_state = True
 
     @classmethod
-    def _menu_context_instance(cls):
-        """Return this runtime's menu for the current area.
+    def _registry_instances(cls, registry, key):
+        """Return an immutable snapshot of one registry bucket.
+
+        Older generations stored one instance directly. Accept that prior
+        shape as a defensive live-reload and test compatibility boundary.
+        """
+        value = registry.get(key)
+        if value is None:
+            return ()
+        if isinstance(value, (list, tuple)):
+            return tuple(value)
+        return (value,)
+
+    @classmethod
+    def _all_menu_instances(cls):
+        """Return each registered runtime once, preserving open order."""
+        result = []
+        for value in tuple(cls._active_by_window.values()):
+            instances = tuple(value) if isinstance(value, (list, tuple)) else (value,)
+            for instance in instances:
+                if not any(candidate is instance for candidate in result):
+                    result.append(instance)
+        return tuple(result)
+
+    @classmethod
+    def _menu_context_instances(cls):
+        """Return this runtime's menus for the current area in draw order.
 
         Keep this name distinct from ``GestureGpuDraw._context_instance``:
         the unified preview inherits both renderers, and normal MRO lookup
@@ -201,26 +226,34 @@ class GestureMenuRuntime(PublicGpu):
         """
         area = getattr(bpy.context, 'area', None)
         if area is None:
-            return None
+            return ()
         try:
-            return cls._active_by_area.get(area.as_pointer())
+            return cls._registry_instances(cls._active_by_area, area.as_pointer())
         except ReferenceError:
-            return None
+            return ()
+
+    @classmethod
+    def _menu_context_instance(cls):
+        """Return the topmost menu for compatibility with preview callers."""
+        instances = cls._menu_context_instances()
+        for instance in reversed(instances):
+            if not getattr(instance, '_menu_close_requested', False):
+                return instance
+        return instances[-1] if instances else None
 
     @classmethod
     def _draw_callback(cls):
-        instance = cls._menu_context_instance()
-        if instance is None or getattr(instance, '_menu_close_requested', False):
-            return
-        try:
-            instance._draw_menu()
-        except Exception as exc:
-            instance._menu_last_draw_error = repr(exc)
-            return
+        for instance in cls._menu_context_instances():
+            if getattr(instance, '_menu_close_requested', False):
+                continue
+            try:
+                instance._draw_menu()
+            except Exception as exc:
+                instance._menu_last_draw_error = repr(exc)
 
     @classmethod
     def redraw_gesture(cls, gesture) -> None:
-        for instance in tuple(cls._active_by_window.values()):
+        for instance in cls._all_menu_instances():
             try:
                 if instance.operator_gesture == gesture:
                     instance._menu_layout_dirty = True
@@ -230,7 +263,7 @@ class GestureMenuRuntime(PublicGpu):
 
     @classmethod
     def force_close_all(cls) -> None:
-        for instance in tuple(cls._active_by_window.values()):
+        for instance in cls._all_menu_instances():
             try:
                 from .runtime_tooltip import cancel_hover_tooltip
 
@@ -262,6 +295,138 @@ class GestureMenuRuntime(PublicGpu):
                 ...
         cls._draw_handles.clear()
 
+    @classmethod
+    def _append_registry_instance(cls, registry, key, instance) -> None:
+        instances = cls._registry_instances(registry, key)
+        if any(candidate is instance for candidate in instances):
+            return
+        registry[key] = (*instances, instance)
+
+    @classmethod
+    def _remove_registry_instance(cls, registry, key, instance) -> None:
+        instances = tuple(
+            candidate
+            for candidate in cls._registry_instances(registry, key)
+            if candidate is not instance
+        )
+        if instances:
+            registry[key] = instances
+        else:
+            registry.pop(key, None)
+
+    @classmethod
+    def _promote_registry_instance(cls, registry, key, instance) -> None:
+        instances = cls._registry_instances(registry, key)
+        if not any(candidate is instance for candidate in instances):
+            return
+        registry[key] = (
+            *(candidate for candidate in instances if candidate is not instance),
+            instance,
+        )
+
+    @classmethod
+    def _registered_menu_for_gesture(cls, gesture):
+        """Return the one live persistent menu already showing ``gesture``."""
+        for instance in reversed(cls._all_menu_instances()):
+            try:
+                area_is_live = getattr(instance, '_area_is_live', None)
+                if callable(area_is_live) and not area_is_live():
+                    continue
+                if _same_element(instance.operator_gesture, gesture):
+                    return instance
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
+        return None
+
+    def _reuse_menu_runtime(self) -> None:
+        """Keep one gesture menu alive and move it above the other menus."""
+        self._cancel_menu_animation_timer()
+        remove_event_timer = getattr(
+            self,
+            '_remove_menu_animation_event_timer',
+            None,
+        )
+        if callable(remove_event_timer):
+            remove_event_timer()
+        self._menu_close_requested = False
+        self._menu_closing_at = 0.0
+        self._menu_opened_at = 0.0
+        self._menu_close_start_reveal = 1.0
+        self._menu_layout_dirty = True
+
+        window_key = getattr(self, '_menu_window_key', None)
+        area_key = getattr(self, '_menu_area_key', None)
+        if window_key is not None:
+            self._promote_registry_instance(
+                self._active_by_window,
+                window_key,
+                self,
+            )
+        if area_key is not None:
+            self._promote_registry_instance(
+                self._active_by_area,
+                area_key,
+                self,
+            )
+        self._tag_menu_redraw()
+
+    def _menu_area_instances(self):
+        area_key = getattr(self, '_menu_area_key', None)
+        if area_key is None:
+            return ()
+        return self._registry_instances(self._active_by_area, area_key)
+
+    def _menu_is_topmost(self) -> bool:
+        """Whether this is the latest visible menu in its owner area."""
+        instances = self._menu_area_instances()
+        for instance in reversed(instances):
+            if getattr(instance, '_menu_close_requested', False):
+                continue
+            return instance is self
+        # Unregistered test doubles and an owner midway through cleanup retain
+        # their historical single-menu input behavior.
+        return not instances
+
+    def _menu_is_obscured_at(self, point) -> bool:
+        """Return whether a newer menu owns this point in the same area."""
+        instances = self._menu_area_instances()
+        self_index = next(
+            (
+                index
+                for index, instance in enumerate(instances)
+                if instance is self
+            ),
+            -1,
+        )
+        if self_index < 0:
+            return False
+        for instance in reversed(instances[self_index + 1:]):
+            if getattr(instance, '_menu_close_requested', False):
+                continue
+            try:
+                if instance._menu_contains(point):
+                    return True
+            except (AttributeError, ReferenceError, RuntimeError, TypeError):
+                continue
+        return False
+
+    def _clear_menu_hover(self) -> bool:
+        old_row = getattr(self, '_menu_hovered_row', None)
+        old_part = getattr(self, '_menu_hovered_part', None)
+        old_close = bool(getattr(self, '_menu_hovered_close', False))
+        self._menu_hovered_row = None
+        self._menu_hovered_part = None
+        self._menu_hovered_close = False
+        tooltip_changed = False
+        if getattr(self, '_menu_tooltip_state', None) is not None:
+            tooltip_changed = self._sync_menu_tooltip(None)
+        return bool(
+            old_row is not None
+            or old_part is not None
+            or old_close
+            or tooltip_changed
+        )
+
     def _register_menu_runtime(self, context) -> bool:
         area = context.area
         window = context.window
@@ -279,11 +444,6 @@ class GestureMenuRuntime(PublicGpu):
         except ReferenceError:
             return False
 
-        previous = self._active_by_window.get(window_key)
-        if previous is not None and previous is not self:
-            previous._menu_close_requested = True
-            previous._unregister_menu_runtime()
-
         space_cls = type(space)
         if space_cls not in self._draw_handles:
             try:
@@ -293,8 +453,8 @@ class GestureMenuRuntime(PublicGpu):
             except (AttributeError, RuntimeError, TypeError):
                 return False
 
-        self._active_by_window[window_key] = self
-        self._active_by_area[area_key] = self
+        self._append_registry_instance(self._active_by_window, window_key, self)
+        self._append_registry_instance(self._active_by_area, area_key, self)
         self._menu_window_key = window_key
         self._menu_area_key = area_key
         if self._tracks_session_menu_state:
@@ -311,10 +471,10 @@ class GestureMenuRuntime(PublicGpu):
         cancel_hover_tooltip(getattr(self, '_menu_tooltip_state', None))
         window_key = getattr(self, '_menu_window_key', None)
         area_key = getattr(self, '_menu_area_key', None)
-        if window_key is not None and self._active_by_window.get(window_key) is self:
-            self._active_by_window.pop(window_key, None)
-        if area_key is not None and self._active_by_area.get(area_key) is self:
-            self._active_by_area.pop(area_key, None)
+        if window_key is not None:
+            self._remove_registry_instance(self._active_by_window, window_key, self)
+        if area_key is not None:
+            self._remove_registry_instance(self._active_by_area, area_key, self)
         if not self._active_by_window:
             self._remove_draw_handlers()
         if self._tracks_session_menu_state:

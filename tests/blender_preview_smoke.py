@@ -604,7 +604,7 @@ with suppress_gesture_disk_save():
     assert menu_colors.row == menu_colors.background
     assert not GestureMenuRuntime._active_by_window
     assert not GestureMenuRuntime._active_by_area
-    assert GesturePreview._active_by_area.get(area.as_pointer()) is menu_preview
+    assert GesturePreview._active_by_area.get(area.as_pointer()) == (menu_preview,)
     selector = menu_preview.gpu.gesture_bpu
     assert selector.root.children
     assert abs(selector.font_size - 12 * SELECTOR_SCALE) < 0.001

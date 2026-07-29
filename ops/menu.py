@@ -62,6 +62,13 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         menu.layout.label(text='Menu gesture not found', icon='ERROR')
         menu.layout.label(text='Restore or recreate its shortcut in preferences')
 
+    def _activate_existing_menu(self, gesture) -> bool:
+        existing = self._registered_menu_for_gesture(gesture)
+        if existing is None:
+            return False
+        existing._reuse_menu_runtime()
+        return True
+
     def invoke(self, context, event):
         area = context.area
         if area is None or area.type in {'PREFERENCES', 'FILE_BROWSER'}:
@@ -87,6 +94,8 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         from ..utils.region_mouse import mouse_in_window_region
 
         PublicCacheFunc.ensure_gesture_structure(gesture)
+        if self._activate_existing_menu(gesture):
+            return {'FINISHED'}
         mouse = mouse_in_window_region(event, area)
         if mouse is None:
             return {'CANCELLED'}
@@ -292,7 +301,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             operator_setattr(self, '_menu_layout_dirty', True)
             return {'PASS_THROUGH'}
         if self._menu_closing_at:
-            return {'RUNNING_MODAL'}
+            return {'RUNNING_MODAL'} if self._menu_is_topmost() else {'PASS_THROUGH'}
 
         external_modal = self._has_external_modal(context)
         if external_modal:
@@ -305,7 +314,32 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             operator_setattr(self, '_menu_external_modal_active', False)
             self._menu_mark_context_changed()
 
+        if event.type in {
+                'MOUSEMOVE',
+                'LEFTMOUSE',
+                'WHEELUPMOUSE',
+                'WHEELDOWNMOUSE',
+        }:
+            point = self._menu_mouse(event)
+            owns_pointer_sequence = bool(
+                getattr(self, '_menu_drag_button', None)
+                or getattr(self, '_menu_pressed_row', None) is not None
+                or getattr(self, '_menu_pressed_close', False)
+            )
+            if (
+                    point is not None
+                    and not owns_pointer_sequence
+                    and self._menu_is_obscured_at(point)
+            ):
+                changed = self._clear_menu_hover()
+                changed = self._clear_menu_press() or changed
+                if changed:
+                    self._tag_menu_redraw()
+                return {'PASS_THROUGH'}
+
         if event.value == 'PRESS' and event.type in {'ESC', 'RIGHTMOUSE'}:
+            if not self._menu_is_topmost():
+                return {'PASS_THROUGH'}
             if self._close_menu_enum_dropdown():
                 return {'RUNNING_MODAL'}
             self._begin_menu_close()

@@ -66,6 +66,10 @@ def _load_menu_module():
         ),
         get_element_status_info=lambda _element, **_kwargs: None,
     )
+    _module(
+        f"{PACKAGE}.gesture.runtime_tooltip",
+        cancel_hover_tooltip=lambda _state: None,
+    )
 
     name = f"{PACKAGE}.gesture.menu"
     spec = importlib.util.spec_from_file_location(name, MODULE_PATH)
@@ -211,6 +215,179 @@ class MenuRedrawScopeTests(unittest.TestCase):
 
         runtime._draw_menu.assert_called_once_with()
         self.assertEqual(runtime._menu_last_draw_error, '')
+
+    def test_menu_draw_callback_draws_every_area_menu_in_open_order(self):
+        class PreviewLike(menu_module.GestureMenuRuntime):
+            _active_by_area = {}
+
+        area = types.SimpleNamespace(as_pointer=lambda: 23)
+        draw_order = []
+        first = types.SimpleNamespace(
+            _menu_close_requested=False,
+            _menu_last_draw_error='',
+            _draw_menu=lambda: draw_order.append('first'),
+        )
+        second = types.SimpleNamespace(
+            _menu_close_requested=False,
+            _menu_last_draw_error='',
+            _draw_menu=lambda: draw_order.append('second'),
+        )
+        PreviewLike._active_by_area[23] = (first, second)
+        previous_area = getattr(menu_module.bpy.context, 'area', None)
+        try:
+            menu_module.bpy.context.area = area
+            PreviewLike._draw_callback()
+            self.assertIs(PreviewLike._menu_context_instance(), second)
+        finally:
+            menu_module.bpy.context.area = previous_area
+
+        self.assertEqual(draw_order, ['first', 'second'])
+
+    def test_runtime_registry_keeps_multiple_menus_until_each_owner_leaves(self):
+        class FakeSpace:
+            added = []
+            removed = []
+
+            @classmethod
+            def draw_handler_add(cls, *args):
+                handle = object()
+                cls.added.append((handle, args))
+                return handle
+
+            @classmethod
+            def draw_handler_remove(cls, handle, region_type):
+                cls.removed.append((handle, region_type))
+
+        class MultiMenuRuntime(menu_module.GestureMenuRuntime):
+            _active_by_window = {}
+            _active_by_area = {}
+            _draw_handles = {}
+            _tracks_session_menu_state = False
+
+        area = types.SimpleNamespace(as_pointer=lambda: 31)
+        window = types.SimpleNamespace(as_pointer=lambda: 41)
+        context = types.SimpleNamespace(
+            area=area,
+            window=window,
+            space_data=FakeSpace(),
+        )
+        first = MultiMenuRuntime()
+        second = MultiMenuRuntime()
+        for runtime in (first, second):
+            runtime._tag_menu_redraw = Mock()
+            runtime._cancel_menu_animation_timer = Mock()
+            runtime._menu_tooltip_state = None
+            runtime._menu_close_requested = False
+
+        self.assertTrue(first._register_menu_runtime(context))
+        self.assertTrue(second._register_menu_runtime(context))
+
+        self.assertEqual(
+            MultiMenuRuntime._active_by_window[41],
+            (first, second),
+        )
+        self.assertEqual(
+            MultiMenuRuntime._active_by_area[31],
+            (first, second),
+        )
+        self.assertFalse(first._menu_close_requested)
+        self.assertEqual(len(FakeSpace.added), 1)
+
+        first._unregister_menu_runtime()
+        self.assertEqual(MultiMenuRuntime._active_by_window[41], (second,))
+        self.assertEqual(MultiMenuRuntime._active_by_area[31], (second,))
+        self.assertFalse(FakeSpace.removed)
+
+        second._unregister_menu_runtime()
+        self.assertFalse(MultiMenuRuntime._active_by_window)
+        self.assertFalse(MultiMenuRuntime._active_by_area)
+        self.assertEqual(len(FakeSpace.removed), 1)
+
+    def test_same_gesture_runtime_is_reused_and_promoted(self):
+        class MultiMenuRuntime(menu_module.GestureMenuRuntime):
+            _active_by_window = {}
+            _active_by_area = {}
+
+        first_gesture = types.SimpleNamespace(
+            name='First',
+            as_pointer=lambda: 101,
+        )
+        second_gesture = types.SimpleNamespace(
+            name='Second',
+            as_pointer=lambda: 102,
+        )
+        first = MultiMenuRuntime()
+        second = MultiMenuRuntime()
+        probe = MultiMenuRuntime()
+        first._menu_gesture_ref = first_gesture
+        second._menu_gesture_ref = second_gesture
+        first._menu_window_key = 71
+        first._menu_area_key = 72
+        second._menu_window_key = 71
+        second._menu_area_key = 72
+        first._menu_close_requested = True
+        first._menu_closing_at = 10.0
+        first._menu_opened_at = 5.0
+        first._menu_close_start_reveal = 0.5
+        first._menu_layout_dirty = False
+        first._cancel_menu_animation_timer = Mock()
+        first._remove_menu_animation_event_timer = Mock()
+        first._tag_menu_redraw = Mock()
+        MultiMenuRuntime._active_by_window[71] = (first, second)
+        MultiMenuRuntime._active_by_area[72] = (first, second)
+
+        self.assertIs(
+            probe._registered_menu_for_gesture(first_gesture),
+            first,
+        )
+        self.assertIsNone(
+            probe._registered_menu_for_gesture(
+                types.SimpleNamespace(name='Other', as_pointer=lambda: 103),
+            ),
+        )
+
+        first._reuse_menu_runtime()
+
+        self.assertEqual(
+            MultiMenuRuntime._active_by_window[71],
+            (second, first),
+        )
+        self.assertEqual(
+            MultiMenuRuntime._active_by_area[72],
+            (second, first),
+        )
+        self.assertFalse(first._menu_close_requested)
+        self.assertEqual(first._menu_closing_at, 0.0)
+        self.assertEqual(first._menu_opened_at, 0.0)
+        self.assertEqual(first._menu_close_start_reveal, 1.0)
+        self.assertTrue(first._menu_layout_dirty)
+        first._cancel_menu_animation_timer.assert_called_once_with()
+        first._remove_menu_animation_event_timer.assert_called_once_with()
+        first._tag_menu_redraw.assert_called_once_with()
+
+    def test_newer_overlapping_menu_owns_pointer_but_not_uncovered_points(self):
+        class MultiMenuRuntime(menu_module.GestureMenuRuntime):
+            _active_by_area = {}
+
+        first = MultiMenuRuntime()
+        second = MultiMenuRuntime()
+        first._menu_area_key = 59
+        second._menu_area_key = 59
+        first._menu_close_requested = False
+        second._menu_close_requested = False
+        second._ensure_layout = Mock()
+        second._menu_contains = lambda point: point == (10.0, 10.0)
+        MultiMenuRuntime._active_by_area[59] = (first, second)
+
+        self.assertTrue(first._menu_is_obscured_at((10.0, 10.0)))
+        self.assertFalse(first._menu_is_obscured_at((20.0, 20.0)))
+        self.assertFalse(second._menu_is_obscured_at((10.0, 10.0)))
+        self.assertFalse(first._menu_is_topmost())
+        self.assertTrue(second._menu_is_topmost())
+
+        second._menu_close_requested = True
+        self.assertFalse(first._menu_is_obscured_at((10.0, 10.0)))
+        self.assertTrue(first._menu_is_topmost())
 
     def test_menu_transition_reveal_is_bidirectional(self):
         runtime = menu_module.GestureMenuRuntime()
