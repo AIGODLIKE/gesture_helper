@@ -1398,10 +1398,15 @@ class GestureMenuRuntime(PublicGpu):
                     if has_property_background
                     else colors.background
                 )
-                if pressed and row.enabled:
-                    row_color = blend_layout_hover_color(row_color, colors.pressed, 0.90)
-                elif hovered and row.enabled:
-                    row_color = blend_layout_hover_color(row_color, colors.hover, 0.72)
+                if not has_number_field:
+                    if pressed and row.enabled:
+                        row_color = blend_layout_hover_color(
+                            row_color, colors.pressed, 0.90,
+                        )
+                    elif hovered and row.enabled:
+                        row_color = blend_layout_hover_color(
+                            row_color, colors.hover, 0.72,
+                        )
             else:
                 if pressed and row.enabled:
                     row_color = colors.pressed
@@ -1438,10 +1443,15 @@ class GestureMenuRuntime(PublicGpu):
                 if fraction is not None and fraction > 0.0:
                     fill_w = max(2.0, (width - inset * 2.0) * fraction)
                     fill_color = property_visual[4]
-                    if pressed and row.enabled:
-                        fill_color = blend_layout_hover_color(fill_color, colors.pressed, 0.90)
-                    elif hovered and row.enabled:
-                        fill_color = blend_layout_hover_color(fill_color, colors.hover, 0.72)
+                    if not has_number_field:
+                        if pressed and row.enabled:
+                            fill_color = blend_layout_hover_color(
+                                fill_color, colors.pressed, 0.90,
+                            )
+                        elif hovered and row.enabled:
+                            fill_color = blend_layout_hover_color(
+                                fill_color, colors.hover, 0.72,
+                            )
                     if has_number_field:
                         fx1, fy1, fx2, fy2 = _property_field_rect(row.rect, metrics.scale)
                         fill_w = max(2.0, (fx2 - fx1) * fraction)
@@ -1468,6 +1478,23 @@ class GestureMenuRuntime(PublicGpu):
                             height=max(1.0, height - inset),
                             corner_mask=corner_mask,
                         )
+        numeric_control_drawn = False
+        if property_visual is not None and has_number_field:
+            # The hovered/pressed value-part fill covers the center of the
+            # field.  Draw the complete three-part control before the label so
+            # that interaction feedback cannot paint over the numeric text.
+            self._draw_property_control(
+                property_visual,
+                row=row,
+                x1=x1,
+                x2=x2,
+                y1=y1,
+                y2=y2,
+                metrics=metrics,
+                colors=colors,
+                field_corner_mask=corner_mask,
+            )
+            numeric_control_drawn = True
         if status is not ElementStatus.VALID:
             marker_color = colors.text_hover if status.is_error else colors.warning
             marker_w = max(2.0, 2.0 * metrics.scale)
@@ -1479,9 +1506,30 @@ class GestureMenuRuntime(PublicGpu):
                 marker_color,
             )
 
+        numeric_value_active = bool(
+            has_number_field
+            and (
+                (
+                    hovered
+                    and getattr(self, '_menu_hovered_part', None)
+                    == NUMBER_PART_VALUE
+                )
+                or (
+                    pressed
+                    and getattr(self, '_menu_pressed_part', None)
+                    == NUMBER_PART_VALUE
+                )
+            )
+        )
         if status.is_error:
             text_color = colors.text_hover
-        elif (hovered or pressed) and row.enabled:
+        elif (
+                row.enabled
+                and (
+                    numeric_value_active
+                    or (not has_number_field and (hovered or pressed))
+                )
+        ):
             text_color = colors.text_hover
         else:
             text_color = colors.text if row.enabled else colors.text_disabled
@@ -1577,7 +1625,7 @@ class GestureMenuRuntime(PublicGpu):
                 size=metrics.font_size,
                 color=color_to_srgb(text_color),
             )
-        if property_visual is not None:
+        if property_visual is not None and not numeric_control_drawn:
             self._draw_property_control(
                 property_visual,
                 row=row,

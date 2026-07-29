@@ -572,6 +572,98 @@ class MenuRedrawScopeTests(unittest.TestCase):
             self.assertIsNone(runtime._menu_pressed_row)
             self.assertIsNone(runtime._menu_pressed_part)
 
+    def test_numeric_value_hover_fill_is_drawn_beneath_active_text(self):
+        runtime = menu_module.GestureMenuRuntime()
+        events = []
+        runtime._menu_current_reveal = 1.0
+        runtime.draw_rounded_rectangle_area = (
+            lambda *_args, **_kwargs: events.append("fill")
+        )
+        runtime.draw_rectangle = lambda *_args, **_kwargs: events.append("accent")
+        runtime.draw_text = (
+            lambda *_args, **kwargs: events.append(("text", kwargs["color"]))
+        )
+        runtime.draw_2d_line = lambda *_args, **_kwargs: events.append("arrow")
+        runtime.draw_image = lambda *_args, **_kwargs: events.append("image")
+        runtime._fit_text = lambda text, _width, _size: text
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="FLOAT",
+                display_property_value=0.2,
+                display_property_fraction=0.2,
+                display_property_is_editable=True,
+                is_draw_icon=False,
+            ),
+            "Amount  0.20",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        runtime._menu_hovered_row = row
+        runtime._menu_hovered_part = menu_module.NUMBER_PART_VALUE
+        runtime._menu_pressed_row = None
+        runtime._menu_pressed_part = None
+        colors = self._colors()
+
+        with patch.object(menu_module, "show_number_arrows", return_value=True):
+            runtime._draw_row(row, self._metrics(), colors)
+
+        text_index = next(
+            index
+            for index, event in enumerate(events)
+            if isinstance(event, tuple) and event[0] == "text"
+        )
+        self.assertGreater(text_index, max(
+            index for index, event in enumerate(events) if event == "fill"
+        ))
+        self.assertEqual(events[text_index][1], colors.text_hover)
+
+    def test_numeric_arrow_hover_does_not_change_value_surface_or_text(self):
+        runtime = menu_module.GestureMenuRuntime()
+        runtime._menu_current_reveal = 1.0
+        runtime.draw_rectangle = Mock()
+        runtime.draw_2d_line = Mock()
+        runtime.draw_image = Mock()
+        runtime._fit_text = lambda text, _width, _size: text
+        row = menu_module.MenuRow(
+            types.SimpleNamespace(
+                display_property_type="FLOAT",
+                display_property_value=0.2,
+                display_property_fraction=0.2,
+                display_property_is_editable=True,
+                is_draw_icon=False,
+            ),
+            "Amount  0.20",
+            "PROPERTY",
+            rect=(0.0, 0.0, 200.0, 24.0),
+        )
+        colors = self._colors()
+
+        def draw(hovered_part):
+            runtime._menu_hovered_row = row if hovered_part is not None else None
+            runtime._menu_hovered_part = hovered_part
+            runtime._menu_pressed_row = None
+            runtime._menu_pressed_part = None
+            runtime.draw_rounded_rectangle_area = Mock()
+            runtime.draw_text = Mock()
+            runtime._draw_row(row, self._metrics(), colors)
+            fills = [
+                call.kwargs["color"]
+                for call in runtime.draw_rounded_rectangle_area.call_args_list
+            ]
+            return fills, runtime.draw_text.call_args.kwargs["color"]
+
+        with patch.object(menu_module, "show_number_arrows", return_value=True):
+            normal_fills, normal_text = draw(None)
+            arrow_fills, arrow_text = draw(menu_module.NUMBER_PART_DECREMENT)
+
+        self.assertEqual(len(normal_fills), 4)
+        self.assertEqual(len(arrow_fills), 4)
+        self.assertEqual(arrow_fills[:2], normal_fills[:2])
+        self.assertNotEqual(arrow_fills[2], normal_fills[2])
+        self.assertEqual(arrow_fills[3], normal_fills[3])
+        self.assertEqual(normal_text, colors.text)
+        self.assertEqual(arrow_text, colors.text)
+
     def test_read_only_numeric_property_does_not_advertise_arrow_controls(self):
         runtime = menu_module.GestureMenuRuntime()
         runtime._menu_hovered_row = None

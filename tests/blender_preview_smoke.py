@@ -457,6 +457,9 @@ with suppress_gesture_disk_save():
     ) == NUMBER_PART_INCREMENT
     numeric_ops.direction_element = None
     numeric_ops.distance = 0.0
+    numeric_ops.session.draw_ctx = SimpleNamespace(mouse_region=(12.0, 32.0))
+    numeric.ops = numeric_ops
+    assert tuple(numeric.text_color) == tuple(draw_preferences.text_default_color)
     numeric_ops.session.draw_ctx = SimpleNamespace(mouse_region=(50.0, 32.0))
     numeric.ops = numeric_ops
     assert tuple(numeric.text_color) == tuple(draw_preferences.text_active_color)

@@ -215,8 +215,8 @@ class ElementGpuProperty:
             hovered_part, pressed_part = self._numeric_field_states()
             active = bool(
                 active
-                or hovered_part is not None
-                or pressed_part is not None
+                or hovered_part == NUMBER_PART_VALUE
+                or pressed_part == NUMBER_PART_VALUE
             )
         color = tuple(draw.text_active_color if active else draw.text_default_color)
         if status is ElementStatus.DISABLED:

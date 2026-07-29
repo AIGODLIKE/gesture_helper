@@ -99,9 +99,11 @@ with bundled JSON presets, translations, and PNG icon assets.
    area. Layout-row hover changes only the background fill (no
    hover outline); property backgrounds and slider fills receive the same
    color blend so their value fraction remains visible.
-   Hovering or pressing any part of a three-part numeric field switches its
-   label to the active text color so the value remains legible over the
-   interaction fill.
+   Hovering or pressing the value part of a three-part numeric field switches
+   its label to the active text color, and the interaction fill is submitted
+   below the label so the value remains legible. Edge-arrow interaction changes
+   only that edge block and chevron, leaving the middle value surface and text
+   unchanged.
    `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
    operator/property metadata and independent status/icon diagnostics. Tooltip

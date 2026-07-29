@@ -133,6 +133,11 @@ try:
                 _numeric_pressed_element=None,
             ),
         )
+        numeric.ops.session.draw_ctx.mouse_region = (12.0, 32.0)
+        assert tuple(numeric.text_color) == tuple(
+            get_pref().draw_property.text_default_color
+        )
+        numeric.ops.session.draw_ctx.mouse_region = (50.0, 32.0)
         assert tuple(numeric.text_color) == tuple(
             get_pref().draw_property.text_active_color
         )
