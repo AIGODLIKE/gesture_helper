@@ -15,6 +15,7 @@ from ..utils.property import (
     __set_property__,
 )
 from ..utils.enum import from_rna_get_enum_items, ENUM_NUMBER_VALUE_CHANGE_MODE, ENUM_BOOL_VALUE_CHANGE_MODE
+from ..utils.icons import ui_icon
 from ..src.translate import __keymap_translate__
 
 all_event = list((e.identifier, e.name, e.description) for e in bpy.types.Event.bl_rna.properties['type'].enum_items)
@@ -619,7 +620,11 @@ class ElementModalOperatorEventItem(
         column.label(text=self.property_name)
         column.label(text=self.control_property_type)
         row.prop(self, "control_property")
-        row.operator(ElementModalOperatorEventCRUE.SelectControlProperty.bl_idname, icon="RESTRICT_SELECT_OFF", text="")
+        row.operator(
+            ElementModalOperatorEventCRUE.SelectControlProperty.bl_idname,
+            icon=ui_icon("RESTRICT_SELECT_OFF"),
+            text="",
+        )
 
         if draw_func := getattr(self, f"draw_{self.control_property_type.lower()}", None):
             draw_func(column.box())

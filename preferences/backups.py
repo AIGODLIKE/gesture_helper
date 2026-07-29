@@ -16,6 +16,7 @@ from ..utils.backups import (
     resolve_backups_folder,
 )
 from ..utils.property import set_property, get_property
+from ..utils.icons import ui_icon
 
 
 def _on_max_auto_backups_update(self, _context):
@@ -135,7 +136,11 @@ class BackupsProperty(bpy.types.PropertyGroup):
         path_row = path_box.row(align=True)
         path_row.label(text=gesture_path, translate=False)
         folder = os.path.dirname(gesture_path) if gesture_path else active_folder
-        path_row.operator("wm.path_open", text="", icon='FILE_FOLDER').filepath = folder
+        path_row.operator(
+            "wm.path_open",
+            text="",
+            icon=ui_icon('FILE_FOLDER'),
+        ).filepath = folder
 
         folder_box = box.box()
         folder_box.use_property_split = False
@@ -143,7 +148,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
         folder_box_row = folder_box.row(align=True)
         folder_box_row.label(text=default_folder, translate=False)
         folder_box_row.operator(
-            "wm.path_open", text="", icon='FILE_FOLDER'
+            "wm.path_open", text="", icon=ui_icon('FILE_FOLDER')
         ).filepath = default_folder
 
         if active_folder != default_folder:
@@ -152,7 +157,7 @@ class BackupsProperty(bpy.types.PropertyGroup):
             active_row = folder_box.row(align=True)
             active_row.label(text=active_folder, translate=False)
             active_row.operator(
-                "wm.path_open", text="", icon='FILE_FOLDER'
+                "wm.path_open", text="", icon=ui_icon('FILE_FOLDER')
             ).filepath = active_folder
 
         backup_count, backup_bytes = get_rotating_backup_stats(active_folder)
@@ -166,7 +171,11 @@ class BackupsProperty(bpy.types.PropertyGroup):
         )
         clear_row = stats_row.row(align=True)
         clear_row.enabled = backup_count > 0
-        clear_row.operator("wm.gesture_clear_backups", text="", icon='TRASH')
+        clear_row.operator(
+            "wm.gesture_clear_backups",
+            text="",
+            icon=ui_icon('TRASH'),
+        )
 
         folder_box.prop(backups, 'max_auto_backups')
 

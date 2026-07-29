@@ -5,6 +5,7 @@ from __future__ import annotations
 import bpy
 
 from .addon_keymap import get_kmi_operator_properties
+from ..utils.icons import ui_icon
 
 
 def get_temp_keymap() -> bpy.types.KeyMap | None:
@@ -89,7 +90,13 @@ def draw_temp_keymap_item(
     split = box.split()
 
     row = split.row(align=True)
-    row.prop(gesture_property, "show_gesture_keymaps", text="", emboss=False, icon=show_icon)
+    row.prop(
+        gesture_property,
+        "show_gesture_keymaps",
+        text="",
+        emboss=False,
+        icon=ui_icon(show_icon),
+    )
     row.row().operator(set_key.OperatorSetKeyMaps.bl_idname)
 
     row = split.row()
@@ -109,7 +116,11 @@ def draw_temp_keymap_item(
     else:
         row.label()
 
-    row.operator(RestoreKey.bl_idname, text="", icon='BACK').item_id = kmi.id
+    row.operator(
+        RestoreKey.bl_idname,
+        text="",
+        icon=ui_icon('BACK'),
+    ).item_id = kmi.id
 
     if show_expanded:
         box = col.box()

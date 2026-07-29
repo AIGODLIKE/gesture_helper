@@ -9,6 +9,7 @@ from ..ops.quick_add.create_element_property import (
 from ..utils.public import get_pref
 from ..utils.session_state import SessionState
 from ..utils.translate import translate_rna_text
+from ..utils.icons import ui_icon
 
 
 class ContextMenu(bpy.types.Menu):
@@ -33,11 +34,25 @@ class ContextMenu(bpy.types.Menu):
         layout = self.layout
 
         if button_pointer and button_pointer.__class__.__name__ == "BlExtDummyGroup":
-            layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
+            layout.label(
+                text="Add gesture",
+                icon=ui_icon(
+                    "GEOMETRY_SET"
+                    if bpy.app.version >= (4, 3, 0)
+                    else "VIEW_PAN"
+                ),
+            )
             layout.label(text="Dynamic enum properties cannot be added")
         elif (show_operator or show_property) and show:
             layout.context_pointer_set('show_gesture_add_menu', self)
-            layout.label(text="Add gesture", icon="GEOMETRY_SET" if bpy.app.version >= (4, 3, 0) else "VIEW_PAN")
+            layout.label(
+                text="Add gesture",
+                icon=ui_icon(
+                    "GEOMETRY_SET"
+                    if bpy.app.version >= (4, 3, 0)
+                    else "VIEW_PAN"
+                ),
+            )
             layout.enabled = get_pref().active_gesture is not None
             if show_property:
                 prop_type = button_prop.type
@@ -64,7 +79,7 @@ class ContextMenu(bpy.types.Menu):
                             pgettext("Add Gesture-Controlled Property %s")
                             % property_name
                         ),
-                        icon='LOCKED' if control_error else 'MOUSE_MOVE',
+                        icon=ui_icon('LOCKED' if control_error else 'MOUSE_MOVE'),
                     )
                     operator.display_property = True
                     operator.property_type = prop_type
@@ -85,7 +100,11 @@ class ContextMenu(bpy.types.Menu):
                 rr.operator(CreateElementOperator.bl_idname, text=pgettext("Add Operator %s to Gesture") % text)
                 rr = row
                 rr.operator_context = "INVOKE_DEFAULT"
-                rr.operator(CreateElementOperator.bl_idname, text="Modal Operator", icon="PRESET_NEW")
+                rr.operator(
+                    CreateElementOperator.bl_idname,
+                    text="Modal Operator",
+                    icon=ui_icon("PRESET_NEW"),
+                )
 
 
 _context_menu_appended = False

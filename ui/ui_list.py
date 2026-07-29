@@ -4,6 +4,7 @@ from bpy.props import IntProperty, StringProperty
 from ..utils.pref_access import PrefAccess
 from ..utils.active_selection import ActiveSelection
 from ..utils.public_ui import icon_two
+from ..utils.icons import ui_icon
 
 _ELEMENT_TREE_FULL_DRAW_LIMIT = 48
 _ELEMENT_TREE_PAGE_SIZE = 32
@@ -109,13 +110,23 @@ class GestureUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         row.prop(prop, "gesture_keymap_split_factor")
 
         row = column.row(align=True)
-        row.prop(prop, "gesture_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
-        row.prop(prop, "enable_name_translation", icon="BLANK1")
+        row.prop(
+            prop,
+            "gesture_remove_tips",
+            icon=ui_icon(
+                "INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR"
+            ),
+        )
+        row.prop(prop, "enable_name_translation", icon=ui_icon("BLANK1"))
 
         row = column.row(align=True)
-        row.prop(prop, 'gesture_show_enabled_button', icon=icon_two(prop.gesture_show_enabled_button, "HIDE"))
-        row.prop(prop, 'gesture_show_keymap', icon="BLANK1")
-        row.prop(prop, 'gesture_show_description', icon="INFO")
+        row.prop(
+            prop,
+            'gesture_show_enabled_button',
+            icon=ui_icon(icon_two(prop.gesture_show_enabled_button, "HIDE")),
+        )
+        row.prop(prop, 'gesture_show_keymap', icon=ui_icon("BLANK1"))
+        row.prop(prop, 'gesture_show_description', icon=ui_icon("INFO"))
 
 
 class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
@@ -196,7 +207,7 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         operator = previous.operator(
             ElementTreePage.bl_idname,
             text='',
-            icon='TRIA_LEFT',
+            icon=ui_icon('TRIA_LEFT'),
         )
         operator.root_pointer = str(root_pointer)
         operator.page = max(0, page - 1)
@@ -206,7 +217,7 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         operator = following.operator(
             ElementTreePage.bl_idname,
             text='',
-            icon='TRIA_RIGHT',
+            icon=ui_icon('TRIA_RIGHT'),
         )
         operator.root_pointer = str(root_pointer)
         operator.page = min(page_count - 1, page + 1)
@@ -231,19 +242,25 @@ class ElementUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
         row = column.row(align=True)
         prop = self.draw_property
         icon = icon_two(prop.element_show_enabled_button, 'HIDE')
-        row.prop(prop, 'element_show_enabled_button', icon=icon)
+        row.prop(prop, 'element_show_enabled_button', icon=ui_icon(icon))
         if getattr(context.area, 'type', None) == 'PREFERENCES':
             icon = icon_two(prop.element_show_left_side, 'ALIGN')
-            row.prop(prop, 'element_show_left_side', icon=icon)
+            row.prop(prop, 'element_show_left_side', icon=ui_icon(icon))
 
         row = column.row(align=True)
         icon = icon_two(prop.element_show_icon, 'HIDE')
-        row.prop(prop, 'element_show_icon', icon=icon)
+        row.prop(prop, 'element_show_icon', icon=ui_icon(icon))
 
         row = column.row(align=True)
-        row.prop(prop, "element_remove_tips", icon="INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR")
+        row.prop(
+            prop,
+            "element_remove_tips",
+            icon=ui_icon(
+                "INFO_LARGE" if bpy.app.version >= (4, 3, 0) else "ERROR"
+            ),
+        )
         row.operator(ElementCURE.SwitchShowChild.bl_idname)
-        row.prop(prop, "enable_name_translation", icon="BLANK1")
+        row.prop(prop, "enable_name_translation", icon=ui_icon("BLANK1"))
 
 
 class ElementModalEventUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
@@ -263,8 +280,19 @@ class ImportPresetUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
 
         left = layout.row()
         left.alignment = 'LEFT'
-        left.prop(item, 'selected', text=item.name, translate=False, icon='NONE')
+        left.prop(
+            item,
+            'selected',
+            text=item.name,
+            translate=False,
+            icon=ui_icon('NONE'),
+        )
 
         right = layout.row()
         right.alignment = 'RIGHT'
-        right.prop(item, 'selected', icon=icon_two(item.selected, 'RESTRICT_SELECT'), text='')
+        right.prop(
+            item,
+            'selected',
+            icon=ui_icon(icon_two(item.selected, 'RESTRICT_SELECT')),
+            text='',
+        )

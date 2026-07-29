@@ -8,6 +8,7 @@ from ..utils.active_selection import ActiveSelection
 from ..utils.pref_access import PrefAccess
 from ..utils.public import get_pref
 from ..utils.rna_register import register_classes_safe, unregister_classes_safe
+from ..utils.icons import ui_icon
 
 _MODAL_EVENT_VISIBILITY: dict[int, bool] = {}
 
@@ -56,13 +57,17 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         rr.enabled = not message
         rr.operator_context = "EXEC_DEFAULT"
         rr.prop(pref, 'enabled', text="", emboss=True)
-        rr.operator("wm.gesture_save_userpref", text="", icon="FILE_TICK")
+        rr.operator(
+            "wm.gesture_save_userpref",
+            text="",
+            icon=ui_icon("FILE_TICK"),
+        )
         self.draw_label_ang_version(row)
 
         if message:
             status = row.row(align=True)
             status.enabled = False
-            status.label(text=message, icon="PAUSE")
+            status.label(text=message, icon=ui_icon("PAUSE"))
         if is_panel_pause_source_active(context):
             toggle = row.row(align=True)
             toggle.enabled = True
@@ -80,7 +85,11 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         layout = self.layout
         layout.enabled = not heavy_panel_skip_message(context)
         layout.operator_context = "EXEC_DEFAULT"
-        layout.operator("wm.gesture_show_preferences", text="", icon="PREFERENCES")
+        layout.operator(
+            "wm.gesture_show_preferences",
+            text="",
+            icon=ui_icon("PREFERENCES"),
+        )
 
     def draw(self, context):
         ...

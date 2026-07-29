@@ -2,6 +2,7 @@ import bpy
 
 from .draw_element import DrawElement
 from ..ops import export_import
+from ..utils.icons import ui_icon
 from ..utils.public import get_pref
 
 
@@ -26,23 +27,51 @@ class GestureDraw:
         # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
         column.operator_context = "INVOKE_DEFAULT"
 
-        column.operator(GestureCURE.ADD.bl_idname, icon='ADD', text='')
-        column.operator(GestureCURE.COPY.bl_idname, text='', icon='COPYDOWN')
-        column.operator(GestureCURE.REMOVE.bl_idname, text='', icon='REMOVE')
+        column.operator(GestureCURE.ADD.bl_idname, icon=ui_icon('ADD'), text='')
+        column.operator(
+            GestureCURE.COPY.bl_idname,
+            text='',
+            icon=ui_icon('COPYDOWN'),
+        )
+        column.operator(
+            GestureCURE.REMOVE.bl_idname,
+            text='',
+            icon=ui_icon('REMOVE'),
+        )
 
         column.separator()
 
         sort_column = column.column(align=True)
-        sort_column.operator(GestureCURE.SORT.bl_idname, icon='SORT_DESC', text='').is_next = False
+        sort_column.operator(
+            GestureCURE.SORT.bl_idname,
+            icon=ui_icon('SORT_DESC'),
+            text='',
+        ).is_next = False
 
-        sort_column.operator(GestureCURE.SORT.bl_idname, icon='SORT_ASC', text='').is_next = True
+        sort_column.operator(
+            GestureCURE.SORT.bl_idname,
+            icon=ui_icon('SORT_ASC'),
+            text='',
+        ).is_next = True
 
         column.separator()
 
         import_id_name = export_import.Import.bl_idname
-        column.operator(export_import.Export.bl_idname, icon='EXPORT', text='')
-        column.operator(import_id_name, icon='ASSET_MANAGER', text='').preset_show = True
-        column.operator(import_id_name, icon='IMPORT', text='').preset_show = False
+        column.operator(
+            export_import.Export.bl_idname,
+            icon=ui_icon('EXPORT'),
+            text='',
+        )
+        column.operator(
+            import_id_name,
+            icon=ui_icon('ASSET_MANAGER'),
+            text='',
+        ).preset_show = True
+        column.operator(
+            import_id_name,
+            icon=ui_icon('IMPORT'),
+            text='',
+        ).preset_show = False
 
     @staticmethod
     def draw_gesture_key(

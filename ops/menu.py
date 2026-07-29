@@ -60,7 +60,9 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
 
     @staticmethod
     def _draw_error(menu, _context):
-        menu.layout.label(text='Menu gesture not found', icon='ERROR')
+        from ..utils.icons import ui_icon
+
+        menu.layout.label(text='Menu gesture not found', icon=ui_icon('ERROR'))
         menu.layout.label(text='Restore or recreate its shortcut in preferences')
 
     def _activate_existing_menu(self, gesture) -> bool:
@@ -84,10 +86,12 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
         gestures = get_gestures()
         gesture = gestures.get(self.gesture) if gestures is not None else None
         if gesture is None or gesture.gesture_type != 'MENU':
+            from ..utils.icons import ui_icon
+
             context.window_manager.popup_menu(
                 self.__class__._draw_error,
                 title=pgettext('Error'),
-                icon='ERROR',
+                icon=ui_icon('ERROR'),
             )
             return {'CANCELLED'}
 

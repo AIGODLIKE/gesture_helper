@@ -12,6 +12,7 @@ from ..element.element_modal_operator import ElementModalOperatorEventItem
 from ..element.element_modal_operator_cure import ElementModalOperatorEventCRUE
 from ..ops.gesture_cure import GestureCURE
 from ..utils.gesture_store import WM_STORE_ATTR
+from ..utils.icons import ui_icon
 
 
 class Gesture(
@@ -51,7 +52,9 @@ class Gesture(
         layout.separator()
         layout.label(
             text='',
-            icon='MENU_PANEL' if self.gesture_type == 'MENU' else 'MOUSE_MOVE',
+            icon=ui_icon(
+                'MENU_PANEL' if self.gesture_type == 'MENU' else 'MOUSE_MOVE'
+            ),
         )
         layout.label(text=self.name_translate, translate=False)
         if prop.gesture_show_description:
