@@ -6,6 +6,7 @@ from bpy.props import StringProperty
 from ..gesture.gesture_executor import GestureExecutor
 from ..gesture.menu import GestureMenuRuntime
 from ..utils.adapter import operator_setattr
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public import PublicOperator, debug_print
 
 
@@ -315,7 +316,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
             self._menu_mark_context_changed()
 
         if event.type in {
-                'MOUSEMOVE',
+                *POINTER_MOVE_EVENT_TYPES,
                 'LEFTMOUSE',
                 'WHEELUPMOUSE',
                 'WHEELDOWNMOUSE',
@@ -375,7 +376,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
                 self._tag_menu_redraw()
             return {'PASS_THROUGH'}
 
-        if event.type == 'MOUSEMOVE':
+        if event.type in POINTER_MOVE_EVENT_TYPES:
             if self._move_menu_drag(event):
                 return {'RUNNING_MODAL'}
             if self._update_menu_hover(event):

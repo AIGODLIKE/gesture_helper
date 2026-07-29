@@ -5,6 +5,7 @@ from mathutils import Vector
 
 from .element_modal_operator import ElementModalOperatorEventItem
 from ..utils.enum import ENUM_OPERATOR_CONTEXT, ENUM_OPERATOR_TYPE, from_rna_get_enum_items
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public import get_debug, debug_print
 from ..utils.property import set_property_to_kmi_properties
 from ..utils.public_cache import cache_update_lock
@@ -105,7 +106,7 @@ class ModalProperty:
         return self.properties
 
     def run_element_modal_event(self, ops, context, event) -> bool:
-        if event.type in ("MOUSEMOVE", "INBETWEEN_MOUSEMOVE"):
+        if event.type in POINTER_MOVE_EVENT_TYPES:
             last_mouse = getattr(ops, "mouse", None)
             mouse = Vector((event.mouse_x, event.mouse_y))
             is_change = False

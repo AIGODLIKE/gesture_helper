@@ -54,9 +54,11 @@ with bundled JSON presets, translations, and PNG icon assets.
 2. `GestureSession` owns per-modal state, trajectory KD-tree, event snapshot,
    phase/handoff state, property-drag state, proxy identity pool, and timeout
    handles.
-3. `gesture/gesture_input.py` normalizes events, thresholds, direction and
-   hover state; `gesture/gesture_executor.py` chooses immediate vs release
-   execution. `element/element_operator.py` invokes operators and modal
+3. `utils/input_event.py` defines shared pointer-move semantics so normal and
+   in-between Blender samples drive the same gesture, tablet, numeric-drag,
+   persistent-menu, and preview paths. `gesture/gesture_input.py` normalizes
+   thresholds, direction and hover state; `gesture/gesture_executor.py` chooses
+   immediate vs release execution. `element/element_operator.py` invokes operators and modal
    wrappers; `element/element_property.py` resolves and edits live RNA.
    `utils/operator_compat.py` migrates legacy `*_GPENCIL` mode arguments to
    Blender 4.3+ `*_GREASE_PENCIL` identifiers. `object.mode_set` uses its native
@@ -106,7 +108,11 @@ with bundled JSON presets, translations, and PNG icon assets.
    unchanged.
    `gesture/runtime_tooltip.py` owns delayed hover fade-in/fade-out state and
    short-lived redraw timers; `element/element_tooltip.py` builds translated
-   operator/property metadata and independent status/icon diagnostics. Tooltip
+   operator/property metadata and independent status/icon diagnostics. RNA
+   property labels, descriptions, and enum values honor the property's explicit
+   `translation_context`; compatibility scanning is used only when no property
+   context is available, while operator metadata retains its cross-context
+   lookup for Blender-version catalog differences. Tooltip
    timers are cancelled on target changes, modal reset/exit, and unregister.
    While a runtime tooltip is visibly displayed, Ctrl+C copies its complete
    content to Blender's clipboard and reports the result. Radial numeric
@@ -287,6 +293,12 @@ with bundled JSON presets, translations, and PNG icon assets.
   both states of layout alignment, property drag inversion, property value
   visibility, and boolean state icons. `src/translate/` holds locale JSON and translation
   caches; `src/icons/` holds numbered, color, and Blender-derived PNG icons.
+- The normal `Common Menu` preset is enabled on `BUTTON4MOUSE` in 19 relevant
+  3D View/mode keymaps. Its compact, keep-open menu filters mode and object-type
+  sections at runtime and groups viewport display, mode switching, object and
+  mesh operations, sculpt/pose actions, camera/light/mesh values, render/tool
+  values, and units. `tests/test_common_menu_preset.py` guards its shortcut,
+  coverage, serialized arguments, property paths, and Simplified Chinese text.
 
 ## Module graph
 
@@ -329,8 +341,9 @@ flowchart TD
   selector press/release cancellation, property data paths, import
   rollback/keymaps (including complete replacement after prewarming nested
   relationship, active-selection, and frozen-UI caches), lifecycle/reload,
-  dedicated Preferences-page RNA registration,
-  preview (including menu draw routing,
+   dedicated Preferences-page RNA registration,
+   preview (including Blender `MOUSEMOVE`/`INBETWEEN_MOUSEMOVE` compatibility,
+   menu draw routing,
   translation, the visible X close action, selector scaling/full-width rows,
   top-left instruction-HUD dragging, single-action flyout surface geometry,
   enum flyouts, three-part numeric-field state/hit boxes, selector/backplate
@@ -343,6 +356,8 @@ flowchart TD
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.
+- Common side-button menu RNA, operator arguments, context branches, editable
+  values, and exact KMI coverage: `tests/blender_common_menu_smoke.py`.
 - Simultaneous persistent-menu registry, one-instance-per-gesture reuse,
   draw-order, overlap ownership, and cleanup smoke:
   `tests/blender_multi_menu_smoke.py`; run it with the same four isolated
@@ -358,7 +373,7 @@ flowchart TD
   requests/second.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
-- Release-candidate verification on 2026-07-29: 173 Python files compiled in
+- Previous release-candidate verification on 2026-07-29: 173 Python files compiled in
   memory, 272 unit tests passed, Ruff and `git diff --check` passed, and all 16
   source JSON files passed duplicate-key validation. Nine isolated background
   smoke scripts passed in both Blender 4.3.2 and 5.2.0 LTS with zero
@@ -369,6 +384,11 @@ flowchart TD
   The ZIP installed into isolated local Extension repositories, started
   enabled, imported all 11 bundled presets, exposed the current `SPLIT` RNA,
   and disabled cleanly in Blender 4.3 and 5.2.
+- Current-tree focused verification for `Common Menu` passed its four structural
+  tests and the source duplicate-key check. Its dedicated smoke and the complete
+  12-preset transactional import/keymap smoke passed in isolated Blender 4.3.2
+  and 5.2.0 LTS profiles. The complete release/build/package suite has not been
+  rerun since the previous baseline.
 
 ## Current risks and observed issues
 

@@ -8,6 +8,7 @@ import time
 import bpy
 from mathutils import Vector
 
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from .gesture_session import (
     GestureSession,
     InputSnapshot,
@@ -133,7 +134,7 @@ def refresh_poll_context_fingerprint(session: GestureSession):
         # A blocking gesture cannot change Blender selection/mode/tool through
         # ordinary cursor motion. Reuse the invoke/non-mouse snapshot so the
         # active-tool lookup does not run on every MOUSEMOVE.
-        if event_type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+        if event_type in POINTER_MOVE_EVENT_TYPES:
             return current
         if getattr(session, '_poll_context_serial', -1) == serial:
             return current
@@ -967,7 +968,7 @@ class GestureInputProcessor:
         drag = session.property_drag
         if drag is not None:
             element, start_mouse, start_value = drag
-            if event.type in {'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE'}:
+            if event.type in POINTER_MOVE_EVENT_TYPES:
                 session._event_consumed = True
                 mouse = Vector((event.mouse_x, event.mouse_y))
                 delta = element.property_drag_delta(start_mouse, mouse)
@@ -1145,7 +1146,7 @@ class GestureInputProcessor:
             return finish(bool(drag_result or press_dirty))
         visual_dirty = False
         moved = False
-        if event.type == "MOUSEMOVE":
+        if event.type in POINTER_MOVE_EVENT_TYPES:
             session.move_count += 1
             session.last_mouse_mouse_time = time.time()
             schedule_timeout_timer(session, ops.pref.gesture_property.timeout, ops)

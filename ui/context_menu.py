@@ -8,6 +8,7 @@ from ..ops.quick_add.create_element_property import (
 )
 from ..utils.public import get_pref
 from ..utils.session_state import SessionState
+from ..utils.translate import translate_rna_text
 
 
 class ContextMenu(bpy.types.Menu):
@@ -40,6 +41,10 @@ class ContextMenu(bpy.types.Menu):
             layout.enabled = get_pref().active_gesture is not None
             if show_property:
                 prop_type = button_prop.type
+                property_name = translate_rna_text(
+                    button_prop.name,
+                    getattr(button_prop, 'translation_context', None),
+                )
                 direct = layout.column(align=True)
                 control_shape_supported = (
                     prop_type in {'BOOLEAN', 'INT', 'FLOAT', 'ENUM'}
@@ -57,7 +62,7 @@ class ContextMenu(bpy.types.Menu):
                         CreateElementProperty.bl_idname,
                         text=(
                             pgettext("Add Gesture-Controlled Property %s")
-                            % __name_translate__(button_prop.name)
+                            % property_name
                         ),
                         icon='LOCKED' if control_error else 'MOUSE_MOVE',
                     )
@@ -68,7 +73,7 @@ class ContextMenu(bpy.types.Menu):
                 actions.operator_context = 'INVOKE_DEFAULT'
                 actions.operator(
                     CreateElementProperty.bl_idname,
-                    text=pgettext("Property Actions for %s") % __name_translate__(button_prop.name),
+                    text=pgettext("Property Actions for %s") % property_name,
                 )
 
             if show_operator:

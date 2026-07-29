@@ -17,6 +17,7 @@ from ...gesture.gesture_session import GestureSession
 from ...gesture.menu import GestureMenuRuntime
 from ...gesture.preview_input import PreviewGestureInputProcessor
 from ...utils.adapter import operator_setattr
+from ...utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ...utils.public import PublicOperator
 from ...utils.session_state import SessionState
 
@@ -31,7 +32,7 @@ _PREVIEW_TIMER_EVENTS = frozenset({
     'TIMER_AUTOSAVE', 'TIMER_REPORT', 'TIMERREGION',
 })
 _ELEMENT_POINTER_EVENTS = frozenset({
-    'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE', 'LEFTMOUSE',
+    *POINTER_MOVE_EVENT_TYPES, 'LEFTMOUSE',
     'WHEELUPMOUSE', 'WHEELDOWNMOUSE',
 })
 
@@ -611,7 +612,7 @@ class GesturePreview(
         drag_result = self._menu_drag_event(event)
         if drag_result is not None:
             return drag_result
-        if event.type == 'MOUSEMOVE':
+        if event.type in POINTER_MOVE_EVENT_TYPES:
             if self._update_menu_hover(event):
                 self._tag_menu_redraw()
             return {'PASS_THROUGH'}
@@ -683,7 +684,7 @@ class GesturePreview(
     @staticmethod
     def _preview_menu_drag_move(owner, event) -> bool:
         previous = owner._menu_drag_mouse
-        if previous is None or event.type != 'MOUSEMOVE':
+        if previous is None or event.type not in POINTER_MOVE_EVENT_TYPES:
             return False
         point = owner._menu_mouse(event)
         if point is None:
@@ -781,7 +782,7 @@ class GesturePreview(
 
     def _radial_drag_event(self, event):
         space = event.type == 'SPACE' and not event.alt and not event.ctrl and not event.shift
-        moving = event.type == 'MOUSEMOVE' and event.type_prev == 'SPACE'
+        moving = event.type in POINTER_MOVE_EVENT_TYPES and event.type_prev == 'SPACE'
         if not (space or moving):
             return None
         if event.value == 'PRESS':

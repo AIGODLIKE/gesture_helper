@@ -39,6 +39,7 @@ from gesture_helper.ui import ui_list  # noqa: E402
 from gesture_helper.utils.gesture_persistence import suppress_gesture_disk_save  # noqa: E402
 from gesture_helper.utils import gesture_persistence  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
+from gesture_helper.utils.input_event import POINTER_MOVE_EVENT_TYPES  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
 from gesture_helper.utils.color import color_to_gpu, color_to_srgb  # noqa: E402
 from gesture_helper.utils.number_arrows import (  # noqa: E402
@@ -98,6 +99,14 @@ assert bpy.types.Operator.bl_rna_get_subclass_py(
 assert bpy.types.Menu.bl_rna_get_subclass_py(
     'GESTURE_MT_main_action_menu'
 ) is not None
+live_event_types = {
+    item.identifier
+    for item in bpy.types.Event.bl_rna.properties['type'].enum_items
+}
+assert POINTER_MOVE_EVENT_TYPES == {
+    'MOUSEMOVE', 'INBETWEEN_MOUSEMOVE',
+}
+assert POINTER_MOVE_EVENT_TYPES <= live_event_types
 
 window = bpy.context.window
 area = next(candidate for candidate in window.screen.areas if candidate.type == 'VIEW_3D')
@@ -943,7 +952,7 @@ with suppress_gesture_disk_save():
     with bpy.context.temp_override(**override):
         assert menu_preview.modal(bpy.context, header_press) == {'RUNNING_MODAL'}
     header_anchor = menu_preview._menu_anchor
-    header_move = preview_event(region, 'MOUSEMOVE')
+    header_move = preview_event(region, 'INBETWEEN_MOUSEMOVE')
     header_move.mouse_x = header_press.mouse_x - 11
     header_move.mouse_y = header_press.mouse_y + 7
     with bpy.context.temp_override(**override):

@@ -25,7 +25,7 @@ gesture_store = importlib.import_module(f"{PACKAGE}.utils.gesture_store")
 store = gesture_store.get_gesture_store()
 assert store is not None
 store.gesture.clear()
-assert gesture_cure.add_all_preset() == 11
+assert gesture_cure.add_all_preset() == 12
 assert len(store.gesture) > 0
 
 assert bpy.ops.preferences.addon_disable(module=PACKAGE) == {"FINISHED"}

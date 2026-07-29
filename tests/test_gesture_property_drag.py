@@ -40,6 +40,8 @@ def _load_gesture_input_module():
     package.__path__ = [str(MODULE_PATH.parents[1])]
     gesture_package = _module(f"{PACKAGE}.gesture")
     gesture_package.__path__ = [str(MODULE_PATH.parent)]
+    utils_package = _module(f"{PACKAGE}.utils")
+    utils_package.__path__ = [str(MODULE_PATH.parents[1] / "utils")]
 
     _module(
         f"{PACKAGE}.gesture.gesture_session",
@@ -326,6 +328,75 @@ class GesturePropertyDragTests(unittest.TestCase):
             )
         )
         self.assertIsNone(session._ui_pressed_element)
+
+    def test_inbetween_mousemove_advances_the_main_gesture_motion_state(self):
+        tracking_calls = []
+        zone = object()
+
+        class SeededTree:
+            def __len__(self):
+                return 1
+
+        session = types.SimpleNamespace(
+            event=None,
+            _input_event_serial=0,
+            _event_consumed=False,
+            _ui_pressed_element=None,
+            property_drag=None,
+            _numeric_pressed_element=None,
+            _last_trajectory_mouse=Vector((0.0, 0.0)),
+            move_count=1,
+            event_count=2,
+            last_mouse_mouse_time=0.0,
+            phase=types.SimpleNamespace(
+                shows_radial_ui=False,
+                records_mouse_trail=False,
+            ),
+            snapshot=types.SimpleNamespace(
+                mouse_window=Vector((12.0, 9.0)),
+                direction=None,
+                distance=0.0,
+                threshold_zone=zone,
+            ),
+            trajectory_tree=SeededTree(),
+            extension_hover=[],
+            advance_to_tracking=lambda: tracking_calls.append(True),
+        )
+        ops = types.SimpleNamespace(
+            pref=types.SimpleNamespace(
+                gesture_property=types.SimpleNamespace(timeout=180),
+            ),
+            operator_gesture=None,
+            mouse_is_in_extension_any_area=False,
+        )
+
+        with (
+                patch.object(gesture_input, "refresh_poll_context_fingerprint"),
+                patch.object(gesture_input, "refresh_snapshot"),
+                patch.object(gesture_input, "schedule_timeout_timer") as schedule,
+                patch.object(gesture_input, "sync_runtime_tooltip", return_value=False),
+                patch.object(self.processor, "_handle_child_navigation") as child_nav,
+                patch.object(gesture_input, "update_extension_hover"),
+        ):
+            dirty = self.processor.on_event(
+                session,
+                ops,
+                _event("INBETWEEN_MOUSEMOVE", x=12.0, y=9.0),
+            )
+
+        self.assertTrue(dirty)
+        self.assertEqual(session.move_count, 2)
+        self.assertEqual(session.event_count, 3)
+        self.assertEqual(session._last_trajectory_mouse.x, 12.0)
+        self.assertEqual(tracking_calls, [True])
+        schedule.assert_called_once_with(session, 180, ops)
+        child_nav.assert_called_once_with(
+            session,
+            ops,
+            session.snapshot,
+            session.snapshot.mouse_window,
+            False,
+        )
 
     def test_unchanged_mousemove_is_consumed_without_refresh(self):
         element = FakeElement(changed=False)

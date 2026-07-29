@@ -11,6 +11,7 @@ import bpy
 from ..utils.blf_text import measure_text
 from ..utils.color import color_to_srgb
 from ..utils.gesture_items import get_gesture_extension_items, poll_context_fingerprint
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public_gpu import PublicGpu, gpu_draw_begin, gpu_draw_end
 from ..utils.region_mouse import find_window_region, mouse_in_window_region
 from ..utils.layout_alignment import (
@@ -616,7 +617,7 @@ class GestureMenuRuntime(PublicGpu):
 
     def _move_menu_drag(self, event) -> bool:
         previous = getattr(self, '_menu_drag_mouse', None)
-        if previous is None or event.type != 'MOUSEMOVE':
+        if previous is None or event.type not in POINTER_MOVE_EVENT_TYPES:
             return False
         point = self._menu_mouse(event)
         if point is None:

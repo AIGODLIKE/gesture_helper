@@ -257,6 +257,37 @@ class ModalMousePanelFreezeTests(unittest.TestCase):
 
         self.assertEqual(writes, [12])
 
+    def test_inbetween_mousemove_updates_the_modal_drag_value(self):
+        state = {"value": 10}
+        writes = []
+
+        def resolve(*_args):
+            return state["value"]
+
+        def write(_context, _path, value):
+            writes.append(value)
+            state["value"] = value
+
+        modal_mouse.resolve_context_path = resolve
+        modal_mouse.by_path_set_value = write
+        modal_mouse.bpy.context = object()
+        operator = modal_mouse.ModalMouseOperator()
+        operator.___value___ = 10
+        operator.value_mode = "X"
+        operator.invert = False
+        operator.data_path = "scene.value"
+        operator.header_text = "Value %d"
+        operator._set_display_text = Mock()
+
+        result = operator.modal(
+            types.SimpleNamespace(),
+            _event("INBETWEEN_MOUSEMOVE", delta=2.0),
+        )
+
+        self.assertEqual(result, {"RUNNING_MODAL"})
+        self.assertEqual(writes, [12])
+        operator._set_display_text.assert_called_once()
+
     def test_invoke_and_exit_bracket_the_explicit_panel_freeze(self):
         modal_mouse.resolve_context_path = lambda *_args: 10
         region = FakeRegion()

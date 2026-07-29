@@ -6,6 +6,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty
 from mathutils import Vector
 
 from ..utils.enum import ENUM_NUMBER_VALUE_CHANGE_MODE
+from ..utils.input_event import POINTER_MOVE_EVENT_TYPES
 from ..utils.public import (
     by_path_set_value,
     PublicMouseModal,
@@ -280,7 +281,7 @@ class ModalMouseOperator(bpy.types.Operator, StoreValue, PublicMouseModal, Publi
             vm = self.value_mode
             overlay_mouse = Vector((event.mouse_region_x, event.mouse_region_y))
 
-            if et == 'MOUSEMOVE':
+            if et in POINTER_MOVE_EVENT_TYPES:
                 delta = self.value_delta(event, vm)
                 if self.invert:
                     delta = -delta

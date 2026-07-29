@@ -92,6 +92,12 @@ def _load_preview_module():
         GestureSession=type("GestureSession", (), {}),
     )
     _module(f"{PACKAGE}.utils.adapter", operator_setattr=setattr)
+    _module(
+        f"{PACKAGE}.utils.input_event",
+        POINTER_MOVE_EVENT_TYPES=frozenset({
+            "MOUSEMOVE", "INBETWEEN_MOUSEMOVE",
+        }),
+    )
     _module(f"{PACKAGE}.utils.public", PublicOperator=PublicOperator)
     _module(
         f"{PACKAGE}.utils.session_state",
@@ -276,7 +282,7 @@ class PreviewContextTests(unittest.TestCase):
             point=(30.0, 70.0),
         )
         move = types.SimpleNamespace(
-            type="MOUSEMOVE", value="NOTHING", alt=False, ctrl=False, shift=False,
+            type="INBETWEEN_MOUSEMOVE", value="NOTHING", alt=False, ctrl=False, shift=False,
             point=(42.0, 75.0),
         )
         release = types.SimpleNamespace(
@@ -318,6 +324,27 @@ class PreviewContextTests(unittest.TestCase):
         self.assertEqual(result, {'RUNNING_MODAL'})
         self.assertIs(owner.event, event)
         self.assertEqual(calls, [event])
+
+    def test_menu_preview_updates_hover_for_inbetween_mousemove(self):
+        calls = []
+        event = types.SimpleNamespace(
+            type='INBETWEEN_MOUSEMOVE',
+            value='NOTHING',
+        )
+        owner = types.SimpleNamespace(
+            event=None,
+            _menu_closing_at=0.0,
+            _preview_hud_event=lambda _event: set(),
+            _menu_drag_event=lambda _event: None,
+            _update_menu_hover=lambda _event: calls.append('hover') or True,
+            _tag_menu_redraw=lambda: calls.append('redraw'),
+        )
+
+        result = preview_module.GesturePreview._modal_menu(owner, event)
+
+        self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertIs(owner.event, event)
+        self.assertEqual(calls, ['hover', 'redraw'])
 
     def test_menu_preview_draws_menu_then_shared_hud(self):
         draw_order = []

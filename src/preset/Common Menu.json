@@ -1,0 +1,1235 @@
+{
+  "time": 1785339378,
+  "blender_version": [
+    5,
+    2,
+    0
+  ],
+  "addon_version": [
+    2,
+    4,
+    0
+  ],
+  "author": "ACGGIT Community",
+  "description": "A context-aware side-button menu for modes, operators, viewport controls, and useful numeric values",
+  "gesture": {
+    "0": {
+      "name": "Common Side Button Menu",
+      "enabled": true,
+      "gesture_type": "MENU",
+      "menu_style": "COMPACT",
+      "menu_keep_open": true,
+      "key_string": "{\"type\": \"BUTTON4MOUSE\", \"value\": \"PRESS\", \"any\": false, \"shift\": 0, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+      "keymaps_string": "[\"3D View\", \"Object Mode\", \"Mesh\", \"Curve\", \"Armature\", \"Metaball\", \"Lattice\", \"Pose\", \"Weight Paint\", \"Vertex Paint\", \"Sculpt\", \"Particle\", \"Font\", \"Grease Pencil\", \"Curves\", \"Paint Vertex Selection (Weight, Vertex)\", \"Paint Face Mask (Weight, Vertex, Texture)\", \"Sculpt Curves\", \"Image Paint\"]",
+      "element": {
+        "0": {
+          "name": "3D View",
+          "element_type": "SELECTED_STRUCTURE",
+          "selected_type": "IF",
+          "poll_string": "C.space_data.type == 'VIEW_3D'",
+          "element": {
+            "0": {
+              "name": "Quick Access",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Frame Selected",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "selected_type": "IF",
+                  "poll_string": "C.object is not None",
+                  "element": {
+                    "0": {
+                      "name": "Frame Selected",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_selected"
+                    }
+                  }
+                },
+                "1": {
+                  "name": "View All",
+                  "element_type": "SELECTED_STRUCTURE",
+                  "selected_type": "ELSE",
+                  "element": {
+                    "0": {
+                      "name": "View All",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_all"
+                    }
+                  }
+                },
+                "2": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "3": {
+                  "name": "Undo",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "ed.undo"
+                },
+                "4": {
+                  "name": "Redo",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "ed.redo"
+                },
+                "5": {
+                  "name": "Local View",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.localview"
+                },
+                "6": {
+                  "name": "Perspective / Orthographic",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.view_persportho"
+                },
+                "7": {
+                  "name": "Dividing_Line",
+                  "element_type": "DIVIDING_LINE"
+                },
+                "8": {
+                  "name": "Cursor to World Origin",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.snap_cursor_to_center"
+                },
+                "9": {
+                  "name": "Selection to Cursor",
+                  "element_type": "OPERATOR",
+                  "operator_bl_idname": "view3d.snap_selected_to_cursor",
+                  "operator_properties": "{'use_offset': False}"
+                }
+              }
+            },
+            "1": {
+              "name": "Active Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.object is not None",
+              "element": {
+                "0": {
+                  "name": "Mode Switch",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Object Mode",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "object.mode_set",
+                      "operator_properties": "{'mode': 'OBJECT'}"
+                    },
+                    "1": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "2": {
+                      "name": "Mesh Modes",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "IF",
+                      "poll_string": "C.object.type == 'MESH'",
+                      "element": {
+                        "0": {
+                          "name": "Edit Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'EDIT'}"
+                        },
+                        "1": {
+                          "name": "Sculpt Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'SCULPT'}"
+                        },
+                        "2": {
+                          "name": "Weight Paint",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'WEIGHT_PAINT'}"
+                        },
+                        "3": {
+                          "name": "Vertex Paint",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'VERTEX_PAINT'}"
+                        },
+                        "4": {
+                          "name": "Texture Paint",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'TEXTURE_PAINT'}"
+                        }
+                      }
+                    },
+                    "3": {
+                      "name": "Armature Modes",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "C.object.type == 'ARMATURE'",
+                      "element": {
+                        "0": {
+                          "name": "Edit Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'EDIT'}"
+                        },
+                        "1": {
+                          "name": "Pose Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'POSE'}"
+                        }
+                      }
+                    },
+                    "4": {
+                      "name": "Grease Pencil Modes",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "C.object.type in ('GPENCIL', 'GREASEPENCIL')",
+                      "element": {
+                        "0": {
+                          "name": "Edit Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'EDIT'}"
+                        },
+                        "1": {
+                          "name": "Draw Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'PAINT_GREASE_PENCIL'}"
+                        },
+                        "2": {
+                          "name": "Sculpt Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'SCULPT_GREASE_PENCIL'}"
+                        },
+                        "3": {
+                          "name": "Weight Paint",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'WEIGHT_GREASE_PENCIL'}"
+                        },
+                        "4": {
+                          "name": "Vertex Paint",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'VERTEX_GREASE_PENCIL'}"
+                        }
+                      }
+                    },
+                    "5": {
+                      "name": "Curves Modes",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "C.object.type == 'CURVES'",
+                      "element": {
+                        "0": {
+                          "name": "Edit Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'EDIT'}"
+                        },
+                        "1": {
+                          "name": "Sculpt Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'SCULPT_CURVES'}"
+                        }
+                      }
+                    },
+                    "6": {
+                      "name": "Editable Object Modes",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "ELIF",
+                      "poll_string": "C.object.type in ('CURVE', 'SURFACE', 'META', 'FONT', 'LATTICE')",
+                      "element": {
+                        "0": {
+                          "name": "Edit Mode",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.mode_set",
+                          "operator_properties": "{'mode': 'EDIT'}"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "2": {
+              "name": "Viewport & Shading",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "View Actions",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Front View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'FRONT', 'align_active': False, 'relative': False}"
+                    },
+                    "1": {
+                      "name": "Back View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'BACK', 'align_active': False, 'relative': False}"
+                    },
+                    "2": {
+                      "name": "Right View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'RIGHT', 'align_active': False, 'relative': False}"
+                    },
+                    "3": {
+                      "name": "Left View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'LEFT', 'align_active': False, 'relative': False}"
+                    },
+                    "4": {
+                      "name": "Top View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'TOP', 'align_active': False, 'relative': False}"
+                    },
+                    "5": {
+                      "name": "Bottom View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_axis",
+                      "operator_properties": "{'type': 'BOTTOM', 'align_active': False, 'relative': False}"
+                    },
+                    "6": {
+                      "name": "Camera View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_camera"
+                    },
+                    "7": {
+                      "name": "Perspective / Orthographic",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.view_persportho"
+                    }
+                  }
+                },
+                "1": {
+                  "name": "Viewport Display",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Show Overlays",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.overlay.show_overlays"
+                    },
+                    "1": {
+                      "name": "Show Gizmos",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.show_gizmo"
+                    },
+                    "2": {
+                      "name": "Show Floor",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.overlay.show_floor"
+                    },
+                    "3": {
+                      "name": "X-Ray",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.show_xray"
+                    },
+                    "4": {
+                      "name": "Lock Camera to View",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.lock_camera"
+                    }
+                  }
+                },
+                "2": {
+                  "name": "Viewport Shading",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Shading",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.type"
+                    },
+                    "1": {
+                      "name": "Lighting",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.light"
+                    },
+                    "2": {
+                      "name": "Color Type",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.color_type"
+                    },
+                    "3": {
+                      "name": "Shadows",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.show_shadows"
+                    },
+                    "4": {
+                      "name": "Cavity",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.show_cavity"
+                    }
+                  }
+                },
+                "3": {
+                  "name": "View Values",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Focal Length",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.lens",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 1
+                    },
+                    "1": {
+                      "name": "Clip Start",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.clip_start",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 3
+                    },
+                    "2": {
+                      "name": "Clip End",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.clip_end",
+                      "property_wheel_step": 10.0,
+                      "property_value_precision": 1
+                    },
+                    "3": {
+                      "name": "X-Ray Opacity",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "space_data.shading.xray_alpha",
+                      "property_wheel_step": 0.05,
+                      "property_value_precision": 2
+                    }
+                  }
+                }
+              }
+            },
+            "3": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "4": {
+              "name": "Object Mode Tools",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.mode == 'OBJECT' and C.object is not None",
+              "element": {
+                "0": {
+                  "name": "Object Tools",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Selection",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Select All",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.select_all",
+                          "operator_properties": "{'action': 'SELECT'}"
+                        },
+                        "1": {
+                          "name": "Deselect All",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.select_all",
+                          "operator_properties": "{'action': 'DESELECT'}"
+                        },
+                        "2": {
+                          "name": "Invert Selection",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.select_all",
+                          "operator_properties": "{'action': 'INVERT'}"
+                        }
+                      }
+                    },
+                    "1": {
+                      "name": "Transform",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Move",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "transform.translate"
+                        },
+                        "1": {
+                          "name": "Rotate",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "transform.rotate"
+                        },
+                        "2": {
+                          "name": "Scale",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "transform.resize"
+                        },
+                        "3": {
+                          "name": "Duplicate",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.duplicate_move"
+                        }
+                      }
+                    },
+                    "2": {
+                      "name": "Apply Transform",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Apply Rotation & Scale",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.transform_apply",
+                          "operator_properties": "{'location': False, 'rotation': True, 'scale': True}"
+                        },
+                        "1": {
+                          "name": "Apply All Transforms",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.transform_apply",
+                          "operator_properties": "{'location': True, 'rotation': True, 'scale': True}"
+                        },
+                        "2": {
+                          "name": "Apply Visual Transform",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.visual_transform_apply"
+                        }
+                      }
+                    },
+                    "3": {
+                      "name": "Clear Transform",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Clear Location",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.location_clear"
+                        },
+                        "1": {
+                          "name": "Clear Rotation",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.rotation_clear"
+                        },
+                        "2": {
+                          "name": "Clear Scale",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.scale_clear"
+                        }
+                      }
+                    },
+                    "4": {
+                      "name": "Set Origin",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Origin to Geometry",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.origin_set",
+                          "operator_properties": "{'type': 'ORIGIN_GEOMETRY', 'center': 'MEDIAN'}"
+                        },
+                        "1": {
+                          "name": "Geometry to Origin",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.origin_set",
+                          "operator_properties": "{'type': 'GEOMETRY_ORIGIN', 'center': 'MEDIAN'}"
+                        },
+                        "2": {
+                          "name": "Origin to 3D Cursor",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.origin_set",
+                          "operator_properties": "{'type': 'ORIGIN_CURSOR', 'center': 'MEDIAN'}"
+                        },
+                        "3": {
+                          "name": "Origin to Center of Mass",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.origin_set",
+                          "operator_properties": "{'type': 'ORIGIN_CENTER_OF_MASS', 'center': 'MEDIAN'}"
+                        }
+                      }
+                    },
+                    "5": {
+                      "name": "Add Modifier",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Mirror Modifier",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.modifier_add",
+                          "operator_properties": "{'type': 'MIRROR'}"
+                        },
+                        "1": {
+                          "name": "Subdivision Surface Modifier",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.modifier_add",
+                          "operator_properties": "{'type': 'SUBSURF'}"
+                        },
+                        "2": {
+                          "name": "Bevel Modifier",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.modifier_add",
+                          "operator_properties": "{'type': 'BEVEL'}"
+                        },
+                        "3": {
+                          "name": "Solidify Modifier",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.modifier_add",
+                          "operator_properties": "{'type': 'SOLIDIFY'}"
+                        },
+                        "4": {
+                          "name": "Array Modifier",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "object.modifier_add",
+                          "operator_properties": "{'type': 'ARRAY'}"
+                        }
+                      }
+                    },
+                    "6": {
+                      "name": "Object Display",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Display Type",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "object.display_type"
+                        },
+                        "1": {
+                          "name": "Show Name",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "object.show_name"
+                        },
+                        "2": {
+                          "name": "In Front",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "object.show_in_front"
+                        },
+                        "3": {
+                          "name": "Show Wire",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "object.show_wire"
+                        }
+                      }
+                    },
+                    "7": {
+                      "name": "Shadeable Object",
+                      "element_type": "SELECTED_STRUCTURE",
+                      "selected_type": "IF",
+                      "poll_string": "C.object.type in ('MESH', 'CURVE', 'SURFACE')",
+                      "element": {
+                        "0": {
+                          "name": "Shading",
+                          "element_type": "CHILD_GESTURE",
+                          "element": {
+                            "0": {
+                              "name": "Shade Smooth",
+                              "element_type": "OPERATOR",
+                              "operator_bl_idname": "object.shade_smooth"
+                            },
+                            "1": {
+                              "name": "Shade Flat",
+                              "element_type": "OPERATOR",
+                              "operator_bl_idname": "object.shade_flat"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "5": {
+              "name": "Mesh Edit Mode Tools",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.mode == 'EDIT_MESH'",
+              "element": {
+                "0": {
+                  "name": "Mesh Edit Tools",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Selection",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Select All",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.select_all",
+                          "operator_properties": "{'action': 'SELECT'}"
+                        },
+                        "1": {
+                          "name": "Deselect All",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.select_all",
+                          "operator_properties": "{'action': 'DESELECT'}"
+                        },
+                        "2": {
+                          "name": "Invert Selection",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.select_all",
+                          "operator_properties": "{'action': 'INVERT'}"
+                        },
+                        "3": {
+                          "name": "Select Non-Manifold",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.select_non_manifold"
+                        }
+                      }
+                    },
+                    "1": {
+                      "name": "Modeling",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Subdivide",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.subdivide"
+                        },
+                        "1": {
+                          "name": "Bevel",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.bevel"
+                        },
+                        "2": {
+                          "name": "Inset Faces",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.inset"
+                        },
+                        "3": {
+                          "name": "Duplicate",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.duplicate_move"
+                        },
+                        "4": {
+                          "name": "Separate Selected",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.separate",
+                          "operator_properties": "{'type': 'SELECTED'}"
+                        }
+                      }
+                    },
+                    "2": {
+                      "name": "Clean Up",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Merge by Distance",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.remove_doubles"
+                        },
+                        "1": {
+                          "name": "Limited Dissolve",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.dissolve_limited"
+                        },
+                        "2": {
+                          "name": "Delete Loose",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.delete_loose"
+                        },
+                        "3": {
+                          "name": "Recalculate Outside",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.normals_make_consistent",
+                          "operator_properties": "{'inside': False}"
+                        },
+                        "4": {
+                          "name": "Recalculate Inside",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.normals_make_consistent",
+                          "operator_properties": "{'inside': True}"
+                        }
+                      }
+                    },
+                    "3": {
+                      "name": "Edge Marks",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Mark Seam",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.mark_seam",
+                          "operator_properties": "{'clear': False}"
+                        },
+                        "1": {
+                          "name": "Clear Seam",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.mark_seam",
+                          "operator_properties": "{'clear': True}"
+                        },
+                        "2": {
+                          "name": "Mark Sharp",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.mark_sharp",
+                          "operator_properties": "{'clear': False}"
+                        },
+                        "3": {
+                          "name": "Clear Sharp",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.mark_sharp",
+                          "operator_properties": "{'clear': True}"
+                        }
+                      }
+                    },
+                    "4": {
+                      "name": "Mesh Shading",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Shade Smooth",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.faces_shade_smooth"
+                        },
+                        "1": {
+                          "name": "Shade Flat",
+                          "element_type": "OPERATOR",
+                          "operator_bl_idname": "mesh.faces_shade_flat"
+                        }
+                      }
+                    },
+                    "5": {
+                      "name": "Auto Merge Settings",
+                      "element_type": "CHILD_GESTURE",
+                      "element": {
+                        "0": {
+                          "name": "Auto Merge",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "scene.tool_settings.use_mesh_automerge"
+                        },
+                        "1": {
+                          "name": "Split Edges & Faces",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "scene.tool_settings.use_mesh_automerge_and_split"
+                        },
+                        "2": {
+                          "name": "Auto Merge Distance",
+                          "element_type": "PROPERTY",
+                          "property_data_path": "scene.tool_settings.double_threshold",
+                          "property_wheel_step": 0.001,
+                          "property_value_precision": 4
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "6": {
+              "name": "Sculpt Mode Tools",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.mode == 'SCULPT' and C.object is not None and C.object.type == 'MESH'",
+              "element": {
+                "0": {
+                  "name": "Sculpt Tools",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Voxel Remesh",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "object.voxel_remesh"
+                    },
+                    "1": {
+                      "name": "Remesh Voxel Size",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.remesh_voxel_size",
+                      "property_wheel_step": 0.005,
+                      "property_value_precision": 4
+                    },
+                    "2": {
+                      "name": "Remesh Adaptivity",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.remesh_voxel_adaptivity",
+                      "property_wheel_step": 0.01,
+                      "property_value_precision": 3
+                    }
+                  }
+                }
+              }
+            },
+            "7": {
+              "name": "Pose Mode Tools",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.mode == 'POSE' and C.object is not None and C.object.type == 'ARMATURE'",
+              "element": {
+                "0": {
+                  "name": "Pose Tools",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Select All",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.select_all",
+                      "operator_properties": "{'action': 'SELECT'}"
+                    },
+                    "1": {
+                      "name": "Deselect All",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.select_all",
+                      "operator_properties": "{'action': 'DESELECT'}"
+                    },
+                    "2": {
+                      "name": "Invert Selection",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.select_all",
+                      "operator_properties": "{'action': 'INVERT'}"
+                    },
+                    "3": {
+                      "name": "Dividing_Line",
+                      "element_type": "DIVIDING_LINE"
+                    },
+                    "4": {
+                      "name": "Clear All Transforms",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.transforms_clear"
+                    },
+                    "5": {
+                      "name": "Clear Location",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.loc_clear"
+                    },
+                    "6": {
+                      "name": "Clear Rotation",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.rot_clear"
+                    },
+                    "7": {
+                      "name": "Clear Scale",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "pose.scale_clear"
+                    }
+                  }
+                }
+              }
+            },
+            "8": {
+              "name": "Dividing_Line",
+              "element_type": "DIVIDING_LINE"
+            },
+            "9": {
+              "name": "Camera Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "IF",
+              "poll_string": "C.object is not None and C.object.type == 'CAMERA'",
+              "element": {
+                "0": {
+                  "name": "Camera Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Focal Length",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.lens",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 1
+                    },
+                    "1": {
+                      "name": "Sensor Width",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.sensor_width",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 1
+                    },
+                    "2": {
+                      "name": "Depth of Field",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.dof.use_dof"
+                    },
+                    "3": {
+                      "name": "Focus Distance",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.dof.focus_distance",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 2
+                    },
+                    "4": {
+                      "name": "Show Passepartout",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.show_passepartout"
+                    },
+                    "5": {
+                      "name": "Passepartout Opacity",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.passepartout_alpha",
+                      "property_wheel_step": 0.05,
+                      "property_value_precision": 2
+                    },
+                    "6": {
+                      "name": "Show Limits",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.show_limits"
+                    },
+                    "7": {
+                      "name": "Set Active Camera",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.object_as_camera"
+                    },
+                    "8": {
+                      "name": "Align Camera to View",
+                      "element_type": "OPERATOR",
+                      "operator_bl_idname": "view3d.camera_to_view"
+                    }
+                  }
+                }
+              }
+            },
+            "10": {
+              "name": "Light Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.object is not None and C.object.type == 'LIGHT'",
+              "element": {
+                "0": {
+                  "name": "Light Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Light Type",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.type"
+                    },
+                    "1": {
+                      "name": "Power",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.energy",
+                      "property_wheel_step": 10.0,
+                      "property_value_precision": 1
+                    },
+                    "2": {
+                      "name": "Light Radius",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.shadow_soft_size",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 2
+                    },
+                    "3": {
+                      "name": "Shadow",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.use_shadow"
+                    }
+                  }
+                }
+              }
+            },
+            "11": {
+              "name": "Empty Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.object is not None and C.object.type == 'EMPTY'",
+              "element": {
+                "0": {
+                  "name": "Empty Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Display Type",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.empty_display_type"
+                    },
+                    "1": {
+                      "name": "Display Size",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.empty_display_size",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 2
+                    },
+                    "2": {
+                      "name": "In Front",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.show_in_front"
+                    }
+                  }
+                }
+              }
+            },
+            "12": {
+              "name": "Mesh Object",
+              "element_type": "SELECTED_STRUCTURE",
+              "selected_type": "ELIF",
+              "poll_string": "C.object is not None and C.object.type == 'MESH'",
+              "element": {
+                "0": {
+                  "name": "Mesh Object Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Display Type",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.display_type"
+                    },
+                    "1": {
+                      "name": "Show Wire",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.show_wire"
+                    },
+                    "2": {
+                      "name": "Show All Edges",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.show_all_edges"
+                    },
+                    "3": {
+                      "name": "In Front",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.show_in_front"
+                    },
+                    "4": {
+                      "name": "Remesh Voxel Size",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.remesh_voxel_size",
+                      "property_wheel_step": 0.005,
+                      "property_value_precision": 4
+                    },
+                    "5": {
+                      "name": "Remesh Adaptivity",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "object.data.remesh_voxel_adaptivity",
+                      "property_wheel_step": 0.01,
+                      "property_value_precision": 3
+                    }
+                  }
+                }
+              }
+            },
+            "13": {
+              "name": "Scene & Tool Values",
+              "element_type": "CHILD_GESTURE",
+              "element": {
+                "0": {
+                  "name": "Timeline",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Current Frame",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.frame_current",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 0
+                    },
+                    "1": {
+                      "name": "Start Frame",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.frame_start",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 0
+                    },
+                    "2": {
+                      "name": "End Frame",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.frame_end",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 0
+                    }
+                  }
+                },
+                "1": {
+                  "name": "Render Values",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Resolution Scale",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.resolution_percentage",
+                      "property_wheel_step": 5.0,
+                      "property_value_precision": 0
+                    },
+                    "1": {
+                      "name": "Frame Rate",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.fps",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 0
+                    },
+                    "2": {
+                      "name": "Frame Rate Base",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.fps_base",
+                      "property_wheel_step": 0.001,
+                      "property_value_precision": 3
+                    },
+                    "3": {
+                      "name": "Transparent Film",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.film_transparent"
+                    },
+                    "4": {
+                      "name": "Use Simplify",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.use_simplify"
+                    },
+                    "5": {
+                      "name": "Simplify Subdivision",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.render.simplify_subdivision",
+                      "property_wheel_step": 1.0,
+                      "property_value_precision": 0
+                    }
+                  }
+                },
+                "2": {
+                  "name": "Tool Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Transform Pivot Point",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.tool_settings.transform_pivot_point"
+                    },
+                    "1": {
+                      "name": "Snapping",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.tool_settings.use_snap"
+                    },
+                    "2": {
+                      "name": "Proportional Editing",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.tool_settings.use_proportional_edit"
+                    },
+                    "3": {
+                      "name": "Proportional Size",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.tool_settings.proportional_size",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 2
+                    },
+                    "4": {
+                      "name": "Auto Keying",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.tool_settings.use_keyframe_insert_auto"
+                    }
+                  }
+                },
+                "3": {
+                  "name": "Unit Settings",
+                  "element_type": "CHILD_GESTURE",
+                  "element": {
+                    "0": {
+                      "name": "Unit System",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.unit_settings.system"
+                    },
+                    "1": {
+                      "name": "Length Unit",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.unit_settings.length_unit"
+                    },
+                    "2": {
+                      "name": "Unit Scale",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.unit_settings.scale_length",
+                      "property_wheel_step": 0.1,
+                      "property_value_precision": 3
+                    },
+                    "3": {
+                      "name": "Separate Units",
+                      "element_type": "PROPERTY",
+                      "property_data_path": "scene.unit_settings.use_separate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Open a persistent context-aware menu with the first mouse side button"
+    }
+  }
+}

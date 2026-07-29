@@ -469,7 +469,10 @@ class MenuRedrawScopeTests(unittest.TestCase):
         runtime._tag_menu_redraw = Mock()
 
         press = types.SimpleNamespace(point=(40.0, 80.0))
-        move = types.SimpleNamespace(type="MOUSEMOVE", point=(55.0, 72.0))
+        move = types.SimpleNamespace(
+            type="INBETWEEN_MOUSEMOVE",
+            point=(55.0, 72.0),
+        )
         self.assertTrue(runtime._menu_header_hit(press))
         self.assertTrue(runtime._start_menu_drag(press, button="LEFTMOUSE"))
         self.assertFalse(runtime._menu_centered)

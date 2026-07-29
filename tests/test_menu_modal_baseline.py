@@ -64,6 +64,12 @@ def _load_menu_module():
         operator_setattr=setattr,
     )
     _module(
+        f"{PACKAGE}.utils.input_event",
+        POINTER_MOVE_EVENT_TYPES=frozenset({
+            "MOUSEMOVE", "INBETWEEN_MOUSEMOVE",
+        }),
+    )
+    _module(
         f"{PACKAGE}.utils.public",
         PublicOperator=PublicOperator,
         debug_print=lambda *args, **kwargs: None,
@@ -263,6 +269,30 @@ class MenuModalBaselineTests(unittest.TestCase):
 
         self.assertEqual(result, {'PASS_THROUGH'})
         self.assertEqual(changes, ['clear-hover', 'clear-press', 'redraw'])
+
+    def test_inbetween_mousemove_updates_the_topmost_menu_hover(self):
+        menu = self.make_menu()
+        window = FakeWindow([menu])
+        menu._menu_close_requested = False
+        menu._menu_closing_at = 0.0
+        menu._menu_external_modal_active = False
+        menu._area_is_live = lambda: True
+        menu._has_external_modal = lambda _context: False
+        menu._menu_is_obscured_at = lambda _point: False
+        menu._move_menu_drag = lambda _event: False
+        calls = []
+        menu._update_menu_hover = lambda _event: calls.append('hover') or True
+        menu._tag_menu_redraw = lambda: calls.append('redraw')
+        event = types.SimpleNamespace(
+            type='INBETWEEN_MOUSEMOVE',
+            value='NOTHING',
+            point=(10.0, 10.0),
+        )
+
+        result = menu.modal(FakeContext(window), event)
+
+        self.assertEqual(result, {'PASS_THROUGH'})
+        self.assertEqual(calls, ['hover', 'redraw'])
 
     def test_obscured_backspace_does_not_reset_an_older_menu(self):
         menu = self.make_menu()

@@ -18,6 +18,7 @@ from ..utils.enum import (
 from ..utils.public import get_pref
 from ..utils.public_cache import PublicCache, PublicCacheFunc, cache_update_lock
 from ..utils.number_arrows import number_drag_value, number_step_value
+from ..utils.translate import translate_rna_text
 
 
 _UI_PANEL_LEAF_ITEMS_CACHE = None
@@ -30,32 +31,6 @@ def _update_show_child(_self, _context) -> None:
         clear_element_tree_cache()
     except (AttributeError, ImportError, RuntimeError):
         pass
-
-
-def _translate_rna_text(text: str, context, *, tooltip: bool) -> str:
-    """Translate RNA text, tolerating strings catalogued under another context."""
-    if not text:
-        return ''
-    try:
-        import bpy
-        from bpy.app.translations import pgettext_iface, pgettext_tip
-
-        translate = pgettext_tip if tooltip else pgettext_iface
-        contexts = (context, *tuple(bpy.app.translations.contexts))
-        seen = set()
-        for msgctxt in contexts:
-            if msgctxt in seen:
-                continue
-            seen.add(msgctxt)
-            try:
-                translated = translate(text, msgctxt)
-            except TypeError:
-                translated = translate(text)
-            if translated != text:
-                return translated
-    except (AttributeError, ImportError, TypeError):
-        pass
-    return text
 
 
 class ElementAddProperty:
@@ -523,8 +498,12 @@ class ElementLayoutProperty:
         description = getattr(source, 'description', '') or ''
         if not description:
             return ''
-        context = getattr(source, 'translation_context', None)
-        return _translate_rna_text(description, context, tooltip=True)
+        context = (
+            getattr(source, 'translation_context', None)
+            if self.is_property_display
+            else None
+        )
+        return translate_rna_text(description, context, tooltip=True)
 
     @property
     def source_name_translate(self) -> str:
@@ -543,9 +522,14 @@ class ElementLayoutProperty:
                 source = resolved[1]
         if source is None:
             return ''
-        return _translate_rna_text(
+        context = (
+            getattr(source, 'translation_context', None)
+            if self.is_property_display
+            else None
+        )
+        return translate_rna_text(
             getattr(source, 'name', '') or '',
-            getattr(source, 'translation_context', None),
+            context,
             tooltip=False,
         )
 
@@ -702,12 +686,14 @@ class ElementLayoutProperty:
             return self._format_property_label(name, pgettext_iface(state_text))
         if prop_type == 'ENUM':
             if resolved is not None:
-                from bpy.app.translations import pgettext_iface
                 rna_prop = resolved[1]
                 if getattr(rna_prop, 'is_enum_flag', False):
                     try:
                         labels = [
-                            pgettext_iface(rna_prop.enum_items[key].name)
+                            translate_rna_text(
+                                rna_prop.enum_items[key].name,
+                                rna_prop.translation_context,
+                            )
                             for key in sorted(value)
                             if rna_prop.enum_items.get(key) is not None
                         ]
@@ -716,7 +702,10 @@ class ElementLayoutProperty:
                         return self._format_property_label(name, str(value))
                 item = rna_prop.enum_items.get(value)
                 if item is not None:
-                    return self._format_property_label(name, pgettext_iface(item.name))
+                    return self._format_property_label(
+                        name,
+                        translate_rna_text(item.name, rna_prop.translation_context),
+                    )
         return self._format_property_label(name, str(value))
 
     def _format_property_label(self, name: str, value: str) -> str:
