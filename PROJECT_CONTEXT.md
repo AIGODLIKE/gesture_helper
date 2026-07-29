@@ -383,7 +383,19 @@ flowchart TD
   requests/second.
 - Release: run Blender `--command extension validate`, then `extension build`,
   inspect ZIP entries, and validate the produced archive again.
-- Release-candidate verification on 2026-07-30: all 184 repository Python files
+- Built-package installation matrix: run
+  `tests\run_installed_extension_matrix.cmd` from CMD. It resolves the default
+  `Blender 4.2.lnk` through `Blender 5.2.lnk` desktop shortcuts, substitutes
+  each launcher's sibling `blender.exe`, pre-creates and write-tests four unique
+  Blender user roots, validates the ZIP, installs it into an isolated local
+  repository, then runs Blender-side import/RNA/preset/unregister assertions.
+  Versions below `blender_version_min` must reject the package and remain
+  non-importable. Each stage has a hard timeout and per-process logs; successful
+  runs remove their isolated profiles, while failed runs retain them.
+- GitHub Actions validates and builds packages with Blender 5.2.0 LTS. Its
+  downloaded Linux archive is cached by OS, architecture, and exact Blender
+  version; cache misses use bounded, retrying downloads before extraction.
+- Release-candidate verification on 2026-07-30: all 185 repository Python files
   compiled in memory, 328 unit tests passed, Ruff and `git diff --check` passed,
   and all 17 JSON files passed duplicate-key validation. Eleven isolated source
   smoke scripts passed in Blender 4.3.2. Ten non-file-load source smokes passed
@@ -394,9 +406,11 @@ flowchart TD
   no duplicates, unsafe paths, forbidden agent/test/cache files,
   `svg_2_png.py`, `eval`/`exec` calls, or corruption; SHA-256 is
   `FAE3EEE1BC1518C321CA8AE36B8ECFB6F7516BA61D5FF42FA4D292837A5E663A`.
-  The ZIP installed into isolated local Extension repositories, started
-  enabled, imported all 12 bundled presets, exposed the current `SPLIT` RNA,
-  and disabled cleanly in Blender 4.3.2 and 5.2.0 LTS.
+  The CMD installation matrix confirmed that Blender 4.2.1 rejects the package
+  because it requires 4.3.0. The ZIP installed into isolated local Extension
+  repositories, started enabled, imported all 12 bundled presets, exposed the
+  current `SPLIT` RNA, and disabled cleanly in Blender 4.3.2, 4.4.3, 4.5.3 LTS,
+  5.0.1, 5.1.0, and 5.2.0 LTS.
 
 ## Current risks and observed issues
 

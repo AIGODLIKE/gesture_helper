@@ -3,15 +3,26 @@
 from __future__ import annotations
 
 import importlib
+import os
 
 import bpy
 
 
-PACKAGE = "bl_ext.gh_test.gesture_helper"
+REPOSITORY = os.environ.get("GH_TEST_REPOSITORY", "gh_test")
+PACKAGE_ID = os.environ.get("GH_TEST_PACKAGE_ID", "gesture_helper")
+PACKAGE = f"bl_ext.{REPOSITORY}.{PACKAGE_ID}"
+EXPECTED_VERSION = tuple(
+    int(part)
+    for part in os.environ.get("GH_EXPECTED_EXTENSION_VERSION", "2.4.0").split(".")
+)
+EXPECTED_PRESET_COUNT = int(os.environ.get("GH_EXPECTED_PRESET_COUNT", "12"))
 
 assert PACKAGE in bpy.context.preferences.addons, tuple(bpy.context.preferences.addons.keys())
 extension = importlib.import_module(PACKAGE)
-assert extension.ADDON_VERSION == (2, 4, 0), extension.ADDON_VERSION
+assert extension.ADDON_VERSION == EXPECTED_VERSION, (
+    extension.ADDON_VERSION,
+    EXPECTED_VERSION,
+)
 
 element_module = importlib.import_module(f"{PACKAGE}.element")
 element_types = {
@@ -25,8 +36,11 @@ gesture_store = importlib.import_module(f"{PACKAGE}.utils.gesture_store")
 store = gesture_store.get_gesture_store()
 assert store is not None
 store.gesture.clear()
-assert gesture_cure.add_all_preset() == 12
+assert gesture_cure.add_all_preset() == EXPECTED_PRESET_COUNT
 assert len(store.gesture) > 0
 
 assert bpy.ops.preferences.addon_disable(module=PACKAGE) == {"FINISHED"}
-print(f"INSTALLED_EXTENSION_SMOKE_OK Blender {bpy.app.version_string}")
+print(
+    "INSTALLED_EXTENSION_SMOKE_OK "
+    f"Blender {bpy.app.version_string} {PACKAGE} {EXPECTED_VERSION}"
+)
