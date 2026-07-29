@@ -31,6 +31,17 @@ class TranslationCatalogTests(unittest.TestCase):
             self.translations,
         )
 
+    def test_backups_preferences_page_is_translated(self):
+        self.assertEqual(self.translations["Backups"], "备份")
+        self.assertEqual(
+            self.translations["Backup and restore settings"],
+            "备份与恢复设置",
+        )
+        self.assertEqual(
+            self.translations["Preferences Backup"],
+            "偏好设置备份",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

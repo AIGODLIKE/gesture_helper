@@ -61,7 +61,7 @@ class PreferencesDraw(GestureDraw):
         sub_column = column.column(align=True)
         # A live gesture freezes the whole preferences surface.  The enabled
         # preference only gates the Gesture page during normal editing; the
-        # Property page remains available when the add-on itself is disabled.
+        # other pages remain available when the add-on itself is disabled.
         sub_column.enabled = (
             (pref.enabled if pref.is_show_gesture else True)
             and not layout_frozen
@@ -111,7 +111,6 @@ class PreferencesDraw(GestureDraw):
         :return:
         """
         from .. import preferences
-        from ..ops.export_import import ExportPreferences, ImportPreferences
         from ..ops.select_icon import (
             OpenCustomIconFolder,
             RefreshIcons,
@@ -130,9 +129,6 @@ class PreferencesDraw(GestureDraw):
         col.prop(pref.draw_property, "force_show_panels_during_modal")
         col.prop(pref.draw_property, "author")
         col.prop(pref.draw_property, "enable_name_translation")
-        col.operator_context = "INVOKE_DEFAULT"
-        col.operator(ExportPreferences.bl_idname)
-        col.operator(ImportPreferences.bl_idname)
 
         icon_box = column.box()
         icon_row = icon_box.row(align=True)
@@ -148,13 +144,29 @@ class PreferencesDraw(GestureDraw):
         )
 
         column.separator()
-        preferences.BackupsProperty.draw_backups(column)
-        column.separator()
         preferences.DebugProperty.draw_debug(column)
 
         col = row.box().column(align=True)
         col.label(text='Gesture')
         preferences.GestureProperty.draw_gesture_property(col)
+
+    @staticmethod
+    def draw_ui_backups(layout):
+        """Draw backup, restore, and automatic-backup settings."""
+        from .. import preferences
+        from ..ops.export_import import ExportPreferences, ImportPreferences
+
+        layout.use_property_split = True
+        column = layout.column(align=True)
+
+        manual_box = column.box().column(align=True)
+        manual_box.label(text="Preferences Backup")
+        manual_box.operator_context = "INVOKE_DEFAULT"
+        manual_box.operator(ExportPreferences.bl_idname)
+        manual_box.operator(ImportPreferences.bl_idname)
+
+        column.separator()
+        preferences.BackupsProperty.draw_backups(column)
 
     @staticmethod
     def draw_ui_style(layout, *, compact=False, show_theme=True):

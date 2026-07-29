@@ -191,11 +191,13 @@ with bundled JSON presets, translations, and PNG icon assets.
 ### UI, preferences, and assets
 
 - `preferences/` defines AddonPreferences and editor/drawing/debug/backup
-  sub-panels; `ui/` defines lists, menus, context-menu integration, and the
+  controls; `ui/` defines lists, menus, context-menu integration, and the
   main sidebar panel. Its registered title appends the current `ADDON_VERSION`,
   and modal pause status is the first header item after that title.
-  Overlay sizing and color controls live on a dedicated Style preferences page
-  and in a default-collapsed Style child of the N-panel. The N-panel child keeps
+  Automatic backup/restore controls and manual preference export/import live
+  on a dedicated Backups preferences page rather than the Property page or
+  N-panel. Overlay sizing and color controls live on a dedicated Style
+  preferences page and in a default-collapsed Style child of the N-panel. The N-panel child keeps
   the active theme selector in its header so presets can be switched without
   expanding the full style controls.
   Menu gestures expose a default-on Keep Open toggle beside Menu Style; pinned
@@ -281,6 +283,7 @@ flowchart TD
   selector press/release cancellation, property data paths, import
   rollback/keymaps (including complete replacement after prewarming nested
   relationship, active-selection, and frozen-UI caches), lifecycle/reload,
+  dedicated Preferences-page RNA registration,
   preview (including menu draw routing,
   translation, the visible X close action, selector scaling/full-width rows,
   top-left instruction-HUD dragging, single-action flyout surface geometry,

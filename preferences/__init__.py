@@ -58,7 +58,8 @@ class GesturePreferences(PublicProperty,
         description='Which preferences page to display',
         items=[
             ('GESTURE', 'Gesture', 'Gesture list and element editor'),
-            ('PROPERTY', 'Property', 'Gesture, backup, and general settings'),
+            ('PROPERTY', 'Property', 'Gesture and general settings'),
+            ('BACKUPS', 'Backups', 'Backup and restore settings'),
             ('STYLE', 'Style', 'Overlay appearance and color settings'),
         ],
     )

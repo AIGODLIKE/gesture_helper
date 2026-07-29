@@ -49,15 +49,29 @@ def assert_bindings(expected) -> None:
 assert bpy.ops.preferences.addon_enable(module="gesture_helper") == {"FINISHED"}
 
 from gesture_helper.gesture.gesture_keymap import GestureKeymap  # noqa: E402
+from gesture_helper.preferences import GesturePreferences  # noqa: E402
 from gesture_helper.utils.gesture_persistence import (  # noqa: E402
     save_gestures_to_disk,
     suppress_gesture_disk_save,
 )
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
+from gesture_helper.utils.public import get_pref  # noqa: E402
 
 
 store = get_gesture_store()
 assert store is not None
+
+page_ids = tuple(
+    item.identifier
+    for item in GesturePreferences.bl_rna.properties["show_page"].enum_items
+)
+assert page_ids == ("GESTURE", "PROPERTY", "BACKUPS", "STYLE"), page_ids
+pref = get_pref()
+original_page = pref.show_page
+pref.show_page = "BACKUPS"
+assert pref.show_page == "BACKUPS"
+assert callable(getattr(pref, "draw_ui_backups", None))
+pref.show_page = original_page
 
 with suppress_gesture_disk_save():
     store.gesture.clear()
