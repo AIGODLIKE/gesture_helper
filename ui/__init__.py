@@ -6,6 +6,7 @@ from .panel import unregister as unregister_panel
 
 operator_list = (
     ui_list.ElementTreePage,
+    ui_list.ElementSelect,
     ui_list.GestureUIList,
     ui_list.ElementUIList,
     ui_list.ElementModalEventUIList,

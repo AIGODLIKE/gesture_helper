@@ -41,6 +41,7 @@ from gesture_helper.utils import gesture_persistence  # noqa: E402
 from gesture_helper.utils.gesture_store import get_gesture_store  # noqa: E402
 from gesture_helper.utils.input_event import POINTER_MOVE_EVENT_TYPES  # noqa: E402
 from gesture_helper.utils.public import get_pref  # noqa: E402
+from gesture_helper.utils.public_cache import PublicCacheFunc  # noqa: E402
 from gesture_helper.utils.color import color_to_gpu, color_to_srgb  # noqa: E402
 from gesture_helper.utils.number_arrows import (  # noqa: E402
     NUMBER_PART_DECREMENT,
@@ -95,6 +96,9 @@ assert bpy.types.Operator.bl_rna_get_subclass_py('WM_OT_gesture_preview') is not
 assert bpy.types.Operator.bl_rna_get_subclass_py('WM_OT_gesture_preview_close') is not None
 assert bpy.types.Operator.bl_rna_get_subclass_py(
     'WM_OT_gesture_element_tree_page'
+) is not None
+assert bpy.types.Operator.bl_rna_get_subclass_py(
+    'WM_OT_gesture_element_select'
 ) is not None
 assert bpy.types.Menu.bl_rna_get_subclass_py(
     'GESTURE_MT_main_action_menu'
@@ -571,13 +575,29 @@ with suppress_gesture_disk_save():
     page_root.__init_element__()
     page_root.name = 'Paged Tree'
     page_root.show_child = True
-    for index in range(64):
+    nested_select_parent = page_root.element.add()
+    nested_select_parent.element_type = 'COLUMN'
+    nested_select_parent.__init_element__()
+    nested_select_parent.name = 'Nested Select Parent'
+    nested_select_parent.show_child = True
+    nested_select_group = nested_select_parent.element.add()
+    nested_select_group.element_type = 'COLUMN'
+    nested_select_group.__init_element__()
+    nested_select_group.name = 'Nested Select Group'
+    nested_select_group.show_child = True
+    nested_select_target = nested_select_group.element.add()
+    nested_select_target.element_type = 'OPERATOR'
+    nested_select_target.__init_element__()
+    nested_select_target.name = 'Nested Select Target'
+    nested_select_target.operator_bl_idname = 'view3d.view_all'
+    for index in range(61):
         item = page_root.element.add()
         item.element_type = 'OPERATOR'
         item.__init_element__()
         item.name = f'Paged {index + 1}'
 
     store.index_gesture = 0
+    PublicCacheFunc.cache_clear()
     select_element(first)
 
     descendants = ui_list._visible_tree_descendants(page_root)
@@ -588,6 +608,24 @@ with suppress_gesture_disk_save():
     refreshed_descendants = ui_list._visible_tree_descendants(page_root)
     assert refreshed_descendants is not descendants
     descendants = refreshed_descendants
+    select_context = SimpleNamespace(
+        gesture_select_element=nested_select_target,
+    )
+    assert ui_list.ElementSelect.execute(None, select_context) == {'FINISHED'}
+    assert nested_select_target.radio
+    assert (
+        get_pref().active_element.as_pointer()
+        == nested_select_target.as_pointer()
+    )
+    assert sum(item.radio for item in gesture.element_iteration) == 1
+    # A radio action is one-way: clicking the selected row again must not
+    # toggle it off and leave the property editor without a visible element.
+    assert ui_list.ElementSelect.execute(None, select_context) == {'FINISHED'}
+    assert nested_select_target.radio
+    assert (
+        get_pref().active_element.as_pointer()
+        == nested_select_target.as_pointer()
+    )
     page_context = SimpleNamespace(area=area)
     original_draw_item = type(page_root).draw_item
     type(page_root).draw_item = lambda self, layout, **kwargs: None

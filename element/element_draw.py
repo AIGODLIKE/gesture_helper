@@ -202,9 +202,11 @@ class ElementDraw:
 
         select_row = controls.row(align=True)
         select_row.ui_units_x = 1.0
-        select_row.prop(
-            self,
-            'radio',
+        from ..ui.ui_list import ElementSelect
+
+        select_row.context_pointer_set('gesture_select_element', self)
+        select_row.operator(
+            ElementSelect.bl_idname,
             text='',
             icon=ui_icon(icon_two(self.radio, 'RESTRICT_SELECT')),
             emboss=False,

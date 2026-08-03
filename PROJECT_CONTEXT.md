@@ -38,6 +38,10 @@ with bundled JSON presets, translations, and PNG icon assets.
   structural saves, migrates legacy AddonPreferences data, and rolls back a
   failed restore. `register_mod` snapshots before file load and restores after
   Blender clears the WindowManager store.
+- `utils/backups.py` sends only `bl_ext.*` packages through
+  `bpy.utils.extension_path_user`; legacy/source checkouts route directly to
+  Blender `DATAFILES`. This prevents a source smoke named `gesture_helper` from
+  resolving a same-id installed Extension and writing its real user data.
 - `utils/property.py` is the generic RNA-to-indexed-dict serializer/importer;
   `ops/export_import.py` validates and sanitizes imported JSON. During strict
   batch assignment, reactive active-gesture and temporary-operator KMI sync is
@@ -253,7 +257,11 @@ with bundled JSON presets, translations, and PNG icon assets.
   menus remain interactive, and cancel input closes only the topmost menu.
   Expanded element trees with more than 48 visible descendants use a cached,
   area/root-scoped 32-row page; selection changes reveal their page, while
-  explicit page changes are preserved. Layout Gesture Action choices are built
+  explicit page changes are preserved. Element rows route their radio-marked
+  selection surface through the property-free `wm.gesture_element_select`
+  operator and a layout context pointer, so selection is a one-way action
+  rather than a `BoolProperty` toggle; repeated clicks keep one active element,
+  including for deeply nested rows in a paged tree. Layout Gesture Action choices are built
   lazily in a menu instead of as hundreds of controls on every panel draw. The
   Add Element block keeps layout containers (Row/Column/Box) on one row and
   Div/Label/Split plus the two compact menus on a fixed second row; unavailable
@@ -355,7 +363,8 @@ flowchart TD
   translation, the visible X close action, selector scaling/full-width rows,
   top-left instruction-HUD dragging, single-action flyout surface geometry,
   enum flyouts, three-part numeric-field state/hit boxes, selector/backplate
-  dragging, alignment RNA, and Space-drag), and
+  dragging, alignment RNA, Space-drag, and one-way selection of a three-level
+  nested element inside a 64-descendant paged tree), and
   panel behavior. Run them
   with isolated `BLENDER_USER_CONFIG`, `BLENDER_USER_DATAFILES`,
   `BLENDER_USER_SCRIPTS`, and `BLENDER_USER_EXTENSIONS`, plus `--background
@@ -363,6 +372,8 @@ flowchart TD
   Blender; nonexistent override paths are ignored and silently fall back to
   the normal user profile. Treat traceback/Python-error text as failure
   evidence even when Blender exits zero.
+- `tests/test_backup_paths.py` guards the source/Extension storage boundary,
+  including same-id install collisions and fail-closed Extension path errors.
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.

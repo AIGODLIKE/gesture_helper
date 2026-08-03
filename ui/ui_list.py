@@ -94,6 +94,31 @@ class ElementTreePage(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class ElementSelect(bpy.types.Operator):
+    """Select the element supplied by the row's layout context."""
+
+    bl_idname = 'wm.gesture_element_select'
+    bl_label = 'Select Element'
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context):
+        element = getattr(context, 'gesture_select_element', None)
+        if element is None:
+            return {'CANCELLED'}
+
+        from ..utils.selection import _element_is_live, select_element
+
+        if not _element_is_live(element):
+            return {'CANCELLED'}
+        try:
+            select_element(element)
+            if element.is_operator and element.operator_is_operator:
+                element.to_operator_tmp_kmi()
+        except (AttributeError, ReferenceError, RuntimeError, TypeError):
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
+
 class GestureUIList(bpy.types.UIList, PrefAccess, ActiveSelection):
     bl_idname = 'GESTURE_UL_gesture_items'
 

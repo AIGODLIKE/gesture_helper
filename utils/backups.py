@@ -70,16 +70,20 @@ def get_extension_user_folder(*, create: bool = True) -> str:
     - Extension install (``bl_ext.*`` package): always
       ``bpy.utils.extension_path_user(__package__)``. Uninstall removes this
       folder with the extension.
-    - Legacy ``scripts/addons`` install only: ``extension_path_user`` raises
-      ``ValueError`` because the package is not an extension id. Fall back to
-      ``bpy.utils.user_resource('DATAFILES', path='gesture_helper')`` so zip /
-      manual installs keep working. Never write into the add-on source tree.
+    - Legacy ``scripts/addons`` or source-checkout install: route directly to
+      ``bpy.utils.user_resource('DATAFILES', path='gesture_helper')``. Do not
+      probe ``extension_path_user`` because a same-id installed Extension can
+      make a bare legacy package name resolve to the real Extension data.
     """
     from .. import __package__ as base_package
-    try:
+
+    if base_package.startswith("bl_ext."):
         path = bpy.utils.extension_path_user(base_package)
-    except (TypeError, RuntimeError, ValueError):
-        # Legacy add-on only: package is e.g. "gesture_helper", not "bl_ext....".
+    else:
+        # Do not probe ``extension_path_user("gesture_helper")`` for a legacy
+        # source checkout. Blender can resolve that bare name to an installed
+        # Extension with the same id, bypassing BLENDER_USER_DATAFILES and
+        # writing a source smoke's state into the user's real Extension data.
         path = bpy.utils.user_resource(
             'DATAFILES', path="gesture_helper", create=create
         )
