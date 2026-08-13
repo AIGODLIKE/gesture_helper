@@ -54,6 +54,22 @@ _KEY_BOOL_FIELDS = frozenset({
     'repeat',
     'head',
 })
+# Add-on versions before 2.2.0 serialized the complete KMI RNA into shortcut
+# JSON, so exports made on Blender 4.5+ include the Hyper modifier fields.
+# Runtime KMI creation never consumed them (see addon_keymap._KMI_DATA_KEYS);
+# drop them instead of rejecting the whole legacy preset as unknown fields.
+_LEGACY_KEY_FIELDS = frozenset({
+    'hyper',
+    'hyper_ui',
+})
+
+
+def strip_legacy_keymap_fields(data: dict) -> dict:
+    """Drop shortcut fields that old exporters leaked from the raw KMI dump."""
+    return {
+        key: value for key, value in data.items()
+        if key not in _LEGACY_KEY_FIELDS
+    }
 
 
 def _rna_identity(value) -> int:
@@ -125,6 +141,10 @@ class KeymapProperty:
     __keymaps__ = 'keymaps'
 
     def set_key(self, value) -> None:
+        if isinstance(value, dict):
+            # Data written by pre-2.2.0 versions may still carry legacy KMI
+            # dump fields; never store them back into IDProperties.
+            value = strip_legacy_keymap_fields(value)
         self[self.__key__] = value
         self.key_update()
 

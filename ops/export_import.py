@@ -1,4 +1,5 @@
 # Import dialog shows preset options
+import json
 import os
 import time
 from datetime import datetime
@@ -141,7 +142,9 @@ def _is_legacy_script_element(element: dict) -> bool:
     return element.get('operator_type') == 'SCRIPT' or bool(element.get('operator_script'))
 
 
-def _remove_legacy_script_from_tree(elements: dict) -> None:
+def _remove_legacy_script_from_tree(elements: dict) -> int:
+    """Remove legacy SCRIPT elements in place and return how many were removed."""
+    removed = 0
     remove_keys = []
     for key, element in elements.items():
         if not isinstance(element, dict):
@@ -152,7 +155,7 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
                 raise ValueError(
                     f"Invalid child element data at key {key!r}: expected an object"
                 )
-            _remove_legacy_script_from_tree(nested)
+            removed += _remove_legacy_script_from_tree(nested)
         if _is_legacy_script_element(element):
             debug_print(
                 f"Gesture Helper: removed legacy SCRIPT element "
@@ -162,6 +165,7 @@ def _remove_legacy_script_from_tree(elements: dict) -> None:
             remove_keys.append(key)
     for key in remove_keys:
         del elements[key]
+    return removed + len(remove_keys)
 
 
 def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
@@ -184,13 +188,18 @@ def _migrate_legacy_operator_ids_in_tree(elements: dict) -> None:
             )
 
 
-def sanitize_gesture_import_data(gesture_data: dict) -> dict:
-    """Validate and migrate gesture JSON before applying it to RNA."""
+def sanitize_gesture_import_data(gesture_data: dict, stats: dict | None = None) -> dict:
+    """Validate and migrate gesture JSON before applying it to RNA.
+
+    ``stats``, when given, receives migration counters
+    (``removed_script_elements``).
+    """
     from ..utils.selection import strip_radio_from_copy_data
 
     if not isinstance(gesture_data, dict):
         raise ValueError("Invalid gesture file: 'gesture' must be an object")
 
+    removed_script_elements = 0
     for key, gesture in gesture_data.items():
         if not isinstance(gesture, dict):
             raise ValueError(f"Invalid gesture data at key {key!r}: expected an object")
@@ -205,11 +214,20 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
                 raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
             if not isinstance(key_data, dict):
                 raise ValueError(f"Invalid shortcut for gesture {key!r}: expected an object")
-            from ..gesture.gesture_keymap import validate_keymap_data
+            from ..gesture.gesture_keymap import (
+                strip_legacy_keymap_fields,
+                validate_keymap_data,
+            )
+            # Pre-2.2.0 exports dumped the raw KMI, leaking fields such as
+            # ``hyper``/``hyper_ui`` on Blender 4.5+. Drop those before the
+            # strict schema check and store the cleaned shortcut back.
+            cleaned_key_data = strip_legacy_keymap_fields(key_data)
             try:
-                validate_keymap_data(key_data)
+                validate_keymap_data(cleaned_key_data)
             except ValueError as exc:
                 raise ValueError(f"Invalid shortcut for gesture {key!r}: {exc}") from exc
+            if cleaned_key_data != key_data:
+                gesture['key_string'] = json.dumps(cleaned_key_data)
 
         keymaps_string = gesture.get('keymaps_string')
         if keymaps_string is not None:
@@ -244,12 +262,14 @@ def sanitize_gesture_import_data(gesture_data: dict) -> dict:
                 f"Invalid element collection for gesture {key!r}: expected an object"
             )
         if elements:
-            _remove_legacy_script_from_tree(elements)
+            removed_script_elements += _remove_legacy_script_from_tree(elements)
             _migrate_legacy_operator_ids_in_tree(elements)
             from ..utils.layout_scale import migrate_legacy_layout_scales
             migrate_legacy_layout_scales(elements)
             for child in elements.values():
                 strip_radio_from_copy_data(child)
+    if stats is not None:
+        stats['removed_script_elements'] = removed_script_elements
     return gesture_data
 
 
@@ -443,7 +463,8 @@ class Import(PublicFileOperator):
             data = self.read_json()
             if not isinstance(data, dict) or 'gesture' not in data:
                 raise ValueError("Invalid gesture file: missing 'gesture' data")
-            restore = sanitize_gesture_import_data(data['gesture'])
+            sanitize_stats = {}
+            restore = sanitize_gesture_import_data(data['gesture'], sanitize_stats)
             if not isinstance(restore, dict):
                 raise ValueError("Invalid gesture file: 'gesture' must be an object")
             with suppress_radio_updates():
@@ -492,6 +513,15 @@ class Import(PublicFileOperator):
                 r"Imported %s gesture(s). Author: %s. Description: %s. Exported with add-on version %s."
             ) % (len(restore), auth, des, ver)
             self.report({'INFO'}, text)
+            removed_scripts = sanitize_stats.get('removed_script_elements', 0)
+            if removed_scripts:
+                self.report(
+                    {'WARNING'},
+                    pgettext(
+                        "Skipped %d legacy script element(s); "
+                        "script execution is no longer supported"
+                    ) % removed_scripts,
+                )
             return True
         except Exception as e:
             rollback_errors = []

@@ -217,6 +217,62 @@ class KeymapRestartTests(unittest.TestCase):
         self.assertEqual(calls, ["unload", "load"])
         self.assertEqual([str(failure) for failure in failures], ["Gesture: invalid"])
 
+    def test_strip_legacy_keymap_fields_drops_only_leaked_kmi_fields(self):
+        # Real shape of a pre-2.2.0 export made on Blender 4.5+.
+        legacy = {
+            "type": "M",
+            "value": "PRESS",
+            "direction": "ANY",
+            "any": False,
+            "shift": 0,
+            "ctrl": 0,
+            "alt": 0,
+            "oskey": 0,
+            "key_modifier": "NONE",
+            "repeat": False,
+            "hyper": False,
+            "hyper_ui": False,
+        }
+        cleaned = keymap_module.strip_legacy_keymap_fields(legacy)
+
+        self.assertNotIn("hyper", cleaned)
+        self.assertNotIn("hyper_ui", cleaned)
+        expected = {k: v for k, v in legacy.items() if not k.startswith("hyper")}
+        self.assertEqual(cleaned, expected)
+        # The strict schema accepts the cleaned legacy shortcut unchanged.
+        keymap_module.validate_keymap_data(cleaned)
+
+    def test_strip_legacy_keymap_fields_keeps_unknown_fields_for_validation(self):
+        cleaned = keymap_module.strip_legacy_keymap_fields({
+            "type": "A",
+            "value": "PRESS",
+            "mystery": True,
+            "hyper": False,
+        })
+
+        self.assertEqual(cleaned, {"type": "A", "value": "PRESS", "mystery": True})
+        with self.assertRaisesRegex(ValueError, "unknown shortcut field"):
+            keymap_module.validate_keymap_data(cleaned)
+
+    def test_set_key_never_stores_legacy_fields_in_idproperties(self):
+        stored = {}
+
+        class Harness(keymap_module.KeymapProperty):
+            def __setitem__(self, key, value):
+                stored[key] = value
+
+            def key_update(self):
+                pass
+
+        Harness().set_key({
+            "type": "M",
+            "value": "PRESS",
+            "hyper": False,
+            "hyper_ui": False,
+        })
+
+        self.assertEqual(stored, {"key": {"type": "M", "value": "PRESS"}})
+
     def test_import_validation_ignores_old_failures_and_forces_new_disabled_items(self):
         calls = []
         old_failure = keymap_module.KeymapLoadFailure(

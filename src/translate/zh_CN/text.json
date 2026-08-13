@@ -82,6 +82,7 @@
   "Item": "项",
   "Modal Event": "模态事件",
   "Imported %s gesture(s). Author: %s. Description: %s. Exported with add-on version %s.": "已导入 %s 条手势。作者：%s。描述：%s。导出自扩展版本 %s。",
+  "Skipped %d legacy script element(s); script execution is no longer supported": "已跳过 %d 个旧版脚本元素；出于安全考虑不再支持执行脚本",
   "Author": "作者",
   "Description": "描述",
   "This is a description": "这是一个描述",

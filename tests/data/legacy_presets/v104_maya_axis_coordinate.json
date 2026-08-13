@@ -1,0 +1,295 @@
+{
+ "time": 1723793825.9564834,
+ "blender_version": [
+  4,
+  3,
+  0
+ ],
+ "addon_version": [
+  1,
+  0,
+  4
+ ],
+ "author": "小萌新",
+ "description": "这是一个描述",
+ "gesture": {
+  "0": {
+   "name": "轴&坐标 - Maya",
+   "enabled": true,
+   "key_string": "{\"type\": \"RIGHTMOUSE\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 1, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+   "keymaps_string": "[\"Window\"]",
+   "element": {
+    "0": {
+     "name": "影响选项",
+     "element_type": "CHILD_GESTURE",
+     "enabled": true,
+     "direction": "3",
+     "element": {
+      "0": {
+       "name": "仅原点",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "3",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.use_transform_data_origin'}",
+       "operator_type": "OPERATOR"
+      },
+      "1": {
+       "name": "仅位置",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "4",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.use_transform_pivot_point_align'}",
+       "operator_type": "OPERATOR"
+      },
+      "2": {
+       "name": "仅父级",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "2",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.use_transform_skip_children'}",
+       "operator_type": "OPERATOR"
+      }
+     }
+    },
+    "1": {
+     "name": "全局",
+     "element_type": "OPERATOR",
+     "enabled": true,
+     "direction": "5",
+     "operator_bl_idname": "wm.context_set_enum",
+     "operator_context": "INVOKE_DEFAULT",
+     "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GLOBAL'}",
+     "operator_type": "OPERATOR"
+    },
+    "2": {
+     "name": "局部",
+     "element_type": "OPERATOR",
+     "enabled": true,
+     "direction": "4",
+     "operator_bl_idname": "wm.context_set_enum",
+     "operator_context": "INVOKE_DEFAULT",
+     "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'LOCAL'}",
+     "operator_type": "OPERATOR"
+    },
+    "3": {
+     "name": "游标",
+     "element_type": "OPERATOR",
+     "enabled": true,
+     "direction": "2",
+     "operator_bl_idname": "wm.context_set_enum",
+     "operator_context": "INVOKE_DEFAULT",
+     "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'CURSOR'}",
+     "operator_type": "OPERATOR"
+    },
+    "4": {
+     "name": "轴",
+     "element_type": "CHILD_GESTURE",
+     "enabled": true,
+     "direction": "6",
+     "element": {
+      "0": {
+       "name": "视图",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "5",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'VIEW'}",
+       "operator_type": "OPERATOR"
+      },
+      "1": {
+       "name": "法向",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "7",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'NORMAL'}",
+       "operator_type": "OPERATOR"
+      },
+      "2": {
+       "name": "万向",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "4",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'GIMBAL'}",
+       "operator_type": "OPERATOR"
+      },
+      "3": {
+       "name": "父级",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "6",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'scene.transform_orientation_slots[0].type', 'value': 'PARENT'}",
+       "operator_type": "OPERATOR"
+      }
+     }
+    },
+    "5": {
+     "name": "View",
+     "element_type": "CHILD_GESTURE",
+     "enabled": true,
+     "direction": "7",
+     "element": {
+      "0": {
+       "name": "面法向",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "7",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'space_data.overlay.show_face_orientation'}",
+       "operator_type": "OPERATOR"
+      },
+      "1": {
+       "name": "线框",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "6",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'space_data.overlay.show_wireframes'}",
+       "operator_type": "OPERATOR"
+      },
+      "2": {
+       "name": "显示游标",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "8",
+       "operator_bl_idname": "wm.context_toggle",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'space_data.overlay.show_cursor'}",
+       "operator_type": "OPERATOR"
+      }
+     }
+    },
+    "6": {
+     "name": "网格编辑",
+     "element_type": "SELECTED_STRUCTURE",
+     "enabled": true,
+     "selected_type": "IF",
+     "poll_string": "(C.mode == \"EDIT_MESH\")",
+     "element": {
+      "0": {
+       "name": "镜像",
+       "element_type": "CHILD_GESTURE",
+       "enabled": true,
+       "direction": "1",
+       "element": {
+        "0": {
+         "name": "X",
+         "element_type": "OPERATOR",
+         "enabled": true,
+         "direction": "3",
+         "operator_bl_idname": "wm.context_toggle",
+         "operator_context": "INVOKE_DEFAULT",
+         "operator_properties": "{'data_path': 'object.use_mesh_mirror_x'}",
+         "operator_type": "OPERATOR"
+        },
+        "1": {
+         "name": "Y",
+         "element_type": "OPERATOR",
+         "enabled": true,
+         "direction": "2",
+         "operator_bl_idname": "wm.context_toggle",
+         "operator_context": "INVOKE_DEFAULT",
+         "operator_properties": "{'data_path': 'object.use_mesh_mirror_y'}",
+         "operator_type": "OPERATOR"
+        },
+        "2": {
+         "name": "自动合并顶点",
+         "element_type": "OPERATOR",
+         "enabled": true,
+         "direction": "1",
+         "operator_bl_idname": "wm.context_toggle",
+         "operator_context": "INVOKE_DEFAULT",
+         "operator_properties": "{'data_path': 'scene.tool_settings.use_mesh_automerge'}",
+         "operator_type": "OPERATOR"
+        },
+        "3": {
+         "name": "Z",
+         "element_type": "OPERATOR",
+         "enabled": true,
+         "direction": "8",
+         "operator_bl_idname": "wm.context_toggle",
+         "operator_context": "INVOKE_DEFAULT",
+         "operator_properties": "{'data_path': 'object.use_mesh_mirror_z'}",
+         "operator_type": "OPERATOR"
+        }
+       }
+      }
+     }
+    },
+    "7": {
+     "name": "变换轴心点",
+     "element_type": "CHILD_GESTURE",
+     "enabled": true,
+     "direction": "1",
+     "element": {
+      "0": {
+       "name": "质心点",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "1",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'MEDIAN_POINT'}",
+       "operator_type": "OPERATOR"
+      },
+      "1": {
+       "name": "各自轴心点",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "2",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'INDIVIDUAL_ORIGINS'}",
+       "operator_type": "OPERATOR"
+      },
+      "2": {
+       "name": "3D游标",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "3",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'CURSOR'}",
+       "operator_type": "OPERATOR"
+      },
+      "3": {
+       "name": "边界框中心",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "7",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{}",
+       "operator_type": "OPERATOR"
+      },
+      "4": {
+       "name": "活动元素",
+       "element_type": "OPERATOR",
+       "enabled": true,
+       "direction": "8",
+       "operator_bl_idname": "wm.context_set_enum",
+       "operator_context": "INVOKE_DEFAULT",
+       "operator_properties": "{'data_path': 'tool_settings.transform_pivot_point', 'value': 'ACTIVE_ELEMENT'}",
+       "operator_type": "OPERATOR"
+      }
+     }
+    }
+   },
+   "description": "快速设置 轴和坐标"
+  }
+ }
+}

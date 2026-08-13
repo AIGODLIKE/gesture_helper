@@ -49,7 +49,13 @@ with bundled JSON presets, translations, and PNG icon assets.
   `utils/strict_json.py` rejects duplicate object keys for gesture imports,
   persistence, preference backups, embedded shortcut JSON, bundled presets,
   and translation catalogs. Keymap data is also strict about scalar shortcut
-  fields and unknown fields.
+  fields and unknown fields. Legacy preset compatibility: pre-2.2.0 exports
+  dumped the raw KMI into `key_string`, leaking `hyper`/`hyper_ui` on
+  Blender 4.5+; `gesture_keymap.strip_legacy_keymap_fields` drops exactly
+  those fields before strict validation (in `sanitize_gesture_import_data`,
+  which also serves persistence restore and legacy-preferences migration) and
+  in `set_key`, while other unknown fields still fail closed. Legacy SCRIPT
+  elements are removed with a user-visible skip report instead of silently.
 
 ### Input, execution, and drawing flow
 
@@ -377,6 +383,11 @@ flowchart TD
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.
+- Legacy preset-asset import compatibility (1.x/2.0/2.1 export shapes, leaked
+  `hyper` KMI fields, SCRIPT-element removal, and the shared
+  `_apply_gesture_data` migration path):
+  `tests/blender_legacy_preset_import_smoke.py` with real historical samples
+  in `tests/data/legacy_presets/`.
 - Common side-button menu RNA, operator arguments, context branches, editable
   values, and exact KMI coverage: `tests/blender_common_menu_smoke.py`.
 - Simultaneous persistent-menu registry, one-instance-per-gesture reuse,

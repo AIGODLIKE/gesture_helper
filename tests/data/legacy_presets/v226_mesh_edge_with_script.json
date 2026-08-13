@@ -1,0 +1,242 @@
+{
+ "time": 1758881283.8611705,
+ "blender_version": [
+  4,
+  5,
+  3
+ ],
+ "addon_version": [
+  2,
+  1,
+  9
+ ],
+ "author": "小萌新",
+ "description": "This is a description",
+ "gesture": {
+  "0": {
+   "name": "Mesh Edge Property",
+   "key_string": "{\"type\": \"E\", \"value\": \"PRESS\", \"direction\": \"ANY\", \"any\": false, \"shift\": 1, \"ctrl\": 0, \"alt\": 0, \"oskey\": 0, \"key_modifier\": \"NONE\", \"repeat\": false}",
+   "keymaps_string": "[\"Mesh\"]",
+   "element": {
+    "0": {
+     "name": "Bevel",
+     "element_type": "CHILD_GESTURE",
+     "icon": "EDGESEL",
+     "enabled_icon": true,
+     "direction": "3",
+     "element": {
+      "0": {
+       "name": "Bevel Weight",
+       "element_type": "OPERATOR",
+       "direction": "1",
+       "operator_bl_idname": "transform.edge_bevelweight"
+      },
+      "1": {
+       "name": "Clear Bevel Weight",
+       "element_type": "OPERATOR",
+       "icon": "PANEL_CLOSE",
+       "enabled_icon": true,
+       "direction": "7",
+       "operator_bl_idname": "transform.edge_bevelweight",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': -1.0}"
+      },
+      "2": {
+       "name": "1",
+       "element_type": "OPERATOR",
+       "direction": "3",
+       "operator_bl_idname": "transform.edge_bevelweight",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': 1.0}"
+      },
+      "3": {
+       "name": "0.5",
+       "element_type": "OPERATOR",
+       "direction": "4",
+       "operator_bl_idname": "transform.edge_bevelweight",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': 0.5}"
+      },
+      "4": {
+       "name": "Clear Bevel Weight",
+       "element_type": "OPERATOR",
+       "icon": "PANEL_CLOSE",
+       "enabled_icon": true,
+       "direction": "2",
+       "operator_bl_idname": "transform.edge_bevelweight",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': -1.0}"
+      }
+     }
+    },
+    "1": {
+     "name": "Sharp",
+     "element_type": "CHILD_GESTURE",
+     "direction": "7",
+     "element": {
+      "0": {
+       "name": "Mark Sharp",
+       "element_type": "OPERATOR",
+       "direction": "7",
+       "operator_bl_idname": "mesh.mark_sharp"
+      },
+      "1": {
+       "name": "Clear Sharp",
+       "element_type": "OPERATOR",
+       "direction": "8",
+       "operator_bl_idname": "mesh.mark_sharp",
+       "operator_properties": "{'clear': True}"
+      },
+      "2": {
+       "name": "Mark Sharp Verts",
+       "element_type": "OPERATOR",
+       "direction": "6",
+       "operator_bl_idname": "mesh.mark_sharp",
+       "operator_properties": "{'use_verts': True}"
+      },
+      "3": {
+       "name": "Set Sharpness by Angle",
+       "element_type": "OPERATOR",
+       "direction": "5",
+       "operator_bl_idname": "mesh.set_sharpness_by_angle"
+      },
+      "4": {
+       "name": "Mark Sharp Verts",
+       "element_type": "OPERATOR",
+       "direction": "2",
+       "operator_bl_idname": "mesh.mark_sharp",
+       "operator_properties": "{'use_verts': True}"
+      }
+     }
+    },
+    "2": {
+     "name": "Edge Crease",
+     "element_type": "CHILD_GESTURE",
+     "direction": "5",
+     "element": {
+      "0": {
+       "name": "Edge Crease",
+       "element_type": "OPERATOR",
+       "direction": "3",
+       "operator_bl_idname": "transform.edge_crease"
+      },
+      "1": {
+       "name": "Clear Crease",
+       "element_type": "OPERATOR",
+       "direction": "4",
+       "operator_bl_idname": "transform.edge_crease",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': -1.0}"
+      },
+      "2": {
+       "name": "1",
+       "element_type": "OPERATOR",
+       "direction": "5",
+       "operator_bl_idname": "transform.edge_crease",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': 1.0}"
+      },
+      "3": {
+       "name": "0.5",
+       "element_type": "OPERATOR",
+       "direction": "7",
+       "operator_bl_idname": "transform.edge_crease",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': 0.5}"
+      },
+      "4": {
+       "name": "0.25",
+       "element_type": "OPERATOR",
+       "direction": "8",
+       "operator_bl_idname": "transform.edge_crease",
+       "operator_context": "EXEC_DEFAULT",
+       "operator_properties": "{'value': 0.25}"
+      }
+     }
+    },
+    "3": {
+     "name": "Seam Edge",
+     "element_type": "CHILD_GESTURE",
+     "direction": "1",
+     "element": {
+      "0": {
+       "name": "Mark Seam",
+       "element_type": "OPERATOR",
+       "direction": "1",
+       "operator_bl_idname": "mesh.mark_seam"
+      },
+      "1": {
+       "name": "Clear Seam",
+       "element_type": "OPERATOR",
+       "direction": "8",
+       "operator_bl_idname": "mesh.mark_seam",
+       "operator_properties": "{'clear': True}"
+      },
+      "2": {
+       "name": "Clear Seam",
+       "element_type": "OPERATOR",
+       "direction": "2",
+       "operator_bl_idname": "mesh.mark_seam",
+       "operator_properties": "{'clear': True}"
+      }
+     }
+    },
+    "4": {
+     "name": "Rotate Edge",
+     "element_type": "OPERATOR",
+     "icon": "LOOP_FORWARDS",
+     "enabled_icon": true,
+     "direction": "2",
+     "operator_bl_idname": "mesh.edge_rotate",
+     "operator_properties": "{'use_ccw': False}"
+    },
+    "5": {
+     "name": "Rotate Edge",
+     "element_type": "OPERATOR",
+     "icon": "LOOP_BACK",
+     "enabled_icon": true,
+     "direction": "4",
+     "operator_bl_idname": "mesh.edge_rotate",
+     "operator_properties": "{'use_ccw': True}"
+    },
+    "6": {
+     "name": "Freestyle",
+     "element_type": "CHILD_GESTURE",
+     "direction": "8",
+     "element": {
+      "0": {
+       "name": "Mark Freestyle Edge",
+       "element_type": "OPERATOR",
+       "direction": "8",
+       "operator_bl_idname": "mesh.mark_freestyle_edge"
+      },
+      "1": {
+       "name": "Clear Freestyle Edge",
+       "element_type": "OPERATOR",
+       "direction": "1",
+       "operator_bl_idname": "mesh.mark_freestyle_edge",
+       "operator_properties": "{'clear': True}"
+      },
+      "2": {
+       "name": "Clear Freestyle Edge",
+       "element_type": "OPERATOR",
+       "direction": "7",
+       "operator_bl_idname": "mesh.mark_freestyle_edge",
+       "operator_properties": "{'clear': True}"
+      }
+     }
+    },
+    "7": {
+     "name": "Clear All Property",
+     "element_type": "OPERATOR",
+     "icon": "PANEL_CLOSE",
+     "enabled_icon": true,
+     "direction": "6",
+     "operator_type": "SCRIPT",
+     "operator_script": "bpy.ops.transform.edge_crease(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.transform.edge_bevelweight(\"EXEC_DEFAULT\", value=-1)\nbpy.ops.mesh.mark_seam(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True)\nbpy.ops.mesh.mark_sharp(clear=True, use_verts=True)\nbpy.ops.mesh.mark_freestyle_edge(clear=True)"
+    }
+   },
+   "description": "Set edge properties to quickly add or clean up"
+  }
+ }
+}
