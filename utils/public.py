@@ -131,7 +131,7 @@ class PublicProperty(PrefAccess, ActiveSelection, StructureCacheOps):
     def __element_move_item__(self) -> "Element":
         """Return element being moved."""
         from ..element.element_cure import ElementCURE
-        return ElementCURE.MOVE.move_item
+        return ElementCURE.MOVE.live_move_item()
 
     @property
     def __is_cut_element__(self) -> bool:

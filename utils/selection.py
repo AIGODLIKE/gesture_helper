@@ -161,8 +161,10 @@ def enforce_single_selection(element):
         return
 
     with suppress_radio_updates():
+        # iter_elements walks the live RNA collections, so every yielded item
+        # is attached by construction; a per-item liveness scan was O(n²).
         for item in iter_elements(gesture):
-            if item == element or not _element_is_live(item):
+            if item == element:
                 continue
             if item.radio:
                 item['radio'] = False

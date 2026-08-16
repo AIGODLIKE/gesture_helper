@@ -687,11 +687,22 @@ def _is_non_blocking_modal_operator(operator) -> bool:
 
 def _is_blocking_modal(_context=None) -> bool:
     try:
-        modal_operators = bpy.context.window.modal_operators[:]
-        return any(
-            not _is_non_blocking_modal_operator(operator)
-            for operator in modal_operators
-        )
+        window = bpy.context.window
+        if window is not None:
+            windows = (window,)
+        else:
+            # Timer callbacks run without a context window (this is why the
+            # refresh poller lives here at all). Fall back to every live
+            # window instead of treating "no window" as "modal finished".
+            wm = getattr(bpy.context, "window_manager", None)
+            windows = tuple(getattr(wm, "windows", ()) or ())
+        for candidate in windows:
+            if any(
+                not _is_non_blocking_modal_operator(operator)
+                for operator in candidate.modal_operators[:]
+            ):
+                return True
+        return False
     except (AttributeError, ReferenceError, RuntimeError, TypeError):
         return False
 
@@ -866,14 +877,19 @@ def panel_pause_state(context) -> tuple[Optional[str], bool]:
     return message, is_panel_layout_frozen(context)
 
 
-def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEBOUNCE_SEC) -> None:
-    """Run *callback* once after *delay*; coalesces repeats while pending."""
+def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEBOUNCE_SEC) -> bool:
+    """Run *callback* once after *delay*; coalesces repeats while pending.
+
+    Returns True when the work was accepted (queued, coalesced, or executed);
+    False when it was dropped because the panel layout is frozen. Callers that
+    track "already synced" state must only commit it on acceptance.
+    """
     if key in _pending:
-        return
+        return True
     # Gesture redraws the whole screen (incl. N-panel); syncing keymaps mid-modal
     # can restart bindings and make the direction arc hitch.
     if is_panel_layout_frozen():
-        return
+        return False
 
     def _flush():
         _pending.pop(key, None)
@@ -892,12 +908,13 @@ def schedule(key: str, callback: Callable[[], None], *, delay: float = _SYNC_DEB
     except Exception:
         _pending.pop(key, None)
         if is_panel_layout_frozen():
-            return
+            return False
         try:
             callback()
         except Exception:
             from .debug_util import debug_traceback
             debug_traceback(key='operator')
+    return True
 
 
 def cancel_all() -> None:

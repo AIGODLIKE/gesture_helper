@@ -82,6 +82,13 @@ IMAGE_UI_MODE_MAP = {
 }
 
 
+def _modifier_matches(kmi_state, pressed: bool) -> bool:
+    # KMI modifier fields are ints since Blender 3.2: -1 = Any, 0 / 1 exact.
+    if kmi_state == -1:
+        return True
+    return bool(kmi_state) == bool(pressed)
+
+
 def kmi_matches_event(event, kmi) -> bool:
     event_type = event.type
     kmi_type = kmi.type
@@ -90,14 +97,26 @@ def kmi_matches_event(event, kmi) -> bool:
             return False
 
     if not kmi.any:
-        if bool(kmi.shift) != event.shift:
+        if not _modifier_matches(kmi.shift, event.shift):
             return False
-        if bool(kmi.ctrl) != event.ctrl:
+        if not _modifier_matches(kmi.ctrl, event.ctrl):
             return False
-        if bool(kmi.alt) != event.alt:
+        if not _modifier_matches(kmi.alt, event.alt):
             return False
-        if bool(getattr(kmi, 'oskey', False)) != bool(getattr(event, 'oskey', False)):
+        if not _modifier_matches(
+                getattr(kmi, 'oskey', 0), getattr(event, 'oskey', False)):
             return False
+        # Blender 4.5+ Hyper modifier: only compare when both sides expose it.
+        kmi_hyper = getattr(kmi, 'hyper', None)
+        if kmi_hyper is not None and not _modifier_matches(
+                kmi_hyper, getattr(event, 'hyper', False)):
+            return False
+
+    key_modifier = getattr(kmi, 'key_modifier', 'NONE')
+    if key_modifier not in {'', 'NONE'}:
+        # A held-second-key requirement cannot be verified from one event;
+        # skipping the binding is safer than firing it without the held key.
+        return False
 
     if kmi.value not in {'NOTHING', 'ANY'} and event.value != kmi.value:
         # Gesture modal consumes PRESS and exits on RELEASE.

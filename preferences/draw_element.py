@@ -52,7 +52,7 @@ class DrawElement:
         draw_property = pref.draw_property
 
         column = layout.column(align=True)
-        column.enabled = ElementCURE.MOVE.move_item is None
+        column.enabled = ElementCURE.MOVE.live_move_item() is None
         # Preferences default to EXEC; confirm tips / modifier shortcuts need invoke.
         column.operator_context = "INVOKE_DEFAULT"
 
@@ -123,7 +123,9 @@ class DrawElement:
     @staticmethod
     def draw_move_element(layout: 'bpy.types.UILayout'):
         from ..element.element_cure import ElementCURE
-        mi = ElementCURE.MOVE.move_item
+        mi = ElementCURE.MOVE.live_move_item()
+        if mi is None:
+            return
 
         column = layout.column(align=True)
         column.label(text="While moving an element")

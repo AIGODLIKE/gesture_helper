@@ -59,7 +59,9 @@ class ElementCURE:
     def is_movable(self) -> bool:
         """Return whether this item can be moved to."""
 
-        move_from = ElementCURE.MOVE.move_item
+        move_from = ElementCURE.MOVE.live_move_item()
+        if move_from is None:
+            return False
         if move_from.parent_element == self:
             # Cannot move to current item parent
             return False
@@ -67,7 +69,7 @@ class ElementCURE:
             # Target is a child of the item being moved
             return False
 
-        is_ok = move_from and (self not in list(move_from.element))
+        is_ok = self not in list(move_from.element)
         move_element = is_ok and move_from != self and self != self.parent_element
         movable = (
             self.is_child_gesture
@@ -361,13 +363,33 @@ class ElementCURE:
 
         cancel_move: BoolProperty(default=False, options={'SKIP_SAVE'})
 
+        @staticmethod
+        def live_move_item():
+            """Return the tracked move source only while its RNA is alive.
+
+            The marker is a class attribute, so it survives store replacement
+            and file loads; dereferencing a freed element from draw code is
+            undefined behavior.
+            """
+            item = ElementCURE.MOVE.move_item
+            if item is None:
+                return None
+            from ..utils.selection import _element_is_live
+            try:
+                if _element_is_live(item):
+                    return item
+            except Exception:
+                ...
+            ElementCURE.MOVE.move_item = None
+            return None
+
         @cache_update_lock
         def move(self):
             from ..utils.property import get_property, __set_prop__
             from ..utils.selection import strip_radio_from_copy_data, suppress_radio_updates
 
             move_to = getattr(bpy.context, 'move_element', None)
-            move_from = ElementCURE.MOVE.move_item
+            move_from = ElementCURE.MOVE.live_move_item()
             gesture = move_from.parent_gesture if move_from else None
 
             if move_from:
@@ -385,7 +407,7 @@ class ElementCURE:
             return self.pref.other_property
 
         def execute(self, _):
-            move_from = ElementCURE.MOVE.move_item
+            move_from = ElementCURE.MOVE.live_move_item()
             gesture = self.active_gesture
 
             if self.cancel_move:

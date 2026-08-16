@@ -61,8 +61,11 @@ def __coerce_enum_value__(pro, value):
 
 def __set_prop__(prop, path, value):
     """Set a single property value."""
-    pr = getattr(prop, path, None)
-    if pr is not None or path in prop.bl_rna.properties:
+    # Only real RNA properties are assignable. Probing with getattr first
+    # would both run arbitrary Python property getters on imported data and
+    # raise an uncaught KeyError below for non-RNA attribute names.
+    if path in prop.bl_rna.properties:
+        pr = getattr(prop, path, None)
         pro = prop.bl_rna.properties[path]
         typ = pro.type
         try:
@@ -99,9 +102,9 @@ def set_property(prop, data: dict):
 
 
 def __set_property__(prop, data: dict):
+    rna_properties = prop.bl_rna.properties
     for k, item in data.items():
-        pr = getattr(prop, k, None)
-        if pr is not None or k in prop.bl_rna.properties:
+        if k in rna_properties:
             __set_prop__(prop, k, item)
 
 

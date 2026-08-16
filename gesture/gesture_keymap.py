@@ -106,6 +106,45 @@ def validate_keymap_data(data: dict) -> None:
             raise ValueError(f"shortcut field {key!r} must be a boolean")
 
 
+def drop_gesture_temp_state(gesture) -> None:
+    """Release the temp-KMI editor item and signature cache of one gesture.
+
+    Called before gesture rename/removal; without it each old identity/name
+    pair leaks a TEMP keymap item and signature until add-on reload.
+    """
+    try:
+        identity = _rna_identity(gesture)
+        names = {gesture.name}
+    except Exception:
+        return
+    # Include previous names retained by this gesture's pointer identity so a
+    # rename does not leak one TEMP KMI/signature for every historic name.
+    for key in tuple(_TEMP_KMI_SIGNATURES):
+        if key[0] == identity:
+            names.add(key[1])
+            _TEMP_KMI_SIGNATURES.pop(key, None)
+    try:
+        from .temp_keymap import get_temp_keymap
+        from .addon_keymap import get_kmi_operator_properties
+        from ..ops import set_key
+
+        keymap = get_temp_keymap()
+        if keymap is None:
+            return
+        temp_idname = set_key.OperatorTempModifierKey.bl_idname
+        for kmi in list(keymap.keymap_items):
+            if kmi.idname != temp_idname:
+                continue
+            try:
+                properties = get_kmi_operator_properties(kmi)
+                if properties.get('gesture') in names:
+                    keymap.keymap_items.remove(kmi)
+            except Exception:
+                ...
+    except Exception:
+        ...
+
+
 @contextmanager
 def suppress_keymap_restarts():
     """Defer transient shortcut rebuilds while a gesture collection is mutated."""
@@ -153,7 +192,7 @@ class KeymapProperty:
         key = self.__key__
         if key in self and dict(self[key]):
             default.update(
-                {k: dict(value) if value is IDPropertyGroup else value
+                {k: dict(value) if isinstance(value, IDPropertyGroup) else value
                  for (k, value) in
                  dict(self[key]).items()}
             )
@@ -233,19 +272,35 @@ class GestureKeymap(KeymapProperty):
         cache_key = (_rna_identity(self), self.name)
         signature = _temp_kmi_signature(kmi)
         previous = _TEMP_KMI_SIGNATURES.get(cache_key)
-        _TEMP_KMI_SIGNATURES[cache_key] = signature
         if previous is None or previous == signature:
+            _TEMP_KMI_SIGNATURES[cache_key] = signature
             return
 
-        gesture_identity = cache_key[0]
+        gesture_identity, gesture_name = cache_key
 
         def _flush():
             from ..utils.public import get_pref
             active = get_pref().active_gesture
-            if active is not None and _rna_identity(active) == gesture_identity:
+            if (
+                    active is not None
+                    and _rna_identity(active) == gesture_identity
+                    and active.name == gesture_name
+            ):
                 active.from_temp_key_update_data()
+                current_key = (_rna_identity(active), active.name)
+                _TEMP_KMI_SIGNATURES[current_key] = _temp_kmi_signature(
+                    active.temp_kmi
+                )
+                if current_key != cache_key:
+                    _TEMP_KMI_SIGNATURES.pop(cache_key, None)
 
-        schedule('gesture_temp_key_sync', _flush)
+        # Commit the signature inside the callback only after this gesture was
+        # actually synchronized. Switching gestures before the timer runs must
+        # leave the old signature in place so the next draw retries.
+        schedule(
+            f'gesture_temp_key_sync:{gesture_identity}:{gesture_name}',
+            _flush,
+        )
 
     def key_load(self, *, force: bool = False) -> list[KeymapLoadFailure]:
         """Load this gesture's shortcuts, returning failures without aborting siblings."""

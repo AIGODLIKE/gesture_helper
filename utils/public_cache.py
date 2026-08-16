@@ -148,6 +148,25 @@ class PublicCache:
         return child_iteration
 
 
+def _drop_move_marker(gesture=None) -> None:
+    """Clear the element-move marker when its owner is about to be freed."""
+    try:
+        from ..element.element_cure import ElementCURE
+        item = ElementCURE.MOVE.move_item
+        if item is None:
+            return
+        if gesture is not None:
+            try:
+                owner = item.parent_gesture
+            except Exception:
+                owner = None
+            if owner is not None and owner != gesture:
+                return
+        ElementCURE.MOVE.move_item = None
+    except Exception:
+        ...
+
+
 class PublicCacheFunc(PublicCache):
     @staticmethod
     def prepare_store_replacement():
@@ -158,9 +177,31 @@ class PublicCacheFunc(PublicCache):
         # Blender may reuse CollectionProperty pointer identities immediately
         # after clear(). Drop every old proxy while its RNA is still valid so
         # update callbacks for replacement elements cannot resolve stale owners.
+        _drop_move_marker()
         clear_all_active_element_caches()
         clear_frozen_ui_selections()
         PublicCache.cache_clear_data()
+        PublicCache.__structure_generation__ += 1
+        PublicCache.__derived_generation__ += 1
+        PublicCacheFunc.clear_derived_lru_caches()
+
+    @staticmethod
+    def prepare_gesture_removal(gesture):
+        """Release cached RNA proxies for one gesture before it is removed.
+
+        Single-gesture counterpart of prepare_store_replacement: without it,
+        the removed tree's wrapper keys stay in the structure caches and a
+        reused collection pointer can later resolve to a destroyed gesture.
+        """
+        if gesture is None:
+            return
+        from .selection import clear_active_element_cache
+        from .ui_draw_sync import clear_frozen_ui_selection
+
+        _drop_move_marker(gesture)
+        clear_active_element_cache(gesture)
+        clear_frozen_ui_selection(gesture)
+        PublicCache.purge_gesture(gesture)
         PublicCache.__structure_generation__ += 1
         PublicCache.__derived_generation__ += 1
         PublicCacheFunc.clear_derived_lru_caches()

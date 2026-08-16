@@ -18,8 +18,44 @@ def get_element_index(element) -> int | None:
     return None
 
 
-@cache
+# Keyed by (pointer, structure generation, derived generation) instead of the
+# RNA wrapper: Blender reuses collection pointers, so a wrapper-keyed
+# functools.cache could resolve a rebuilt element to a stale validity result.
+_SELECTED_STRUCTURE_MEMO: dict[tuple[int, int, int], bool] = {}
+_SELECTED_STRUCTURE_MEMO_LIMIT = 4096
+_MEMO_MISSING = object()
+
+
 def get_available_selected_structure(element) -> bool:
+    try:
+        key = (
+            int(element.as_pointer()),
+            PublicCache.__structure_generation__,
+            PublicCache.__derived_generation__,
+        )
+    except (AttributeError, ReferenceError, RuntimeError, TypeError):
+        key = None
+    if key is not None:
+        cached = _SELECTED_STRUCTURE_MEMO.get(key, _MEMO_MISSING)
+        if cached is not _MEMO_MISSING:
+            return cached
+    value = _compute_available_selected_structure(element)
+    if key is not None:
+        if len(_SELECTED_STRUCTURE_MEMO) >= _SELECTED_STRUCTURE_MEMO_LIMIT:
+            _SELECTED_STRUCTURE_MEMO.clear()
+        _SELECTED_STRUCTURE_MEMO[key] = value
+    return value
+
+
+def _clear_selected_structure_memo() -> None:
+    _SELECTED_STRUCTURE_MEMO.clear()
+
+
+# Compatibility with the functools-style invalidation call sites.
+get_available_selected_structure.cache_clear = _clear_selected_structure_memo
+
+
+def _compute_available_selected_structure(element) -> bool:
     def get_prev(e):
         p = e.prev_element
         if p and not p.enabled:

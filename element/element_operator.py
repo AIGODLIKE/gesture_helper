@@ -375,7 +375,10 @@ class OperatorProperty:
             debug_print(e.args, key='operator')
             debug_trace_stack(key='operator')
             debug_traceback(key='operator')
-            self['operator_properties'] = "{}"
+            # Never wipe the stored string here: a transient failure (e.g.
+            # the target operator's add-on is temporarily disabled) must not
+            # destroy the user's configured arguments. The validity check
+            # already surfaces the problem in the UI.
             return {}
 
     @property

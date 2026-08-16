@@ -66,9 +66,18 @@ class GestureRelationship(PublicUniqueNamePropertyGroup,
         return get_gesture_direction_items(self.element)
 
     def remove_before(self):
+        # Release this gesture's cached RNA proxies while they are still
+        # valid; Blender may reuse the collection pointer identities right
+        # after remove(), and stale keys would then resolve to dead items.
+        from ..utils.public_cache import PublicCacheFunc
+        from .gesture_keymap import drop_gesture_temp_state
+        PublicCacheFunc.prepare_gesture_removal(self)
+        drop_gesture_temp_state(self)
         if self.is_last and self.index != 0:  # Deleted item was last
             self.index = self.index - 1  # Decrement index to keep a selection
 
     @cache_update_lock
     def rename_before(self):
+        from .gesture_keymap import drop_gesture_temp_state
+        drop_gesture_temp_state(self)
         self.to_temp_kmi()
