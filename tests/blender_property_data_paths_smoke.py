@@ -1008,7 +1008,7 @@ finally:
 
 assert len(validated_spaces) >= 15, validated_spaces
 print(
-    "property data paths smoke passed",
+    "PROPERTY_DATA_PATHS_SMOKE_OK",
     bpy.app.version_string,
     len(CREATE_ELEMENT_DATA_PATHS),
     validated_candidates,

@@ -97,4 +97,4 @@ for gesture in store.gesture:
     assert not (key_fields & {"hyper", "hyper_ui"}), key_fields
 
 store.gesture.clear()
-print("blender_legacy_preset_import_smoke: OK")
+print("LEGACY_PRESET_IMPORT_SMOKE_OK", bpy.app.version_string, flush=True)

@@ -17,7 +17,9 @@ sys.path.insert(0, str(REPOSITORY.parent))
 assert bpy.ops.preferences.addon_enable(module="gesture_helper") == {"FINISHED"}
 print("KEYMAP_SELECTOR_HOVER_SMOKE_STAGE addon_enabled", flush=True)
 
+from gesture_helper.gesture.addon_keymap import get_kmi_operator_properties  # noqa: E402
 from gesture_helper.gesture.gesture_keymap import GestureKeymap  # noqa: E402
+from gesture_helper.gesture.temp_keymap import get_temp_keymap  # noqa: E402
 from gesture_helper.ops.export_import import Export  # noqa: E402
 from gesture_helper.ops.quick_add.draw_gpu import DrawGpu  # noqa: E402
 from gesture_helper.src.translate import __name_translate__  # noqa: E402
@@ -74,6 +76,17 @@ try:
         )
     }
     assert registered == {"3D View", "Object Mode"}, registered
+
+    gesture.to_temp_kmi()
+    old_name = gesture.name
+    gesture.name = "Focused Object Mode Smoke Renamed"
+    temp_gesture_names = [
+        get_kmi_operator_properties(item).get("gesture")
+        for item in get_temp_keymap().keymap_items
+        if item.idname == "wm.gesture_temp_kmi"
+    ]
+    assert old_name not in temp_gesture_names, temp_gesture_names
+    assert temp_gesture_names.count(gesture.name) == 1, temp_gesture_names
     print("KEYMAP_SELECTOR_HOVER_SMOKE_STAGE keymaps_registered", flush=True)
 
     override = view3d_override()

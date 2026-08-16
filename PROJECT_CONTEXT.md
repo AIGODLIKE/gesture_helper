@@ -35,9 +35,11 @@ with bundled JSON presets, translations, and PNG icon assets.
   with `SKIP_SAVE`, so they are session state rather than `.blend` DNA.
 - `utils/gesture_persistence.py` serializes the store to CONFIG JSON using
   atomic temp-file + `os.replace`, validates the written structure, debounces
-  structural saves, migrates legacy AddonPreferences data, and rolls back a
-  failed restore. `register_mod` snapshots before file load and restores after
-  Blender clears the WindowManager store.
+  structural saves, tracks the normalized gesture payload from the last
+  successful load/save, migrates legacy AddonPreferences data, and rolls back
+  a failed restore. `register_mod` snapshots before file load, compares that
+  complete payload with the persisted baseline (including RNA fields without
+  update callbacks), and restores after Blender clears the WindowManager store.
 - `utils/backups.py` sends only `bl_ext.*` packages through
   `bpy.utils.extension_path_user`; legacy/source checkouts route directly to
   Blender `DATAFILES`. This prevents a source smoke named `gesture_helper` from
@@ -383,6 +385,18 @@ flowchart TD
 - Focused example-keymap, selector-close, and numeric-hover verification:
   `tests/blender_keymap_selector_hover_smoke.py`; it explicitly enables and
   restores Blender's numeric-arrow preference instead of assuming its default.
+- Complete preset-library round trip and restored gesture execution:
+  `tests/blender_full_preset_roundtrip_smoke.py` imports every bundled preset,
+  adds one executable probe gesture, exports the complete library through the
+  production operator, clears and reimports it, compares RNA/KMI state, and
+  executes the restored probe action.
+- Hardening verification on 2026-08-16: all 183 repository Python files
+  compiled in memory, 336 unit tests passed, Ruff and `git diff --check`
+  passed, and all 20 tracked JSON files passed duplicate-key validation. The
+  complete fresh-profile source smoke matrix passed 13/13 in Blender 4.3.2
+  and 12/12 non-file-reload cases in Blender 5.2.0 LTS; the 5.2 lifecycle
+  case remains excluded because that Blender build crashes in an add-on-free
+  `read_homefile` reproduction.
 - Legacy preset-asset import compatibility (1.x/2.0/2.1 export shapes, leaked
   `hyper` KMI fields, SCRIPT-element removal, and the shared
   `_apply_gesture_data` migration path):
@@ -434,6 +448,52 @@ flowchart TD
   current `SPLIT` RNA, and disabled cleanly in Blender 4.3.2, 4.4.3, 4.5.3 LTS,
   5.0.1, 5.1.0, and 5.2.0 LTS.
 
+## Hardening baseline (2026-08)
+
+A full-source review hardened these contracts; preserve them in future edits:
+
+- **Registration recovery:** every class registration goes through
+  `register_classes_safe` (including `props.py`); `_deferred_init_done` is set
+  only after `init_register()` succeeds; the `register()`-time cache rebuild
+  runs inside `suppress_gesture_disk_save()` so an empty store can never
+  overwrite the gesture JSON. `_unregister_stale_class` only removes classes
+  whose module path contains this add-on's short name.
+- **Data-loss visibility:** `log_backup(..., critical=True)` prints
+  unconditionally; save/load/migration failures use it. When every load
+  candidate fails to parse, the primary file is renamed `*.corrupt-<stamp>`
+  before any automatic save can replace it. Preference backups use the same
+  atomic temp-file writer as gesture files (`write_json_file_atomic`). The
+  normalized payload from the last successful gesture load/save is the dirty
+  baseline, so persistent fields without RNA update callbacks still flush
+  before Blender replaces the WindowManager store.
+- **RNA proxy lifetime:** removing a gesture goes through
+  `PublicCacheFunc.prepare_gesture_removal` (single-gesture counterpart of
+  `prepare_store_replacement`, wired via `Gesture.remove_before`), which also
+  drops the temp-KMI editor item, all signatures retained across renames, and
+  the element-move marker. Renaming likewise replaces its old temp-KMI state.
+  `ElementCURE.MOVE.live_move_item()` is the only sanctioned reader of
+  the move marker. `get_available_selected_structure` memoizes by
+  `(as_pointer, structure_generation, derived_generation)`, never by wrapper,
+  and caches both true and false results.
+- **Failure containment:** a failed `Element.properties` resolve returns `{}`
+  but never clears the stored `operator_properties` string. Persistent-menu
+  draw exceptions print once per distinct error. `ui_draw_sync.schedule`
+  returns acceptance; gesture shortcut sync uses a per-gesture timer key and
+  commits its KMI signature only after that gesture's callback actually runs.
+  A file-load pre-handler that cannot capture its restoration snapshot falls
+  back to a conservative disk save rather than assuming the store is clean.
+  `_is_blocking_modal` falls back to scanning `wm.windows` in timer context
+  (no context window) instead of reporting "modal finished".
+- **Bounded caches:** rounded-rect/arc/fill-mesh geometry quantizes inputs
+  (0.25 px / 0.5°) into `lru_cache`; the per-size GPU batch dict caps at 1024
+  entries; text measure/wrap caches are `lru_cache`-bounded; menu poll
+  fingerprints refresh at most every 0.15 s; poll ASTs cache per expression.
+- **Pass-through matching:** KMI modifiers treat -1 as "Any", compare `hyper`
+  when both sides expose it, and skip bindings that require a held
+  `key_modifier`.
+- **i18n:** every user-facing `report()` goes through `pgettext`; new msgids
+  must be added to `src/translate/zh_CN/text.json`.
+
 ## Current risks and observed issues
 
 1. **Bundled asset provenance must stay explicit:** the Blender-derived icon
@@ -450,7 +510,12 @@ flowchart TD
    smoke passes in Blender 4.3.2, and the other ten 5.2 source smokes plus the
    installed-package smoke pass. Re-run the lifecycle smoke when a newer 5.2
    build is available. Foreground visual placement and multi-window behavior
-   still require targeted manual checks.
+   still require targeted manual checks. The same binary also crashes with
+   EXCEPTION_ACCESS_VIOLATION inside `IDP_GetPropertyFromGroup` when
+   `blender_preview_smoke.py` runs against a user profile pre-populated by the
+   import/preset smokes (reproduced identically on the unmodified v2.4.0
+   source); run 5.2 smokes in fresh isolated profiles, or rerun the preview
+   smoke alone when the sequence trips it.
 4. **Broad lifecycle surface:** modal timers, GPU draw handlers, playback/load
    handlers, cached RNA proxies, and `SKIP_SAVE` restoration all share cleanup
    paths. Any future change in `register_mod.py`, `gesture_session.py`,

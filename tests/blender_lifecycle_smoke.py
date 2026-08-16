@@ -229,6 +229,35 @@ assert matching_handlers(
 assert matching_handlers(
     bpy.app.handlers.load_post, register_mod._on_load_post,
 ) == 1
+
+# If snapshot capture itself fails, load_pre must conservatively flush to disk
+# instead of treating the missing snapshot as evidence that the store is clean.
+import gesture_helper.utils.gesture_persistence as persistence  # noqa: E402
+
+original_capture_snapshot = persistence.capture_gesture_snapshot
+original_cancel_save = persistence.cancel_scheduled_gesture_save
+original_save_gestures = persistence.save_gestures_to_disk
+fallback_save_calls = []
+
+
+def fail_snapshot_capture():
+    raise RuntimeError("lifecycle snapshot probe")
+
+
+try:
+    persistence.capture_gesture_snapshot = fail_snapshot_capture
+    persistence.cancel_scheduled_gesture_save = lambda: fallback_save_calls.append("cancel")
+    persistence.save_gestures_to_disk = (
+        lambda **kwargs: fallback_save_calls.append(kwargs.get("description"))
+    )
+    register_mod._on_load_pre()
+finally:
+    persistence.capture_gesture_snapshot = original_capture_snapshot
+    persistence.cancel_scheduled_gesture_save = original_cancel_save
+    persistence.save_gestures_to_disk = original_save_gestures
+
+assert fallback_save_calls == ["cancel", "before_file_load"], fallback_save_calls
+
 animation_pre = getattr(bpy.app.handlers, "animation_playback_pre", None)
 animation_post = getattr(bpy.app.handlers, "animation_playback_post", None)
 if animation_pre is not None:
