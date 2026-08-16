@@ -2,7 +2,6 @@
 version 0.0.2
 Handle API differences across Blender versions.
 """
-import bpy
 
 _MISSING = object()
 
@@ -32,17 +31,10 @@ def operator_getattr(op, name: str, default=_MISSING):
 
 
 def operator_invoke_confirm(self, event, context, title, message) -> set:
-    """Blender 4.1+ requires extra args; new UI shows two buttons."""
-    if bpy.app.version >= (4, 1, 0):
-        return context.window_manager.invoke_confirm(
-            **{
-                "operator": self,
-                "event": event,
-                'title': title,
-                'message': message,
-            }
-        )
-    else:
-        return context.window_manager.invoke_confirm(
-            self, event
-        )
+    """Titled two-button confirm dialog (minimum supported Blender is 4.3)."""
+    return context.window_manager.invoke_confirm(
+        operator=self,
+        event=event,
+        title=title,
+        message=message,
+    )

@@ -1,4 +1,6 @@
 import os
+from functools import lru_cache
+
 from ..utils.debug_util import debug_print
 
 DEBUG_ONLY_PRESET_NAMES = frozenset({
@@ -22,8 +24,20 @@ def get_preset_gesture_list(*, include_debug_only: bool | None = None) -> dict[s
         except (AttributeError, ImportError, KeyError, ReferenceError, RuntimeError):
             include_debug_only = False
 
-    items = {}
+    # The import dialog rebuilds this list on every redraw; key the cached
+    # scan by folder mtime so a manually dropped preset still shows up.
+    try:
+        mtime = os.stat(PRESET_FOLDER).st_mtime_ns
+    except OSError:
+        mtime = -1
+    return dict(_preset_list_cached(bool(include_debug_only), mtime))
 
+
+@lru_cache(maxsize=8)
+def _preset_list_cached(include_debug_only: bool, _mtime: int) -> dict[str, str]:
+    from .public import PRESET_FOLDER
+
+    items = {}
     try:
         for f in sorted(os.listdir(PRESET_FOLDER), key=str.casefold):
             path = os.path.join(PRESET_FOLDER, f)

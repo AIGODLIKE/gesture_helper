@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+from functools import lru_cache
 
 import bpy
 
@@ -125,7 +126,10 @@ def _ast_literal_value(node):
         if isinstance(operand, (int, float)):
             return -operand
     if isinstance(node, (ast.List, ast.Tuple)):
-        return type(node.elts)([_ast_literal_value(elt) for elt in node.elts])
+        values = [_ast_literal_value(elt) for elt in node.elts]
+        # node.elts is always a plain list; dispatch on the node type so
+        # tuple literals stay tuples like ast.literal_eval would return.
+        return tuple(values) if isinstance(node, ast.Tuple) else values
     if isinstance(node, ast.Set):
         return {_ast_literal_value(elt) for elt in node.elts}
     if isinstance(node, ast.Dict):
@@ -165,6 +169,16 @@ def parse_operator_properties(text: str) -> dict:
     return result
 
 
+@lru_cache(maxsize=512)
+def _parse_condition_ast(expression: str):
+    """Cache parsed poll ASTs; evaluation still runs per call.
+
+    Poll strings are evaluated on every direction/extension walk, and
+    re-parsing the same text dominated the expression cost.
+    """
+    return ast.parse(expression, mode='eval')
+
+
 class _ConditionExpressionParser:
     """Parse a restricted subset of Python expressions for poll checks."""
 
@@ -182,7 +196,7 @@ class _ConditionExpressionParser:
     def parse(self, expression: str):
         if not expression or not expression.strip():
             return False
-        tree = ast.parse(expression, mode='eval')
+        tree = _parse_condition_ast(expression)
         return self._parse_node(tree.body)
 
     def _parse_node(self, node):

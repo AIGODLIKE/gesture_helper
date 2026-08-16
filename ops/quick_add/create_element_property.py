@@ -487,20 +487,22 @@ class Create(Draw):
         COLLECTION:Collection.
         :return:
         """
+        from bpy.app.translations import pgettext
+
         pref = get_pref()
         pt = self.property_type
         if pt == "ENUM" and self.button_prop and self.button_prop.is_enum_flag:
-            self.report({'ERROR'}, "Multi-select enum (set) is not supported")
+            self.report({'ERROR'}, pgettext("Multi-select enum (set) is not supported"))
             return False
         if pt == "ENUM" and not self.display_property and not self.has_enum_items:
-            self.report({'ERROR'}, "Dynamic enum properties cannot be added")
+            self.report({'ERROR'}, pgettext("Dynamic enum properties cannot be added"))
             return False
         if self.display_property:
             control_error = gesture_control_property_error(
                 self.button_pointer, self.button_prop,
             )
             if control_error:
-                self.report({'ERROR'}, control_error)
+                self.report({'ERROR'}, pgettext(control_error))
                 return False
         self.cache_clear()
         with pref.add_element_property.active_radio():
@@ -573,14 +575,19 @@ class CreateElementProperty(Create):
         from ...utils.session_state import SessionState
         SessionState.context_menu_from_button = False
 
+        from bpy.app.translations import pgettext
+
         self.from_context_get_info(context)
         if not self.button_pointer or not self.button_prop:
-            self.report({'ERROR'}, "Property context lost, right-click the property again")
+            self.report(
+                {'ERROR'},
+                pgettext("Property context lost, right-click the property again"),
+            )
             return {'CANCELLED'}
         if not self.data_path:
             self.copy_data_path()
         if not self.data_path:
-            self.report({'ERROR'}, "Unable to resolve a bpy.context data path")
+            self.report({'ERROR'}, pgettext("Unable to resolve a bpy.context data path"))
             self.clear_info()
             return {'CANCELLED'}
 

@@ -109,7 +109,7 @@ class GestureCURE:
                 try:
                     count = add_all_preset()
                 except Exception as exc:
-                    self.report({'ERROR'}, str(exc))
+                    self.report({'ERROR'}, pgettext(str(exc)))
                     return {'CANCELLED'}
                 self.report({'INFO'}, pgettext("Imported %d presets") % count)
                 return {'FINISHED'}
@@ -186,6 +186,10 @@ class GestureCURE:
             if gestures is None or store is None:
                 return {'CANCELLED'}
             if self.bulk_remove:
+                from ..utils.public_cache import PublicCacheFunc
+                # Drop every cached RNA proxy while the collection is still
+                # alive; clear() may free pointers that Blender reuses at once.
+                PublicCacheFunc.prepare_store_replacement()
                 gestures.clear()
                 store.index_gesture = 0
                 self.cache_clear()

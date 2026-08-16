@@ -103,14 +103,28 @@ class CreateSwitchPanel(bpy.types.Operator):
         if self.panel_name == "":
             return {"FINISHED"}
         from ...element.element_cure import ElementCURE
-        bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
-        last = ElementCURE.ADD.last_element
+        from ...utils.public import get_pref
+
+        pref = get_pref()
+        with pref.add_element_property.active_radio():
+            result = bpy.ops.wm.gesture_element_add(element_type="OPERATOR")
+            if 'CANCELLED' in result:
+                return {"CANCELLED"}
+            last = ElementCURE.ADD.last_element
+        # last_element is a class attribute pointing at the previous add on
+        # failure; writing through it would corrupt an unrelated element.
+        if last is None:
+            from bpy.app.translations import pgettext
+            self.report({'ERROR'}, pgettext("Failed to add gesture element"))
+            return {"CANCELLED"}
         last['operator_bl_idname'] = GestureSwitchPanelCategory.bl_idname
         props = {'panel_name': self.panel_name}
         if self.space_type and self.space_type != 'NONE':
             props['space_type'] = self.space_type
         last['operator_properties'] = str(props)
         last.name = self.panel_name
+        from ...utils.public_cache import PublicCacheFunc
+        PublicCacheFunc.cache_clear()
         return {"FINISHED"}
 
     def draw(self, context):

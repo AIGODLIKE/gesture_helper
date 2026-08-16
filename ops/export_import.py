@@ -613,14 +613,18 @@ class Export(PublicFileOperator):
         ):
             return os.path.abspath(folder_path)
 
+        if folder_path and not os.path.isdir(folder_path):
+            if os.path.isfile(folder_path):
+                return os.path.abspath(folder_path)
+            # A concrete file name typed without the .json suffix: complete
+            # the extension instead of creating a directory with that name.
+            return os.path.abspath(folder_path + self.filename_ext)
+
         if not folder_path:
             folder_path = resolve_backups_folder()
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)
-
-        if os.path.isfile(folder_path):
-            return os.path.abspath(folder_path)
 
         return os.path.abspath(
             os.path.join(folder_path, f'Gesture {datetime.now()}.json'.replace(':', ' '))
@@ -679,9 +683,11 @@ class Export(PublicFileOperator):
             self.report({'INFO'}, pgettext("No export items selected"))
             return {'CANCELLED'}
 
+        # Resolve exactly once: the timestamped fallback name embeds "now", so
+        # a second evaluation would report a different file than was written.
         path = self.file_path
         try:
-            self.write_json_file(export_data)
+            self.write_json_file(export_data, path=path)
         except (OSError, TypeError, ValueError) as exc:
             log_backup(f"manual gesture export failed ({path}): {exc}")
             self.report({'ERROR'}, pgettext("Export failed. Check the path: %s") % path)
@@ -689,10 +695,11 @@ class Export(PublicFileOperator):
         self.report({'INFO'}, pgettext("Exported to %s") % path)
         return {'FINISHED'}
 
-    def write_json_file(self, export_data=None):
+    def write_json_file(self, export_data=None, path=None):
         from ..utils.gesture_persistence import _write_gesture_file_atomic
 
-        path = self.file_path
+        if path is None:
+            path = self.file_path
         _write_gesture_file_atomic(path, export_data or self.export_data)
 
     @staticmethod
@@ -782,8 +789,10 @@ class Export(PublicFileOperator):
             path = None
         else:
             from ..utils.gesture_persistence import _write_gesture_file_atomic
+            from ..utils.backups import invalidate_rotating_backup_stats
 
             _write_gesture_file_atomic(path, export_data)
+            invalidate_rotating_backup_stats()
             log_backup(f"ok: {len(gesture_data)} gesture(s) -> {path}")
 
         # Cap rotating copies (oldest by mtime first); prefs single-file excluded.

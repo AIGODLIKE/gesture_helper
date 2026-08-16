@@ -35,7 +35,8 @@ class SwitchMode(bpy.types.Operator):
             return {'FINISHED'}
         if self.type == 'SWITCH_OBJECT_EDIT_MODE':
             if obj.type != 'MESH':
-                self.report({'ERROR'}, "Active object must be a mesh")
+                from bpy.app.translations import pgettext
+                self.report({'ERROR'}, pgettext("Active object must be a mesh"))
                 return {'CANCELLED'}
             if context.mode != 'EDIT_MESH':
                 bpy.ops.object.mode_set(mode='EDIT')

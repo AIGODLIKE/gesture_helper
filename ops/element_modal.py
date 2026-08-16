@@ -181,7 +181,8 @@ class ElementModal(PublicOperator, State, PublicMouseModal, KeymapTips):
         if event.type == "LEFTMOUSE" and event.value == "PRESS":  # Confirm
             error = self._run_target_operator()
             if error is not None:
-                self.report({'ERROR'}, str(error))
+                from bpy.app.translations import pgettext
+                self.report({'ERROR'}, pgettext(str(error)))
                 return self.exit(context, cancelled=True)
             self.finished(context)
             return self.exit(context)

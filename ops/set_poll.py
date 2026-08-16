@@ -29,10 +29,10 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
 
     ___notation___ = {
         '==': '!=',
-        "is": 'not is',
+        "is": 'is not',
         "in": 'not in',
     }
-    __notation__ = {**___notation___, **{v: k for k, v in ___notation___}}
+    __notation__ = {**___notation___, **{v: k for k, v in ___notation___.items()}}
 
     @property
     def element(self):
@@ -134,6 +134,10 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
         poll_string = f"{prefix_string}{notation}{' ' if notation else ''}{string}{suffix_string} "
         if is_parentheses:
             poll_string = f'({poll_string})'
+        if self.is_not and not notation and string not in {'and', 'or', 'not'}:
+            # Bare truthiness expressions (Has Selected Object(s), UV Sync)
+            # have no operator to flip; invert the whole expression instead.
+            poll_string = f'not ({poll_string.strip()}) '
 
         layout.operator_context = "EXEC_DEFAULT"
         op = layout.operator(self.bl_idname, text=__name_translate__(name))
@@ -142,7 +146,8 @@ class SetPollExpression(ActiveSelection, PublicOperator, PollData):
     def invoke(self, context, _):
         wm = context.window_manager
         if wm is None:
-            self.report({'ERROR'}, "Window manager unavailable")
+            from bpy.app.translations import pgettext
+            self.report({'ERROR'}, pgettext("Window manager unavailable"))
             return {'CANCELLED'}
         if self.poll_string or self.clear:
             return self.execute(context)

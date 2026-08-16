@@ -111,7 +111,11 @@ _context_menu_appended = False
 
 
 def register():
-    """Append draw hook to WM_MT_button_context."""
+    """Append draw hook to WM_MT_button_context.
+
+    The menu class is built into every supported Blender, but it is not
+    registered in ``--background`` sessions, so the fallback must stay.
+    """
     global _context_menu_appended
     if _context_menu_appended:
         return

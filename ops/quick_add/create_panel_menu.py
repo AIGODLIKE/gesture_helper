@@ -39,7 +39,8 @@ class CreatePanelMenu(PublicOperator, StructureCacheOps):
             ae = ElementCURE.ADD.last_element
 
         if ae is None:
-            self.report({'ERROR'}, "Failed to add gesture element")
+            from bpy.app.translations import pgettext
+            self.report({'ERROR'}, pgettext("Failed to add gesture element"))
             return {"CANCELLED"}
 
         if self.type == "PANEL":
@@ -65,14 +66,17 @@ class CreatePanelMenu(PublicOperator, StructureCacheOps):
 
 def draw_add(self, context):
     from bpy.app.translations import pgettext_iface
-    t = "unknown"
-    layout = self.layout
-    if bpy.types.Menu in self.__class__.__bases__:
+    # isinstance covers indirect subclasses (third-party panels often insert
+    # their own base class); __bases__ only matched direct children, leaving
+    # ``t = "unknown"`` and an invalid enum assignment below.
+    if isinstance(self, bpy.types.Menu):
         layout = self.layout.row(align=True)
         t = "Menu"
-    elif bpy.types.Panel in self.__class__.__bases__:
+    elif isinstance(self, bpy.types.Panel):
         layout = self.layout.column(align=True)
         t = "Panel"
+    else:
+        return
 
     layout.separator()
     layout.alert = True
@@ -109,6 +113,12 @@ def _safe_remove_draw(cls) -> None:
         pass
 
 
+def _already_hooked(cls) -> bool:
+    # Subclasses that inherit ``draw`` share the base class's _draw_funcs
+    # list; appending through both classes would run draw_add twice.
+    return draw_add in getattr(getattr(cls, 'draw', None), '_draw_funcs', ())
+
+
 def start_adding():
     """Append quick-add buttons to panels/menus.
 
@@ -118,11 +128,11 @@ def start_adding():
     # Always clear first so cancel / re-enter never stacks duplicate draw hooks.
     stop_adding()
     for p in iter_panel_classes():
-        if _can_append(p):
+        if _can_append(p) and not _already_hooked(p):
             p.append(draw_add)
             __panel__.append(p)
     for m in iter_menu_classes():
-        if _can_append(m):
+        if _can_append(m) and not _already_hooked(m):
             m.append(draw_add)
             __menu__.append(m)
     SessionState.panel_menu_adding = True

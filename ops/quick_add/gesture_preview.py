@@ -507,21 +507,23 @@ class GesturePreview(
             ...
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event):
+        from bpy.app.translations import pgettext
+
         scope = self.scope if self.scope in {'GESTURE', 'ELEMENT'} else 'GESTURE'
         self.scope = scope
         renderer, target = self._active_preview_target()
         if scope == 'GESTURE' and target is None:
-            self.report({'WARNING'}, 'Select a gesture to preview')
+            self.report({'WARNING'}, pgettext('Select a gesture to preview'))
             return {'CANCELLED'}
         if scope == 'ELEMENT' and target is None:
-            self.report({'WARNING'}, 'Select an element to preview')
+            self.report({'WARNING'}, pgettext('Select an element to preview'))
             return {'CANCELLED'}
 
         area = getattr(context, 'area', None)
         if area is None or area.type != 'VIEW_3D':
             override = self.find_view3d_context(context)
             if override is None:
-                self.report({'WARNING'}, 'Open a 3D View to preview this item')
+                self.report({'WARNING'}, pgettext('Open a 3D View to preview this item'))
                 return {'CANCELLED'}
             try:
                 with context.temp_override(**override):
@@ -531,7 +533,7 @@ class GesturePreview(
                         scope=scope,
                     )
             except (AttributeError, RuntimeError, TypeError):
-                self.report({'WARNING'}, 'Unable to start the preview in the 3D View')
+                self.report({'WARNING'}, pgettext('Unable to start the preview in the 3D View'))
                 return {'CANCELLED'}
             operator_setattr(self, '_preview_cleaned', True)
             return {'FINISHED'} if result and 'RUNNING_MODAL' in result else result
@@ -542,7 +544,7 @@ class GesturePreview(
         self.init_invoke(event)
 
         if not SessionState.begin_gesture_preview(self, scope):
-            self.report({'WARNING'}, 'A preview is already running')
+            self.report({'WARNING'}, pgettext('A preview is already running'))
             return {'CANCELLED'}
         try:
             if not self._enter_renderer(context, event, renderer, target):
@@ -551,7 +553,7 @@ class GesturePreview(
             context.window_manager.modal_handler_add(self)
         except Exception:
             self.__exit_modal__()
-            self.report({'WARNING'}, 'Unable to start the preview')
+            self.report({'WARNING'}, pgettext('Unable to start the preview'))
             return {'CANCELLED'}
 
         self._tag_preview_redraw()
