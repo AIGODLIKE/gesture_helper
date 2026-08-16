@@ -14,7 +14,10 @@ class TempDrawProperty(bpy.types.PropertyGroup):
 
     @classmethod
     def register_property(cls):
-        bpy.utils.register_class(TempDrawProperty)
+        # A failed enable leaves classes registered; the safe path re-registers
+        # instead of raising "already registered" on the retry.
+        from .utils.rna_register import register_classes_safe
+        register_classes_safe((TempDrawProperty,))
         setattr(bpy.types.WindowManager, cls.key, PointerProperty(type=TempDrawProperty))
 
     @classmethod

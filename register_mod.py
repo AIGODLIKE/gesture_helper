@@ -133,18 +133,27 @@ def _on_load_pre(*_args):
     """Flush pending global gesture edits before Blender clears the WM store."""
     global _load_gesture_snapshot
     _load_gesture_snapshot = None
+    snapshot_captured = False
     try:
         from .utils.gesture_persistence import (
             cancel_scheduled_gesture_save,
             capture_gesture_snapshot,
+            has_unsaved_gesture_changes,
             save_gestures_to_disk,
         )
         try:
             _load_gesture_snapshot = capture_gesture_snapshot()
+            snapshot_captured = True
         except Exception:
             ...
-        cancel_scheduled_gesture_save()
-        save_gestures_to_disk(description='before_file_load')
+        # Only flush when edits are actually pending. An unconditional write
+        # here serialized the whole store twice on every file open.
+        if (
+                not snapshot_captured
+                or has_unsaved_gesture_changes(_load_gesture_snapshot)
+        ):
+            cancel_scheduled_gesture_save()
+            save_gestures_to_disk(description='before_file_load')
     except (KeyError, AttributeError, RuntimeError):
         ...
     return None
@@ -230,6 +239,7 @@ def register():
     from .utils import icons
     from .utils.texture import Texture
     from .utils.public_gpu import clear_gpu_caches
+    from .utils.gesture_persistence import suppress_gesture_disk_save
 
     clear_pref_cache()
     SessionState.clear()
@@ -241,13 +251,20 @@ def register():
         module.register()
 
     clear_temp_keymap()
-    public_cache.PublicCacheFunc.cache_clear()
+    # The store is still empty here. Without the disk-save guard this cache
+    # rebuild would schedule a debounced save that can overwrite the gesture
+    # file with an empty payload before init_register() loads it.
+    with suppress_gesture_disk_save():
+        public_cache.PublicCacheFunc.cache_clear()
     gesture_keymap.GestureKeymap.key_clear_owned()
 
     global _deferred_init_done
     if not _deferred_init_done:
-        _deferred_init_done = True
+        # Mark done only after a successful init: if it raises, the next
+        # enable attempt must run the gesture/preferences load again instead
+        # of silently starting with an empty store.
         init_register()
+        _deferred_init_done = True
     _register_load_handlers()
     _register_animation_handlers()
 
@@ -293,10 +310,12 @@ def unregister():
     pref = get_pref()
     clear_all_active_element_caches(pref)
     with suppress_gesture_disk_save():
-        public_cache.PublicCacheFunc.cache_clear()
+        # Shutdown only needs the caches released; a full rebuild would walk
+        # every gesture immediately before the store is cleared anyway.
+        public_cache.PublicCacheFunc.prepare_store_replacement()
     def _shutdown_log(message):
         try:
-            log_backup(message)
+            log_backup(message, critical=True)
         except Exception:
             pass
 

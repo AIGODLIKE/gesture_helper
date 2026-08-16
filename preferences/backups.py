@@ -1,4 +1,3 @@
-import json
 import os
 
 import bpy
@@ -186,6 +185,8 @@ class BackupsProperty(bpy.types.PropertyGroup):
 
 class BackupsPreferences:
     def preferences_backups(self, export_path=None):
+        from ..utils.gesture_persistence import write_json_file_atomic
+
         if not export_path:
             export_path = get_preferences_backup_path()
         log_backup(f"preferences start -> {export_path}")
@@ -193,8 +194,9 @@ class BackupsPreferences:
         draw = data.get("draw_property")
         if isinstance(draw, dict):
             draw.pop("force_show_panels_during_modal", None)
-        with open(export_path, "w", encoding="utf-8") as file:
-            file.write(json.dumps(data, ensure_ascii=True, indent=2))
+        # Atomic replace: this file is overwritten on every disable/exit, and
+        # a crash mid-write must not truncate the only automatic backup.
+        write_json_file_atomic(export_path, data)
         log_backup(f"preferences ok -> {export_path}")
 
     def preferences_restore(self, file_path=None):

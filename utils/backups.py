@@ -270,21 +270,13 @@ def blender_close_backup_filename(mode: str) -> str:
     return f"{_GESTURE_BACKUP_PREFIX}{_BLENDER_CLOSE_MARKER}.json"
 
 
-def log_backup(message: str) -> None:
+def log_backup(message: str, *, critical: bool = False) -> None:
     from .debug_util import debug_print
+    if critical:
+        # Data-loss level events (save/load/migration failures) must stay
+        # visible on the console even with every debug switch disabled.
+        print(f"[Gesture Helper] {message}")
     debug_print(f"[Gesture Helper Backup] {message}", key='export_import')
-
-
-def _gesture_backup_files(folder: str) -> list[str]:
-    if not os.path.isdir(folder):
-        return []
-    return sorted(
-        (
-            name for name in os.listdir(folder)
-            if name.startswith(_GESTURE_BACKUP_PREFIX) and name.endswith(".json")
-        ),
-        reverse=True,
-    )
 
 
 def _is_rotating_gesture_backup(name: str) -> bool:
@@ -459,11 +451,30 @@ def prune_rotating_gesture_backups(
         deleted_count += 1
         deleted_bytes += size
         log_backup(f"prune deleted oldest: {path}")
+    if deleted_count:
+        invalidate_rotating_backup_stats()
     return deleted_count, deleted_bytes
+
+
+# The Backups preferences page reads these stats on every redraw; cache the
+# directory scan briefly and invalidate on backup writes/cleanup.
+_ROTATING_STATS_CACHE: dict[str, tuple[float, tuple[int, int]]] = {}
+_ROTATING_STATS_TTL_SEC = 2.0
+
+
+def invalidate_rotating_backup_stats() -> None:
+    _ROTATING_STATS_CACHE.clear()
 
 
 def get_rotating_backup_stats(folder: str | None = None) -> tuple[int, int]:
     """Return ``(count, total_bytes)`` for rotating auto-backups."""
+    import time
+
+    key = folder or ''
+    now = time.monotonic()
+    entry = _ROTATING_STATS_CACHE.get(key)
+    if entry is not None and now - entry[0] < _ROTATING_STATS_TTL_SEC:
+        return entry[1]
     total = 0
     count = 0
     for path in iter_rotating_gesture_backup_paths(folder):
@@ -472,6 +483,7 @@ def get_rotating_backup_stats(folder: str | None = None) -> tuple[int, int]:
             count += 1
         except OSError:
             continue
+    _ROTATING_STATS_CACHE[key] = (now, (count, total))
     return count, total
 
 
@@ -506,6 +518,8 @@ def clear_rotating_gesture_backups(folder: str | None = None) -> tuple[int, int]
         deleted_count += 1
         deleted_bytes += size
         log_backup(f"clear deleted: {path}")
+    if deleted_count:
+        invalidate_rotating_backup_stats()
     return deleted_count, deleted_bytes
 
 

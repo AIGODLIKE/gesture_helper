@@ -70,12 +70,32 @@ def _find_registered_class(cls):
     return None
 
 
+# Short add-on package name ("gesture_helper") for both install layouts:
+# legacy "gesture_helper.utils" and extension "bl_ext.<repo>.gesture_helper.utils".
+_ADDON_SHORT_NAME = (
+    (__package__ or '').rsplit('.', 1)[0].rpartition('.')[2] or 'gesture_helper'
+)
+
+
+def _owns_class(old_cls) -> bool:
+    """Whether *old_cls* belongs to any install of this add-on/extension.
+
+    Generic class names such as ``Element`` or ``Gesture`` can collide with
+    unrelated add-ons; unregistering their classes would silently break them.
+    Dual installs (legacy + extension) still match through the short name.
+    """
+    module = getattr(old_cls, '__module__', '') or ''
+    return _ADDON_SHORT_NAME in module.split('.')
+
+
 def _unregister_stale_class(cls) -> None:
     """Drop an older RNA class with the same identifier after a reload."""
     old_cls = _find_registered_class(cls)
     if old_cls is None or old_cls is cls:
         return
     if not getattr(old_cls, 'is_registered', False):
+        return
+    if not _owns_class(old_cls):
         return
     bpy.utils.unregister_class(old_cls)
 

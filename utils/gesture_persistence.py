@@ -24,6 +24,39 @@ _suppress_disk_save = 0
 _save_timer_pending = False
 _save_timer_fn = None
 _SAVE_DEBOUNCE_SEC = 0.35
+# True while structural edits have not reached disk yet. Lets file-load
+# hooks skip a full serialize+write when nothing changed since the last save.
+_pending_unsaved_changes = False
+_persisted_gesture_data: dict | None = None
+_SNAPSHOT_UNSET = object()
+
+
+def _normalize_gesture_data(gesture_data: dict) -> dict:
+    """Return the exact JSON-compatible form used at the persistence boundary."""
+    return loads_json_strict(json.dumps(gesture_data, ensure_ascii=True))
+
+
+def _set_persisted_gesture_baseline(gesture_data: dict) -> None:
+    global _persisted_gesture_data, _pending_unsaved_changes
+    _persisted_gesture_data = _normalize_gesture_data(gesture_data)
+    _pending_unsaved_changes = False
+
+
+def has_unsaved_gesture_changes(gesture_data=_SNAPSHOT_UNSET) -> bool:
+    """Return whether live gesture data differs from the last successful I/O.
+
+    RNA fields without update callbacks still participate through the snapshot
+    comparison, while the pending flags retain the cheap structural fast path.
+    """
+    if _pending_unsaved_changes or _save_timer_pending:
+        return True
+    if gesture_data is _SNAPSHOT_UNSET:
+        gesture_data = capture_gesture_snapshot()
+    if gesture_data is None:
+        return False
+    if _persisted_gesture_data is None:
+        return bool(gesture_data)
+    return _normalize_gesture_data(gesture_data) != _persisted_gesture_data
 
 
 @contextmanager
@@ -68,8 +101,8 @@ def _read_gesture_file(path: str) -> dict:
     return data
 
 
-def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
-    """Write and validate a gesture file before atomically replacing ``path``."""
+def write_json_file_atomic(path: str, data: dict) -> None:
+    """Write *data* as JSON via a verified temp file + atomic replace."""
     directory = os.path.dirname(path) or os.curdir
     os.makedirs(directory, exist_ok=True)
     fd, temp_path = tempfile.mkstemp(
@@ -79,16 +112,17 @@ def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
     )
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as file:
-            json.dump(export_data, file, ensure_ascii=True, indent=2)
+            json.dump(data, file, ensure_ascii=True, indent=2)
             file.flush()
             os.fsync(file.fileno())
 
         # Compare the exact JSON-compatible structure while the old file is
         # still untouched. This catches partial writes and serialization drift.
-        written_data = _read_gesture_file(temp_path)
-        expected_data = loads_json_strict(json.dumps(export_data, ensure_ascii=True))
+        with open(temp_path, 'r', encoding='utf-8') as file:
+            written_data = load_json_strict(file)
+        expected_data = loads_json_strict(json.dumps(data, ensure_ascii=True))
         if written_data != expected_data:
-            raise ValueError('Gesture file verification failed before replace')
+            raise ValueError('JSON file verification failed before replace')
 
         os.replace(temp_path, path)
     finally:
@@ -97,6 +131,14 @@ def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
                 os.remove(temp_path)
         except OSError:
             ...
+
+
+def _write_gesture_file_atomic(path: str, export_data: dict) -> None:
+    """Write and validate a gesture file before atomically replacing ``path``."""
+    if not isinstance(export_data, dict) or not isinstance(
+            export_data.get('gesture'), dict):
+        raise ValueError("Invalid gesture file: missing 'gesture' data")
+    write_json_file_atomic(path, export_data)
 
 
 def _replace_gesture_store(
@@ -203,7 +245,7 @@ def restore_gesture_snapshot(gesture_data: dict) -> bool:
     try:
         _apply_gesture_data(store, gesture_data)
     except Exception as exc:
-        log_backup(f"gestures memory restore failed: {exc}")
+        log_backup(f"gestures memory restore failed: {exc}", critical=True)
         from .debug_util import debug_traceback
         debug_traceback(key='export_import')
         return False
@@ -213,6 +255,7 @@ def restore_gesture_snapshot(gesture_data: dict) -> bool:
 
 def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
     """Write all gestures to CONFIG (or backups fallback). Return path or None."""
+    global _pending_unsaved_changes
     from ..ops.export_import import Export
 
     try:
@@ -231,16 +274,18 @@ def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
                 _write_gesture_file_atomic(path, export_data)
             except (OSError, TypeError, ValueError) as exc:
                 last_error = exc
-                log_backup(f"gestures save path failed ({path}): {exc}")
+                log_backup(f"gestures save path failed ({path}): {exc}", critical=True)
                 continue
             count = len(export_data.get('gesture') or {})
             log_backup(f"gestures save: {count} gesture(s) -> {path}")
+            _set_persisted_gesture_baseline(export_data['gesture'])
+            _pending_unsaved_changes = False
             return path
         if last_error is not None:
             raise last_error
         raise OSError("No Gesture Helper save path is available")
     except Exception as e:
-        log_backup(f"gestures save failed: {e}")
+        log_backup(f"gestures save failed: {e}", critical=True)
         from .debug_util import debug_traceback
         debug_traceback(key='export_import')
         return None
@@ -248,10 +293,11 @@ def save_gestures_to_disk(*, description: str = 'gesture_config') -> str | None:
 
 def schedule_save_gestures_to_disk(*, description: str = 'structure_changed') -> None:
     """Debounced write after structural edits (add/remove/sort/copy, etc.)."""
-    global _save_timer_pending, _save_timer_fn
+    global _save_timer_pending, _save_timer_fn, _pending_unsaved_changes
 
     if _suppress_disk_save:
         return
+    _pending_unsaved_changes = True
     if _save_timer_pending:
         return
 
@@ -282,6 +328,9 @@ def _try_load_path(store, path: str) -> bool:
     _apply_gesture_data(store, data['gesture'])
     # Drop migration-only DNA so it cannot be confused with the WM store.
     clear_legacy_preferences_gestures()
+    snapshot = capture_gesture_snapshot()
+    if snapshot is not None:
+        _set_persisted_gesture_baseline(snapshot)
     log_backup(f"gestures load: ok ({len(store.gesture)} gesture(s))")
     return True
 
@@ -327,6 +376,29 @@ def clear_legacy_preferences_gestures() -> None:
             pref.index_gesture = 0
 
 
+def _preserve_corrupt_primary(failed_paths) -> None:
+    """Rename an unreadable primary file so later saves cannot overwrite it."""
+    try:
+        primary = next(iter(iter_gestures_save_paths()), None)
+    except Exception:
+        return
+    if not primary or primary not in failed_paths:
+        return
+    if not os.path.isfile(primary):
+        return
+    from datetime import datetime
+    stamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    target = f"{primary}.corrupt-{stamp}"
+    try:
+        os.replace(primary, target)
+        log_backup(
+            f"gestures load: corrupt file preserved as {target}",
+            critical=True,
+        )
+    except OSError as exc:
+        log_backup(f"gestures load: could not preserve corrupt file: {exc}")
+
+
 def load_gestures_from_disk() -> bool:
     """
     Always load gestures into the WM session store.
@@ -353,7 +425,7 @@ def load_gestures_from_disk() -> bool:
             return _try_load_path(store, path)
         except Exception as e:
             failed.append(path)
-            log_backup(f"gestures load failed ({path}): {e}")
+            log_backup(f"gestures load failed ({path}): {e}", critical=True)
             from .debug_util import debug_traceback
             debug_traceback(key='export_import')
 
@@ -361,17 +433,25 @@ def load_gestures_from_disk() -> bool:
         try:
             return _try_load_path(store, path)
         except Exception as e:
-            log_backup(f"gestures load failed ({path}): {e}")
+            log_backup(f"gestures load failed ({path}): {e}", critical=True)
             from .debug_util import debug_traceback
             debug_traceback(key='export_import')
+
+    if failed:
+        # Keep the unreadable bytes for manual recovery; an automatic save
+        # would otherwise replace them with a valid empty library.
+        _preserve_corrupt_primary(failed)
 
     try:
         if _migrate_legacy_preferences_gestures(store):
             return True
     except Exception as e:
-        log_backup(f"gestures legacy migration failed: {e}")
+        log_backup(f"gestures legacy migration failed: {e}", critical=True)
         from .debug_util import debug_traceback
         debug_traceback(key='export_import')
 
+    snapshot = capture_gesture_snapshot()
+    if snapshot is not None and not snapshot:
+        _set_persisted_gesture_baseline(snapshot)
     log_backup("gestures load: no file and no in-memory gestures")
     return False
