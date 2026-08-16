@@ -251,7 +251,14 @@ class GestureMenuRuntime(PublicGpu):
             try:
                 instance._draw_menu()
             except Exception as exc:
-                instance._menu_last_draw_error = repr(exc)
+                error_text = repr(exc)
+                if getattr(instance, '_menu_last_draw_error', None) != error_text:
+                    # An invisible menu still owns modal input; leave at least
+                    # one console trace instead of failing silently every frame.
+                    print(f"[Gesture Helper] menu draw failed: {error_text}")
+                    from ..utils.debug_util import debug_traceback
+                    debug_traceback(key='gpu')
+                instance._menu_last_draw_error = error_text
 
     @classmethod
     def redraw_gesture(cls, gesture) -> None:
@@ -892,6 +899,22 @@ class GestureMenuRuntime(PublicGpu):
             rows.append(MenuRow(element, 'No available items', 'EMPTY', enabled=False))
         return rows
 
+    # Poll fingerprints read context.selected_objects (a full scene filter)
+    # and the active tool. Hover updates and draw callbacks both rebuild the
+    # layout key, so cap the fingerprint cost at one refresh per interval
+    # instead of paying it on every pointer move over a keep-open menu.
+    _POLL_FINGERPRINT_TTL = 0.15
+
+    def _menu_poll_fingerprint(self):
+        now = time.monotonic()
+        stamp = getattr(self, '_menu_poll_fingerprint_time', None)
+        if stamp is not None and (now - stamp) < self._POLL_FINGERPRINT_TTL:
+            return self._menu_poll_fingerprint_value
+        value = poll_context_fingerprint()
+        self._menu_poll_fingerprint_value = value
+        self._menu_poll_fingerprint_time = now
+        return value
+
     def _layout_key(self):
         from ..utils.public_cache import PublicCache
 
@@ -910,7 +933,7 @@ class GestureMenuRuntime(PublicGpu):
             gesture_key,
             PublicCache.__structure_generation__,
             PublicCache.__derived_generation__,
-            poll_context_fingerprint(),
+            self._menu_poll_fingerprint(),
             self._menu_style(),
             _element_identity(getattr(self, '_menu_enum_dropdown', None)),
             bool(getattr(self, '_menu_centered', False)),

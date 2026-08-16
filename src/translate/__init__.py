@@ -186,13 +186,18 @@ def __load_json__():
 def get_language_list() -> tuple[str, ...]:
     """Return locale ids supported by the current Blender build."""
     try:
-        prop = bpy.context.preferences.bl_rna.properties['view'].properties['language']
-        return tuple(
+        # ``properties['view']`` is a pointer definition; the enum lives on
+        # the pointed-to struct's own RNA.
+        prop = bpy.context.preferences.view.bl_rna.properties['language']
+        identifiers = tuple(
             item.identifier for item in prop.enum_items
             if item.identifier != 'DEFAULT'
         )
-    except Exception:
-        return ('en_US', 'zh_HANS')
+        if identifiers:
+            return identifiers
+    except Exception as e:
+        debug_print("get_language_list probe failed", e, key='operator')
+    return ('en_US', 'zh_HANS')
 
 
 def _resolve_locale(folder_name: str, supported: tuple[str, ...]) -> str | None:
@@ -220,8 +225,8 @@ def register():
             continue
         for category, strings in translate_dict.items():
             ti = TranslationHelper(f"Gesture_{locale}_{category}", strings, lang=locale)
-            ti.register()
-            __language_list__.append(ti)
+            if ti.register():
+                __language_list__.append(ti)
     _clear_translation_caches()
 
 

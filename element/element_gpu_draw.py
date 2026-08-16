@@ -1,5 +1,5 @@
 import math
-from functools import cache
+from functools import cache, lru_cache
 
 import bpy
 import gpu
@@ -38,7 +38,9 @@ from ..utils.texture import Texture
 from .element_status import ElementStatus, get_element_status_info
 
 
-@cache
+# Bounded: property rows feed live value strings through here, so an
+# unbounded cache grows on every scrubbed value in long sessions.
+@lru_cache(maxsize=4096)
 def from_text_get_dimensions(text, size):
     """(text width, stable line height) — height never depends on the glyphs."""
     from ..utils.blf_text import measure_text

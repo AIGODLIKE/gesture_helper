@@ -59,12 +59,19 @@ class Texture:
             chroma = max(br, bg, bb) - min(br, bg, bb)
             if chroma < 0.08:
                 thresh = 0.12
+                keyed = []
                 for i in range(0, count, 4):
                     dr = abs(pixels[i] - br)
                     dg = abs(pixels[i + 1] - bg)
                     db = abs(pixels[i + 2] - bb)
                     if dr < thresh and dg < thresh and db < thresh:
-                        pixels[i + 3] = 0.0
+                        keyed.append(i + 3)
+                # A solid near-neutral custom icon matches everywhere; keying
+                # it would erase the whole image. Only strip a plausible
+                # backdrop (at most ~70% of all pixels).
+                if total > 0 and len(keyed) / total <= 0.7:
+                    for alpha_index in keyed:
+                        pixels[alpha_index] = 0.0
         return pixels
 
     @staticmethod

@@ -1,6 +1,6 @@
 import math
 from contextlib import contextmanager
-from functools import cache
+from functools import cache, lru_cache
 
 import blf
 import gpu
@@ -14,7 +14,16 @@ DEFAULT_CIRCLE_SEGMENTS = 64
 _SHADER_CACHE: dict[str, object] = {}
 # key -> (shader_identity, batch); rebuild when shader instance changes after reload.
 _ROUNDED_FILL_BATCH: dict[tuple, tuple] = {}
+# Slider fills and animated widths produce continuous float dimensions, so
+# the permanent per-size GPUBatch cache needs a hard cap (oldest half drops).
+_ROUNDED_FILL_BATCH_LIMIT = 1024
 _IMAGE_BATCH_CACHE: dict[tuple[float, float], tuple] = {}
+
+
+def _quantize_px(value) -> float:
+    """Quantize pixel dimensions to 0.25 px so continuously animated sizes
+    (numeric slider fills, eased arcs) cannot flood the geometry caches."""
+    return round(float(value) * 4.0) / 4.0
 
 _GPU_DRAW_DEPTH = 0
 _SAVED_BLEND = None
@@ -44,9 +53,9 @@ def clear_gpu_caches() -> None:
     _ROUNDED_FILL_BATCH.clear()
     _IMAGE_BATCH_CACHE.clear()
     from_segments_generator_circle_vertex.cache_clear()
-    get_rounded_rectangle_vertex.cache_clear()
-    get_arc_vertex.cache_clear()
-    get_rounded_fill_mesh.cache_clear()
+    _rounded_rectangle_vertex_cached.cache_clear()
+    _arc_vertex_cached.cache_clear()
+    _rounded_fill_mesh_cached.cache_clear()
     clear_color_cache()
     from .blf_text import clear_text_metrics
     clear_text_metrics()
@@ -236,7 +245,6 @@ def _clamp_rounded_radius(radius, width, height) -> float:
     )
 
 
-@cache
 def get_rounded_rectangle_vertex(
         radius=10,
         width=200,
@@ -250,6 +258,23 @@ def get_rounded_rectangle_vertex(
     endpoints, so opposite corners and all four straight edges are symmetric.
     ``corner_mask`` is ``(top-left, top-right, bottom-right, bottom-left)``.
     """
+    return _rounded_rectangle_vertex_cached(
+        _quantize_px(radius),
+        _quantize_px(width),
+        _quantize_px(height),
+        int(segments),
+        tuple(bool(value) for value in corner_mask),
+    )
+
+
+@lru_cache(maxsize=2048)
+def _rounded_rectangle_vertex_cached(
+        radius,
+        width,
+        height,
+        segments,
+        corner_mask,
+) -> tuple:
     if segments <= 0:
         raise ValueError("Amount of segments must be greater than 0.")
     radius = _clamp_rounded_radius(radius, width, height)
@@ -285,18 +310,22 @@ def get_rounded_rectangle_vertex(
     return tuple(vertex)
 
 
-@cache
 def get_arc_vertex(arc, segments=40):
     """Unit-circle arc from 0° to ``arc`` degrees (inclusive endpoints)."""
-    segments = max(1, int(segments))
+    # Eased direction-cue arcs sweep continuously; 0.5° steps keep the cache
+    # bounded without any visible difference at overlay radii.
+    return _arc_vertex_cached(round(float(arc) * 2.0) / 2.0, max(1, int(segments)))
+
+
+@lru_cache(maxsize=1024)
+def _arc_vertex_cached(arc, segments):
     vertex = []
     for i in range(segments + 1):
-        b = math.radians(float(arc) * i / segments)
+        b = math.radians(arc * i / segments)
         vertex.append((math.cos(b), math.sin(b)))
     return tuple(vertex)
 
 
-@cache
 def get_rounded_fill_mesh(
         radius,
         width,
@@ -305,6 +334,17 @@ def get_rounded_fill_mesh(
         corner_mask=(True, True, True, True),
 ):
     """Center-fan mesh for a filled rounded rect."""
+    return _rounded_fill_mesh_cached(
+        _quantize_px(radius),
+        _quantize_px(width),
+        _quantize_px(height),
+        int(segments),
+        tuple(bool(value) for value in corner_mask),
+    )
+
+
+@lru_cache(maxsize=2048)
+def _rounded_fill_mesh_cached(radius, width, height, segments, corner_mask):
     segs = _round_rect_segments(radius, segments)
     outline = get_rounded_rectangle_vertex(radius, width, height, segs, corner_mask)
     verts = ((0.0, 0.0),) + outline
@@ -317,12 +357,16 @@ def _get_rounded_fill_batch(radius, width, height, segments, corner_mask):
     segs = _round_rect_segments(radius, segments)
     corner_mask = tuple(bool(value) for value in corner_mask)
     key = (
-        round(radius, 3), round(width, 3), round(height, 3), int(segs), corner_mask,
+        _quantize_px(radius), _quantize_px(width), _quantize_px(height),
+        int(segs), corner_mask,
     )
     shader = _get_shader('UNIFORM_COLOR')
     entry = _ROUNDED_FILL_BATCH.get(key)
     if entry is not None and entry[0] is shader:
         return entry[1]
+    if len(_ROUNDED_FILL_BATCH) >= _ROUNDED_FILL_BATCH_LIMIT:
+        for old_key in list(_ROUNDED_FILL_BATCH)[:_ROUNDED_FILL_BATCH_LIMIT // 2]:
+            del _ROUNDED_FILL_BATCH[old_key]
     verts, indices = get_rounded_fill_mesh(radius, width, height, segs, corner_mask)
     batch = batch_for_shader(shader, 'TRIS', {"pos": verts}, indices=indices)
     _ROUNDED_FILL_BATCH[key] = (shader, batch)

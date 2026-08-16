@@ -1,4 +1,4 @@
-from functools import cache
+from functools import lru_cache
 
 import bpy
 
@@ -11,6 +11,16 @@ from ..utils.rna_register import register_classes_safe, unregister_classes_safe
 from ..utils.icons import ui_icon
 
 _MODAL_EVENT_VISIBILITY: dict[int, bool] = {}
+
+
+@lru_cache(maxsize=16)
+def _panel_title(_language: str, _translate_interface: bool) -> str:
+    """Header title, cached for the complete interface-translation state."""
+    from .. import ADDON_VERSION
+    return (
+        f"{bpy.app.translations.pgettext_iface('Gesture')} "
+        f"{'.'.join(map(str, ADDON_VERSION))}"
+    )
 
 
 def _panel_area_key(context) -> int:
@@ -35,14 +45,12 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
         except (KeyError, AttributeError):
             return False
 
-    def draw_label_ang_version(self, layout):
-        @cache
-        def text():
-            from .. import ADDON_VERSION
-            label = f"{bpy.app.translations.pgettext_iface('Gesture')} {'.'.join(map(str, ADDON_VERSION))}"
-            return label
-
-        layout.label(text=text())
+    def draw_label_and_version(self, layout):
+        view = bpy.context.preferences.view
+        layout.label(text=_panel_title(
+            view.language,
+            bool(view.use_translate_interface),
+        ))
 
     def draw_header(self, context):
         from ..utils.ui_draw_sync import (
@@ -62,7 +70,7 @@ class GesturePanel(bpy.types.Panel, PrefAccess, ActiveSelection):
             text="",
             icon=ui_icon("FILE_TICK"),
         )
-        self.draw_label_ang_version(row)
+        self.draw_label_and_version(row)
 
         if message:
             status = row.row(align=True)

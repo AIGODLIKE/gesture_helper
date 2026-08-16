@@ -15,13 +15,20 @@ class TranslationHelper:
             for msgctxt in msgctxts:
                 bucket[(msgctxt, src)] = src_trans
 
-    def register(self):
+    def register(self) -> bool:
         try:
             bpy.app.translations.register(self.name, self.translations_dict)
+            return True
         except ValueError as e:
             debug_print(e.args, key='operator')
             debug_trace_stack(key='operator')
             debug_traceback(key='operator')
+            return False
 
     def unregister(self):
-        bpy.app.translations.unregister(self.name)
+        try:
+            bpy.app.translations.unregister(self.name)
+        except ValueError as e:
+            # A duplicate-name registration failure must not abort the rest
+            # of the unregister chain.
+            debug_print(e.args, key='operator')

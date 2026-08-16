@@ -1,5 +1,6 @@
 import bpy
 
+from bpy.app.translations import pgettext
 from bpy.props import BoolProperty
 
 from ..utils.cache_state import CacheState
@@ -221,7 +222,7 @@ class ElementModalOperatorEventCRUE:
                 try:
                     prop = element.operator_func.get_rna_type().properties.get(self.control_property)
                     if prop and prop.type == 'ENUM' and getattr(prop, 'is_enum_flag', False):
-                        self.report({'ERROR'}, "Multi-select enum (set) is not supported")
+                        self.report({'ERROR'}, pgettext("Multi-select enum (set) is not supported"))
                         return {'CANCELLED'}
                 except KeyError:
                     ...

@@ -73,9 +73,6 @@ class PreviewGestureInputProcessor(GestureInputProcessor):
     def _handle_property_drag(self, session, ops, event):
         return None
 
-    def _arm_radial_property_drag(self, session, ops, event) -> None:
-        return None
-
     def _handle_child_navigation(
             self, session, ops, snap, mouse, in_extension_ui: bool,
     ) -> None:

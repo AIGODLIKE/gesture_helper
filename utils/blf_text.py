@@ -17,7 +17,7 @@ No font ships with the add-on; metrics always follow the user's UI font.
 
 from __future__ import annotations
 
-from functools import cache
+from functools import lru_cache
 
 import blf
 
@@ -96,7 +96,8 @@ def wrap_text(
     ))
 
 
-@cache
+# Bounded: tooltip/description texts vary with live values and locale.
+@lru_cache(maxsize=2048)
 def _wrap_text_cached(
         remaining: str,
         max_width: float,

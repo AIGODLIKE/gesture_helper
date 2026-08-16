@@ -19,9 +19,13 @@ CUSTOM_ICONS_EXPORT_FILENAME = "gesture_helper_custom_icons.zip"
 
 
 def get_custom_icons_folder() -> str:
-    """User custom icons folder under extension_path_user (never the install tree)."""
+    """User custom icons folder under extension_path_user (never the install tree).
+
+    Read-only lookup: creating the folder here would make add-on enable fail
+    on a read-only user directory (this runs from ``Icons.register``).
+    """
     from .backups import get_extension_user_folder
-    return abspath(join(get_extension_user_folder(), CUSTOM_ICONS_DIR_NAME))
+    return abspath(join(get_extension_user_folder(create=False), CUSTOM_ICONS_DIR_NAME))
 
 
 def ensure_custom_icons_folder() -> str:
@@ -144,7 +148,8 @@ def index_from_folder(icon_folder_path: str, icon_type: str) -> None:
         file_path = os.path.abspath(os.path.join(icon_folder_path, file))
         if not os.path.isfile(file_path):
             continue
-        name, _suffix = file.split(".", 1)
+        # rsplit keeps multi-dot names ("my.icon.png" -> "my.icon") intact.
+        name = file.rsplit(".", 1)[0]
         key = name.lower()
         if key in icons_path_map:
             continue
@@ -251,7 +256,12 @@ class Icons:
         icon_root = os.path.join(ADDON_FOLDER, 'src', 'icons')
         index_from_folder(icon_root, "ADDON")
         index_from_folder(os.path.join(icon_root, 'blender'), "BLENDER")
-        index_from_folder(get_custom_icons_folder(), "CUSTOM")
+        try:
+            index_from_folder(get_custom_icons_folder(), "CUSTOM")
+        except OSError:
+            # A broken/read-only user data root must not block add-on enable;
+            # bundled icons above keep working without custom icons.
+            ...
 
     @staticmethod
     def _ensure_registered() -> None:

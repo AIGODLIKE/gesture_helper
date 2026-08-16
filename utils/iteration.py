@@ -1,19 +1,24 @@
 """Live element-tree iteration (single source of truth for tree walks)."""
 
+from collections import deque
+
 
 def iter_elements(root, *, include_root=False):
     """Depth-first pre-order over element collections under *root*.
 
     *root* is a gesture or element PropertyGroup with an ``element`` collection.
+    Yields wrappers taken directly from the live RNA collections, so every
+    yielded element is attached by construction.
     """
     if include_root:
         yield root
-    stack = list(root.element)
+    stack = deque(root.element)
     while stack:
-        element = stack.pop(0)
+        element = stack.popleft()
         yield element
-        if len(element.element):
-            stack[0:0] = list(element.element)
+        children = element.element
+        if len(children):
+            stack.extendleft(reversed(children))
 
 
 def find_owning_gesture(item):
