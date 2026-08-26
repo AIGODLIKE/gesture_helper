@@ -711,7 +711,7 @@
                   "icon": "SNAP_FACE_CENTER",
                   "enabled_icon": true,
                   "direction": "2",
-                  "operator_bl_idname": "mesh.poke"
+                  "operator_bl_idname": "mesh.inset"
                 },
                 "1": {
                   "name": "Solidify Faces",
