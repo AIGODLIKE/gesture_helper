@@ -1,8 +1,10 @@
 # Project Instructions
 
-Read `PROJECT_CONTEXT.md` before reading or searching source code. Use it to
-select the smallest relevant scope, then verify important claims against the
-current source files and tests; the summary never overrides the source.
+For source or architecture changes, read `PROJECT_CONTEXT.md` before reading or
+searching source code. For focused read-only or documentation-only work, read
+only the relevant files and use the context when it affects scope. Verify
+important claims against the current source files and tests; the summary never
+overrides the source.
 
 Keep `PROJECT_CONTEXT.md` concise and refresh it when architecture, build
 behavior, dependencies, workflows, or durable risks change.
