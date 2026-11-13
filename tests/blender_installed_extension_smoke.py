@@ -13,7 +13,7 @@ PACKAGE_ID = os.environ.get("GH_TEST_PACKAGE_ID", "gesture_helper")
 PACKAGE = f"bl_ext.{REPOSITORY}.{PACKAGE_ID}"
 EXPECTED_VERSION = tuple(
     int(part)
-    for part in os.environ.get("GH_EXPECTED_EXTENSION_VERSION", "2.4.0").split(".")
+    for part in os.environ.get("GH_EXPECTED_EXTENSION_VERSION", "2.4.1").split(".")
 )
 EXPECTED_PRESET_COUNT = int(os.environ.get("GH_EXPECTED_PRESET_COUNT", "12"))
 

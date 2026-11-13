@@ -4,7 +4,7 @@ bl_info = {
     "name": "Gesture Helper",
     "description": "Use gestures to run Blender operators or change properties.",
     "author": "ACGGIT Community",
-    "version": (2, 4, 0),
+    "version": (2, 4, 1),
     "blender": (4, 3, 0),
     "location": "View3D Sidebar",
     "support": "COMMUNITY",

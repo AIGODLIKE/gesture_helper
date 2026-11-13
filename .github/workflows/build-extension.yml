@@ -163,9 +163,21 @@ jobs:
           path: dist/staging/
           if-no-files-found: error
 
+      - name: Prepare release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -euo pipefail
+          notes="release-notes/v${EXTENSION_VERSION}.md"
+          if [ ! -f "$notes" ]; then
+            mkdir -p release-notes
+            : > "$notes"
+          fi
+          echo "RELEASE_NOTES_PATH=$notes" >> "$GITHUB_ENV"
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           files: dist/release/${{ env.RELEASE_ZIP_NAME }}
+          body_path: ${{ env.RELEASE_NOTES_PATH }}
           generate_release_notes: true
