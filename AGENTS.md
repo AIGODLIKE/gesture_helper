@@ -17,3 +17,8 @@ table and ensure those files are not listed.
 Preserve existing worktree changes. Verify preset changes with JSON duplicate-
 key checks, focused unit tests, and isolated Blender smoke tests when they
 touch runtime RNA, keymaps, or menu behavior.
+
+Release asset names never carry a version: the GitHub Release ZIP must be
+`gesture_helper.zip` (`{id}.zip`), not `gesture_helper-2.4.1.zip`, because a
+versioned file name breaks installation. Keep `RELEASE_ZIP_NAME` in
+`.github/workflows/build-extension.yml` as `${EXTENSION_ID}.zip`.

@@ -544,3 +544,5 @@ A full-source review hardened these contracts; preserve them in future edits:
   unchanged; ordinary source UI and manifest text remain English.
 - Never include `AGENTS.md`, `PROJECT_CONTEXT.md`, tests, or caches in release
   archives.
+- Release ZIPs are named `gesture_helper.zip` with no version; versioned
+  names break installation.

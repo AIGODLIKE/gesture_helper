@@ -11,7 +11,8 @@
 #           ├── blender_manifest.toml
 #           ├── __init__.py
 #           └── ...
-#   GitHub Release    →  {id}-{version}.zip  (same nested layout)
+#   GitHub Release    →  {id}.zip  (same nested layout; no version in the name,
+#                        versioned names break installation)
 #
 # id / version are read from blender_manifest.toml automatically.
 
@@ -78,7 +79,7 @@ jobs:
             echo "EXTENSION_ID=$EXTENSION_ID"
             echo "EXTENSION_VERSION=$EXTENSION_VERSION"
             echo "ARTIFACT_NAME=$ARTIFACT_NAME"
-            echo "RELEASE_ZIP_NAME=${EXTENSION_ID}-${EXTENSION_VERSION}.zip"
+            echo "RELEASE_ZIP_NAME=${EXTENSION_ID}.zip"
           } >> "$GITHUB_ENV"
 
           echo "Extension id=$EXTENSION_ID version=$EXTENSION_VERSION artifact=$ARTIFACT_NAME.zip"
@@ -137,7 +138,7 @@ jobs:
           flat_zip="$(ls dist/*.zip | head -n1)"
           test -f "$flat_zip"
 
-          # Rebuild as: {id}.zip / {id}-{version}.zip
+          # Rebuild as: {id}.zip
           #   └── {id}/
           #       ├── blender_manifest.toml
           #       └── ...
