@@ -527,6 +527,12 @@ A full-source review hardened these contracts; preserve them in future edits:
 ## Constraints
 
 - Support Blender 4.3+ and current 5.x; use version-safe Blender UI icons.
+- Blender 5.3 (verified 2026-11-13 on 5.3.0): `UnifiedPaintPanel.paint_settings`
+  was renamed `paint_settings_from_active_tool`; `gesture/pass_through/core.py`
+  resolves either name. The essentials weight brush "Paint" became
+  "Add Weight", and `asset_libraries.new()` returns `PreferencesAssetLibrary`
+  (a `UserAssetLibrary` subclass); the data-path smoke handles both. All 13
+  source smokes and 336 unit tests pass on 5.3.0.
 - Preserve bundled example key events and nested fixture state exactly; every
   example shortcut must cover both `3D View` and `Object Mode`.
 - JSON is UTF-8; conditional `IF`/`ELIF`/`ELSE` elements must be consecutive.

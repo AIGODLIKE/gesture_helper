@@ -141,14 +141,21 @@ class GesturePassThroughKeymap:
 
     @staticmethod
     def try_pass_paint_texture_stencil(context: bpy.types.Context, event: bpy.types.Event) -> set | None:
+        if event.type != "RIGHTMOUSE" or context.mode != "PAINT_TEXTURE":
+            return None
+        if not context.space_data or context.space_data.type != "VIEW_3D":
+            return None
+
         from bl_ui.properties_paint_common import UnifiedPaintPanel
 
-        settings = UnifiedPaintPanel.paint_settings(context)
+        # Blender 5.3 renamed paint_settings() to paint_settings_from_active_tool().
+        get_settings = (
+            getattr(UnifiedPaintPanel, "paint_settings_from_active_tool", None)
+            or getattr(UnifiedPaintPanel, "paint_settings", None)
+        )
+        settings = get_settings(context) if get_settings else context.tool_settings.image_paint
         brush = getattr(settings, "brush", None)
-        if context.space_data and context.space_data.type == "VIEW_3D":
-            if context.mode == "PAINT_TEXTURE" and brush:
-                ts = getattr(brush, "texture_slot", None)
-                if ts and getattr(ts, "map_mode", None) == "STENCIL":
-                    if event.type == "RIGHTMOUSE":
-                        return {'FINISHED', 'PASS_THROUGH'}
+        ts = getattr(brush, "texture_slot", None)
+        if ts and getattr(ts, "map_mode", None) == "STENCIL":
+            return {'FINISHED', 'PASS_THROUGH'}
         return None

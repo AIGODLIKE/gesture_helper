@@ -140,11 +140,16 @@ try:
                 # Brush assets replaced writable Paint.brush pointers in 4.3.
                 # Blender 4.3/4.4 may return CANCELLED while still activating
                 # the asset, so the live pointer below is authoritative.
+                # Blender 5.3 renamed the essentials weight "Paint" brush
+                # to "Add Weight".
+                weight_brush_name = (
+                    "Add Weight" if bpy.app.version >= (5, 3, 0) else "Paint"
+                )
                 bpy.ops.brush.asset_activate(
                     asset_library_type='ESSENTIALS',
                     relative_asset_identifier=(
                         "brushes/essentials_brushes-mesh_weight.blend"
-                        "/Brush/Paint"
+                        f"/Brush/{weight_brush_name}"
                     ),
                 )
             brush = bpy.context.tool_settings.weight_paint.brush
@@ -545,7 +550,8 @@ for collection, create, identifier, prop_identifier in (
     second = create("B")
     first_removed = False
     try:
-        assert second.bl_rna.identifier == identifier
+        # Blender 5.3 returns the PreferencesAssetLibrary subclass.
+        assert isinstance(second, getattr(bpy.types, identifier))
         assert not second.is_property_readonly(prop_identifier)
         for preference_item in (first, second):
             assert resolve_context_data_path(
