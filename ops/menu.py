@@ -74,7 +74,7 @@ class GestureMenuOperator(PublicOperator, GestureMenuRuntime):
 
     def invoke(self, context, event):
         area = context.area
-        if area is None or area.type in {'PREFERENCES', 'FILE_BROWSER'}:
+        if area is None:
             return {'CANCELLED'}
 
         from ..utils.session_state import SessionState

@@ -71,10 +71,9 @@ class GestureOperator(
         if pass_right_mouse := self.try_pass_paint_texture_stencil(context, event):
             return pass_right_mouse
 
-        # Preferences / other utility windows must not start a gesture modal.
-        area = context.area
-        if area is not None and area.type in {'PREFERENCES', 'FILE_BROWSER'}:
-            return {'CANCELLED'}
+        # Preferences and File Browser windows run gestures like any editor.
+        # Re-opening an already open Preferences window from a gesture is
+        # skipped in GestureHandle/defer_operator_call to avoid focus fights.
 
         from ..utils.session_state import SessionState
 

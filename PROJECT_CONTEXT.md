@@ -235,6 +235,10 @@ with bundled JSON presets, translations, and PNG icon assets.
    the final batched rebuild can make update callbacks resolve destroyed items.
 6. `gesture/pass_through/*` handles forwarding to Blender's native keymaps when
    a gesture does not consume the event.
+   Radial and menu gestures also run in Preferences and File Browser areas (no
+   area-type cancel guard); File Browser pass-through adds `File Browser Main`
+   (WINDOW) / `File Browser Buttons` (side regions). Re-opening an already
+   open Preferences window stays skipped to avoid focus fights.
    Runtime keymaps are derived state: `gesture/addon_keymap.py` preserves the
    exact KMI object registry across Python hot reload and removes only those
    registered objects. No operator-id/name-based orphan sweep is performed.
@@ -404,6 +408,9 @@ flowchart TD
   in `tests/data/legacy_presets/`.
 - Common side-button menu RNA, operator arguments, context branches, editable
   values, and exact KMI coverage: `tests/blender_common_menu_smoke.py`.
+- Preferences/File Browser radial + menu start and pass-through keymaps:
+  `tests/blender_utility_area_gesture_smoke.py`, run in foreground Blender
+  (no `--background`; headless area switching crashes Blender 5.3).
 - Simultaneous persistent-menu registry, one-instance-per-gesture reuse,
   draw-order, overlap ownership, and cleanup smoke:
   `tests/blender_multi_menu_smoke.py`; run it with the same four isolated

@@ -207,6 +207,12 @@ def from_region_get_keymaps(context) -> list[str]:
                 keys.append(IMAGE_UI_MODE_MAP.get(ui_mode))
         keys.append("Image Generic")
         debug_print(ut, ui_mode, key='key')
+    elif area_type == "FILE_BROWSER":
+        # File list selection/navigation lives in the main-region keymap.
+        if region_type == "WINDOW":
+            keys.append("File Browser Main")
+        elif region_type in {"TOOLS", "UI", "TOOL_PROPS"}:
+            keys.append("File Browser Buttons")
 
     if mk is not None:
         keys.append(mk)
